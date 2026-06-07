@@ -714,7 +714,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 **Required env (`.env.test`):** `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_HOUSEHOLD_ID`, `PLAYWRIGHT_ADVISOR_EMAIL`, `PLAYWRIGHT_ADVISOR_PASSWORD`, `SUPABASE_SERVICE_ROLE_KEY` (profile + referral asserts), `NEXT_PUBLIC_SUPABASE_ANON_KEY` (recompute poll). Optional: `PLAYWRIGHT_CONSUMER_TIER1_*`, `PLAYWRIGHT_ATTORNEY_*`, `PLAYWRIGHT_ADVISOR_REFERRAL_CODE`, `PLAYWRIGHT_ATTORNEY_REFERRAL_CODE`.
 
-**Advisor client seed:** included in `npm run seed:e2e` (Michael Johnson → `e2e-client.johnson@mywealthmaps.test`).
+**Advisor client seed:** included in `npm run seed:e2e` (`e2e-advisor-client@mywealthmaps.test`).
 
 **Manual release smoke** ([CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)) still required for production sign-off — dollar math, Stripe C-4, drip inbox, full signup attribution to Supabase.
 
@@ -1204,7 +1204,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Data deletion (Sprint C-6 — Washington WCPA):**
 
-- **Single path:** `lib/compliance/deleteUser.ts` — CLI (`scripts/gdpr-delete-user.ts`), admin execute API, daily cron, `--rolobe` cleanup script.
+- **Single path:** `lib/compliance/deleteUser.ts` — CLI (`scripts/gdpr-delete-user.ts`), admin execute API, daily cron, go-live **`npm run cleanup:purge`**, legacy `--rolobe` / `--legacy` cleanup script.
 - **Tables:** `deletion_schedule` (pending automated deletions); `deletion_audit_log` (append-only compliance record).
 - **FK scan before Auth delete:** `notifications`, `assessment_results`, `funnel_events`, `privacy_requests`, `deletion_schedule`, `ingestion_jobs`, `change_log`, `firms`, `firm_members`, `profiles`, `email_captures` (by email). `referral_clicks` via advisor_id / attorney_profile_id OR delete.
 - **Orphan Auth users:** no `profiles` row → FK sweep + Auth delete + audit log (no early return).

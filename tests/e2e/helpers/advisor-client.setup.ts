@@ -2,7 +2,7 @@ import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import { resolveE2eEmail, resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
 
-setup('authenticate Johnson client (advisor demo household)', async ({ page }) => {
+setup('authenticate E2E advisor client household', async ({ page }) => {
   const email = resolveE2eEmail(
     process.env.SEED_CLIENT_EMAIL,
     E2E_IDENTITIES.advisorClient.email,
@@ -18,5 +18,5 @@ setup('authenticate Johnson client (advisor demo household)', async ({ page }) =
   await page.getByRole('button', { name: 'Sign in' }).click()
 
   await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 60_000 })
-  await page.context().storageState({ path: '.auth/johnson-client.json' })
+  await page.context().storageState({ path: '.auth/advisor-client.json' })
 })

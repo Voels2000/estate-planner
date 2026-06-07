@@ -1,9 +1,9 @@
 /**
- * Monte Carlo edge function JWT smoke — advisor on Johnson household.
- * Manual equivalent: e2e-advisor@mywealthmaps.test → Johnson → Strategy → Run Monte Carlo
+ * Monte Carlo edge function JWT smoke — advisor on E2E advisor client household.
+ * Manual equivalent: e2e-advisor@mywealthmaps.test → linked client → Strategy → Run Monte Carlo
  */
 import { test, expect } from '@playwright/test'
-import { clickAdvisorClientTab, gotoMichaelJohnsonClient } from '../helpers/constants'
+import { clickAdvisorClientTab, gotoAdvisorLinkedClient } from '../helpers/constants'
 
 test.describe('Security sprint — Monte Carlo edge auth', () => {
   test('Strategy tab Monte Carlo returns P10/P50/P90', async ({ page }) => {
@@ -15,7 +15,7 @@ test.describe('Security sprint — Monte Carlo edge auth', () => {
       }
     })
 
-    await gotoMichaelJohnsonClient(page)
+    await gotoAdvisorLinkedClient(page)
     await clickAdvisorClientTab(page, /Strategy/)
 
     await page.getByRole('button', { name: 'Run Monte Carlo' }).click()

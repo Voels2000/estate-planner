@@ -1,73 +1,36 @@
 /**
- * Ensures Playwright advisor2 account has Michael Johnson (or Johnson-named client)
- * and an active link to household 90cc8759 for strategy-recommendation API tests.
+ * Ensures Playwright advisor account has E2E advisor client linked.
  *
  * Usage:
- *   SEED_ADVISOR_EMAIL=e2e-advisor@mywealthmaps.test npx tsx scripts/seed-michael-johnson-advisor-demo.ts
- *   npx tsx scripts/seed-advisor2-playwright-fixture.ts
+ *   SEED_ADVISOR_EMAIL=e2e-advisor@mywealthmaps.test npm run seed:e2e
+ *   # or re-seed client only:
+ *   npx tsx scripts/seed-michael-johnson-advisor-demo.ts
  */
 
-import { createAdminClient } from '../lib/supabase/admin'
-
 import { E2E_IDENTITIES } from './e2e-test-identities'
+import { findUserIdByEmail, initSupabaseEnv } from './seed-e2e-lib'
 
-const ADVISOR2_EMAIL = process.env.SEED_ADVISOR_EMAIL?.trim() ?? E2E_IDENTITIES.advisor.email
-const STRATEGY_TEST_HOUSEHOLD_ID = '90cc8759-5465-4671-8894-e17eca783a42'
+const ADVISOR2_EMAIL = E2E_IDENTITIES.advisor.email
 
 async function main() {
-  const admin = createAdminClient()
+  initSupabaseEnv()
+  const advisorId = await findUserIdByEmail(ADVISOR2_EMAIL)
+  const clientId = await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)
 
-  const { data: advisor } = await admin
-    .from('profiles')
-    .select('id, email, role')
-    .eq('email', ADVISOR2_EMAIL)
-    .maybeSingle()
-
-  if (!advisor?.id) {
-    console.error('Advisor not found:', ADVISOR2_EMAIL)
+  if (!advisorId) {
+    console.error(`Advisor not found: ${ADVISOR2_EMAIL} — run npm run seed:e2e`)
     process.exit(1)
   }
 
-  console.log('Advisor:', advisor.email, advisor.id)
-
-  const { data: household } = await admin
-    .from('households')
-    .select('id, owner_id')
-    .eq('id', STRATEGY_TEST_HOUSEHOLD_ID)
-    .maybeSingle()
-
-  if (household?.owner_id) {
-    const { data: existingLink } = await admin
-      .from('advisor_clients')
-      .select('id, status')
-      .eq('advisor_id', advisor.id)
-      .eq('client_id', household.owner_id)
-      .maybeSingle()
-
-    if (!existingLink) {
-      const { error } = await admin.from('advisor_clients').insert({
-        advisor_id: advisor.id,
-        client_id: household.owner_id,
-        status: 'active',
-        accepted_at: new Date().toISOString(),
-      })
-      if (error) console.error('advisor_clients insert:', error.message)
-      else console.log('Linked advisor2 to strategy test household owner')
-    } else if (existingLink.status !== 'active') {
-      await admin
-        .from('advisor_clients')
-        .update({ status: 'active', accepted_at: new Date().toISOString() })
-        .eq('id', existingLink.id)
-      console.log('Reactivated advisor_clients link')
-    } else {
-      console.log('Strategy test household link already active')
-    }
-  } else {
-    console.warn('Household not found:', STRATEGY_TEST_HOUSEHOLD_ID)
+  if (!clientId) {
+    console.error(
+      `Advisor client not found: ${E2E_IDENTITIES.advisorClient.email} — run npm run seed:e2e`,
+    )
+    process.exit(1)
   }
 
-  console.log('\nRun Michael Johnson demo seed for advisor2:')
-  console.log(`  SEED_ADVISOR_EMAIL=${ADVISOR2_EMAIL} npx tsx scripts/seed-michael-johnson-advisor-demo.ts`)
+  console.log(`Advisor ${ADVISOR2_EMAIL} → client ${E2E_IDENTITIES.advisorClient.email}`)
+  console.log(`  /advisor/clients/${clientId}`)
 }
 
 main().catch((e) => {

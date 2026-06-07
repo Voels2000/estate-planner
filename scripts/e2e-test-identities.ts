@@ -2,7 +2,7 @@
  * Canonical E2E / Playwright test identities (go-live v2).
  *
  * All automation and seed scripts should import from here — not hardcode legacy
- * @rolobe.resend.app addresses. Retire rolobe via `npm run cleanup:rolobe`.
+ * @rolobe.resend.app addresses. Retire via `npm run cleanup:purge` (go-live) or `npm run cleanup:rolobe` (legacy list).
  *
  * Domain: @mywealthmaps.test — does not receive real mail; safe for staging/prod smoke.
  */
@@ -41,11 +41,12 @@ export const E2E_IDENTITIES = {
     fullName: 'E2E Test Advisor',
     firmName: 'MWM E2E Advisory',
   },
+  /** Advisor-linked client — rich household for advisor workspace / RMD / domicile E2E */
   advisorClient: {
-    email: 'e2e-client.johnson@mywealthmaps.test',
+    email: 'e2e-advisor-client@mywealthmaps.test',
     password: E2E_TEST_PASSWORD,
-    fullName: 'Michael Johnson',
-    householdName: 'Michael & Sarah Johnson',
+    fullName: 'Morgan Demo',
+    householdName: 'E2E Advisor Client Household',
   },
   attorneyPortal: {
     email: 'e2e-attorney@mywealthmaps.test',
@@ -93,6 +94,7 @@ export const LEGACY_E2E_EMAILS = [
   'test-attorney@mywealthmaps.test',
   'test-advisor@mywealthmaps.test',
   'michael.johnson.demo@local.estate',
+  'e2e-client.johnson@mywealthmaps.test',
 ] as const
 
 export function buildEnvTestFileLines(opts: {

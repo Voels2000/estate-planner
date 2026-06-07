@@ -16,9 +16,12 @@ export async function fetchHouseholdIdByOwnerEmail(email: string): Promise<strin
   return data?.id ?? null
 }
 
-export async function fetchJohnsonHouseholdId(): Promise<string | null> {
+export async function fetchAdvisorClientHouseholdId(): Promise<string | null> {
   return fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.advisorClient.email)
 }
+
+/** @deprecated Use fetchAdvisorClientHouseholdId */
+export const fetchJohnsonHouseholdId = fetchAdvisorClientHouseholdId
 
 export async function fetchAttorneyListingId(): Promise<string | null> {
   initSupabaseEnv()

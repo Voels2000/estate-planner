@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test'
-import { gotoMichaelJohnsonClient } from '../helpers/constants'
+import { gotoAdvisorLinkedClient } from '../helpers/constants'
 
 test.beforeEach(async ({ page }) => {
-  await gotoMichaelJohnsonClient(page)
+  await gotoAdvisorLinkedClient(page)
 })
 
 test('strategy tab situation metrics render without sunset messaging', async ({ page }) => {

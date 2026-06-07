@@ -6,6 +6,7 @@ import {
   E2E_IDENTITIES,
   LEGACY_E2E_EMAILS,
   ROLOBE_ACCOUNTS,
+  DRIP_SMOKE_EMAIL,
 } from './e2e-test-identities'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
@@ -30,27 +31,56 @@ const DELETE_EMAILS = [
   'consumer20@rolobe.resend.app',
 ]
 
+/** Real demo / user-specific accounts — never delete via bulk cleanup */
+const GO_LIVE_PROTECTED = [
+  'avoels@comcast.net',
+  'avoels@outlook.com',
+  'david@gmail.com',
+  'Stephen.a.voels@sbcglobal.net',
+]
+
 /** Canonical @mywealthmaps.test — never delete */
 const CANONICAL_PROTECTED = [
   E2E_IDENTITIES.consumer.email,
   E2E_IDENTITIES.consumerTier1.email,
+  E2E_IDENTITIES.goldenPathStage1.email,
   E2E_IDENTITIES.advisor.email,
   E2E_IDENTITIES.advisorClient.email,
   E2E_IDENTITIES.attorneyPortal.email,
   E2E_IDENTITIES.advisorListing.email,
   E2E_IDENTITIES.attorneyListing.email,
-  'e2e-drip@mywealthmaps.test',
+  DRIP_SMOKE_EMAIL,
 ]
 
 /**
  * @rolobe accounts protected from --legacy until explicitly removed via --rolobe.
- * consumer21 was the drip inbox check — now replaced by verify-drip-sequence.ts.
  */
 const ROLOBE_PROTECTED_FROM_LEGACY = [...ROLOBE_ACCOUNTS]
 
-const PROTECTED = [...CANONICAL_PROTECTED, ...ROLOBE_PROTECTED_FROM_LEGACY]
+const PROTECTED = [...CANONICAL_PROTECTED, ...GO_LIVE_PROTECTED, ...ROLOBE_PROTECTED_FROM_LEGACY]
+
+function isProtectedEmail(email: string | undefined | null): boolean {
+  if (!email) return false
+  const lower = email.toLowerCase()
+  return PROTECTED.some((p) => p.toLowerCase() === lower)
+}
 
 const LEGACY_DELETE_CANDIDATES = LEGACY_E2E_EMAILS.filter((e) => !PROTECTED.includes(e))
+
+async function listAllAuthUsers() {
+  const users: Awaited<ReturnType<typeof supabase.auth.admin.listUsers>>['data']['users'] = []
+  let page = 1
+
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 })
+    if (error) throw new Error(`listUsers page ${page}: ${error.message}`)
+    users.push(...data.users)
+    if (data.users.length < 1000) break
+    page++
+  }
+
+  return users
+}
 
 async function confirm(message: string): Promise<boolean> {
   const rl = readline.createInterface({ input, output })
@@ -204,8 +234,8 @@ async function deleteRoblobeAccountFallback(email: string, userId: string): Prom
 }
 
 async function deleteAccountWithAudit(email: string, useFallback = false): Promise<boolean> {
-  if (CANONICAL_PROTECTED.includes(email)) {
-    console.error(`SAFETY: refusing to delete canonical account ${email}`)
+  if (isProtectedEmail(email)) {
+    console.error(`SAFETY: refusing to delete protected account ${email}`)
     return false
   }
 
@@ -245,12 +275,69 @@ async function deleteAccountWithAudit(email: string, useFallback = false): Promi
 
 async function runLegacyCleanup(emails: string[]) {
   for (const email of emails) {
-    if (PROTECTED.includes(email)) {
+    if (isProtectedEmail(email)) {
       console.error(`SAFETY: refusing to delete protected account ${email}`)
       continue
     }
     await deleteAccountWithAudit(email)
   }
+}
+
+async function runPurgeUnprotected() {
+  const dryRun = process.argv.includes('--dry-run')
+  const autoYes = process.argv.includes('--yes')
+  const allUsers = await listAllAuthUsers()
+
+  const protectedUsers = allUsers.filter((u) => isProtectedEmail(u.email))
+  const deleteCandidates = allUsers.filter((u) => u.email && !isProtectedEmail(u.email))
+
+  console.log(`\nAuth users total: ${allUsers.length}`)
+  console.log(`Protected (keeping): ${protectedUsers.length}`)
+  for (const u of protectedUsers.sort((a, b) => (a.email ?? '').localeCompare(b.email ?? ''))) {
+    console.log(`  KEEP  ${u.email}`)
+  }
+
+  console.log(`\nTo delete: ${deleteCandidates.length}`)
+  for (const u of deleteCandidates.sort((a, b) => (a.email ?? '').localeCompare(b.email ?? ''))) {
+    console.log(`  DEL   ${u.email ?? u.id}`)
+  }
+
+  if (deleteCandidates.length === 0) {
+    console.log('\nNothing to delete.')
+    return
+  }
+
+  if (dryRun) {
+    console.log('\n[DRY RUN] No changes made. Re-run with --purge-unprotected --yes to execute.')
+    return
+  }
+
+  if (!autoYes) {
+    console.log(
+      '\nEach deletion uses lib/compliance/deleteUser.ts (WCPA audit log + verification).',
+    )
+    console.log('Protected list: CANONICAL + GO_LIVE_PROTECTED + rolobe (until --rolobe).\n')
+    const ok = await confirm('Permanently delete all unprotected auth users listed above?')
+    if (!ok) {
+      console.log('Aborted.')
+      process.exit(0)
+    }
+  }
+
+  let deleted = 0
+  let failed = 0
+
+  for (const user of deleteCandidates) {
+    const email = user.email ?? user.id
+    console.log(`\n--- ${email} ---`)
+    const success = await deleteAccountWithAudit(email)
+    if (success) deleted++
+    else failed++
+  }
+
+  console.log(`\nPurge summary: ${deleted} deleted, ${failed} failed`)
+  console.log('Re-seed automation: npm run seed:e2e')
+  console.log('Verify: npm run verify:estate:e2e')
 }
 
 async function runRoblobeCleanup() {
@@ -291,6 +378,11 @@ async function runRoblobeCleanup() {
 }
 
 async function main() {
+  if (process.argv.includes('--purge-unprotected')) {
+    await runPurgeUnprotected()
+    return
+  }
+
   if (process.argv.includes('--rolobe')) {
     await runRoblobeCleanup()
     return

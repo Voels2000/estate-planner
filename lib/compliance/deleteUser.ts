@@ -17,15 +17,28 @@ export type DeletionResult = {
   completedAt: string
 }
 
-/** Household-scoped tables (deleted when household_id is known). */
+/** Household-scoped tables (deleted when household_id is known). Order matters for FKs. */
 const HOUSEHOLD_TABLES = [
+  'monte_carlo_results',
+  'estate_composition_cache',
+  'estate_checklist_items',
+  'estate_health_check',
+  'estate_recommendations',
+  'household_alerts',
+  'strategy_configs',
+  'adjusted_taxable_gifts',
+  'gst_ledger',
+  'liquidity_analysis',
+  'domicile_schedule',
+  'attorney_notes',
+  'attorney_document_requests',
+  'document_gap_dismissals',
   'strategy_line_items',
   'gift_history',
   'projection_scenarios',
   'estate_health_scores',
   'beneficiary_conflicts',
   'household_people',
-  'asset_beneficiaries',
   'entity_titling',
   'legal_documents',
 ] as const
@@ -40,10 +53,18 @@ const OWNER_TABLES = [
   'real_estate',
   'insurance_policies',
   'businesses',
+  'business_interests',
   'trusts',
   'digital_assets',
   'life_events',
   'funnel_events',
+  'estate_documents',
+  'domicile_analysis',
+  'monte_carlo_runs',
+  'education_progress',
+  'asset_beneficiaries',
+  'advisor_directory',
+  'attorney_listings',
   'advisor_clients',
   'attorney_clients',
   'connection_requests',
@@ -64,6 +85,7 @@ const FK_TABLES_TO_USER = [
   { table: 'funnel_events', column: 'user_id' },
   { table: 'privacy_requests', column: 'user_id' },
   { table: 'deletion_schedule', column: 'user_id' },
+  { table: 'education_progress', column: 'user_id' },
   { table: 'ingestion_jobs', column: 'owner_id' },
   { table: 'change_log', column: 'changed_by' },
   { table: 'firms', column: 'owner_id' },
@@ -98,7 +120,13 @@ async function deleteByColumn(
     .from(table)
     .delete({ count: 'exact' })
     .eq(column, id)
-  if (error) throw new Error(`${table}: ${error.message}`)
+  if (error) {
+    if (error.message.includes("Could not find the table")) {
+      console.warn(`[deleteUser] Skipping missing table ${table}`)
+      return 0
+    }
+    throw new Error(`${table}: ${error.message}`)
+  }
   return count ?? 0
 }
 
@@ -184,8 +212,17 @@ async function verifyDeletion(
   ]
 
   if (householdId) {
-    checks.push({ table: 'households', column: 'id', id: householdId })
+    checks.push(
+      { table: 'households', column: 'id', id: householdId },
+      { table: 'estate_composition_cache', column: 'household_id', id: householdId },
+      { table: 'strategy_configs', column: 'household_id', id: householdId },
+    )
   }
+
+  checks.push(
+    { table: 'estate_documents', column: 'owner_id', id: userId },
+    { table: 'domicile_analysis', column: 'user_id', id: userId },
+  )
 
   for (const { table, column, id } of checks) {
     if (!id) continue
@@ -279,7 +316,15 @@ export async function deleteUserData(params: {
 
     const householdId = household?.id ?? null
 
-    const userIdColumnTables = new Set(['insurance_policies', 'life_events', 'funnel_events'])
+    const userIdColumnTables = new Set([
+      'insurance_policies',
+      'life_events',
+      'funnel_events',
+      'domicile_analysis',
+      'monte_carlo_runs',
+      'education_progress',
+    ])
+    const profileIdColumnTables = new Set(['advisor_directory', 'attorney_listings'])
     const skipGenericDelete = new Set([
       'advisor_clients',
       'attorney_clients',
@@ -287,6 +332,7 @@ export async function deleteUserData(params: {
       'referral_clicks',
       'ingestion_jobs',
       'funnel_events',
+      'education_progress',
     ])
 
     const deleteScoped = async (table: string, column: string, value: string) => {
@@ -300,13 +346,27 @@ export async function deleteUserData(params: {
         .from('advisor_clients')
         .delete()
         .or(`advisor_id.eq.${userId},client_id.eq.${userId}`)
+      await admin
+        .from('advisor_notes')
+        .delete()
+        .or(`advisor_id.eq.${userId},client_id.eq.${userId}`)
+      await admin
+        .from('advisor_gap_statuses')
+        .delete()
+        .or(`advisor_id.eq.${userId},client_id.eq.${userId}`)
       await admin.from('connection_requests').delete().eq('consumer_id', userId)
       await admin
         .from('referral_clicks')
         .delete()
         .or(`advisor_id.eq.${userId},attorney_profile_id.eq.${userId}`)
     }
-    tablesCleared.push('advisor_clients', 'connection_requests', 'referral_clicks')
+    tablesCleared.push(
+      'advisor_clients',
+      'advisor_notes',
+      'advisor_gap_statuses',
+      'connection_requests',
+      'referral_clicks',
+    )
 
     for (const table of DELETION_ORDER) {
       if (skipGenericDelete.has(table)) continue
@@ -321,7 +381,11 @@ export async function deleteUserData(params: {
         continue
       }
 
-      const column = userIdColumnTables.has(table) ? 'user_id' : 'owner_id'
+      const column = profileIdColumnTables.has(table)
+        ? 'profile_id'
+        : userIdColumnTables.has(table)
+          ? 'user_id'
+          : 'owner_id'
       await deleteScoped(table, column, userId)
     }
 

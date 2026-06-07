@@ -13,7 +13,7 @@ const projects: Project[] = [
   { name: 'advisor-setup', testMatch: /helpers\/advisor\.setup\.ts/, timeout: setupTimeout },
   { name: 'consumer-setup', testMatch: /helpers\/consumer\.setup\.ts/, timeout: setupTimeout },
   { name: 'attorney-setup', testMatch: /helpers\/attorney\.setup\.ts/, timeout: setupTimeout },
-  { name: 'johnson-setup', testMatch: /helpers\/johnson-client\.setup\.ts/, timeout: setupTimeout },
+  { name: 'advisor-client-setup', testMatch: /helpers\/advisor-client\.setup\.ts/, timeout: setupTimeout },
   {
     name: 'security',
     dependencies: ['consumer-setup', 'advisor-setup'],
@@ -28,7 +28,7 @@ const projects: Project[] = [
   },
   {
     name: 'advisor-sync',
-    dependencies: ['advisor-setup', 'johnson-setup'],
+    dependencies: ['advisor-setup', 'advisor-client-setup'],
     testMatch: /advisor\/advisor-consumer-sync\.spec\.ts/,
     use: { storageState: '.auth/advisor.json' },
   },

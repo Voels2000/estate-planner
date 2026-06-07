@@ -10,7 +10,36 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-## Advisor branding storage — advisor-branding bucket (2026-06-07)
+## Go-live auth purge + deleteUser coverage (2026-06-07)
+
+**Session 132** — No migration. Application-layer only:
+
+| Change | Detail |
+|--------|--------|
+| **`scripts/cleanup-test-accounts.ts`** | `--purge-unprotected`, `--dry-run`, `--yes`; `GO_LIVE_PROTECTED` + case-insensitive guard |
+| **`lib/compliance/deleteUser.ts`** | Extended household/owner table lists; `advisor_notes` / `advisor_gap_statuses` OR delete; skip missing tables |
+| **npm** | `cleanup:purge`, `cleanup:purge:dry-run` |
+| **Prod outcome** | **10** auth users remain; Johnson + rolobe stragglers purged with audit log |
+
+**Verify:** `npm run cleanup:purge:dry-run` → 0 to delete · `npm run verify:deletion -- --email …` after any WCPA delete
+
+---
+
+## Estate verification suite — app-only (2026-06-07)
+
+**Session 131** — No migration. Added cross-surface verification harness:
+
+| Surface | Route / module |
+|---------|----------------|
+| Matrix CLI | `npm run verify:estate` → `lib/verify/runEstateVerification.ts` |
+| Lifecycle | `runStrategyLifecycleVerification.ts` (e2e `--lifecycle`) |
+| HTTP scrape | `scrapeEstateHttpSurfaces.ts` (`--http`) |
+| User API | `POST /api/verify-estate-plan` |
+| UI | `/settings/security` — Verify my plan |
+
+**Goldens:** `tests/fixtures/estate-golden/{voels,e2e,voels-advisor}.json`
+
+---
 
 **Migration:** `20260630120000_advisor_branding_storage.sql`
 
@@ -948,10 +977,11 @@ All added to `FK_TABLES_TO_USER` and `DELETION_ORDER` (via FK map).
 - `deleteAuthUserWithFallback()` — hard delete, soft delete fallback, post-delete verify
 - `verifyDeletion()` — post-deletion row-count check on high-value tables
 - `scripts/verify-deletion.ts` — `npm run verify:deletion -- --email …`
+- `scripts/cleanup-test-accounts.ts --purge-unprotected` — go-live auth purge (`npm run cleanup:purge`)
 - `scripts/cleanup-test-accounts.ts --rolobe` — legacy `@rolobe.resend.app` retirement
 - `scripts/verify-drip-sequence.ts` — `npm run verify:drip` (replaces manual rolobe inbox check)
 
-**Auth table clean:** 9 accounts remain (4 founder + 5 `@mywealthmaps.test`).
+**Auth table clean:** **10 accounts** (4 real + 6 `@mywealthmaps.test`) after go-live purge 2026-06-07.
 All `@rolobe.resend.app` accounts deleted; soft-deleted scrambled accounts hard-deleted.
 
 ---

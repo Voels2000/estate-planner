@@ -33,13 +33,18 @@
     "test:import:api": "dotenv -o -e .env.test -- npx playwright test tests/e2e/consumer/consumer-import.spec.ts --project=consumer --workers=1",
     "seed:e2e": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.ts",
     "verify:e2e-auth": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/verify-e2e-auth.ts",
-    "seed:e2e:fast": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.ts --skip-johnson",
+    "seed:e2e:fast": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.ts --skip-advisor-client",
     "prune:e2e": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/prune-e2e-household-artifacts.ts",
     "verify:drip": "dotenv -e .env.local -- npx tsx scripts/verify-drip-sequence.ts",
     "cleanup:rolobe": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --rolobe",
+    "cleanup:purge": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --purge-unprotected",
+    "cleanup:purge:dry-run": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --purge-unprotected --dry-run",
     "repair:orphaned-user": "dotenv -e .env.local -- npx tsx scripts/repair-orphaned-auth-user.ts",
     "verify:deletion": "dotenv -e .env.local -- npx tsx scripts/verify-deletion.ts",
-    "sync:voels-demo": "dotenv -e .env.local -- npx tsx scripts/sync-voels-demo-accounts.ts"
+    "sync:voels-demo": "dotenv -e .env.local -- npx tsx scripts/sync-voels-demo-accounts.ts",
+    "verify:estate": "dotenv -e .env.local -- npx tsx scripts/verify-estate-suite.ts",
+    "verify:estate:voels": "dotenv -e .env.local -- npx tsx scripts/verify-estate-suite.ts --preset voels --check-goldens --http",
+    "verify:estate:e2e": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/verify-estate-suite.ts --preset e2e --lifecycle --check-goldens --http"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

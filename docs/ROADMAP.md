@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-07 (attorney portal collaboration v2)
+# Last updated: 2026-06-07 (go-live purge + estate verification)
 
 ---
 
@@ -157,6 +157,9 @@
 | **Attorney weekly digest email** | `[x]` — cron §10 Fridays; gaps, doc requests, stale matter stage |
 | **Engine B export standardization** | `[x]` — estate-plan PDF API + remove dead advisor `estateTax` RPC loader; trust guidance cache fallback |
 | **Voels demo account sync** | `[x]` — `npm run sync:voels-demo` (comcast → outlook); `compare-voels-accounts.ts` |
+| **Estate verification suite** | `[x]` — `npm run verify:estate` matrix + lifecycle + HTTP + Security UI |
+| **E2E Johnson → advisor-client** | `[x]` — `e2e-advisor-client@`; Playwright `.auth/advisor-client.json` |
+| **Go-live auth purge** | `[x]` — `npm run cleanup:purge`; 10 prod accounts; `deleteUser` table coverage |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
 **Recent commits (2026-06-05 → 07):** `bff7ecd` · `9488024` · `996a087` · `4d22809`
@@ -189,7 +192,33 @@
 
 ---
 
-### Sprint — Projection Engine C→B Unification `[x]` **shipped (2026-06-05)**
+### Sprint — Estate verification suite (phases 1–4) `[x]` **complete (2026-06-07)**
+
+| Item | Status |
+|------|--------|
+| **`npm run verify:estate`** — cross-surface matrix CLI | `[x]` |
+| Golden fixtures + `--check-goldens` / `--update-goldens` | `[x]` |
+| Strategy lifecycle probe (`--lifecycle`, e2e preset) | `[x]` |
+| HTTP API scrape (`--http`) | `[x]` |
+| **`POST /api/verify-estate-plan`** + Security settings UI | `[x]` |
+
+**Files:** `lib/verify/*`, `scripts/verify-estate-suite.ts`, `tests/fixtures/estate-golden/`, `app/api/verify-estate-plan/route.ts`
+
+---
+
+### Sprint — Go-live auth purge + E2E Johnson retirement `[x]` **complete (2026-06-07)**
+
+| Item | Status |
+|------|--------|
+| **`npm run cleanup:purge`** — delete unprotected auth users via WCPA path | `[x]` |
+| **`GO_LIVE_PROTECTED`** — `david@gmail.com`, `stephen.a.voels@sbcglobal.net` | `[x]` |
+| **`deleteUser.ts`** — extended table lists + missing-table skip | `[x]` |
+| **`e2e-advisor-client@`** replaces Johnson; seed + Playwright auth | `[x]` |
+| Prod purge — **10** accounts remain | `[x]` |
+
+**Files:** `lib/compliance/deleteUser.ts`, `scripts/cleanup-test-accounts.ts`, `scripts/seed-e2e-lib.ts`, `tests/e2e/helpers/advisor-client.setup.ts`
+
+---
 
 **Shipped:** Engine B at death-year rows in **`estate-tax-projection.ts`**; **`generate-base-case.ts`** derives **`hasBypassTrust`** from line items. Voels death-year **2057** state tax **$18,273,170** (zero diff vs engine B). Regenerate base case per household to refresh stored **`outputs_s1_first`**.
 

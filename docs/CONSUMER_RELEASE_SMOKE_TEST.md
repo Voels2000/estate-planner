@@ -78,7 +78,7 @@ npm run seed:e2e
 ```
 
 - **Consumer:** `e2e-consumer@mywealthmaps.test` / `E2eTest!2026Mwm` (estate tier 3).
-- **Advisor portal:** `e2e-advisor@mywealthmaps.test` — linked to Johnson client `e2e-client.johnson@mywealthmaps.test`.
+- **Advisor portal:** `e2e-advisor@mywealthmaps.test` — linked to `e2e-advisor-client@mywealthmaps.test`.
 - **Attorney portal:** `e2e-attorney@mywealthmaps.test` — newsletter kit on `/attorney`.
 - **Referral smoke:** `?ref=e2eadv01` · `?aref=e2eatt01` (from `.env.test`).
 

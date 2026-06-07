@@ -174,3 +174,22 @@ grep -rn "calculate_federal_estate_tax\|calculate_state_estate_tax" \
 On the first grep, ignore `STATE_HAS_ESTATE_TAX` in `stateRegistry.ts` (boolean flags, not engine A).
 On the third grep, UI label maps and planning-topic branches are documented exceptions in
 [SPRINT_UNIFY_STATE_TAX.md Phase 0](./SPRINT_UNIFY_STATE_TAX.md).
+
+---
+
+## Estate verification suite (2026-06-07)
+
+Cross-surface reconciliation — not a calculation engine, but the **regression harness** for Engine B alignment.
+
+| Entry | File | Use for |
+|-------|------|---------|
+| `runEstateVerification()` | `lib/verify/runEstateVerification.ts` | Matrix: cache · live RPC · export · horizons Today |
+| `runFullEstateVerification()` | `lib/verify/runFullEstateVerification.ts` | + optional lifecycle + HTTP scrape |
+| CLI | `npm run verify:estate` | Ops / CI / user household via env |
+| API | `POST /api/verify-estate-plan` | Consumer/advisor self-service (auth-gated) |
+
+**Verify after tax/composition changes:**
+```bash
+npm run verify:estate -- --preset voels --check-goldens
+npx dotenv-cli -e .env.local -- npx tsx scripts/verify-engine-b-tax-surfaces.ts
+```

@@ -1,0 +1,7 @@
+{
+  "_comment": "Run npm run verify:estate -- --preset voels-advisor --update-goldens",
+  "gross_estate": null,
+  "federal_tax": null,
+  "state_tax": null,
+  "tolerance": 1
+}

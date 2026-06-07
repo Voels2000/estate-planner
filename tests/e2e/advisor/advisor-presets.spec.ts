@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { existsSync } from 'fs'
-import { clickAdvisorClientTab, gotoMichaelJohnsonClient } from '../helpers/constants'
+import { clickAdvisorClientTab, gotoAdvisorLinkedClient } from '../helpers/constants'
 
 const API_TIMEOUT_MS = 30_000
 
@@ -164,7 +164,7 @@ test.describe('Load preset in recommendation form', () => {
     const created = (await create.json()).preset
     presetIdsToCleanup.push(created.id)
 
-    await gotoMichaelJohnsonClient(page)
+    await gotoAdvisorLinkedClient(page)
     await clickAdvisorClientTab(page, /Strategy/)
 
     const assumptionsSection = page.locator('section').filter({

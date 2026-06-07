@@ -1,13 +1,17 @@
 import { expect, type Page } from '@playwright/test'
 
-/** Navigate from /advisor to a linked client (prefers Michael & Sarah Johnson when listed). */
-export async function gotoMichaelJohnsonClient(page: Page) {
+/** Navigate from /advisor to the linked E2E advisor client. */
+export async function gotoAdvisorLinkedClient(page: Page) {
   await page.goto('/advisor')
   await page.getByText('My Clients').first().waitFor({ state: 'visible', timeout: 30_000 })
-  const johnsonRow = page.locator('tbody tr').filter({ hasText: /Johnson/ }).first()
-  const targetRow = (await johnsonRow.count()) > 0
-    ? johnsonRow
-    : page.locator('tbody tr').filter({ has: page.getByRole('link', { name: 'View →' }) }).first()
+  const namedRow = page
+    .locator('tbody tr')
+    .filter({ hasText: /E2E Advisor Client|Morgan Demo|Advisor Client/i })
+    .first()
+  const targetRow =
+    (await namedRow.count()) > 0
+      ? namedRow
+      : page.locator('tbody tr').filter({ has: page.getByRole('link', { name: 'View →' }) }).first()
   await targetRow.getByRole('link', { name: 'View →' }).click()
   await page.waitForURL(/\/advisor\/clients\/[a-f0-9-]+$/)
 }
@@ -18,3 +22,6 @@ export async function clickAdvisorClientTab(page: Page, tabLabel: RegExp) {
   await tab.click()
   await expect(tab).toHaveClass(/text-\[color:var\(--mwm-navy\)\]/, { timeout: 30_000 })
 }
+
+/** @deprecated Use gotoAdvisorLinkedClient */
+export const gotoMichaelJohnsonClient = gotoAdvisorLinkedClient

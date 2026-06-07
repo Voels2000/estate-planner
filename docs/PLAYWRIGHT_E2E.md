@@ -18,10 +18,14 @@ Template: [.env.test.example](../.env.test.example)
 | Script | Projects |
 |--------|----------|
 | `npm run seed:e2e` | Seed all E2E users + print `.env.test` |
-| `npm run seed:e2e:fast` | Seed without Michael Johnson client |
-| `npm run prune:e2e` | Remove Playwright-named rows on consumer household |
+| `npm run seed:e2e:fast` | Seed without linked advisor client household |
+| `npm run verify:estate` | Cross-surface estate number matrix (see below) |
+| `npm run verify:estate:voels` | Voels preset + goldens + HTTP scrape |
+| `npm run verify:estate:e2e` | E2E preset + strategy lifecycle + goldens + HTTP |
 | `npm run verify:drip` | Check `email_captures` drip_step_1/2/3 schedule |
-| `npm run cleanup:rolobe` | Retire all `@rolobe.resend.app` auth accounts (prompts) |
+| `npm run cleanup:purge:dry-run` | Preview auth users to keep vs delete (go-live) |
+| `npm run cleanup:purge` | Delete all unprotected auth users via WCPA `deleteUser` path |
+| `npm run cleanup:rolobe` | Retire listed `@rolobe.resend.app` accounts only (legacy) |
 | `npm run test:e2e:consumer` | consumer-setup + consumer |
 | `npm run test:e2e:go-live-profile` | **Go-live pre-flight:** profile save + spouse layout + inline prompts (`--workers=1`) |
 | `npm run test:e2e:partial-patch` | Partial PATCH API smoke only (3 cases) |
@@ -75,6 +79,17 @@ Prefer `npm run seed:e2e`. Old scripts remain for reference:
 - `scripts/seed-test-consumer-estate.ts` — tier bump only for existing email
 - `scripts/seed-test-attorney.ts` — superseded by `seed-e2e-fixtures`
 - `scripts/seed-michael-johnson-advisor-demo.ts` — called by master seed
+
+## Estate verification (numeric reconciliation)
+
+After `seed:e2e` or for Voels demo smoke:
+
+```bash
+npm run verify:estate -- --preset voels --check-goldens --http
+npm run verify:estate:e2e    # lifecycle + goldens + HTTP on e2e household
+```
+
+See [NEXT_SESSION.md](./NEXT_SESSION.md) — Estate verification suite.
 
 ## Verification log
 

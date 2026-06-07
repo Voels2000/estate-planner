@@ -1,0 +1,7 @@
+{
+  "_comment": "Run npm run seed:e2e then npm run verify:estate -- --preset e2e --update-goldens",
+  "gross_estate": null,
+  "federal_tax": null,
+  "state_tax": null,
+  "tolerance": 1
+}

@@ -100,8 +100,9 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **CLI script** — `scripts/gdpr-delete-user.ts` → `deleteUser`
 - [x] **`deleteUser.ts` production hardening** — FK scan (`firms`, `firm_members`, `change_log` + full list), orphan Auth handling, hard/soft delete fallback, post-deletion verification (`aea4bf6`, `3cdd9b5`)
 - [x] **`verify:deletion` script** — `npm run verify:deletion -- --email user@example.com` — must PASS before WCPA response
-- [x] **Auth table clean** — 9 accounts (4 founder + 5 `@mywealthmaps.test`); all `@rolobe.resend.app` retired
-- [ ] **`verify:deletion` tested** — dry-run account deleted and verified PASS on staging/production
+- [x] **Auth table clean** — **10 accounts** (4 real + 6 `@mywealthmaps.test`); go-live purge 2026-06-07 via `npm run cleanup:purge`
+- [x] **`verify:deletion` tested** — Johnson + rolobe stragglers deleted via purge; audit log `success=true`
+- [x] **Go-live purge script** — `npm run cleanup:purge` / `cleanup:purge:dry-run`; `GO_LIVE_PROTECTED` includes `david@gmail.com`, `stephen.a.voels@sbcglobal.net`
 - [ ] **No soft-deleted Auth rows** — `SELECT … FROM auth.users WHERE deleted_at IS NOT NULL` returns 0 rows
 
 ### Compliance reminders (Sprint C-7) ✅ verified 2026-05-25

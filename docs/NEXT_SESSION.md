@@ -1,6 +1,34 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Last updated: 2026-06-07 (Voels demo account sync)
+# Last updated: 2026-06-07 (Estate verification suite phases 1–4)
+
+---
+
+## Estate verification suite — shipped ✅ (2026-06-07)
+
+**Purpose:** User-runnable cross-surface comparison matrix proving gross estate + tax numbers align across composition cache, live RPC, export Engine B, strategy Today column, optional HTTP APIs, and (e2e only) strategy accept/withdraw lifecycle.
+
+**Commands:**
+```bash
+npm run verify:estate                              # any household via HOUSEHOLD_ID / VERIFY_USER_EMAIL
+npm run verify:estate -- --preset voels --check-goldens --http
+npm run verify:estate:e2e                          # e2e + lifecycle + goldens + HTTP
+npm run verify:estate -- --preset voels --update-goldens   # refresh golden fixture
+```
+
+**Phases:**
+| Phase | Deliverable |
+|-------|-------------|
+| **1** | `lib/verify/runEstateVerification.ts` + matrix CLI |
+| **2** | `runStrategyLifecycleVerification.ts` — consumer outside_strategy + advisor accept/withdraw (`--lifecycle`, e2e only) |
+| **3** | `scrapeEstateHttpSurfaces.ts` — magic-link session → `/api/estate-composition` (+ export when Tier 3) |
+| **4** | `POST /api/verify-estate-plan` + **Verify my plan** on `/settings/security` |
+
+**Goldens:** `tests/fixtures/estate-golden/{voels,e2e,voels-advisor}.json` — optional `--check-goldens`
+
+**Presets:** `voels` (consumer) · `voels-advisor` (My Plan) · `e2e` (`PLAYWRIGHT_HOUSEHOLD_ID`)
+
+**Note:** Projection Y0 and advisor PDF export gross may differ until base case regenerated — informational unless `--strict-projection`.
 
 ---
 
@@ -1179,7 +1207,7 @@ Death-year state tax in **`estate-tax-projection.ts`** uses **`calculateStateEst
 | `test:e2e:security-isolation` | Consumer + advisor IDOR matrix — gifting, estate-composition, export, documents; **403 or 404** both deny access |
 | `test:e2e:cross-role` | Johnson advisor sync, persona onboarding, attorney documents/gap-dismissals, cross-household specs |
 | New specs | `tests/e2e/security/cross-household-isolation.spec.ts`, `advisor/advisor-consumer-sync.spec.ts`, `attorney/attorney-documents-gaps.spec.ts`, `consumer/onboarding-persona.spec.ts` |
-| Helpers | `tests/e2e/helpers/e2e-households.ts`, `johnson-client.setup.ts` |
+| Helpers | `tests/e2e/helpers/e2e-households.ts`, `advisor-client.setup.ts` |
 | CI | `npx tsx scripts/verify-app-route-slugs.ts` — fails build on conflicting App Router dynamic segments |
 | `/api/health` | Added to `security-sprint-post-deploy.spec.ts` |
 
@@ -2110,8 +2138,9 @@ No duplicate entry points, no dead-end panels, no tab-hopping required to act.
 
 | Area | Outcome |
 |------|---------|
-| **Auth table** | 9 accounts remain — 4 founder + 5 `@mywealthmaps.test` (see test account table below) |
-| **Rolobe retirement** | All `@rolobe.resend.app` deleted via `npm run cleanup:rolobe` |
+| **Auth table** | **10 accounts** — 4 real + 6 `@mywealthmaps.test` (see table below); go-live purge 2026-06-07 |
+| **Go-live purge** | `npm run cleanup:purge` — unprotected users via `deleteUserData` + `deletion_audit_log` |
+| **Rolobe retirement** | All `@rolobe.resend.app` removed (purge + prior `cleanup:rolobe`) |
 | **FK scan** | `firms`, `firm_members`, `change_log` added to `FK_TABLES_TO_USER` — blocked Auth hard-delete during cleanup |
 | **Orphan Auth** | No profile → Auth delete + audit log (no early "Profile not found" return) |
 | **Auth delete fallback** | Hard delete → soft delete with warning; monthly check for `deleted_at IS NOT NULL` |
@@ -2120,19 +2149,20 @@ No duplicate entry points, no dead-end panels, no tab-hopping required to act.
 
 **Commits:** `84388ad` (rolobe tooling), `aea4bf6` (deleteUser hardening + verify-deletion), `3cdd9b5` (firms/firm_members/change_log FK scan)
 
-### Auth accounts (production — 2026-05-25)
+### Auth accounts (production — 2026-06-07)
 
 | Email | Purpose |
 |-------|---------|
-| avoels@comcast.net | Primary founder |
-| avoels@outlook.com | Secondary founder |
-| stephen.a.voels@sbcglobal.net | Personal |
-| david@gmail.com | Personal |
+| avoels@comcast.net | Primary founder / advisor My Plan demo |
+| avoels@outlook.com | Voels Household consumer demo |
+| stephen.a.voels@sbcglobal.net | Personal (`GO_LIVE_PROTECTED`) |
+| david@gmail.com | Personal (`GO_LIVE_PROTECTED`) |
 | e2e-consumer@mywealthmaps.test | E2E consumer tier 3 |
 | e2e-consumer-tier1@mywealthmaps.test | E2E consumer tier 1 |
 | e2e-advisor@mywealthmaps.test | E2E advisor |
+| e2e-advisor-client@mywealthmaps.test | E2E advisor-linked client (replaces Johnson) |
 | e2e-attorney@mywealthmaps.test | E2E attorney |
-| e2e-client.johnson@mywealthmaps.test | E2E advisor client |
+| e2e-golden-path@mywealthmaps.test | E2E golden-path smoke |
 
 ---
 
@@ -2411,10 +2441,10 @@ No duplicate entry points, no dead-end panels, no tab-hopping required to act.
 |------|-------|-------|
 | **Consumer** | `e2e-consumer@mywealthmaps.test` | Estate tier 3 · `npm run seed:e2e` |
 | **Consumer tier 1** | `e2e-consumer-tier1@mywealthmaps.test` | Upgrade-banner project |
-| **Advisor (Playwright)** | `e2e-advisor@mywealthmaps.test` | Johnson client: `e2e-client.johnson@mywealthmaps.test` |
+| **Advisor (Playwright)** | `e2e-advisor@mywealthmaps.test` | Advisor client: `e2e-advisor-client@mywealthmaps.test` |
 | **Attorney (portal)** | `e2e-attorney@mywealthmaps.test` | `?aref=e2eatt01` |
 | **Referral codes** | `e2eadv01` / `e2eatt01` | Directory listings (no login) |
-| *Legacy* | *(retired)* | All `@rolobe.resend.app` removed via `npm run cleanup:rolobe` — [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) |
+| *Legacy* | *(retired)* | Go-live purge via `npm run cleanup:purge` — [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) |
 
 ### Drip smoke (DB verification)
 

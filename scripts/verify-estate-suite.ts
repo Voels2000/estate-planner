@@ -1,0 +1,155 @@
+/**
+ * Unified estate verification suite — cross-surface comparison matrix.
+ *
+ * Run:
+ *   npm run verify:estate
+ *   npm run verify:estate -- --preset voels --http
+ *   npm run verify:estate -- --preset e2e --lifecycle --check-goldens
+ *   HOUSEHOLD_ID=uuid npm run verify:estate
+ *
+ * Options:
+ *   --preset voels|voels-advisor|e2e
+ *   --json                 machine-readable output
+ *   --check-goldens        compare against tests/fixtures/estate-golden/{preset}.json
+ *   --update-goldens       write golden fixture from current run (requires --preset)
+ *   --lifecycle            strategy accept/withdraw probe (e2e preset only)
+ *   --http                 authenticated API surface scrape
+ *   --strict-projection    fail when projection Y0 differs from composition
+ *   --tolerance N          dollar tolerance (default 1)
+ */
+
+import { createClient } from '@supabase/supabase-js'
+import type { EstateVerificationPreset } from '@/lib/verify/estateVerificationPresets'
+import {
+  formatFullEstateVerificationReport,
+  runFullEstateVerification,
+} from '@/lib/verify/runFullEstateVerification'
+
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+function parseArgs(argv: string[]) {
+  const presetArg = argv.find((a) => a.startsWith('--preset='))
+  const presetValue = presetArg?.split('=')[1]
+  const presetFlagIdx = argv.indexOf('--preset')
+  const preset =
+    presetValue ??
+    (presetFlagIdx >= 0 ? argv[presetFlagIdx + 1] : undefined)
+
+  return {
+    preset: preset as EstateVerificationPreset | undefined,
+    json: argv.includes('--json'),
+    checkGoldens: argv.includes('--check-goldens'),
+    updateGoldens: argv.includes('--update-goldens'),
+    lifecycle: argv.includes('--lifecycle'),
+    http: argv.includes('--http'),
+    strictProjection: argv.includes('--strict-projection'),
+    tolerance: (() => {
+      const eq = argv.find((a) => a.startsWith('--tolerance='))
+      if (eq) return Number(eq.split('=')[1])
+      const idx = argv.indexOf('--tolerance')
+      if (idx >= 0 && argv[idx + 1]) return Number(argv[idx + 1])
+      return undefined
+    })(),
+    help: argv.includes('--help') || argv.includes('-h'),
+  }
+}
+
+function printHelp() {
+  console.log(`
+Estate verification suite — compare tax numbers across application surfaces.
+
+Usage:
+  npm run verify:estate [-- options]
+
+Options:
+  --preset voels|voels-advisor|e2e   Use a known household preset
+  --json                            JSON output
+  --check-goldens                   Compare to tests/fixtures/estate-golden/*.json
+  --update-goldens                  Write golden fixture from current run (requires --preset)
+  --lifecycle                       Strategy lifecycle probe (e2e preset only; mutates DB)
+  --http                            Scrape /api/estate-composition (+ export when paid)
+  --strict-projection               Fail when projection Y0 differs from composition
+  --tolerance N                     Dollar tolerance (default 1)
+
+Environment:
+  HOUSEHOLD_ID                      Target household UUID
+  VERIFY_USER_EMAIL                 Resolve household by owner email
+  PLAYWRIGHT_HOUSEHOLD_ID           Required for --preset e2e
+  PLAYWRIGHT_BASE_URL               Base URL for --http (default localhost:3000)
+  PLAYWRIGHT_CONSUMER_EMAIL         Session email for e2e --http
+
+Examples:
+  npm run verify:estate -- --preset voels --check-goldens
+  npm run verify:estate -- --preset voels --http
+  npm run verify:estate -- --preset e2e --lifecycle --check-goldens
+  VERIFY_USER_EMAIL=client@firm.com npm run verify:estate -- --http
+`)
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2))
+  if (args.help) {
+    printHelp()
+    process.exit(0)
+  }
+
+  if (!url || !serviceKey) {
+    console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+    process.exit(1)
+  }
+
+  const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
+
+  const result = await runFullEstateVerification(admin, {
+    preset: args.preset,
+    strictProjection: args.strictProjection,
+    checkGoldens: args.checkGoldens,
+    tolerance: args.tolerance,
+    runLifecycle: args.lifecycle,
+    runHttp: args.http,
+  })
+
+  if (args.updateGoldens) {
+    if (!args.preset) {
+      console.error('--update-goldens requires --preset voels|voels-advisor|e2e')
+      process.exit(1)
+    }
+    const fs = await import('fs/promises')
+    const path = await import('path')
+    const { ESTATE_VERIFICATION_PRESETS } = await import('@/lib/verify/estateVerificationPresets')
+    const fixtureName = ESTATE_VERIFICATION_PRESETS[args.preset].goldenFixture
+    if (!fixtureName) {
+      console.error(`No golden fixture configured for preset ${args.preset}`)
+      process.exit(1)
+    }
+    const fixturePath = path.join('tests/fixtures/estate-golden', fixtureName)
+    const payload = {
+      _comment: 'Generated by npm run verify:estate -- --preset ... --update-goldens',
+      gross_estate: result.surfaces.compositionCache.grossEstate,
+      federal_tax: result.surfaces.compositionCache.federalTax,
+      state_tax: result.surfaces.compositionCache.stateTax,
+      tolerance: args.tolerance ?? 1,
+    }
+    await fs.writeFile(fixturePath, `${JSON.stringify(payload, null, 2)}\n`)
+    console.log(`Updated golden fixture: ${fixturePath}`)
+  }
+
+  if (args.json) {
+    console.log(JSON.stringify(result, null, 2))
+  } else {
+    console.log(formatFullEstateVerificationReport(result))
+  }
+
+  process.exit(result.passed ? 0 : 1)
+}
+
+main().catch((err) => {
+  if (err instanceof Error) {
+    console.error(err.message)
+    if (err.stack) console.error(err.stack)
+  } else {
+    console.error(err)
+  }
+  process.exit(1)
+})

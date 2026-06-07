@@ -1,6 +1,36 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (Voels demo account sync)
+# Last updated: 2026-06-07 (go-live purge + estate verification)
+
+---
+
+## E2E advisor client — Johnson retired (2026-06-07)
+
+**Decision:** Replace `e2e-client.johnson@mywealthmaps.test` with **`e2e-advisor-client@mywealthmaps.test`**. Rich advisor workspace fixture data (401k, IRA, FL domicile, RMD birth year 1965) now seeded via `seedE2eAdvisorClientHousehold()` in master `seed:e2e`. Old Johnson email added to `LEGACY_E2E_EMAILS` for `--legacy` cleanup.
+
+**Go-live:** Keep canonical `@mywealthmaps.test` + Voels + `GO_LIVE_PROTECTED` (`david@gmail.com`, `stephen.a.voels@sbcglobal.net`); delete everything else via **`npm run cleanup:purge`** (uses `deleteUserData`, not auth-only delete).
+
+---
+
+## Go-live auth purge + deleteUser table coverage (2026-06-07)
+
+**Decision:** Add **`--purge-unprotected`** to `scripts/cleanup-test-accounts.ts` — paginate auth users, skip full `PROTECTED` set (case-insensitive), delete remainder via **`lib/compliance/deleteUser.ts`**. Extend `deleteUser.ts` household/owner table lists (composition cache, checklist, domicile, MC results, advisor notes/gaps, listings) and skip missing prod tables gracefully.
+
+**Why:** Washington WCPA requires full data removal, not orphaned FK rows. Past cleanups failed on incomplete table lists and schema drift (`asset_beneficiaries` uses `owner_id`, not `household_id`).
+
+**Commands:** `npm run cleanup:purge:dry-run` · `npm run cleanup:purge` · `npm run verify:deletion -- --email …`
+
+**Outcome:** Prod auth reduced to **10** accounts; Johnson + last rolobe stragglers removed with audit log entries.
+
+---
+
+## Estate verification suite — cross-surface matrix + user self-service (2026-06-07)
+
+**Decision:** Unify scattered `scripts/verify-*.ts` checks into **`npm run verify:estate`** with labeled comparison matrix (composition cache, live `calculate_estate_composition`, export Engine B, strategy Today). Optional e2e-only strategy lifecycle probe (mutates `strategy_line_items`), HTTP scrape via magic-link session, frozen goldens per preset, and **`POST /api/verify-estate-plan`** + **Verify my plan** on consumer Security settings for owners/advisors without service role.
+
+**Why not replace Playwright:** Matrix proves **numeric consistency**; E2E (~280 tests) still covers auth, UI, and security. Voels preset for prod smoke; e2e preset for CI foundation.
+
+**Files:** `lib/verify/*`, `scripts/verify-estate-suite.ts`, `tests/fixtures/estate-golden/`, `app/api/verify-estate-plan/route.ts`, `app/(dashboard)/settings/security/_plan-verification-client.tsx`
 
 ---
 

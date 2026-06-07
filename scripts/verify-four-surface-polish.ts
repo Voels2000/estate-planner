@@ -13,6 +13,7 @@ import { advisorDatasetIncludeForTab } from '@/lib/advisor/loaders'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { buildAdvisorStrategyViewModels } from '@/lib/advisor/strategyMappers'
 import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
+import { E2E_IDENTITIES } from './e2e-test-identities'
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -46,9 +47,9 @@ async function findVoelsClient(): Promise<{ clientId: string; advisorId: string;
     }
   }
 
-  // Fallback: e2e Johnson client
+  // Fallback: e2e advisor client
   const advisorEmail = process.env.PLAYWRIGHT_ADVISOR_EMAIL ?? process.env.SEED_ADVISOR_EMAIL
-  const clientEmail = process.env.SEED_CLIENT_EMAIL ?? process.env.PLAYWRIGHT_CONSUMER_EMAIL
+  const clientEmail = process.env.SEED_CLIENT_EMAIL ?? E2E_IDENTITIES.advisorClient.email
   if (advisorEmail && clientEmail) {
     const { data: users } = await admin.auth.admin.listUsers({ perPage: 1000 })
     const advisor = users.users.find((u) => u.email === advisorEmail)

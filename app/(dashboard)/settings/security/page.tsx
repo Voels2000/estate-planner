@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SecurityClient from './_security-client'
 import PrivacyRightsClient from './_privacy-rights-client'
+import PlanVerificationClient from './_plan-verification-client'
 
 export default async function SecurityPage() {
   const supabase = await createClient()
@@ -16,6 +17,12 @@ export default async function SecurityPage() {
   const totpFactor = totpFactors[0]
   const isEnrolled = totpFactors.length > 0
 
+  const { data: household } = await supabase
+    .from('households')
+    .select('id')
+    .eq('owner_id', user.id)
+    .maybeSingle()
+
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
       <h1 className="text-2xl font-semibold text-[color:var(--mwm-navy)] mb-1">Security</h1>
@@ -23,6 +30,7 @@ export default async function SecurityPage() {
         Manage two-factor authentication for your account.
       </p>
       <SecurityClient isEnrolled={isEnrolled} factorId={totpFactor?.id} />
+      {household?.id ? <PlanVerificationClient householdId={household.id} /> : null}
       <PrivacyRightsClient />
     </div>
   )

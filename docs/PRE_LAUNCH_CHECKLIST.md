@@ -219,10 +219,9 @@ Do not go live without written confirmation on each.
 
 ## SECTION 7 — TEST ACCOUNT CLEANUP 🟡
 
-- [ ] Remove test1@rolobe.resend.app from production Auth and profiles
-      Command: npm run cleanup:rolobe
-      Or manually in Supabase: DELETE from auth.users WHERE email = 'test1@rolobe.resend.app'
-      Note: Use deleteUser.ts path to log to deletion_audit_log
+- [x] Remove test1@rolobe.resend.app from production Auth and profiles (2026-06-07 go-live purge)
+      Command: `npm run cleanup:purge` (preferred — WCPA audit log)
+      Legacy: `npm run cleanup:rolobe` for rolobe list only
 
 - [ ] Confirm no other @rolobe.resend.app accounts remain in production Auth
       SQL: SELECT email FROM auth.users WHERE email LIKE '%rolobe%'

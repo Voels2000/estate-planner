@@ -9,8 +9,8 @@
  *   npx tsx scripts/seed-e2e-fixtures.ts
  *
  * Options:
- *   --write-example   Write docs/.env.test.example (no secrets except placeholders)
- *   --skip-johnson    Skip Michael Johnson advisor client (faster)
+ *   --write-example        Write docs/.env.test.example (no secrets except placeholders)
+ *   --skip-advisor-client  Skip linked advisor client household (faster)
  *   --only=consumer,advisor,attorney,tier1
  */
 
@@ -27,8 +27,7 @@ import {
   ensureAttorneyListingAndPortal,
   ensureAuthUser,
   initSupabaseEnv,
-  linkAdvisorToClient,
-  runMichaelJohnsonDemoSeed,
+  seedE2eAdvisorClientHousehold,
   seedE2eConsumerHousehold,
   findUserIdByEmail,
   verifyE2eAccounts,
@@ -49,7 +48,7 @@ async function main() {
   }
 
   const only = parseOnlyFlag()
-  const skipJohnson = process.argv.includes('--skip-johnson')
+  const skipAdvisorClient = process.argv.includes('--skip-advisor-client')
   const writeExample = process.argv.includes('--write-example')
   const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? E2E_DEFAULT_BASE_URL
 
@@ -114,16 +113,15 @@ async function main() {
     console.log('')
   }
 
-  if (run('advisor') && !skipJohnson) {
-    console.log('4. Advisor client (Michael Johnson demo)')
-    await runMichaelJohnsonDemoSeed(
-      E2E_IDENTITIES.advisor.email,
-      E2E_IDENTITIES.advisorClient.email,
-    )
-    if (advisorId) {
-      const clientId = await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)
-      if (clientId) await linkAdvisorToClient(advisorId, clientId)
-    }
+  if (run('advisor') && !skipAdvisorClient && advisorId) {
+    console.log('4. Advisor linked client (E2E advisor client household)')
+    const clientId = await ensureAuthUser({
+      email: E2E_IDENTITIES.advisorClient.email,
+      password: E2E_IDENTITIES.advisorClient.password,
+      fullName: E2E_IDENTITIES.advisorClient.fullName,
+      role: 'consumer',
+    })
+    await seedE2eAdvisorClientHousehold(clientId, advisorId)
     console.log('')
   }
 
@@ -160,8 +158,9 @@ async function main() {
   console.log('  npx tsx scripts/prune-e2e-household-artifacts.ts   # optional: clear Playwright test rows')
   console.log('  npm run test:e2e:complete -- --workers=1')
   console.log('')
-  console.log('Retire @rolobe accounts after green CI:')
-  console.log('  npm run cleanup:rolobe')
+  console.log('Go-live auth cleanup (keeps PROTECTED list — see E2E_TEST_RESET.md):')
+  console.log('  npm run cleanup:purge:dry-run')
+  console.log('  npm run cleanup:purge')
 
   if (writeExample) {
     const examplePath = join(process.cwd(), '.env.test.example')

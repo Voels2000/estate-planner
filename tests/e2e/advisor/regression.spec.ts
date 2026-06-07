@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test'
-import { gotoMichaelJohnsonClient } from '../helpers/constants'
+import { gotoAdvisorLinkedClient } from '../helpers/constants'
 
 test('back to client list returns to advisor home', async ({ page }) => {
-  await gotoMichaelJohnsonClient(page)
+  await gotoAdvisorLinkedClient(page)
   await page.getByText('Back to Client List').click()
   await expect(page).toHaveURL(/\/advisor\/?$/)
 })
@@ -13,17 +13,17 @@ test('advisor can open client list', async ({ page }) => {
 })
 
 test('advisor can open a linked client workspace', async ({ page }) => {
-  await gotoMichaelJohnsonClient(page)
+  await gotoAdvisorLinkedClient(page)
   await expect(page.getByText('Back to Client List')).toBeVisible()
 })
 
 test('client overview shows net worth stat', async ({ page }) => {
-  await gotoMichaelJohnsonClient(page)
+  await gotoAdvisorLinkedClient(page)
   await expect(page.getByText('Net Worth').first()).toBeVisible()
 })
 
 test('strategy and tax tabs switch without error', async ({ page }) => {
-  await gotoMichaelJohnsonClient(page)
+  await gotoAdvisorLinkedClient(page)
   await page.getByRole('button', { name: /Strategy/ }).click()
   const dashboard = page.getByText('Advisory Metrics Dashboard')
   const strategyLoading = page.locator('.animate-pulse')

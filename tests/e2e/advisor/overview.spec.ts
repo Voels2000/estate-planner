@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { clickAdvisorClientTab, gotoMichaelJohnsonClient } from '../helpers/constants'
+import { clickAdvisorClientTab, gotoAdvisorLinkedClient } from '../helpers/constants'
 
 test.describe('Advisor client list', () => {
   test('advisor dashboard loads', async ({ page }) => {
@@ -15,7 +15,7 @@ test.describe('Advisor client list', () => {
 
 test.describe('Advisor client overview', () => {
   test.beforeEach(async ({ page }) => {
-    await gotoMichaelJohnsonClient(page)
+    await gotoAdvisorLinkedClient(page)
   })
 
   test('client header shows name and complexity', async ({ page }) => {

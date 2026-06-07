@@ -1,0 +1,7 @@
+{
+  "_comment": "Golden numbers for --check-goldens. Regenerate: npm run verify:estate -- --preset voels --update-goldens",
+  "gross_estate": 9806626,
+  "federal_tax": 0,
+  "state_tax": 997126,
+  "tolerance": 1
+}
