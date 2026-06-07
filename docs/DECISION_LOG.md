@@ -28,6 +28,8 @@
 
 ---
 
+## Voels post-deploy cron — MC self-heal (2026-06-07)
+
 **Decision:** Daily cron `/api/cron/post-deploy-verify` (9:00 UTC) should **backfill** missing Voels `monte_carlo_results` before running the 7 verify checks — not only alert on failure. Manual `npm run verify:post-deploy-voels` stays verify-only (fail fast with `npm run smoke:mc-voels` hint). Up to ~24h lag if cache drops mid-day; sufficient for demo/ops gate.
 
 **Why not regen on every household write:** Base case + MC is expensive; consumer writes only bump staleness and regen on page load. Voels cron is the ops safety net for the prod smoke account.
