@@ -1,6 +1,18 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-06 (federal bracket engine — all surfaces)
+# Updated: 2026-06-07 (advisor logo file-upload)
+
+---
+
+## Advisor logo file-upload — shipped ✅ (2026-06-07)
+
+**Shipped:** **`/advisor/settings`** upload/replace/remove for firm logo. **`POST/DELETE /api/advisor/profile/logo`** → Supabase Storage bucket **`advisor-branding`** (public read, advisor-scoped `{user_id}/logo.{ext}`) → **`profiles.firm_logo_url`**. PDF cover already renders via **`firmLogoUrl`** when URL is http(s).
+
+**Migration:** `20260630120000_advisor_branding_storage.sql` — applied prod via **`supabase db push`**.
+
+**Constraints:** PNG / JPEG / WebP · max 2 MB.
+
+**Next code sprint:** titling perf / memoization.
 
 ---
 
@@ -22,7 +34,7 @@
 
 **Verify:** `npx dotenv-cli -e .env.local -- npx tsx scripts/verify-export-federal-brackets.ts` · `scripts/verify-estate-mc-voels-smoke.ts` · regenerate base case for death-year federal rows.
 
-**Next code sprint:** logo file-upload · titling perf.
+**Next code sprint:** titling perf.
 
 ---
 
@@ -32,7 +44,7 @@
 
 **Verify:** `npx dotenv-cli -e .env.local -- npx tsx scripts/verify-export-federal-brackets.ts`
 
-**Next code sprint:** logo file-upload · titling perf.
+**Next code sprint:** titling perf.
 
 ---
 
@@ -48,13 +60,13 @@
 | `verify-state-tax-coverage.ts` | Estate + income + inheritance tax DB coverage |
 | `verify-export-federal-brackets.ts` | Export panel / Excel / PDF page 3 federal tax — bracket engine parity |
 
-**Next code sprint:** logo file-upload · titling perf.
+**Next code sprint:** titling perf.
 
 ---
 
 ## PDF cover logo — `firm_logo_url` render — shipped ✅ (2026-06-06)
 
-**Shipped:** Export PDF cover page renders advisor logo when **`profiles.firm_logo_url`** is a valid http(s) URL. Wired via **`resolveAdvisorBranding`** → **`firmLogoUrl`** on **`PDFReportData`** → **`generatePDFHTML`** cover header (`<img class="firm-logo">`). Firm name text retained below logo. Upload UI still deferred — advisors can set URL in Supabase until file-upload sprint.
+**Shipped:** Export PDF cover page renders advisor logo when **`profiles.firm_logo_url`** is a valid http(s) URL. Wired via **`resolveAdvisorBranding`** → **`firmLogoUrl`** on **`PDFReportData`** → **`generatePDFHTML`** cover header (`<img class="firm-logo">`). Firm name text retained below logo. Upload at **`/advisor/settings`** (2026-06-07).
 
 **Files:** `lib/export/generatePDFReport.ts` · `lib/advisor/exportMappers.ts`
 

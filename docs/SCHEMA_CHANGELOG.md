@@ -10,6 +10,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Advisor branding storage — advisor-branding bucket (2026-06-07)
+
+**Migration:** `20260630120000_advisor_branding_storage.sql`
+
+| Resource | Detail |
+|----------|--------|
+| Bucket | `advisor-branding` — public read |
+| Path | `{advisor_user_id}/logo.{png\|jpg\|webp}` |
+| Limits | 2 MB · PNG/JPEG/WebP MIME types |
+| RLS | Authenticated insert/update/delete own folder only; public SELECT |
+
+**App:** `POST/DELETE /api/advisor/profile/logo` → updates **`profiles.firm_logo_url`** with public object URL.
+
+---
+
 ## MC Phase 3 signals — monte_carlo_results columns (2026-06-05)
 
 **Migration:** `20260605110000_mc_phase3_signals.sql`

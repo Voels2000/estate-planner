@@ -20,7 +20,7 @@ export default async function AdvisorSettingsPage() {
   const supabase = await createClient()
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('full_name, email, firm_name, phone')
+    .select('full_name, email, firm_name, phone, firm_logo_url')
     .eq('id', access.user.id)
     .maybeSingle()
 
@@ -35,6 +35,7 @@ export default async function AdvisorSettingsPage() {
         email: profile?.email ?? access.user.email ?? null,
         firm_name: profile?.firm_name ?? null,
         phone: profile?.phone ?? null,
+        firm_logo_url: profile?.firm_logo_url ?? null,
       }}
     />
   )

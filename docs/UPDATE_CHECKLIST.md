@@ -73,6 +73,13 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `scripts/verify-post-deploy-voels.ts` — MC Phase 3 + PDF narrative gate (7 checks)
 - [x] ROADMAP · DECISION_LOG · NEXT_SESSION verify script index
 
+## Advisor logo file-upload (2026-06-07) — shipped
+
+- [x] Storage bucket `advisor-branding` + RLS migration `20260630120000`
+- [x] `POST/DELETE /api/advisor/profile/logo` — upload/remove → `profiles.firm_logo_url`
+- [x] `/advisor/settings` — preview, upload, replace, remove
+- [x] ROADMAP · DECISION_LOG · NEXT_SESSION · DATABASE_SCHEMA_REFERENCE · SCHEMA_CHANGELOG synced
+
 ## PDF cover logo — firm_logo_url render (2026-06-06) — shipped
 
 - [x] `PDFReportData.firmLogoUrl` from `resolveAdvisorBranding`

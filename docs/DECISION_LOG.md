@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-06 (federal bracket engine — all surfaces)
+# Last updated: 2026-06-07 (advisor logo file-upload)
+
+---
+
+## Advisor logo file-upload — Storage + settings UI (2026-06-07)
+
+**Decision:** Advisors upload firm logo at **`/advisor/settings`**; **`POST /api/advisor/profile/logo`** writes to public bucket **`advisor-branding`** at `{advisor_id}/logo.{ext}` and sets **`profiles.firm_logo_url`** to the public object URL. **`DELETE`** removes storage object(s) and clears the column. PNG/JPEG/WebP only, 2 MB cap. PDF cover render (2026-06-06) consumes the same URL — no PDF code change.
+
+**Migration:** `20260630120000_advisor_branding_storage.sql` — bucket + RLS (advisor folder scope + public read).
+
+**Files:** `app/api/advisor/profile/logo/route.ts` · `app/advisor/settings/_settings-client.tsx` · `app/advisor/settings/page.tsx`
+
+**Next:** titling perf (deferred).
 
 ---
 
@@ -170,7 +182,7 @@
 
 ## Advisor Profile Settings UI — `/advisor/settings` (2026-06-05)
 
-**Decision:** Advisors edit export branding on their **`profiles`** row via **`/advisor/settings`** + **`PATCH /api/advisor/profile`** (`full_name`, `firm_name`, `phone` partial update; max-length validation). **`email`** read-only; **`firm_logo_url`** write deferred to file-upload sprint (placeholder UI only). Nav **Profile ⚙️** visible to all advisors (not gated on `firm_role`).
+**Decision:** Advisors edit export branding on their **`profiles`** row via **`/advisor/settings`** + **`PATCH /api/advisor/profile`** (`full_name`, `firm_name`, `phone` partial update; max-length validation). **`email`** read-only. **`firm_logo_url`** via logo upload API (2026-06-07). Nav **Profile ⚙️** visible to all advisors (not gated on `firm_role`).
 
 **Verify:** Voels PATCH → PDF `?type=report` cover shows updated **`firm_name`**; `scripts/verify-advisor-settings-voels.ts`.
 

@@ -32,7 +32,7 @@
 | Perf — memo `EstateOutlookChart`, extract `MonteCarloFanChart`, scenarios row `Map` index | `[x]` |
 | Fetch dedup — `getFullHouseholdForOwner` (`React.cache`) on dashboard | `[x]` |
 
-**Deferred:** titling memo/code-split · table virtualization · logo file-upload UI.
+**Deferred:** titling memo/code-split · table virtualization.
 
 ---
 
@@ -74,7 +74,7 @@
 | Export wiring — `fetchAdvisorProfile` → `resolveAdvisorBranding` on PDF/brief | `[x]` |
 | `fetchAdvisorProfile` debug logs removed | `[x]` `52ddc23` |
 | Settings form — `/advisor/settings` + `PATCH /api/advisor/profile` (`full_name`, `firm_name`, `phone`) | `[x]` |
-| Logo upload UI — `firm_logo_url` file upload | `[-]` deferred (file-upload sprint) |
+| Logo upload UI — `firm_logo_url` file upload | `[x]` `20260630120000` + `/api/advisor/profile/logo` |
 | Portal UI fallback — `profiles.firm_name` when `firms.name` absent | `[x]` |
 | PDF cover logo from `firm_logo_url` | `[x]` render on cover when HTTPS URL set |
 
@@ -150,7 +150,7 @@
 | PDF cover logo from `firm_logo_url` | `[x]` `556e773` |
 | **Export federal → bracket engine B** | `[x]` — `computeFederalExportTax` + `federal_estate_tax_brackets` |
 | **Federal flat 40% elimination (all surfaces)** | `[x]` — horizons, composability, Tax stress, MC, projection death-year, heuristics |
-| **Logo file-upload UI** | `[ ]` deferred — `firm_logo_url` write path |
+| **Logo file-upload UI** | `[x]` — `advisor-branding` bucket + settings upload |
 | **Titling perf / memoization** | `[ ]` deferred |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 

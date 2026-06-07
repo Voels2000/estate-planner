@@ -8,6 +8,7 @@ export interface SettingsClientProps {
     email: string | null
     firm_name: string | null
     phone: string | null
+    firm_logo_url: string | null
   }
 }
 
@@ -19,15 +20,25 @@ export default function SettingsClient({ initialProfile }: SettingsClientProps) 
   const [fullName, setFullName] = useState(initialProfile.full_name ?? '')
   const [firmName, setFirmName] = useState(initialProfile.firm_name ?? '')
   const [phone, setPhone] = useState(initialProfile.phone ?? '')
+  const [logoUrl, setLogoUrl] = useState(initialProfile.firm_logo_url ?? '')
   const [saveLoading, setSaveLoading] = useState(false)
+  const [logoLoading, setLogoLoading] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [logoError, setLogoError] = useState<string | null>(null)
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
+  const [logoSuccess, setLogoSuccess] = useState<string | null>(null)
 
   useEffect(() => {
     if (!saveSuccess) return
     const t = setTimeout(() => setSaveSuccess(null), 3000)
     return () => clearTimeout(t)
   }, [saveSuccess])
+
+  useEffect(() => {
+    if (!logoSuccess) return
+    const t = setTimeout(() => setLogoSuccess(null), 3000)
+    return () => clearTimeout(t)
+  }, [logoSuccess])
 
   async function handleSave() {
     setSaveError(null)
@@ -74,6 +85,7 @@ export default function SettingsClient({ initialProfile }: SettingsClientProps) 
           email: data.profile.email ?? baseline.email,
           firm_name: data.profile.firm_name,
           phone: data.profile.phone,
+          firm_logo_url: baseline.firm_logo_url,
         }
         setBaseline(next)
         setFullName(next.full_name ?? '')
@@ -85,6 +97,55 @@ export default function SettingsClient({ initialProfile }: SettingsClientProps) 
       setSaveError('Something went wrong. Please try again.')
     } finally {
       setSaveLoading(false)
+    }
+  }
+
+  async function handleLogoUpload(file: File) {
+    setLogoError(null)
+    setLogoSuccess(null)
+    setLogoLoading(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/advisor/profile/logo', { method: 'POST', body: form })
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string
+        firm_logo_url?: string
+        profile?: SettingsClientProps['initialProfile']
+      }
+      if (!res.ok) {
+        setLogoError(data.error ?? 'Upload failed.')
+        return
+      }
+      const nextUrl = data.firm_logo_url ?? data.profile?.firm_logo_url ?? ''
+      setLogoUrl(nextUrl)
+      setBaseline((prev) => ({ ...prev, firm_logo_url: nextUrl || null }))
+      setLogoSuccess('Logo uploaded.')
+    } catch {
+      setLogoError('Something went wrong. Please try again.')
+    } finally {
+      setLogoLoading(false)
+    }
+  }
+
+  async function handleLogoRemove() {
+    setLogoError(null)
+    setLogoSuccess(null)
+    setLogoLoading(true)
+    try {
+      const res = await fetch('/api/advisor/profile/logo', { method: 'DELETE' })
+      const data = (await res.json().catch(() => ({}))) as { error?: string }
+      if (!res.ok) {
+        setLogoError(data.error ?? 'Failed to remove logo.')
+        return
+      }
+      setLogoUrl('')
+      setBaseline((prev) => ({ ...prev, firm_logo_url: null }))
+      setLogoSuccess('Logo removed.')
+    } catch {
+      setLogoError('Something went wrong. Please try again.')
+    } finally {
+      setLogoLoading(false)
     }
   }
 
@@ -165,10 +226,50 @@ export default function SettingsClient({ initialProfile }: SettingsClientProps) 
           </div>
 
           <div>
-            <span className="block text-sm font-medium text-neutral-400 mb-1">Firm logo</span>
-            <p className="rounded-lg border border-dashed border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-400">
-              Logo upload coming soon
+            <span className="block text-sm font-medium text-neutral-700 mb-2">Firm logo</span>
+            <p className="mb-3 text-xs text-neutral-500">
+              Shown on PDF exports and meeting briefs. PNG, JPEG, or WebP — max 2 MB.
             </p>
+            {logoUrl ? (
+              <div className="mb-3 flex items-center gap-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logoUrl}
+                  alt="Firm logo preview"
+                  className="h-12 max-w-[180px] object-contain rounded border border-neutral-200 bg-white p-1"
+                />
+              </div>
+            ) : (
+              <p className="mb-3 text-sm text-neutral-400">No logo uploaded.</p>
+            )}
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="cursor-pointer rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50">
+                {logoLoading ? 'Uploading…' : logoUrl ? 'Replace logo' : 'Upload logo'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="sr-only"
+                  disabled={logoLoading || saveLoading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) void handleLogoUpload(file)
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+              {logoUrl && (
+                <button
+                  type="button"
+                  onClick={() => void handleLogoRemove()}
+                  disabled={logoLoading || saveLoading}
+                  className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            {logoSuccess && <p className="mt-2 text-sm text-green-700">{logoSuccess}</p>}
+            {logoError && <p className="mt-2 text-sm text-red-600">{logoError}</p>}
           </div>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
