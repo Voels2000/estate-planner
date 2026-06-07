@@ -158,7 +158,7 @@
 | **Engine B export standardization** | `[x]` — estate-plan PDF API + remove dead advisor `estateTax` RPC loader; trust guidance cache fallback |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
-**Recent commits (2026-06-05 → 07):** `56135ca` · `10cd004` · `0b375ae` · engine B export standardization (2026-06-07)
+**Recent commits (2026-06-05 → 07):** `4d22809` · `56135ca` · `10cd004` · `0b375ae`
 
 ---
 
