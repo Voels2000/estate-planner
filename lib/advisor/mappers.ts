@@ -28,7 +28,6 @@ type AdvisorMapperInput = Pick<
   | 'estateDocumentsResult'
   | 'legalDocumentsResult'
   | 'notesResult'
-  | 'estateTaxResult'
   | 'scenarioResult'
   | 'domicileAnalysisResult'
   | 'domicileScheduleResult'
@@ -59,7 +58,6 @@ type AdvisorMappedDatasets = {
   estateDocuments: Record<string, unknown>[]
   legalDocuments: Record<string, unknown>[]
   notes: Record<string, unknown>[]
-  estateTax: Record<string, unknown> | null
   scenario: Record<string, unknown> | null
   scenarioOutputs: Array<Record<string, unknown>>
   scenarioOutputsSecondDeath: Array<Record<string, unknown>>
@@ -140,7 +138,6 @@ export function mapAdvisorClientDatasets(results: AdvisorMapperInput): AdvisorMa
     estateDocuments: (results.estateDocumentsResult.data ?? []) as Record<string, unknown>[],
     legalDocuments: (results.legalDocumentsResult.data ?? []) as Record<string, unknown>[],
     notes: (results.notesResult.data ?? []) as Record<string, unknown>[],
-    estateTax: (results.estateTaxResult.data ?? null) as Record<string, unknown> | null,
     scenario,
     scenarioOutputs,
     scenarioOutputsSecondDeath,

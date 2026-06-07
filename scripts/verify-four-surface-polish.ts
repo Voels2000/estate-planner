@@ -120,7 +120,6 @@ async function main() {
     estateDocumentsResult,
     legalDocumentsResult,
     notesResult,
-    estateTaxResult,
     scenarioResult,
     domicileAnalysisResult,
     domicileScheduleResult,
@@ -148,7 +147,6 @@ async function main() {
     admin.from('estate_documents').select('id, document_type, exists, confirmed_at, created_at').eq('owner_id', target.clientId),
     admin.from('legal_documents').select('id, document_type, exists, confirmed_at, created_at').eq('owner_id', target.clientId),
     admin.from('advisor_notes').select('*').eq('client_id', target.clientId).eq('advisor_id', target.advisorId).order('created_at', { ascending: false }),
-    admin.from('estate_tax').select('*').eq('owner_id', target.clientId).maybeSingle(),
     household.base_case_scenario_id
       ? admin.from('projection_scenarios').select('*').eq('id', household.base_case_scenario_id).maybeSingle()
       : Promise.resolve({ data: null, error: null }),
@@ -216,7 +214,6 @@ async function main() {
     estateDocumentsResult,
     legalDocumentsResult,
     notesResult,
-    estateTaxResult,
     scenarioResult,
     domicileAnalysisResult,
     domicileScheduleResult,
@@ -249,7 +246,6 @@ async function main() {
     estateDocumentsResult: datasetsBundle.estateDocumentsResult,
     legalDocumentsResult: datasetsBundle.legalDocumentsResult,
     notesResult: datasetsBundle.notesResult,
-    estateTaxResult: datasetsBundle.estateTaxResult,
     scenarioResult: datasetsBundle.scenarioResult,
     domicileAnalysisResult: datasetsBundle.domicileAnalysisResult,
     domicileScheduleResult: datasetsBundle.domicileScheduleResult,

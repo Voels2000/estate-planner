@@ -59,7 +59,6 @@ function isFiniteNumber(value: unknown): value is number {
 
 export default function TaxTab({
   household,
-  estateTax,
   advisorHorizons,
   scenario,
   stateExemptions,

@@ -155,9 +155,24 @@
 | **Consumer MC full parity** | `[x]` — 7 advisor assumption fields on `/monte-carlo` |
 | **Attorney portal collaboration v2** | `[x]` — requests inbox, matter workflow, doc requests, firm notes, settings |
 | **Attorney weekly digest email** | `[x]` — cron §10 Fridays; gaps, doc requests, stale matter stage |
+| **Engine B export standardization** | `[x]` — estate-plan PDF API + remove dead advisor `estateTax` RPC loader; trust guidance cache fallback |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
-**Recent commits (2026-06-05 → 07):** `56135ca` · `10cd004` · `0b375ae` · `fde50cc` · `e1047a7`
+**Recent commits (2026-06-05 → 07):** `56135ca` · `10cd004` · `0b375ae` · engine B export standardization (2026-06-07)
+
+---
+
+### Sprint — Engine B export standardization `[x]` **complete (2026-06-07)**
+
+| Item | Status |
+|------|--------|
+| **`/api/export-estate-plan`** — Engine B via composition + brackets (no legacy RPCs) | `[x]` |
+| Remove dead **`estateTax`** advisor loader + prop chain | `[x]` |
+| **`loadTrustWillGuidance`** — cached composition fallback | `[x]` |
+| **`scripts/verify-engine-b-tax-surfaces.ts`** | `[x]` |
+| Regression grep in **`CALCULATION_ENGINES.md`** | `[x]` |
+
+**Files:** `lib/export/buildEstatePlanPdfTaxPayload.ts`, `lib/export/loadEstatePlanPdfTaxPayload.ts`, `app/api/export-estate-plan/route.ts`, `lib/advisor/loaders.ts`, `lib/trusts/loadTrustWillGuidance.ts`
 
 ---
 

@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { hasPaidDownloadAccess } from '@/lib/access/requirePaidDownloadAccess'
 import { assertHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { loadEstatePlanPdfTaxPayload } from '@/lib/export/loadEstatePlanPdfTaxPayload'
 
 export const runtime = 'nodejs'
 
@@ -84,8 +85,6 @@ export async function GET(request: NextRequest) {
       estateReadinessResult,
       recommendationsResult,
       incapacityResult,
-      estateTaxResult,
-      stateTaxResult,
       documentsResult,
       trustsResult,
       beneficiariesResult,
@@ -127,17 +126,7 @@ export async function GET(request: NextRequest) {
       // 4. Incapacity recommendations
       supabase.rpc('generate_incapacity_recommendations', { p_household_id: householdId }),
 
-      // 5. Federal estate tax (advisor, attorney variant, consumer client summary)
-      includeFinancialProfile
-        ? supabase.rpc('calculate_federal_estate_tax', { p_household_id: householdId })
-        : Promise.resolve({ data: null, error: null }),
-
-      // 6. State estate tax (advisor, attorney variant, consumer client summary)
-      includeFinancialProfile
-        ? supabase.rpc('calculate_state_estate_tax', { p_household_id: householdId })
-        : Promise.resolve({ data: null, error: null }),
-
-      // 7. Estate documents on file
+      // 5. Estate documents on file
       supabase
         .from('estate_documents')
         .select('document_type, status, signed_date, notes')
@@ -177,11 +166,19 @@ export async function GET(request: NextRequest) {
       errors.push(`recommendations: ${recommendationsResult.error.message}`)
     }
     if (incapacityResult.error) errors.push(`incapacity: ${incapacityResult.error.message}`)
-    if (estateTaxResult.error) errors.push(`federal_tax: ${estateTaxResult.error.message}`)
-    if (stateTaxResult.error) errors.push(`state_tax: ${stateTaxResult.error.message}`)
 
     if (errors.length > 0) {
       return NextResponse.json({ error: 'Data fetch errors', details: errors }, { status: 500 })
+    }
+
+    let pdfTaxPayload: Awaited<ReturnType<typeof loadEstatePlanPdfTaxPayload>> | null = null
+    if (includeFinancialProfile && householdResult.data) {
+      try {
+        pdfTaxPayload = await loadEstatePlanPdfTaxPayload(supabase, householdId, householdResult.data)
+      } catch (taxErr) {
+        console.error('[export-estate-plan] Engine B tax payload failed:', taxErr)
+        return NextResponse.json({ error: 'Tax calculation failed' }, { status: 500 })
+      }
     }
 
     // Assemble the payload
@@ -197,8 +194,8 @@ export async function GET(request: NextRequest) {
       estate_readiness_score: estateReadinessResult.data?.score ?? null,
       recommendations: recommendationsResult.data ?? null,
       incapacity: incapacityResult.data,
-      federal_estate_tax: includeFinancialProfile ? estateTaxResult.data : null,
-      state_estate_tax: includeFinancialProfile ? stateTaxResult.data : null,
+      federal_estate_tax: pdfTaxPayload?.federal_estate_tax ?? null,
+      state_estate_tax: pdfTaxPayload?.state_estate_tax ?? null,
       documents: documentsResult.data ?? [],
       trusts: trustsResult.data ?? [],
       beneficiaries: beneficiariesResult.data ?? [],

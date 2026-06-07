@@ -354,7 +354,6 @@ export interface ClientViewShellProps {
   estateDocuments: Record<string, unknown>[]
   legalDocuments: Record<string, unknown>[]
   notes: Record<string, unknown>[]
-  estateTax: Record<string, unknown> | null
   scenario?: {
     id?: string
     gross_estate?: number

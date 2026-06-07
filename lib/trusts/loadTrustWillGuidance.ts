@@ -1,5 +1,5 @@
 import type { createClient } from '@/lib/supabase/server'
-import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
+import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import type { EstateComposition } from '@/lib/estate/types'
 import {
   getTrustWillChecklist,
@@ -29,7 +29,7 @@ export async function loadTrustWillGuidance(
 ): Promise<TrustWillGuidancePayload> {
   const compositionPromise = preloadedComposition
     ? Promise.resolve(preloadedComposition)
-    : classifyEstateAssets(supabase, householdId)
+    : getCachedComposition(supabase, householdId, 'consumer', 0)
 
   const [
     composition,

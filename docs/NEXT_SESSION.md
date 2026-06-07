@@ -1,6 +1,25 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Last updated: 2026-06-07 (attorney weekly digest shipped)
+# Last updated: 2026-06-07 (engine B export standardization)
+
+---
+
+## Engine B export standardization — shipped ✅ (2026-06-07)
+
+**Shipped:** Removed last legacy SQL estate-tax RPC call sites from app code. Estate-plan PDF export API and advisor loaders now align with Engine B (composition cache + progressive federal brackets + state rules).
+
+| Track | Change |
+|-------|--------|
+| **1a** | **`/api/export-estate-plan`** — `loadEstatePlanPdfTaxPayload` + `buildEstatePlanPdfTaxPayload` replace `calculate_federal_estate_tax` / `calculate_state_estate_tax` RPCs |
+| **1b** | Removed dead **`estateTax`** loader slice (`calculate_state_estate_tax` on tax/domicile/strategy/meeting-prep tabs); Tax tab already uses **`advisorHorizons.today`** |
+| **2** | **`loadTrustWillGuidance`** fallback uses **`getCachedComposition`** instead of live **`classifyEstateAssets`** |
+| **3** | **`scripts/verify-engine-b-tax-surfaces.ts`** — composition gross vs export API tax payload |
+
+**Files:** `lib/export/buildEstatePlanPdfTaxPayload.ts` · `lib/export/loadEstatePlanPdfTaxPayload.ts` · `app/api/export-estate-plan/route.ts` · `lib/advisor/loaders.ts` · `lib/trusts/loadTrustWillGuidance.ts`
+
+**Regression grep:** `docs/CALCULATION_ENGINES.md` — legacy RPC grep must return zero in `lib/` + `app/`.
+
+**Verify:** `npx dotenv-cli -e .env.local -- npx tsx scripts/verify-engine-b-tax-surfaces.ts`
 
 ---
 
@@ -121,6 +140,7 @@
 | `verify-state-tax-panel-states.ts` | All **13** modeled estate-tax states — engine B brackets |
 | `verify-state-tax-coverage.ts` | Estate + income + inheritance tax DB coverage |
 | `verify-export-federal-brackets.ts` | Export panel / Excel / PDF page 3 federal tax — bracket engine parity |
+| `verify-engine-b-tax-surfaces.ts` | Composition cache gross vs **`/api/export-estate-plan`** Engine B tax payload |
 
 **Next code sprint:** titling perf.
 

@@ -127,7 +127,7 @@ Two separate engines — do not merge.
 | Strategy composability / horizon overlay | Progressive federal via `validateComposability` + `computeHorizonStrategyTaxes` | Optional state when brackets passed |
 | Estate Monte Carlo (advisor Strategy tab) | B — see [Monte Carlo engines](#monte-carlo-engines) | Yes — `hasBypassTrust` |
 
-**Export / PDF tax (2026-06-05):** PDF page 3 metric cards — engine B at render. Export panel + Excel **Tax Analysis** — engine B via `exportMappers.ts`. Excel **Projection** sheet + PDF SVG chart — per-row `estate_tax_*` from stored `outputs_s1_first` (engine B at death years after `generateBaseCase` regenerate).
+**Export / PDF tax (2026-06-07):** Estate-plan PDF export API (`export-estate-plan/route.ts`) — engine B via `loadEstatePlanPdfTaxPayload` + `buildEstatePlanPdfTaxPayload` (composition cache + federal brackets + state rules). PDF page 3 metric cards — engine B at render. Export panel + Excel **Tax Analysis** — engine B via `exportMappers.ts`. Excel **Projection** sheet + PDF SVG chart — per-row `estate_tax_*` from stored `outputs_s1_first` (engine B at death years after `generateBaseCase` regenerate).
 
 Engine **A** (`narrativeEngine` flat rates) — **deleted**.
 
@@ -164,6 +164,11 @@ grep -rn "credit_shelter_trust\|bypass_trust\|'cst'" \
   lib/ app/ components/ \
   --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v ".next" \
   | grep -v "strategyTypes.ts"
+
+# Legacy SQL estate tax RPCs — must be ZERO in lib/ and app/ (migrations/scripts only)
+grep -rn "calculate_federal_estate_tax\|calculate_state_estate_tax" \
+  lib/ app/ \
+  --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v ".next"
 ```
 
 On the first grep, ignore `STATE_HAS_ESTATE_TAX` in `stateRegistry.ts` (boolean flags, not engine A).

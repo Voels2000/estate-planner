@@ -142,7 +142,6 @@ export async function loadAdvisorExportWiringForClient(
     estateDocumentsResult: datasetsBundle.estateDocumentsResult,
     legalDocumentsResult: datasetsBundle.legalDocumentsResult,
     notesResult: datasetsBundle.notesResult,
-    estateTaxResult: datasetsBundle.estateTaxResult,
     scenarioResult,
     domicileAnalysisResult: datasetsBundle.domicileAnalysisResult,
     domicileScheduleResult: datasetsBundle.domicileScheduleResult,

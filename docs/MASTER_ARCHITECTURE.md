@@ -277,7 +277,8 @@ Important:
 | Surface | Risk |
 |---------|------|
 | `MeetingPrepTab` | **Fixed** — `meetingPrepBriefFromHorizons(advisorHorizons)`; full Today / 10 / 20 / At Death tax strip |
-| `lib/calculations/estate-tax-projection.ts` | Death-year rows still use deprecated `computeStateEstateTaxFromBrackets` (no portability / NY cliff) — **follow-up sprint** |
+| ~~`lib/calculations/estate-tax-projection.ts` death-year engine C~~ | **Fixed 2026-06-05** — engine B at death years (`Projection Engine C→B`) |
+| ~~`/api/export-estate-plan` legacy tax RPCs~~ | **Fixed 2026-06-07** — `loadEstatePlanPdfTaxPayload` (composition + Engine B) |
 | `lib/actions/generate-base-case.ts` | MFJ check includes `married_filing_jointly` but not full `isMFJFilingStatus` alias set |
 | PDF / Gifting UI | Display-only `filing_status === 'mfj'` — cosmetic, not tax engine |
 | Consumer `/estate-tax` | Uses unified engine + `filingForTax` helper — reference implementation |
@@ -748,7 +749,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Trial users **cannot** download exports/PDF artifacts.
 - Download endpoints must require paid-active subscription state (not `trialing`), with minimum paid tier checks applied per surface.
 - Enforcement now wired in:
-  - `app/api/export-estate-plan/route.ts` requires paid-active consumer status and Tier 3 for PDF export.
+  - `app/api/export-estate-plan/route.ts` requires paid-active consumer status and Tier 3 for PDF export. Tax figures use Engine B via `loadEstatePlanPdfTaxPayload` (composition cache + federal brackets + state rules — no legacy `calculate_*_estate_tax` RPCs).
   - `app/api/documents/download/[document_id]/route.ts` requires paid-active consumer status for document downloads.
   - `app/api/documents/household/[household_id]/route.ts` lists household documents; aligns `can_download` metadata with paid-active consumer status so trial users are not shown downloadable actions.
   - `app/api/documents/[id]/status/route.ts` — attorney PATCH for doc status (must not share dynamic segment name with household list route — see DECISION_LOG 2026-05-30).
@@ -864,7 +865,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 | Surface | Route | Purpose |
 |---------|-------|---------|
 | My Advisor | `/my-advisor` | Accepted `advisor_clients` + `advisor_directory` listing (`profile_id`); invite-via-email when no connection; pending requests; access log; revoke |
-| Print / export | `/print` | Tier 3+ consumers; paid-active gate via `hasPaidDownloadAccess` on `/api/export-estate-plan`. `ExportPDFButton` → `ConsumerEstatePlanPDF` / `AttorneyEstatePlanPDF` (`components/pdf/EstatePlanPDF.tsx`). Cover: **Estate Planning Preparation Report** + `DISCLAIMER_STRINGS.pdfCover`. **Client Summary:** `MY WEALTH MAPS — CLIENT ESTATE SUMMARY` header, gold purpose callout, household profile grid, readiness without letter grade, Document Status (**Not on file**). **Attorney Summary:** `MY WEALTH MAPS — ATTORNEY INTAKE SUMMARY` + green attorney-review banner (unchanged). Both use `prepared_by_name` from export API (not "Your Advisor" for consumers). Consumer exports include tax + assets RPCs for profile figures. |
+| Print / export | `/print` | Tier 3+ consumers; paid-active gate via `hasPaidDownloadAccess` on `/api/export-estate-plan`. `ExportPDFButton` → `ConsumerEstatePlanPDF` / `AttorneyEstatePlanPDF` (`components/pdf/EstatePlanPDF.tsx`). Cover: **Estate Planning Preparation Report** + `DISCLAIMER_STRINGS.pdfCover`. **Client Summary:** `MY WEALTH MAPS — CLIENT ESTATE SUMMARY` header, gold purpose callout, household profile grid, readiness without letter grade, Document Status (**Not on file**). **Attorney Summary:** `MY WEALTH MAPS — ATTORNEY INTAKE SUMMARY` + green attorney-review banner (unchanged). Both use `prepared_by_name` from export API (not "Your Advisor" for consumers). Consumer exports include Engine B tax payload + assets summary for profile figures. |
 | My Attorney | `/my-attorney` | Active `attorney_clients` rows (household-scoped) + pending attorney `connection_requests`; revoke via `/api/attorney/revoke-access` |
 | Attorney access settings | `/settings/attorney-access` | PDF download toggles and per-attorney revoke; cross-links to `/my-attorney` for pending/connection details |
 | Cancel pending request | `POST /api/connection-requests/cancel` | Consumer cancels own pending row (`status → cancelled`) via admin client after ownership check |

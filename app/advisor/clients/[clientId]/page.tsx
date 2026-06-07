@@ -223,7 +223,6 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     estateDocumentsResult,
     legalDocumentsResult,
     notesResult,
-    estateTaxResult,
     scenarioResult,
     domicileAnalysisResult,
     domicileScheduleResult,
@@ -257,7 +256,6 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     estateDocuments,
     legalDocuments,
     notes,
-    estateTax,
     scenario,
     scenarioOutputs,
     scenarioOutputsSecondDeath,
@@ -282,7 +280,6 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     estateDocumentsResult,
     legalDocumentsResult,
     notesResult,
-    estateTaxResult,
     scenarioResult,
     domicileAnalysisResult,
     domicileScheduleResult,
@@ -654,7 +651,6 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       estateDocuments={estateDocuments ?? []}
       legalDocuments={legalDocuments ?? []}
       notes={notes ?? []}
-      estateTax={estateTax}
       scenario={scenarioForStrategy}
       scenarioHistory={scenarioHistoryForExport}
       exportPdfData={exportPdfData}

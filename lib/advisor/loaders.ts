@@ -36,7 +36,6 @@ export type AdvisorDatasetInclude = {
   estateDocuments: boolean
   legalDocuments: boolean
   notes: boolean
-  estateTax: boolean
   scenario: boolean
   domicile: boolean
   businesses: boolean
@@ -59,7 +58,6 @@ export const ADVISOR_DATASET_INCLUDE_ALL: AdvisorDatasetInclude = {
   estateDocuments: true,
   legalDocuments: true,
   notes: true,
-  estateTax: true,
   scenario: true,
   domicile: true,
   businesses: true,
@@ -89,7 +87,6 @@ export function advisorDatasetIncludeForTab(tab: string): AdvisorDatasetInclude 
         ...core,
         legalDocuments: false,
         notes: false,
-        estateTax: false,
         scenario: false,
         domicile: false,
         businesses: true,
@@ -109,7 +106,6 @@ export function advisorDatasetIncludeForTab(tab: string): AdvisorDatasetInclude 
         ...core,
         legalDocuments: false,
         notes: false,
-        estateTax: false,
         scenario: true,
         domicile: false,
         businesses: false,
@@ -132,7 +128,6 @@ export function advisorDatasetIncludeForTab(tab: string): AdvisorDatasetInclude 
         estateDocuments: false,
         legalDocuments: false,
         notes: true,
-        estateTax: false,
         scenario: false,
         domicile: false,
         businesses: false,
@@ -155,7 +150,6 @@ export function advisorDatasetIncludeForTab(tab: string): AdvisorDatasetInclude 
         estateDocuments: false,
         legalDocuments: true,
         notes: false,
-        estateTax: false,
         scenario: false,
         domicile: false,
         businesses: false,
@@ -175,7 +169,6 @@ export function advisorDatasetIncludeForTab(tab: string): AdvisorDatasetInclude 
         ...core,
         legalDocuments: false,
         notes: false,
-        estateTax: true,
         scenario: true,
         domicile: true,
         businesses: true,
@@ -195,7 +188,6 @@ export function advisorDatasetIncludeForTab(tab: string): AdvisorDatasetInclude 
         ...core,
         legalDocuments: false,
         notes: false,
-        estateTax: true,
         scenario: true,
         domicile: false,
         businesses: false,
@@ -215,7 +207,6 @@ export function advisorDatasetIncludeForTab(tab: string): AdvisorDatasetInclude 
         ...core,
         legalDocuments: false,
         notes: false,
-        estateTax: true,
         scenario: true,
         domicile: false,
         businesses: true,
@@ -235,7 +226,6 @@ export function advisorDatasetIncludeForTab(tab: string): AdvisorDatasetInclude 
         ...core,
         legalDocuments: false,
         notes: false,
-        estateTax: true,
         scenario: true,
         domicile: false,
         businesses: true,
@@ -255,7 +245,6 @@ export function advisorDatasetIncludeForTab(tab: string): AdvisorDatasetInclude 
         ...core,
         legalDocuments: false,
         notes: true,
-        estateTax: false,
         scenario: true,
         domicile: false,
         businesses: true,
@@ -305,7 +294,6 @@ export type AdvisorClientDatasetsResult = {
   estateDocumentsResult: { data: unknown[] | null; error?: unknown }
   legalDocumentsResult: { data: unknown[] | null; error?: unknown }
   notesResult: { data: unknown[] | null; error?: unknown }
-  estateTaxResult: { data: unknown | null; error?: unknown }
   scenarioResult: { data: Record<string, unknown> | null; error: unknown | null }
   domicileAnalysisResult: { data: Record<string, unknown> | null; error?: unknown }
   domicileScheduleResult: { data: unknown[] | null; error?: unknown }
@@ -489,7 +477,6 @@ export async function loadAdvisorClientDatasets(
     estateDocumentsResult,
     legalDocumentsResult,
     notesResult,
-    estateTaxResult,
     scenarioResult,
     domicileAnalysisResult,
     domicileScheduleResult,
@@ -556,9 +543,6 @@ export async function loadAdvisorClientDatasets(
           .eq('client_id', params.clientId)
           .order('created_at', { ascending: false })
       : Promise.resolve(emptyList),
-    inc.estateTax
-      ? supabase.rpc('calculate_state_estate_tax', { p_household_id: params.householdId })
-      : Promise.resolve(emptySingle),
     inc.scenario && params.scenarioId
       ? supabase
           .from('projection_scenarios')
@@ -704,7 +688,6 @@ export async function loadAdvisorClientDatasets(
     estateDocumentsResult,
     legalDocumentsResult,
     notesResult,
-    estateTaxResult,
     scenarioResult,
     domicileAnalysisResult,
     domicileScheduleResult,

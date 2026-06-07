@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (attorney portal collaboration v2)
+# Last updated: 2026-06-07 (engine B export standardization)
+
+---
+
+## Engine B export standardization — estate-plan PDF API + dead loader removal (2026-06-07)
+
+**Decision:** Replace legacy SQL RPCs **`calculate_federal_estate_tax`** / **`calculate_state_estate_tax`** on **`/api/export-estate-plan`** with Engine B helpers shared with advisor export: **`getCachedComposition`**, **`computeFederalExportTax`**, **`calculateStateEstateTax`** + **`resolveActiveStateTax`**, **`deriveHasBypassTrustFromLineItems`**. Remove unused advisor **`estateTax`** dataset fetch (was **`calculate_state_estate_tax`** on tax/domicile/strategy tabs — Tax tab already horizon-driven). Trust/will guidance fallback reads composition cache instead of live classify RPC.
+
+**Files:** `lib/export/buildEstatePlanPdfTaxPayload.ts`, `lib/export/loadEstatePlanPdfTaxPayload.ts`, `app/api/export-estate-plan/route.ts`, `lib/advisor/loaders.ts`, `lib/trusts/loadTrustWillGuidance.ts`, `scripts/verify-engine-b-tax-surfaces.ts`
+
+**Regression:** grep legacy RPC names in `lib/` + `app/` must be zero (see **`CALCULATION_ENGINES.md`**).
 
 ---
 

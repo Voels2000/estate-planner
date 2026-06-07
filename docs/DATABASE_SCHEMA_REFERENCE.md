@@ -481,7 +481,7 @@ After each schema-affecting session:
 
 ## Schema changelog (session notes)
 
-Session-by-session migration and application-layer notes (Sessions 43–128) live in **[SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md)**.
+Session-by-session migration and application-layer notes (Sessions 43–129) live in **[SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md)**.
 
 When you change schema or RPCs, update the **table/RPC sections above** in this file and add a short entry to the changelog (schema migrations only need a one-line pointer if details are in the migration file).
 

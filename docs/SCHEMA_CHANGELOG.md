@@ -1745,6 +1745,16 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
   - `/advisor/presets` — `PresetManager` (CRUD + set default); `MonteCarloAssumptionsPanel` auto-loads default on mount + “Load preset” dropdown (UI-only until advisor saves scenario).
 - E2E: `tests/e2e/advisor/advisor-presets.spec.ts` (API CRUD, consumer 403, UI pre-fill). Playwright seeds: `scripts/seed-michael-johnson-advisor-demo.ts` (Johnson client for advisor2), `scripts/seed-advisor2-playwright-fixture.ts` (household `90cc8759-…` strategy-recommendation link).
 
+## Session 129 Note
+
+- No new schema migration. Code-only Engine B export alignment.
+- Application-layer:
+  - **`lib/export/buildEstatePlanPdfTaxPayload.ts`**, **`lib/export/loadEstatePlanPdfTaxPayload.ts`** — Engine B tax fields for estate-plan PDF export API
+  - **`app/api/export-estate-plan/route.ts`** — replaces legacy **`calculate_federal_estate_tax`** / **`calculate_state_estate_tax`** RPCs with composition cache + bracket engine
+  - **`lib/advisor/loaders.ts`** — removed dead **`estateTax`** dataset slice (**`calculate_state_estate_tax`**); Tax tab already uses **`advisorHorizons.today`**
+  - **`lib/trusts/loadTrustWillGuidance.ts`** — fallback uses **`getCachedComposition`** instead of live **`classifyEstateAssets`**
+  - **`scripts/verify-engine-b-tax-surfaces.ts`** — composition gross vs export API tax payload alignment check
+
 ## Session 128 Note
 
 - Schema: migration **`20260703120000_attorney_digest_sent_at.sql`** — **`profiles.attorney_digest_sent_at`** (weekly digest send timestamp; 6-day cron cooldown).
