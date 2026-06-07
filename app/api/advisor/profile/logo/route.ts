@@ -75,12 +75,13 @@ export async function DELETE() {
   if (!ctx.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!ctx.isAdvisor) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  const userId = ctx.user.id
   const supabase = await createClient()
 
-  const { data: objects } = await supabase.storage.from(BUCKET).list(ctx.user.id)
+  const { data: objects } = await supabase.storage.from(BUCKET).list(userId)
   const logoObjects = (objects ?? []).filter((o) => o.name?.startsWith('logo.'))
   if (logoObjects.length > 0) {
-    const paths = logoObjects.map((o) => `${ctx.user.id}/${o.name}`)
+    const paths = logoObjects.map((o) => `${userId}/${o.name}`)
     const { error: removeError } = await supabase.storage.from(BUCKET).remove(paths)
     if (removeError) {
       console.error('[advisor/profile/logo DELETE storage]', removeError)
@@ -90,7 +91,7 @@ export async function DELETE() {
   const { data, error } = await supabase
     .from('profiles')
     .update({ firm_logo_url: null })
-    .eq('id', ctx.user.id)
+    .eq('id', userId)
     .select('full_name, email, firm_name, phone, firm_logo_url')
     .single()
 
