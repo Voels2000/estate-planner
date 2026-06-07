@@ -132,14 +132,27 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 - **Purpose:** canonical attorney listing for find-attorney, registration, and connection requests — **not** `attorney_directory`
 - **Referral:** unique `referral_code`; event links use `?aref=`; resolved in `referral_clicks.attorney_listing_id`
 - **Migration:** `20260528000000_attorney_referrals.sql`
-- **Application:** `/attorney` portal newsletter kit; `POST /api/referral/track` with `type: 'attorney'`
+- **Application:** `/attorney` portal — nav, requests inbox, firm settings **`PATCH /api/attorney/listing`**; newsletter kit; `POST /api/referral/track` with `type: 'attorney'`
 
 ### `attorney_clients`
 
-- **Key columns:** `attorney_id` (→ `attorney_listings.id`), `client_id` (→ `households.id`), `status`, `granted_at`, `advisor_pdf_access`
-- **Purpose:** attorney access to household estate plan; distinct from `connection_requests` pending/claim flow.
+- **Key columns:** `attorney_id` (→ `attorney_listings.id`), `client_id` (→ `households.id`), `status`, `granted_at`, `advisor_pdf_access`, `request_message`, **`matter_stage`**, **`client_status`**
+- **Purpose:** attorney access to household estate plan; **`matter_stage`** / **`client_status`** are firm workflow (do not mutate consumer data).
 - **FK migration:** `20260630100000_attorney_clients_fk_listing_household.sql` — aligns prod legacy FKs; adds `households_attorney_select` RLS.
-- **Consumer UI:** `/my-attorney` and `/settings/attorney-access` read active/accepted rows; revoke via `/api/attorney/revoke-access`.
+- **Collaboration migration:** `20260702120000` — workflow columns + **`attorney_notes`** + **`attorney_document_requests`**.
+- **Consumer UI:** `/my-attorney` and `/settings/attorney-access` read active/accepted rows; pending doc requests on `/my-attorney`; revoke via `/api/attorney/revoke-access`.
+
+### `attorney_notes`
+
+- **Key columns:** `attorney_listing_id`, `household_id`, `content`, `note_type` (`internal` | `meeting` | `follow_up`)
+- **Purpose:** firm-private notes — **not** visible to consumer.
+- **API:** `GET/POST/DELETE /api/attorney/notes`
+
+### `attorney_document_requests`
+
+- **Key columns:** `attorney_listing_id`, `household_id`, `document_type`, `message`, `status` (`pending` | `fulfilled` | `cancelled`), `requested_by`, `fulfilled_document_id`
+- **Purpose:** attorney requests a document from consumer; consumer notified in-app; consumer owns upload path (vault).
+- **API:** `GET/POST/PATCH /api/attorney/document-requests`
 
 ### `firms`
 

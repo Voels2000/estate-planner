@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
+import { ConsumerAttorneyDocumentRequests } from '@/components/attorney/ConsumerAttorneyDocumentRequests'
 
 type Connection = {
   connection_id: string
@@ -32,9 +33,20 @@ type PendingRequest = {
 type Props = {
   connections: Connection[]
   pendingRequests: PendingRequest[]
+  documentRequests?: Array<{
+    id: string
+    document_type: string
+    message: string | null
+    requested_at: string
+    attorney_listings?: { firm_name: string | null; contact_name: string | null } | null
+  }>
 }
 
-export default function MyAttorneyClient({ connections, pendingRequests }: Props) {
+export default function MyAttorneyClient({
+  connections,
+  pendingRequests,
+  documentRequests = [],
+}: Props) {
   const [revoking, setRevoking] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [cancelledIds, setCancelledIds] = useState<string[]>([])
@@ -105,6 +117,8 @@ export default function MyAttorneyClient({ connections, pendingRequests }: Props
           {error}
         </div>
       )}
+
+      <ConsumerAttorneyDocumentRequests initialRequests={documentRequests} />
 
       {/* Pending requests */}
       {activePending.length > 0 && (

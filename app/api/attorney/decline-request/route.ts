@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { NextResponse } from 'next/server'
+import { getAttorneyListingIdForUser } from '@/lib/attorney/attorneyClientCap'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,18 +24,21 @@ export async function POST(request: Request) {
     .eq('id', user.id)
     .single()
 
-  // Parse body
+  const attorneyListingId = await getAttorneyListingIdForUser(supabase, user.id)
+  if (!attorneyListingId) {
+    return NextResponse.json({ error: 'Attorney listing not found' }, { status: 404 })
+  }
+
   const { attorney_client_id } = await request.json()
   if (!attorney_client_id) {
     return NextResponse.json({ error: 'attorney_client_id is required' }, { status: 400 })
   }
 
-  // 4. Fetch the request row
   const { data: row, error: fetchError } = await admin
     .from('attorney_clients')
     .select('id, client_id')
     .eq('id', attorney_client_id)
-    .eq('attorney_id', user.id)
+    .eq('attorney_id', attorneyListingId)
     .eq('status', 'consumer_requested')
     .single()
 
@@ -42,7 +46,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Request not found' }, { status: 404 })
   }
 
-  // 5. Soft delete
+  const { data: household } = await admin
+    .from('households')
+    .select('owner_id')
+    .eq('id', row.client_id)
+    .single()
+
   const { error: updateError } = await admin
     .from('attorney_clients')
     .update({ status: 'removed' })
@@ -53,21 +62,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to decline request' }, { status: 500 })
   }
 
-  // 6. Notify consumer in-app (fire-and-forget)
+  if (household?.owner_id) {
+    await admin
+      .from('connection_requests')
+      .update({ status: 'cancelled' })
+      .eq('listing_type', 'attorney')
+      .eq('listing_id', attorneyListingId)
+      .eq('consumer_id', household.owner_id)
+      .eq('status', 'pending')
+  }
+
   const attorneyLabel = profile?.full_name?.trim() || 'The attorney'
-  ;(async () => {
-    try {
-      await admin.rpc('create_notification', {
-        p_user_id: row.client_id,
-        p_type: 'consumer_connection_declined',
-        p_title: 'Connection request declined',
-        p_body: `${attorneyLabel} was unable to take on new clients at this time.`,
-        p_delivery: 'in_app',
-        p_metadata: { attorney_client_id },
-        p_cooldown: '1 hour',
-      })
-    } catch {}
-  })()
+  const ownerId = household?.owner_id
+
+  if (ownerId) {
+    ;(async () => {
+      try {
+        await admin.rpc('create_notification', {
+          p_user_id: ownerId,
+          p_type: 'consumer_connection_declined',
+          p_title: 'Connection request declined',
+          p_body: `${attorneyLabel} was unable to take on new clients at this time.`,
+          p_delivery: 'in_app',
+          p_metadata: { attorney_client_id },
+          p_cooldown: '1 hour',
+        })
+      } catch {
+        // non-fatal
+      }
+    })()
+  }
 
   return NextResponse.json({ success: true })
 }

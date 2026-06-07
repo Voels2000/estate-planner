@@ -522,6 +522,7 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | **Attorney event referral** | `/event/[slug]?aref=` | Same tracker → `type: 'attorney'` → `attorney_listing_id` / `attorney_profile_id` |
 | **Advisor newsletter kit** | Advisor portal | `buildAllEventReferralUrls` — 24 `?ref=` links |
 | **Attorney newsletter kit** | Attorney portal `/attorney` | `buildAllAttorneyEventReferralUrls` — 24 `?aref=` links |
+| **Attorney collaboration** | `/attorney`, `/attorney/requests`, client detail | Matter workflow, firm notes, doc requests; **`PATCH /api/attorney/listing`**; consumer doc requests on **`/my-attorney`** |
 | **Signup attribution** | `/signup` after `signUp` + `signInWithPassword` (or `/waitlist` email capture when waitlist mode on) | `_signup-form.tsx` → `profiles` + `POST /api/analytics/funnel` (`account_created`); waitlist: `POST /api/email-capture` (`source: 'waitlist'`) |
 | **Waitlist (pre-launch)** | `/waitlist`; `/signup` redirected on Production by default | `lib/waitlist-mode.ts`, `middleware.ts`, `getSignupHref()`; flip via `PUBLIC_SIGNUP_OPEN=true` at go-live |
 | **Funnel analytics** | All public funnel steps | `captureFunnelEvent()` → `POST /api/analytics/funnel` → `funnel_events`; admin **Funnel** tab — 30-day step counts, tier conversion, slug/referral tables |

@@ -92,10 +92,35 @@ export default async function MyAttorneyPage() {
     }
   })
 
+  const { data: docRequests } = household
+    ? await supabase
+        .from('attorney_document_requests')
+        .select(
+          'id, document_type, message, requested_at, attorney_listings(firm_name, contact_name)',
+        )
+        .eq('household_id', household.id)
+        .eq('status', 'pending')
+        .order('requested_at', { ascending: false })
+    : { data: [] }
+
+  const shapedDocRequests = (docRequests ?? []).map((r) => {
+    const listing = Array.isArray(r.attorney_listings)
+      ? r.attorney_listings[0]
+      : r.attorney_listings
+    return {
+      id: r.id as string,
+      document_type: r.document_type as string,
+      message: (r.message as string | null) ?? null,
+      requested_at: r.requested_at as string,
+      attorney_listings: listing ?? null,
+    }
+  })
+
   return (
     <MyAttorneyClient
       connections={shapedConnections}
       pendingRequests={shapedPending}
+      documentRequests={shapedDocRequests}
     />
   )
 }

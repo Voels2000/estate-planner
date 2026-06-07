@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (ATG intake + Consumer MC parity)
+# Last updated: 2026-06-07 (attorney portal collaboration v2)
+
+---
+
+## Attorney portal collaboration v2 — consumer-owned data + firm workflow (2026-06-07)
+
+**Decision:** Expand attorney portal with collaboration and firm ops without mutating consumer estate data. **Read-only** estate/tax views unchanged; attorneys **upload** to **`legal_documents`** vault. Add **`matter_stage`** / **`client_status`** on **`attorney_clients`** (firm workflow only); **`attorney_notes`** (listing-scoped, never visible to consumer); **`attorney_document_requests`** (attorney asks → consumer notified on **`/my-attorney`**). Portal nav: Clients · Requests · Billing · Firm settings. Connection inbox wires existing accept/decline APIs; accept → **`active`** (advisor parity); claim-listing + directory connect create **`consumer_requested`** rows.
+
+**Files:** `app/(attorney)/` · `components/attorney/Attorney*Panel.tsx` · `app/api/attorney/{matter,notes,document-requests,listing}/` · `supabase/migrations/20260702120000_attorney_collaboration_workflow.sql`
 
 ---
 

@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-07 (ATG intake + Consumer MC parity)
+# Last updated: 2026-06-07 (attorney portal collaboration v2)
 
 ---
 
@@ -969,7 +969,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 | Advisor portal | `advisor/layout.tsx` | Advisor top bar + tabs | Navy, UX-2 |
 | Advisor tools | `(advisor-tools)/layout.tsx` | Prospect Mode bar | Minimal strip; canonical route `/prospect` |
 | Prospect PDF | `GET /api/advisor/prospect-pdf` | — | Print-to-PDF HTML; query params mirror prospect form |
-| Attorney portal | `(attorney)/layout.tsx` | Attorney header | Separate surface; no MWM wordmark today (future sprint) |
+| Attorney portal | `(attorney)/layout.tsx` + nav | Clients · Requests · Billing · Firm settings | Collaboration v2: matter workflow, doc requests, firm notes; consumer data read-only |
 | Public marketing | `(public)/layout.tsx` | `PublicNav` + footer | `/pricing`, `/assess`, `/`, etc. |
 | Education | `(public)/education/layout.tsx` | Education sticky header | Overrides `PublicNav` on `/education/*` |
 | Billing | `billing/layout.tsx` | `MinimalAuthNav` | Wordmark + back to dashboard |
@@ -1251,7 +1251,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 - **Referral:** `lib/events/referral.ts` — advisor `?ref=` (`buildAllEventReferralUrls`) and attorney `?aref=` (`buildAllAttorneyEventReferralUrls`) for all **24** slugs; `_referral-tracker.tsx` → `POST /api/referral/track` with `type: 'advisor' | 'attorney'`; `referral_clicks` with `listing_type`.
 - **Advisor portal:** `app/advisor/page.tsx` + `_advisor-client.tsx` **Newsletter Kit** (`?ref=`).
-- **Attorney portal (Sprint 8):** `app/(attorney)/attorney/page.tsx` + `_attorney-dashboard-client.tsx` **Newsletter Kit** (`?aref=`, blue styling).
+- **Attorney portal (Sprint 8 + v2 2026-06-07):** `app/(attorney)/attorney/` — dashboard, **`/requests`** (connection inbox), **`/settings`** (listing edit), **`/billing`**; client detail — matter workflow, firm notes, document requests, read-only estate view + document vault upload. APIs: **`/api/attorney/matter`**, **`notes`**, **`document-requests`**, **`listing`**. Consumer **`/my-attorney`** shows pending doc requests. Migration **`20260702120000`**. Newsletter kit (`?aref=`) unchanged.
 - **Plan readiness:** `PlanStatusCard` on advisor client Overview (`estate_health_scores.score` + gap counts; replaces `PlanReadinessCard`).
 - **Gap workflow (UX-2):** `advisor_gap_statuses` + `GapStatusSelector` on Overview gap rows; `GET`/`PATCH` `/api/advisor/gap-status`.
 - **GST ledger (pre-launch RLS):** `SLATILITPanel` → `POST /api/advisor/gst-entry` (advisor–client link check + service-role insert); not direct browser `gst_ledger` writes.

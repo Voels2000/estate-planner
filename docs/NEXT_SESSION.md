@@ -1,10 +1,20 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-07 (ATG intake + Consumer MC parity)
+# Last updated: 2026-06-07 (attorney portal collaboration v2)
 
 ---
 
-## ATG intake + Consumer MC parity — shipped ✅ (2026-06-07)
+## Attorney portal collaboration v2 — shipped ✅ (2026-06-07)
+
+**Shipped:** Portal nav (Clients · Requests · Billing · Firm settings); connection request inbox with accept/decline; matter workflow (`matter_stage`, `client_status` on `attorney_clients`); firm-private **`attorney_notes`**; **`attorney_document_requests`** with consumer notifications on My Attorney; listing edit via **`PATCH /api/attorney/listing`**. Consumer estate data stays read-only; attorneys upload to document vault.
+
+**Migration:** `20260702120000_attorney_collaboration_workflow.sql`
+
+**Fixes:** Claim-listing + directory connect create `attorney_clients` `consumer_requested`; accept goes directly to `active` (parity with advisor); decline uses listing id FK.
+
+**Next:** Apply migration; Stripe attorney price IDs for billing.
+
+---
 
 **ATG (IRC §2001(b)):** Gifting tab **`AdjustedTaxableGiftsSection`** (`components/gifting/`) — CRUD via **`GET/POST/PATCH/DELETE /api/consumer/adjusted-taxable-gifts`**. Distinct from Form 709 prior gifts in **`gift_history`**. Migration **`20260701120000`** restores ATG sum in **`calculate_estate_composition`**; **`EstateCompositionCard`** shows add-back when &gt; 0.
 

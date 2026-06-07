@@ -3,6 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 import EstateTaxClient, { type EstateTaxTrustRow } from '@/app/(dashboard)/estate-tax/_estate-tax-client'
 import EstatePlanningDashboard from '@/components/EstatePlanningDashboard'
 import { AttorneyClientVault } from '../../_attorney-client-vault'
+import { AttorneyClientWorkflowPanel } from '@/components/attorney/AttorneyClientWorkflowPanel'
+import { AttorneyNotesPanel } from '@/components/attorney/AttorneyNotesPanel'
+import { AttorneyDocumentRequestsPanel } from '@/components/attorney/AttorneyDocumentRequestsPanel'
+import type { AttorneyClientStatus, AttorneyMatterStage } from '@/lib/attorney/matterWorkflow'
 import { loadEstatePlanningDashboard } from '@/lib/estate/loadEstatePlanningDashboard'
 import { getMissingDocumentAlerts } from '@/lib/attorney/getMissingDocumentAlerts'
 import { attorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
@@ -29,7 +33,7 @@ export default async function AttorneyClientPage({
 
   const { data: connection } = await supabase
     .from('attorney_clients')
-    .select('id, granted_at')
+    .select('id, granted_at, matter_stage, client_status')
     .eq('attorney_id', attorneyListing.id)
     .eq('client_id', household_id)
     .in('status', ['active', 'accepted'])
@@ -110,6 +114,25 @@ export default async function AttorneyClientPage({
 
   const estatePlanningDashboard = await loadEstatePlanningDashboard(supabase, household_id)
 
+  const { data: notes } = await supabase
+    .from('attorney_notes')
+    .select('id, content, note_type, created_at')
+    .eq('attorney_listing_id', attorneyListing.id)
+    .eq('household_id', household_id)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  const { data: docRequests } = await supabase
+    .from('attorney_document_requests')
+    .select('id, document_type, message, status, requested_at')
+    .eq('attorney_listing_id', attorneyListing.id)
+    .eq('household_id', household_id)
+    .order('requested_at', { ascending: false })
+    .limit(20)
+
+  const matterStage = (connection.matter_stage ?? 'intake') as AttorneyMatterStage
+  const clientStatus = (connection.client_status ?? 'active') as AttorneyClientStatus
+
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between">
@@ -126,9 +149,23 @@ export default async function AttorneyClientPage({
           </p>
         </div>
         <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 rounded-full font-medium">
-          👁 Read-only view
+          👁 Client-owned data · read-only view
         </span>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <AttorneyClientWorkflowPanel
+          householdId={household_id}
+          initialMatterStage={matterStage}
+          initialClientStatus={clientStatus}
+        />
+        <AttorneyNotesPanel householdId={household_id} initialNotes={notes ?? []} />
+      </div>
+
+      <AttorneyDocumentRequestsPanel
+        householdId={household_id}
+        initialRequests={docRequests ?? []}
+      />
 
       {household?.id && (
         <EstatePlanningDashboard

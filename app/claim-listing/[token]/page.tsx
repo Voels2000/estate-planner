@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
+import { ensureAttorneyClientRequestRow } from '@/lib/attorney/createAttorneyClientRequest'
 
 interface Props {
   params: Promise<{ token: string }>
@@ -67,8 +68,7 @@ export default async function ClaimListingPage({ params }: Props) {
       .eq('id', listing.id)
   }
 
-  // 7. For advisor-type: migrate into advisor_clients as consumer_requested
-  //    For attorney-type: the connection_request row itself is the record — no separate clients table yet
+  // 7. Migrate into clients table as consumer_requested
   if (!isAttorney) {
     const { data: existingRow } = await admin
       .from('advisor_clients')
@@ -86,6 +86,12 @@ export default async function ClaimListingPage({ params }: Props) {
         request_message: connectionRequest.message,
       })
     }
+  } else {
+    await ensureAttorneyClientRequestRow(admin, {
+      attorneyListingId: listing.id,
+      consumerUserId: connectionRequest.consumer_id,
+      requestMessage: connectionRequest.message,
+    })
   }
 
   // 8. Mark connection request as accepted
@@ -118,5 +124,5 @@ export default async function ClaimListingPage({ params }: Props) {
     })
   }
 
-  redirect(isAttorney ? '/attorney?claimed=true' : '/advisor?claimed=true')
+  redirect(isAttorney ? '/attorney/requests?claimed=true' : '/advisor?claimed=true')
 }

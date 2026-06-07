@@ -22,6 +22,8 @@ type ClientCard = {
   missing_docs?: string
   estate_value?: number
   last_updated?: string | null
+  matter_stage?: string
+  client_status?: string
 }
 
 type IntakeRequestRow = {
@@ -520,6 +522,16 @@ Attorney ref: ${referralCode}`
                       <span className="flex items-center gap-1 text-xs text-neutral-500">
                         <span className="text-xs">📍</span>
                         {client.state}
+                      </span>
+                    )}
+                    {client.matter_stage && client.matter_stage !== 'intake' && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium capitalize">
+                        {client.matter_stage.replace('_', ' ')}
+                      </span>
+                    )}
+                    {client.client_status && client.client_status !== 'active' && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 font-medium">
+                        {client.client_status.replace('_', ' ')}
                       </span>
                     )}
                     {client.complexity_flag && (

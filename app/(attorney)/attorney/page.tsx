@@ -42,7 +42,9 @@ export default async function AttorneyDashboardPage() {
           client_id,
           status,
           granted_at,
-          advisor_pdf_access
+          advisor_pdf_access,
+          matter_stage,
+          client_status
         `)
         .eq('attorney_id', attorneyListing.id)
         .in('status', ['active', 'accepted'])
@@ -129,6 +131,8 @@ export default async function AttorneyDashboardPage() {
       missing_docs: summarizeMissingDocs(clientDocs),
       estate_value: estateValue,
       last_updated: client.granted_at,
+      matter_stage: client.matter_stage ?? 'intake',
+      client_status: client.client_status ?? 'active',
     }
   })
 

@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { randomUUID } from 'crypto'
 import { getAppUrl } from '@/lib/app-url'
+import { ensureAttorneyClientRequestRow } from '@/lib/attorney/createAttorneyClientRequest'
 
 export const dynamic = 'force-dynamic'
 
@@ -85,6 +86,14 @@ export async function POST(request: Request) {
   if (insertError || !requestRow) {
     console.error('Insert error:', insertError)
     return NextResponse.json({ error: 'Failed to send request' }, { status: 500 })
+  }
+
+  if (listing.profile_id) {
+    await ensureAttorneyClientRequestRow(admin, {
+      attorneyListingId: listing.id,
+      consumerUserId: user.id,
+      requestMessage: message.trim(),
+    })
   }
 
   // 8. Fire email + notifications (fire-and-forget)

@@ -2,8 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { NextResponse } from 'next/server'
-import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
 import { resend } from '@/lib/resend'
+import { getAppUrl } from '@/lib/app-url'
 import {
   countActiveAttorneyClients,
   FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
@@ -41,13 +41,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE }, { status: 403 })
   }
 
-  // Parse body
   const { attorney_client_id } = await request.json()
   if (!attorney_client_id) {
     return NextResponse.json({ error: 'attorney_client_id is required' }, { status: 400 })
   }
 
-  // 4. Fetch the request row
   const { data: row, error: fetchError } = await admin
     .from('attorney_clients')
     .select('id, client_id, status')
@@ -60,28 +58,34 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Request not found' }, { status: 404 })
   }
 
-  // 5. Fetch consumer profile
-  const { data: consumer } = await admin
-    .from('profiles')
-    .select('email, full_name')
+  const { data: household } = await admin
+    .from('households')
+    .select('owner_id')
     .eq('id', row.client_id)
     .single()
+
+  const { data: consumer } = household?.owner_id
+    ? await admin
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', household.owner_id)
+        .single()
+    : { data: null }
 
   if (!consumer?.email) {
     return NextResponse.json({ error: 'Consumer profile not found' }, { status: 404 })
   }
 
-  // 6. Generate invite token
-  const token = generateInviteToken()
-  const expiresAt = tokenExpiresAt()
-
-  // 7. Update row to pending + store token
   const { error: updateError } = await admin
     .from('attorney_clients')
     .update({
-      status: 'pending',
-      invite_token: token,
-      invite_expires_at: expiresAt.toISOString(),
+      status: 'active',
+      granted_at: new Date().toISOString(),
+      granted_by: user.id,
+      invite_token: null,
+      invite_expires_at: null,
+      matter_stage: 'intake',
+      client_status: 'active',
     })
     .eq('id', row.id)
 
@@ -90,17 +94,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to accept request' }, { status: 500 })
   }
 
-  // 8. Send invite email
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const acceptUrl = `${appUrl}/attorney-invite/${token}`
+  await admin
+    .from('connection_requests')
+    .update({ status: 'accepted' })
+    .eq('listing_type', 'attorney')
+    .eq('listing_id', attorneyListingId)
+    .eq('consumer_id', household!.owner_id)
+    .eq('status', 'pending')
+
   const attorneyLabel = profile?.full_name?.trim() || 'Your attorney'
+  const appUrl = getAppUrl()
 
   ;(async () => {
     try {
       await resend.emails.send({
         from: 'MyWealthMaps <noreply@mywealthmaps.com>',
         headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
-        tags: [{ name: 'category', value: 'attorney_invite' }],
+        tags: [{ name: 'category', value: 'attorney_accept' }],
         to: consumer.email,
         subject: `${attorneyLabel} accepted your connection request`,
         html: `
@@ -108,20 +118,30 @@ export async function POST(request: Request) {
             <h1 style="color:#1a1a2e;font-size:24px">MyWealthMaps</h1>
             <p style="color:#6b7280;font-size:14px">Financial, Retirement &amp; Estate Planning in One Place</p>
             <div style="background:#f9fafb;border-radius:8px;padding:32px;margin:24px 0">
-              <h2 style="color:#1a1a2e;font-size:20px;margin-top:0">Your request was accepted</h2>
-              <p style="color:#374151;font-size:16px;line-height:1.6"><strong>${attorneyLabel}</strong> has accepted your request to connect on MyWealthMaps.</p>
-              <p style="color:#374151;font-size:16px;line-height:1.6">Click below to confirm the connection and get started.</p>
+              <h2 style="color:#1a1a2e;font-size:20px;margin-top:0">You're now connected</h2>
+              <p style="color:#374151;font-size:16px;line-height:1.6"><strong>${attorneyLabel}</strong> has accepted your connection request and can now view your estate data (read-only) and collaborate on documents.</p>
+              <p style="color:#374151;font-size:16px;line-height:1.6">You retain ownership of your data and can revoke access anytime in My Attorney.</p>
               <div style="text-align:center;margin:32px 0">
-                <a href="${acceptUrl}" style="background:#2563eb;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">Accept Invitation</a>
+                <a href="${appUrl}/my-attorney" style="background:#2563eb;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">Manage attorney access</a>
               </div>
-              <p style="color:#6b7280;font-size:14px;text-align:center">This link expires in 7 days.</p>
             </div>
-            <p style="color:#9ca3af;font-size:12px;text-align:center">If you did not expect this email, you can safely ignore it.</p>
           </div>
         `,
       })
+
+      if (household?.owner_id) {
+        await admin.rpc('create_notification', {
+          p_user_id: household.owner_id,
+          p_type: 'attorney_connection_accepted',
+          p_title: 'Attorney connected',
+          p_body: `${attorneyLabel} accepted your connection request.`,
+          p_delivery: 'in_app',
+          p_metadata: { attorney_client_id: row.id },
+          p_cooldown: '1 hour',
+        })
+      }
     } catch (err) {
-      console.error('Invite email error:', err)
+      console.error('Accept notification error:', err)
     }
   })()
 

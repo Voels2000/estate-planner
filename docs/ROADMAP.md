@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-07 (ATG intake + Consumer MC parity)
+# Last updated: 2026-06-07 (attorney portal collaboration v2)
 
 ---
 
@@ -153,6 +153,7 @@
 | **Titling list virtualization** | `[x]` — `VirtualTitlingCardList` + `@tanstack/react-virtual` (threshold 20) |
 | **ATG intake + composition** | `[x]` — gifting tab section + `/api/consumer/adjusted-taxable-gifts` + RPC `20260701120000` |
 | **Consumer MC full parity** | `[x]` — 7 advisor assumption fields on `/monte-carlo` |
+| **Attorney portal collaboration v2** | `[x]` — requests inbox, matter workflow, doc requests, firm notes, settings |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
 **Recent commits (2026-06-05 → 07):** `8f7df08` · `a5b93e3` · `004c591` · `556e773` · `ca0bd00` · `adb7e88` · `9440315` · `284e569` · `23584f3` · `72fb91d` · `1649b77` · `fde50cc`

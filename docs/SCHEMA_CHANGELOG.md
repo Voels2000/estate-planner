@@ -1463,6 +1463,11 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 - Engine: active consumer SLAT/ILIT rows flow through existing `outside_strategy_items` / `outside_strategy_total` aggregation in `calculate_estate_composition` (no RPC change).
 - Types: `StrategyLineItemSource` includes `slat` in `lib/estate/types.ts` (`ilit` was already present).
 
+## Session 124 Note
+
+- Schema: migration **`20260702120000_attorney_collaboration_workflow.sql`** — **`attorney_clients.matter_stage`**, **`client_status`**, **`request_message`**; tables **`attorney_notes`**, **`attorney_document_requests`** + RLS.
+- Application-layer — Attorney portal v2: nav + **`/attorney/requests`**, **`/attorney/settings`**; client detail workflow panels; **`accept-request`** → direct **`active`**; claim-listing + **`request-connect`** create **`consumer_requested`**; consumer doc requests on **`/my-attorney`**.
+
 ## Session 123 Note
 
 - Schema: migration **`20260701120000_restore_atg_in_calculate_estate_composition.sql`** — restore **`v_atg`** sum from **`adjusted_taxable_gifts`**; add to **`taxable_estate`**; return **`adjusted_taxable_gifts`** in RPC JSON (reverses Session 121 Step 7B removal).
