@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function MfaEnrollPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+  const requiredPrivileged = searchParams.get('required') === 'privileged'
+  const redirectTo = searchParams.get('redirectTo')
 
   const [factorId, setFactorId] = useState('')
   const [qrCode, setQrCode] = useState('')
@@ -49,7 +52,11 @@ export default function MfaEnrollPage() {
         setLoading(false)
         return
       }
-      router.push('/settings/security?mfa=enabled')
+      router.push(
+        redirectTo && redirectTo.startsWith('/')
+          ? redirectTo
+          : '/settings/security?mfa=enabled',
+      )
       router.refresh()
     } catch {
       setError('Something went wrong. Please try again.')
@@ -83,9 +90,26 @@ export default function MfaEnrollPage() {
             color: '#0f1f3d', marginBottom: 6,
           }}>Set Up Two-Factor Authentication</h1>
           <p style={{ fontSize: 13, color: '#718096', lineHeight: 1.6 }}>
-            Scan the QR code with your authenticator app, then enter
-            the 6-digit code to confirm.
+            {requiredPrivileged
+              ? 'Your account requires two-factor authentication before you can continue. Scan the QR code with your authenticator app, then enter the 6-digit code.'
+              : 'Scan the QR code with your authenticator app, then enter the 6-digit code to confirm.'}
           </p>
+          {requiredPrivileged ? (
+            <p
+              style={{
+                marginTop: 10,
+                fontSize: 12,
+                color: '#92400e',
+                background: '#fffbeb',
+                border: '1px solid #fcd34d',
+                borderRadius: 6,
+                padding: '8px 10px',
+              }}
+            >
+              Required for admin, advisor, and attorney accounts when privileged MFA is enabled in
+              production.
+            </p>
+          ) : null}
         </div>
 
         {enrolling && (

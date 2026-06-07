@@ -11,6 +11,7 @@ import {
 } from '@/lib/import/reviewTypeHelpers'
 import { CANONICAL_PROPERTY_TYPES } from '@/lib/import/type-normalizer'
 import { SupportedFormats } from './_SupportedFormats'
+import { CustodianExportGuides } from './_CustodianExportGuides'
 
 type IngestionJob = {
   id: string
@@ -443,6 +444,7 @@ export function ImportClient({
       {step === 'upload' && (
         <>
           <SupportedFormats />
+          <CustodianExportGuides />
           <div className="mb-4 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
             <p className="text-xs font-medium text-neutral-600">Start from a template</p>
             <p className="mt-1 text-xs text-neutral-500">

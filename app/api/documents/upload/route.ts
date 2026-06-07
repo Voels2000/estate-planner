@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyAttorneyHouseholdAccess } from '@/lib/attorney/verifyAttorneyHouseholdAccess'
+import { resolveAttorneyProfileId } from '@/lib/attorney/resolveAttorneyProfileId'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -54,16 +56,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
   } else if (callerRole === 'attorney') {
-    // Attorney must have active connection to this household
-    const { data: connection } = await supabase
-      .from('attorney_clients')
-      .select('id')
-      .eq('attorney_id', user.id)
-      .eq('client_id', household_id)
-      .in('status', ['active', 'accepted'])
-      .maybeSingle()
-
-    if (!connection) {
+    const access = await verifyAttorneyHouseholdAccess(supabase, user.id, household_id)
+    if (!access.ok) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
   } else {
@@ -175,14 +169,17 @@ export async function POST(req: NextRequest) {
     } else {
       // Consumer uploaded — notify attorney if one is linked
       if (attorney_id) {
-        await supabase.from('notifications').insert({
-          user_id: attorney_id,
-          type: 'consumer_document_uploaded',
-          title: 'Client uploaded a document',
-          body: `${uploaderProfile?.full_name ?? 'Your client'} uploaded a new ${document_type.replace(/_/g, ' ')} document to their vault.`,
-          delivery: 'in_app',
-          read: false,
-        })
+        const attorneyProfileId = await resolveAttorneyProfileId(supabase, attorney_id)
+        if (attorneyProfileId) {
+          await supabase.from('notifications').insert({
+            user_id: attorneyProfileId,
+            type: 'consumer_document_uploaded',
+            title: 'Client uploaded a document',
+            body: `${uploaderProfile?.full_name ?? 'Your client'} uploaded a new ${document_type.replace(/_/g, ' ')} document to their vault.`,
+            delivery: 'in_app',
+            read: false,
+          })
+        }
       }
     }
   } catch (notifyError) {

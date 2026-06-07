@@ -40,6 +40,8 @@
     "cleanup:purge": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --purge-unprotected",
     "cleanup:purge:dry-run": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --purge-unprotected --dry-run",
     "repair:orphaned-user": "dotenv -e .env.local -- npx tsx scripts/repair-orphaned-auth-user.ts",
+    "repair:attorney-fks": "dotenv -e .env.local -- npx tsx scripts/repair-attorney-client-fks.ts",
+    "repair:attorney-fks:dry-run": "dotenv -e .env.local -- npx tsx scripts/repair-attorney-client-fks.ts --dry-run",
     "verify:deletion": "dotenv -e .env.local -- npx tsx scripts/verify-deletion.ts",
     "sync:voels-demo": "dotenv -e .env.local -- npx tsx scripts/sync-voels-demo-accounts.ts",
     "verify:estate": "dotenv -e .env.local -- npx tsx scripts/verify-estate-suite.ts",

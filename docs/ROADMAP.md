@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-07 (admin deletion email lookup)
+# Last updated: 2026-06-07 (competitive scan H1–H4, GitHub E2E smoke)
 
 ---
 
@@ -161,6 +161,7 @@
 | **E2E Johnson → advisor-client** | `[x]` — `e2e-advisor-client@`; Playwright `.auth/advisor-client.json` |
 | **Go-live auth purge** | `[x]` — `npm run cleanup:purge`; 10 prod accounts; `deleteUser` table coverage |
 | **Admin deletion email lookup** | `[x]` — Execute tab Look up → UUID; shortcuts from schedule/privacy |
+| **Competitive scan H1–H4** | `[x]` — attorney FKs, import Phase A, e2e-smoke workflow, privileged MFA flag |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
 **Recent commits (2026-06-05 → 07):** `bff7ecd` · `9488024` · `996a087` · `4d22809`
@@ -1490,6 +1491,8 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 ---
 
 ## Backlog (not yet scheduled — confirmed post-launch)
+
+**Competitive gap backlog (prioritized):** [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) — H1–H4 shipped 2026-06-07; enable GitHub E2E pre-go-live; medium/low items remain.
 
 The following items are explicitly deferred to post-launch. Each has a DECISION_LOG entry
 (see DECISION_LOG.md) documenting the reasoning.

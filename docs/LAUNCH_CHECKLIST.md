@@ -75,6 +75,7 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **Pre-launch E2E baseline (profile + growth API, 2026-05-27)** — `consumer-profile-spouse-layout.spec.ts` (4 tests: section headers, live person1 header, spouse toggle + live spouse header, `sm:grid-cols-2`); `consumer-growth-assumptions-api.spec.ts` (empty-body 400 always; round-trip PATCH + revert when `PLAYWRIGHT_HOUSEHOLD_ID` set). Run: `npx dotenv -e .env.test -- npx playwright test tests/e2e/consumer/consumer-profile-spouse-layout.spec.ts tests/e2e/consumer/consumer-growth-assumptions-api.spec.ts --project=consumer --workers=1`. Enable skipped round-trip: `npm run seed:e2e` → copy `PLAYWRIGHT_HOUSEHOLD_ID` to `.env.test` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)).
 - [x] **Post-deploy partial PATCH smoke (inline profile prompts, 2026-05-27)** — verified on production (SS + retirement/longevity). Third case (custom deduction) + UI prompts: `npm run test:e2e:go-live-profile`.
 - [ ] **Go-live pre-flight (final gate before `PUBLIC_SIGNUP_OPEN`)** — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md): `npm run test:e2e:go-live-profile` then `npm run test:e2e:consumer -- --workers=1`. Then [Prospect + Mobile manual smoke](#prospect--mobile-review-mode-manual-smoke-2026-05-29) (Track 1 before Track 2).
+- [ ] **GitHub Actions E2E smoke enabled (pre-go-live)** — Turn on **before** open signups so every push/PR to `main` runs profile + security smoke against production Supabase. [Step-by-step checklist below](#github-actions-e2e-smoke-pre-go-live).
 - [x] **Extended smoke test written (Sprint 13)** — CONSUMER_RELEASE_SMOKE_TEST.md acquisition &
   attribution sections A–G (`?ref=`, `?aref=`, signup attribution, drip step 1, event slugs,
   life-event-on-connect)
@@ -233,6 +234,53 @@ Complete before flipping Supabase Auth or `PUBLIC_SIGNUP_OPEN`:
 - [ ] **Email aliases** — privacy@, security@, legal@ forwarding to monitored inbox
 - [ ] **Stripe Dashboard** — `invoice.upcoming` webhook enabled; Customer Portal cancellation enabled; receipt emails on
 - [ ] **C-4 manual walkthrough** — signup → paid → receipt → self-serve cancel ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md))
+- [ ] **GitHub Actions E2E smoke** — complete [GitHub Actions E2E smoke (pre-go-live)](#github-actions-e2e-smoke-pre-go-live) before go-live day (blocks silent regressions on `main`)
+
+#### GitHub Actions E2E smoke (pre-go-live)
+
+Enable **before** flipping `PUBLIC_SIGNUP_OPEN` — not on go-live day. Workflow: `.github/workflows/e2e-smoke.yml` (off until repo variable is set).
+
+**1. Seed E2E fixtures on production Supabase**
+
+```bash
+npm run seed:e2e
+```
+
+Copy the printed block — you need at least `PLAYWRIGHT_HOUSEHOLD_ID` for GitHub secrets. See [E2E_TEST_RESET.md](./E2E_TEST_RESET.md).
+
+**2. GitHub → Settings → Secrets and variables → Actions → Secrets**
+
+| Secret | Value |
+|--------|--------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Production Supabase URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Production service role key |
+| `PLAYWRIGHT_HOUSEHOLD_ID` | From `npm run seed:e2e` output |
+
+Optional (defaults to canonical `@mywealthmaps.test` accounts if omitted):
+
+| Secret | Default if omitted |
+|--------|---------------------|
+| `PLAYWRIGHT_CONSUMER_EMAIL` | `e2e-consumer@mywealthmaps.test` |
+| `PLAYWRIGHT_CONSUMER_PASSWORD` | `E2eTest!2026Mwm` |
+| `PLAYWRIGHT_ADVISOR_EMAIL` | `e2e-advisor@mywealthmaps.test` |
+| `PLAYWRIGHT_ADVISOR_PASSWORD` | `E2eTest!2026Mwm` |
+
+**3. GitHub → Settings → Secrets and variables → Actions → Variables**
+
+| Variable | Value |
+|----------|--------|
+| `E2E_SMOKE_IN_CI` | `true` |
+
+**4. Verify**
+
+- **Actions → E2E smoke → Run workflow** → job **e2e-smoke** green
+- Push to `main` or open a PR → same workflow runs automatically
+- `REQUIRE_PRIVILEGED_MFA` stays **`false`** in CI (set in workflow) — do not enable privileged MFA in GitHub env
+
+**What runs:** `npm run build` → local app at `http://127.0.0.1:3000` → `test:e2e:go-live-profile` + `test:e2e:security-smoke` (same Supabase project as production seeds).
+
+**Also run locally against production** before go-live: [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (`PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com` in `.env.test`).
 
 #### Pre-go-live — keep Supabase Auth settings OFF
 
@@ -268,6 +316,7 @@ In **Authentication → Settings**:
 **3. Flip `PUBLIC_SIGNUP_OPEN` in Vercel Production**
 
 - [ ] Vercel → Settings → Environment Variables → Production → `PUBLIC_SIGNUP_OPEN` = `true`
+- [ ] **Same pass:** set `REQUIRE_PRIVILEGED_MFA` = `true` (mandatory TOTP for admin/advisor/attorney). Keep **`false`** in Preview, `.env.test`, and CI (`E2E_SMOKE_IN_CI`) so Playwright and local dev are not blocked.
 - [ ] **Redeploy** (required after Production env change)
 
 **4. Verify signup surfaces**
@@ -319,6 +368,8 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 | `WAITLIST_MODE` | `middleware.ts` + server signup redirect | Optional — default on in Production |
 | `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` CTAs | Optional — redeploy when changed |
 | `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | **Pending** — legal review + C-4 manual verify + Stripe production |
+| `REQUIRE_PRIVILEGED_MFA` | Mandatory TOTP for admin/advisor/attorney | **Pending** — flip `true` with `PUBLIC_SIGNUP_OPEN` on go-live; keep **false** in test/CI |
+| `E2E_SMOKE_IN_CI` | GitHub Actions repo variable — PR/push E2E smoke | **Pending** — set `true` [pre-go-live](#github-actions-e2e-smoke-pre-go-live); keep privileged MFA off in workflow |
 | `COMPLIANCE_EMAIL` | `/api/cron/compliance-reminders` ops alerts (overdue deletions, WCPA SLAs) | ✅ `avoels@comcast.net` (2026-05-25) |
 
 **Checklist (Production environment only):**
@@ -332,6 +383,7 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 - [x] `SUPABASE_SERVICE_ROLE_KEY` → confirmed set (2026-05-24)
 - [x] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → **not needed**; Search Console verified via Cloudflare (2026-05-24)
 - [ ] **Open signups:** set `PUBLIC_SIGNUP_OPEN=true` → redeploy → confirm `/signup` open (go-live day — after legal + C-4 manual verify)
+- [ ] **GitHub E2E smoke:** `E2E_SMOKE_IN_CI=true` + secrets configured → green manual workflow run ([§ GitHub Actions E2E smoke](#github-actions-e2e-smoke-pre-go-live))
 
 **Not required in Vercel Production:**
 
@@ -703,6 +755,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 | **LEGAL_TODO.md** | You | Counsel handoff + one-commit legal update — [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
 | **Stripe Phase 1 (test mode)** | You | [§ Stripe Setup — Phase 1](./LAUNCH_CHECKLIST.md#phase-1--test-mode-sandbox--complete-before-live-keys) — 6 prices + preview env + webhook |
 | **C-4 manual walkthrough** | You | [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) on preview |
+| **GitHub E2E smoke (pre-go-live)** | You | [§ GitHub Actions E2E smoke](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live) — `E2E_SMOKE_IN_CI=true` + secrets before open signups |
 | **Stripe Phase 2 (live mode)** | You | [§ Stripe Setup — Phase 2](./LAUNCH_CHECKLIST.md#phase-2--live-mode-production--go-live-day-only) — go-live day only |
 | **Go-live day ops** | You | Supabase Auth ON → verify callback → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke |
 | **Drip step 2 check** | Ops | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` |
@@ -714,6 +767,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 
 | Date | Sprint | Notes |
 |------|--------|-------|
+| 2026-06-07 | Competitive scan H1–H4 | **Closed** — attorney FK alignment, custodian import Phase A, `e2e-smoke.yml`, `REQUIRE_PRIVILEGED_MFA` flag; pre-launch GitHub E2E checklist |
 | 2026-05-30 | PDF exemption + alert dedupe | **Closed** — page 3 uses `currentFederalExemption()`; `dedupeActionItems()` for duplicate alerts |
 | 2026-05-30 | PDF export path wiring | **Closed** — shared `loadAdvisorExportWiring`; API `?type=report`; header Export estate report + Meeting brief split |
 | 2026-05-30 | PDF narrative engine | **Closed** — rule-based cover + action items; `fetchNarrativePdfFields` parallel fetch; Meeting Prep top alerts; manual smoke checklist added |

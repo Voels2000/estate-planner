@@ -3,6 +3,9 @@ import { E2E_DEFAULT_BASE_URL } from './scripts/e2e-test-identities'
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? E2E_DEFAULT_BASE_URL
 
+const useLocalWebServer =
+  baseURL.includes('127.0.0.1') || baseURL.includes('localhost')
+
 const hasTier1Consumer =
   Boolean(process.env.PLAYWRIGHT_CONSUMER_TIER1_EMAIL) &&
   Boolean(process.env.PLAYWRIGHT_CONSUMER_TIER1_PASSWORD)
@@ -62,7 +65,7 @@ const projects: Project[] = [
   {
     name: 'import-unit',
     testDir: './tests/unit',
-    testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|simpleRateLimit|waitlist-mode|roth-analysis).*\.spec\.ts/,
+    testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|simpleRateLimit|waitlist-mode|roth-analysis|privilegedMfaPolicy).*\.spec\.ts/,
     use: {
       baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     },
@@ -100,4 +103,12 @@ export default defineConfig({
     ...devices['Desktop Chrome'],
   },
   projects,
+  webServer: useLocalWebServer
+    ? {
+        command: 'npm run start',
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      }
+    : undefined,
 })

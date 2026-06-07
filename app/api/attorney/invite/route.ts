@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { getAttorneyListingIdForUser } from '@/lib/attorney/attorneyClientCap'
 import { resend } from '@/lib/resend'
 import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
 
@@ -32,11 +33,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
+    const listingId = await getAttorneyListingIdForUser(supabase, user.id)
+    if (!listingId) {
+      return NextResponse.json({ error: 'Attorney listing not found' }, { status: 404 })
+    }
+
     // Check for existing pending invite
     const { data: existing } = await supabase
       .from('attorney_clients')
       .select('id, status')
-      .eq('attorney_id', user.id)
+      .eq('attorney_id', listingId)
       .eq('invited_email', invitedEmail)
       .eq('status', 'pending')
       .maybeSingle()
@@ -53,7 +59,7 @@ export async function POST(request: Request) {
     const { error: insertError } = await supabase
       .from('attorney_clients')
       .insert({
-        attorney_id: user.id,
+        attorney_id: listingId,
         invited_email: invitedEmail,
         status: 'pending',
         created_at: new Date().toISOString(),

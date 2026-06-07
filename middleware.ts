@@ -5,6 +5,11 @@ import {
   isWaitlistMode,
   shouldBypassWaitlistForSignup,
 } from '@/lib/waitlist-mode'
+import {
+  isPrivilegedMfaEnforcementEnabled,
+  profileRequiresPrivilegedMfa,
+  userHasVerifiedTotpFactor,
+} from '@/lib/security/privilegedMfaPolicy'
 
 /** Crawlable SEO + static infra — never auth-gated or redirected. */
 const INFRA_BYPASS_PATHS = [
@@ -37,6 +42,7 @@ const PUBLIC_PATHS = [
   '/event',
   '/mfa-enroll',
   '/mfa-challenge',
+  '/settings/security',
   '/education',
   '/intake',
 ]
@@ -169,6 +175,31 @@ export async function middleware(request: NextRequest) {
   const isFirmMember = profile?.firm_role === 'member'
   if (isAdvisor && !isSuperuser && !isFirmMember && !hasActiveSubscription) {
     return redirectPreservingCookies(request, '/billing', supabaseResponse)
+  }
+
+  // Mandatory MFA for privileged roles — off until go-live (REQUIRE_PRIVILEGED_MFA=true)
+  if (
+    isPrivilegedMfaEnforcementEnabled() &&
+    profile &&
+    profileRequiresPrivilegedMfa(profile) &&
+    !isMfaFlowPath
+  ) {
+    const hasTotp = await userHasVerifiedTotpFactor(supabase)
+    if (!hasTotp) {
+      const enrollUrl = new URL('/mfa-enroll', request.url)
+      enrollUrl.searchParams.set('required', 'privileged')
+      enrollUrl.searchParams.set('redirectTo', pathname)
+      return redirectPreservingCookies(
+        request,
+        enrollUrl.pathname + enrollUrl.search,
+        supabaseResponse,
+      )
+    }
+  }
+
+  // Admin portal — role guard (layout also checks isAdmin)
+  if (pathname.startsWith('/admin') && !isSuperuser) {
+    return redirectPreservingCookies(request, '/dashboard', supabaseResponse)
   }
 
   // Check 2 — attorney route guards only (superusers may access all portals)

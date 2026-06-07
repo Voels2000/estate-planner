@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { resolveAttorneyProfileId } from '@/lib/attorney/resolveAttorneyProfileId'
+import { resolveConsumerHouseholdId } from '@/lib/attorney/verifyAttorneyHouseholdAccess'
 
 interface Props {
   params: Promise<{ token: string }>
@@ -25,17 +27,23 @@ export default async function AttorneyInvitePage({ params }: Props) {
 
   if (user) {
     const admin = createAdminClient()
+    const householdId = await resolveConsumerHouseholdId(admin, user.id)
+
+    if (!householdId) {
+      redirect('/dashboard?attorney_invite=missing_household')
+    }
+
     const { error: acceptError } = await admin
       .from('attorney_clients')
       .update({
-        client_id: user.id,
+        client_id: householdId,
         status: 'accepted',
         billing_transferred: false,
       })
       .eq('id', invite.id)
 
     if (!acceptError) {
-      const attorneyId = invite.attorney_id
+      const attorneyProfileId = await resolveAttorneyProfileId(admin, invite.attorney_id)
       const clientId = user.id
 
       after(() => {
@@ -43,25 +51,25 @@ export default async function AttorneyInvitePage({ params }: Props) {
 
         ;(async () => {
           try {
-            // 1. Notify attorney
-            await admin.rpc('create_notification', {
-              p_user_id: attorneyId,
-              p_type: 'client_accepted_invite',
-              p_title: 'A client accepted your invitation',
-              p_body: 'A new client has accepted your invitation and is now linked to your account.',
-              p_delivery: 'both',
-              p_metadata: { client_id: clientId },
-              p_cooldown: '1 hour',
-            })
+            if (attorneyProfileId) {
+              await admin.rpc('create_notification', {
+                p_user_id: attorneyProfileId,
+                p_type: 'client_accepted_invite',
+                p_title: 'A client accepted your invitation',
+                p_body: 'A new client has accepted your invitation and is now linked to your account.',
+                p_delivery: 'both',
+                p_metadata: { client_id: clientId, household_id: householdId },
+                p_cooldown: '1 hour',
+              })
+            }
 
-            // 2. Notify consumer
             await admin.rpc('create_notification', {
               p_user_id: clientId,
               p_type: 'estate_milestone',
               p_title: '✅ Connected to your attorney',
               p_body: 'You are now connected with your attorney on MyWealthMaps. They can collaborate with you on your estate plan.',
               p_delivery: 'both',
-              p_metadata: { attorney_id: attorneyId },
+              p_metadata: { attorney_listing_id: invite.attorney_id },
               p_cooldown: '1 hour',
             })
           } catch (err) {

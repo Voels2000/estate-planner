@@ -1,8 +1,25 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (admin deletion email lookup)
+# Last updated: 2026-06-07 (competitive scan H1–H4, GitHub E2E smoke)
 
 ---
+
+---
+
+## Competitive scan H1–H4 + GitHub E2E smoke (2026-06-07)
+
+**Decision:** Ship high-impact competitive backlog items before go-live; gate privileged MFA and CI E2E with env flags so automation keeps working until launch.
+
+| Item | Approach |
+|------|----------|
+| H1 Attorney FKs | Upload/invite/accept use listing + household IDs; `npm run repair:attorney-fks` for legacy rows |
+| H2 Import Phase A | Custodian export guides + header/type normalizer (Plaid deferred) |
+| H3 CI E2E smoke | `.github/workflows/e2e-smoke.yml`; **`E2E_SMOKE_IN_CI=false` until pre-go-live checklist** |
+| H4 Privileged MFA | `REQUIRE_PRIVILEGED_MFA=false` until go-live; flip with `PUBLIC_SIGNUP_OPEN` |
+
+**Pre-launch ops:** Enable GitHub E2E (`E2E_SMOKE_IN_CI=true` + secrets) **before** open signups — [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live).
+
+**Files:** `lib/security/privilegedMfaPolicy.ts`, `middleware.ts`, `lib/attorney/resolveAttorneyProfileId.ts`, `lib/import/custodianImportGuides.ts`, `.github/workflows/e2e-smoke.yml`, `docs/COMPETITIVE_SCAN.md`
 
 ---
 

@@ -4,6 +4,8 @@ Run these against **production** (`PLAYWRIGHT_BASE_URL` in `.env.test`, default 
 
 **Prerequisites:** `npm run seed:e2e` on the target environment; copy printed block to `.env.test` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)). Requires `PLAYWRIGHT_HOUSEHOLD_ID` + `SUPABASE_SERVICE_ROLE_KEY`.
 
+**GitHub Actions (pre-go-live):** Enable E2E smoke on every `main` push/PR before open signups — [LAUNCH_CHECKLIST § GitHub Actions E2E smoke](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live). Workflow runs against localhost + production Supabase; local pre-flight below uses production URL.
+
 ---
 
 ## One command — profile + inline prompts (recommended)
