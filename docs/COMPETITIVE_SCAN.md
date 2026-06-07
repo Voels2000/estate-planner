@@ -69,7 +69,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done
 
 | # | Item | Status |
 |---|------|--------|
-| L1 | Accessibility program — eslint-jsx-a11y + axe-playwright on critical paths | `[ ]` |
+| L1 | Accessibility program — eslint-jsx-a11y + axe-playwright on critical paths | `[x]` core-web-vitals jsx-a11y in CI; `npm run test:e2e:a11y` (login, signup, assess, dashboard, profile) |
 | L2 | Mobile E2E expansion (automate LAUNCH_CHECKLIST mobile smoke items) | `[x]` `consumer-mobile-review.spec.ts` Track 2 steps 13–19; `npm run test:e2e:mobile` |
 | L3 | Post-migration RLS verify script in CI against staging | `[ ]` |
 | L4 | OpenAPI or typed API contract for `/api/consumer/*` | `[ ]` |

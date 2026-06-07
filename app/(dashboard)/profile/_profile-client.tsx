@@ -5,7 +5,7 @@
 // Route: /profile
 // ─────────────────────────────────────────
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Children, isValidElement, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ProfileSavePayload } from '@/lib/profile/buildHouseholdPayload'
 import { Button } from '@/components/ui/Button'
@@ -609,10 +609,13 @@ function BooleanToggle({
   )
 }
 
-function Field({ label, children, required }: { label: string, children: React.ReactNode, required?: boolean }) {
+function Field({ label, children, required }: { label: string, children: ReactNode, required?: boolean }) {
+  const child = Children.only(children)
+  const inputId = isValidElement(child) ? (child.props as { id?: string }).id : undefined
+
   return (
     <div>
-      <label className={`${formLabelClass} mb-1 block`}>
+      <label htmlFor={inputId} className={`${formLabelClass} mb-1 block`}>
         {label}{required && <span className="text-red-500 ml-1">*</span>}
       </label>
       {children}

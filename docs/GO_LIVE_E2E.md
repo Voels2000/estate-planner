@@ -57,7 +57,7 @@ After profile pre-flight, import unit tests should pass:
 npm run test:import:unit   # 24 tests — projection readiness, wizard gate, import normalizer
 ```
 
-**Prospect + Mobile sprint (2026-05-29):** Playwright: `advisor-prospect-mode.spec.ts`, `consumer-mobile-review.spec.ts` (Track 2 steps 13–19 — run `npm run test:e2e:mobile`). Manual 19-step checklist: [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29).
+**Prospect + Mobile sprint (2026-05-29):** Playwright: `advisor-prospect-mode.spec.ts`, `consumer-mobile-review.spec.ts` (Track 2 — `npm run test:e2e:mobile`). **Accessibility (L1):** `npm run test:e2e:a11y`. Manual 19-step checklist: [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29).
 
 **Health Score + Playbook + Security sprint (2026-05-29):** Playwright: `consumer-health-score-narrative.spec.ts`, `advisor-first-client-playbook.spec.ts`. CI: `.github/workflows/ci.yml` (lint, build, security audit, unit tests). Manual: [LAUNCH_CHECKLIST § Health Score + Playbook](./LAUNCH_CHECKLIST.md#health-score--advisor-first-client-playbook-manual-smoke-2026-05-29).
 

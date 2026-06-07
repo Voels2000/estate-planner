@@ -4,6 +4,28 @@
 
 ---
 
+## L1 accessibility program — shipped ✅ (2026-06-07)
+
+**L1 (competitive backlog):** eslint-jsx-a11y baseline + axe-playwright on critical consumer/public paths.
+
+**ESLint:** `eslint-config-next/core-web-vitals` (jsx-a11y recommended) — `npm run lint` in CI. Explicit dep: `eslint-plugin-jsx-a11y`.
+
+**Axe E2E:**
+```bash
+npm run test:e2e:a11y
+```
+
+| Surface | Routes |
+|---------|--------|
+| Public | `/login`, `/signup?invite=1`, `/assess` |
+| Consumer | `/dashboard`, `/profile` |
+
+**Helper:** `tests/e2e/helpers/axe-a11y.ts` — fails on serious/critical violations; `color-contrast` disabled pending design pass.
+
+**Profile fix:** `Field` component wires `htmlFor` to child `id` for select/input labels.
+
+---
+
 ## L2 mobile E2E + mfa-enroll build fix — shipped ✅ (2026-06-07)
 
 **L2 (competitive backlog):** Automate LAUNCH_CHECKLIST Track 2 steps 13–19 at iPhone 12 viewport (390×844).

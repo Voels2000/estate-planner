@@ -329,6 +329,15 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Admin funnel tab — `persona_selected`, `persona_skipped`
 - [x] Master docs sync (this pass)
 
+## L1 accessibility program (2026-06-07) — shipped
+
+- [x] `eslint-plugin-jsx-a11y` + `@axe-core/playwright` dev deps
+- [x] jsx-a11y via `eslint-config-next/core-web-vitals` — `npm run lint` in CI
+- [x] `tests/e2e/public/accessibility-critical-paths.spec.ts` + `tests/e2e/consumer/accessibility-critical-paths.spec.ts`
+- [x] `npm run test:e2e:a11y` — serious/critical axe gate on 5 routes
+- [x] Profile `Field` — `htmlFor` linked to control `id`
+- [x] Master docs: COMPETITIVE_SCAN · PLAYWRIGHT_E2E · NEXT_SESSION · UPDATE_CHECKLIST
+
 ## L2 mobile E2E + mfa-enroll build fix (2026-06-07) — shipped
 
 - [x] `consumer-mobile-review.spec.ts` — Track 2 steps 13–19; `tests/e2e/helpers/mobile-review.ts`
