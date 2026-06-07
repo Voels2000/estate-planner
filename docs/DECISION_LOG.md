@@ -1,18 +1,35 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (environment testing policy)
+# Last updated: 2026-06-07 (release routine gates)
 
 ---
+
+---
+
+## Release discipline — three-gate routine (2026-06-07)
+
+**Decision:** Enforce local → preview → production with npm script bundles + GitHub branch protection toggled at go-live prep — not a custom release bot.
+
+| Gate | Enforcement |
+|------|-------------|
+| Local | `release:local` / `release:preflight` — exit non-zero on failure |
+| Preview | Vercel branch deploy + manual smoke (auth, billing if touched) |
+| CI | Required checks on `main` once `E2E_SMOKE_IN_CI` + `RLS_VERIFY_IN_CI` enabled |
+| Production | `release:post-deploy` local-only (`SUPABASE_DB_URL` never GitHub) |
+
+**Canonical doc:** [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md)
+
+**Alternatives considered:** Full RLS SQL in GitHub CI (rejected — credential power); skipping preview gate (rejected — catches Vercel/env issues E2E misses).
 
 ---
 
 ## Environment testing & credential placement (2026-06-07)
 
-**Decision:** Solo-founder pragmatic split — CI and preview use a **dedicated staging Supabase project**; production credentials never in GitHub.
+**Decision:** Solo-founder pragmatic split — CI and preview use Supabase keys safe for GitHub; production service role and `SUPABASE_DB_URL` never in GitHub. **Today:** one Supabase project is typical; **optional upgrade:** dedicated staging project before collaborators.
 
 | Credential | Placement |
 |------------|-----------|
-| Staging Supabase URL/keys | GitHub Actions, Vercel Preview, local `.env.test` |
+| Supabase URL/keys for CI | GitHub Actions, Vercel Preview, local `.env.test` |
 | Production service role | Vercel Production + local `.env.local` only |
 | `SUPABASE_DB_URL` | **Local only** — post-deploy `verify:rls --require-sql`; never GitHub/Vercel |
 

@@ -1,6 +1,6 @@
 # Go-live E2E pre-flight
 
-Run **production** smoke after deploy (`PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com` in `.env.test`) when validating a prod release — and as part of the final gate before `PUBLIC_SIGNUP_OPEN=true`. **Day-to-day E2E and CI use staging Supabase** — see [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
+Run **production** smoke after deploy (`PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com` in `.env.test`) when validating a prod release — and as part of the final gate before `PUBLIC_SIGNUP_OPEN=true`. **Ordered gates:** [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md). **Envs & credentials:** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
 
 **Environment model:** Local → Preview → Production flow and **where credentials live** — [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (canonical). **Policy:** GitHub gets **staging Supabase only**; production service role stays in Vercel Production; **`SUPABASE_DB_URL` local-only** (never GitHub).
 

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-07 (competitive scan H1–H4, GitHub E2E smoke)
+# Last updated: 2026-06-07 (L1–L4 complete; release routine; next M5/L5)
 
 ---
 
@@ -1493,7 +1493,7 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 
 ## Backlog (not yet scheduled — confirmed post-launch)
 
-**Competitive gap backlog (prioritized):** [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) — H1–H4 shipped 2026-06-07; enable GitHub E2E pre-go-live; medium/low items remain.
+**Competitive gap backlog (prioritized):** [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) — H1–H4 + L1–L4 complete (2026-06-07). **Next:** M5 attorney Stripe at go-live, L5 attorney multi-seat. Enable [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) before open signups.
 
 The following items are explicitly deferred to post-launch. Each has a DECISION_LOG entry
 (see DECISION_LOG.md) documenting the reasoning.

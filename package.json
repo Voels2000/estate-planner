@@ -52,7 +52,10 @@
     "verify:rls": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/verify-rls-post-migration.ts",
     "verify:consumer-openapi": "npx tsx scripts/verify-consumer-openapi.ts",
     "smoke:mc-voels": "dotenv -e .env.local -- npx tsx scripts/smoke-mc-precompute-voels.ts",
-    "verify:estate:e2e": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/verify-estate-suite.ts --preset e2e --lifecycle --check-goldens --http"
+    "verify:estate:e2e": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/verify-estate-suite.ts --preset e2e --lifecycle --check-goldens --http",
+    "release:local": "bash scripts/release-local-gate.sh",
+    "release:preflight": "bash scripts/release-local-gate.sh --preflight",
+    "release:post-deploy": "bash scripts/release-post-deploy.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

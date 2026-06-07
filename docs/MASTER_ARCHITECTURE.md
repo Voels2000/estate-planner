@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-07 (attorney weekly digest shipped)
+# Last updated: 2026-06-07 (release routine; L1–L4 competitive backlog complete)
 
 ---
 
@@ -12,7 +12,7 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) (legal/ops go-live blockers) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (product + technical go-live) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (pre-flip automated gate) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 + P-2 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) (legal/ops go-live blockers) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (product + technical go-live) · [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) (local → preview → prod gates) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) (gap backlog) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (pre-flip automated gate) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 + P-2 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
 
 ---
 
@@ -621,7 +621,7 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 
 **Full Production env matrix (Sprint 15 go-live):** [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live).
 
-**Testing & credential placement (local / preview / CI / prod):** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) — staging Supabase for GitHub; `SUPABASE_DB_URL` local-only.
+**Testing & credential placement (local / preview / CI / prod):** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · **Release gates:** [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) — `release:local` → preview → CI → `release:post-deploy`.
 
 ---
 

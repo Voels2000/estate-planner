@@ -4,7 +4,7 @@
 **Scope:** Code + docs review vs leading consumer fintech, RIA planning tools, and legal-tech platforms.  
 **Purpose:** Prioritized backlog to close competitive gaps over time — not a market-share study.
 
-**Related:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)
+**Related:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md)
 
 ---
 
@@ -36,9 +36,9 @@ MWM targets **$2M–$30M households** with a **living estate + financial plannin
 | RLS / tenant isolation | Above typical early-stage fintech | **Strong** |
 | WCPA / deletion | At or above GDPR-ready indie SaaS | **Strong** |
 | Estate verification suite | Category differentiator | **Strong** |
-| E2E coverage | Broad (~254+ tests); not CI-gated | **Competitive** |
-| API contract discipline | Partial Zod; thin OpenAPI | **Adequate** |
-| Accessibility | No a11y CI | **Gap** |
+| E2E coverage | Broad (~280+ tests); CI-gated when `E2E_SMOKE_IN_CI=true` | **Competitive** |
+| API contract discipline | OpenAPI 3.0 + CI drift guard on `/api/consumer/*` | **Adequate** |
+| Accessibility | jsx-a11y in CI + axe E2E on critical paths | **Adequate** |
 
 ---
 
@@ -284,21 +284,28 @@ You store estate values, beneficiary names, document vault PDFs, and WCPA deleti
 
 ## Suggested sequencing
 
+**Competitive backlog L1–L4:** complete (2026-06-07).
+
+**Next (post go-live or at go-live):**
+
+| Priority | Item | Notes |
+|----------|------|-------|
+| **M5** | Attorney Stripe products + attorney E2E expansion | Go-live day — live `STRIPE_PRICE_ATTORNEY_*`, expand `tests/e2e/attorney/` |
+| **L5** | Attorney firm multi-seat | Parity with advisor firm seats — after M5 or in parallel if no billing dependency |
+
+**Ops (not competitive backlog):** Enable [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) gates before `PUBLIC_SIGNUP_OPEN`.
+
 ```
-Quarter 1 (pre/post go-live)
+Quarter 1 (pre/post go-live) — DONE
   H1 Attorney FK fix
   H3 CI Tier 1 smoke
-  H4 MFA for admin + advisors (minimum)
+  H4 MFA for admin + advisors
+  L1–L4 polish backlog
 
 Quarter 2 (growth)
-  H2 Phase A custodian import UX
-  M1 assertHouseholdAccess sweep
-  M3 post-deploy verify:estate
-
-Quarter 3+ (scale)
+  M5 attorney billing at go-live
+  L5 attorney multi-seat
   H2 Phase B Plaid (if metrics justify)
-  M2 consumer vault
-  L1 accessibility CI
 ```
 
 ---
@@ -325,6 +332,7 @@ Quarter 3+ (scale)
 
 | Date | Change |
 |------|--------|
+| 2026-06-07 | L1–L4 shipped (a11y, mobile E2E, RLS verify, consumer OpenAPI); grades updated; release routine documented |
 | 2026-06-07 | Voels cron MC self-heal — daily `/api/cron/post-deploy-verify` backfills then verifies |
 | 2026-06-07 | M1–M4 shipped: household access sweep, consumer document vault, post-deploy verify cron, Upstash rate limits |
 | 2026-06-07 | H1–H4 wired: attorney FK fix, custodian import Phase A, e2e-smoke workflow, privileged MFA flag |

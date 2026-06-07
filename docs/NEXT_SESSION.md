@@ -1,6 +1,22 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Last updated: 2026-06-07 (L2 mobile E2E + mfa-enroll build fix)
+# Last updated: 2026-06-07 (release routine + environment doc alignment)
+
+---
+
+## Release routine — local → preview → production ✅ (2026-06-07)
+
+**Canonical:** [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md)
+
+| Command | When |
+|---------|------|
+| `npm run release:local` | Before every PR — CI parity (lint, build, OpenAPI, unit) |
+| `npm run release:preflight` | Before merge once go-live discipline is on (+ RLS JWT, profile + security E2E) |
+| `npm run release:post-deploy` | After every production deploy (Voels verify + SQL RLS) |
+
+**Enable at go-live prep:** `E2E_SMOKE_IN_CI` + `RLS_VERIFY_IN_CI` → branch protection on `main` requiring `verify`, `e2e-smoke`, `rls-verify`. See [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) pre-flight checkbox.
+
+**Environment reality:** Preview already on Vercel (`estate-planner-gules.vercel.app`); likely one Supabase today — optional second project for CI isolation documented in [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
 
 ---
 

@@ -4,7 +4,7 @@
 
 **Audience:** Solo founder today; structured so a future collaborator can follow the same flow without putting production secrets in GitHub.
 
-**Related:** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [docs/audits/README.md](./audits/README.md)
+**Related:** [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) (enforceable local → preview → prod gates) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [docs/audits/README.md](./audits/README.md)
 
 ---
 
@@ -34,7 +34,7 @@ Preview Vercel deployments and CI both talk to **staging Supabase**. Production 
 
 **Rules**
 
-1. **GitHub never gets production Supabase keys** — only a dedicated **staging** project (free tier is fine).
+1. **GitHub never gets production service role or `SUPABASE_DB_URL`** — CI uses the same Supabase project as preview/E2E today, or a dedicated staging project if you split later.
 2. **`SUPABASE_DB_URL` never goes to GitHub or Vercel** — run SQL RLS checks from your machine after prod deploys.
 3. **Production service role stays in Vercel Production** (and your local `.env.local` when you run prod smoke manually).
 
@@ -62,22 +62,35 @@ Realistic paths to credential exposure:
 
 ---
 
-## One-time: staging Supabase project
+## Current setup (today)
 
-1. Create a **second Supabase project** (e.g. `estate-planner-staging`).
-2. Link locally: `npx supabase link --project-ref <staging-ref>`
-3. Apply migrations: `npx supabase db push` (same repo as production)
-4. Seed E2E fixtures on **staging**:
-   ```bash
-   # Point .env.local at staging URL + staging service role
-   npm run seed:e2e
-   ```
-5. Copy printed block to:
-   - `.env.test` for local Playwright against staging
-   - **GitHub Actions secrets** (staging values only)
-6. Vercel **Preview** env vars → same staging Supabase URL/keys as GitHub.
+You already have:
 
-**Voels-equivalent data:** Staging uses `@mywealthmaps.test` seeds, not real Voels emails. Run `verify:estate --preset e2e` on staging; run `verify:post-deploy-voels` on **production** after deploy only.
+| Piece | Status |
+|-------|--------|
+| **Preview app** | Vercel Preview — e.g. `estate-planner-gules.vercel.app` and per-PR `*.vercel.app` URLs |
+| **Production app** | `mywealthmaps.com` on Vercel Production (`main` deploys) |
+| **Supabase** | Likely **one project** (`fnzvlmrqwcqwiqueevux`) shared across local, preview, and production env vars |
+| **CI** | `ci.yml` always on; E2E + RLS workflows **off** until `E2E_SMOKE_IN_CI` / `RLS_VERIFY_IN_CI` = `true` |
+
+E2E seeds use `@mywealthmaps.test` fixtures — not real Voels emails. Run `verify:estate --preset e2e` locally; run `verify:post-deploy-voels` on **production** after deploy only.
+
+### GitHub Actions secrets (when enabling E2E at go-live prep)
+
+1. `npm run seed:e2e` with `.env.local` pointed at the Supabase project CI will use
+2. Copy printed block to `.env.test` and **GitHub Actions secrets**
+3. Vercel **Preview** env vars → same Supabase URL/keys as GitHub (already typical if preview and prod share one project)
+
+### Optional upgrade: second Supabase for CI isolation
+
+When you want GitHub to **never** touch production data:
+
+1. Create a **second Supabase project** (e.g. `estate-planner-staging`, free tier)
+2. `npx supabase link --project-ref <staging-ref>` → `npx supabase db push`
+3. `npm run seed:e2e` on staging → secrets to GitHub + `.env.test`
+4. Vercel Preview → staging keys; Vercel Production → production keys only
+
+Not required for solo go-live if branch protection + local post-deploy checks are in place — but recommended before collaborators or heavy CI traffic.
 
 ---
 
@@ -93,8 +106,8 @@ Realistic paths to credential exposure:
                              │ git push branch
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PREVIEW (Vercel branch deploy)                                │
-│  App: *.vercel.app  +  Supabase: STAGING                        │
+│  PREVIEW (Vercel branch deploy — already configured)             │
+│  App: estate-planner-gules / PR *.vercel.app                    │
 │  Manual: billing walkthrough (Stripe test), auth callback smoke   │
 │  Avoid heavy API E2E against preview URL (POST /api/* can hang) │
 └────────────────────────────┬────────────────────────────────────┘
@@ -167,21 +180,17 @@ Workflows keep `REQUIRE_PRIVILEGED_MFA=false` so CI is not blocked by MFA gates.
 ## Local commands cheat sheet
 
 ```bash
-# Daily dev (staging DB recommended)
+# Daily dev
 npm run dev
 
-# CI-parity checks
-npm run lint && npm run build && npm run verify:consumer-openapi
+# Before every PR (CI parity)
+npm run release:local
 
-# E2E against staging (set PLAYWRIGHT_BASE_URL in .env.test to staging or localhost)
-npm run test:e2e:go-live-profile -- --workers=1
+# Before merge once go-live discipline is on — see RELEASE_ROUTINE.md
+npm run release:preflight
 
-# After merging + production deploy (from machine with prod .env.local)
-npm run verify:post-deploy-voels
-SUPABASE_DB_URL="$SUPABASE_DB_URL" npm run verify:rls -- --require-sql
-
-# RLS JWT check only (no DB URL needed)
-npm run verify:rls
+# After production deploy
+npm run release:post-deploy
 ```
 
 Store production `SUPABASE_DB_URL` only in `.env.local` (gitignored). Get it from Supabase → Database → Connection string → **Session pooler**.
