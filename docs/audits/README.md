@@ -46,7 +46,7 @@ SUPABASE_DB_URL=postgresql://... npm run verify:rls -- --require-sql
 npm run verify:rls
 ```
 
-**CI:** `.github/workflows/rls-verify.yml` — set repo variable `RLS_VERIFY_IN_CI=true` and secret `SUPABASE_DB_URL` (Supabase → Project Settings → Database → Connection string → Session pooler). Reuses E2E Supabase secrets for behavioral checks.
+**CI:** `.github/workflows/rls-verify.yml` — JWT isolation on staging when `RLS_VERIFY_IN_CI=true`. **SQL:** local post-deploy with `SUPABASE_DB_URL` (never GitHub). See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
 
 **SQL invariants:** `scripts/verify-rls-invariants.sql` — expect **zero rows** (same loose-policy tables as `verify-loose-rls-policies.sql`).
 

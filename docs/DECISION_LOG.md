@@ -1,12 +1,32 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (Voels cron MC self-heal)
+# Last updated: 2026-06-07 (environment testing policy)
 
 ---
 
 ---
 
-## Voels post-deploy cron — MC self-heal (2026-06-07)
+## Environment testing & credential placement (2026-06-07)
+
+**Decision:** Solo-founder pragmatic split — CI and preview use a **dedicated staging Supabase project**; production credentials never in GitHub.
+
+| Credential | Placement |
+|------------|-----------|
+| Staging Supabase URL/keys | GitHub Actions, Vercel Preview, local `.env.test` |
+| Production service role | Vercel Production + local `.env.local` only |
+| `SUPABASE_DB_URL` | **Local only** — post-deploy `verify:rls --require-sql`; never GitHub/Vercel |
+
+**CI behavior:** `e2e-smoke.yml` → localhost app + staging Supabase. `rls-verify.yml` → JWT isolation on staging only (no SQL in CI). SQL RLS invariants run manually after production deploy.
+
+**Not required (solo):** read-only Postgres CI role, scheduled rotation, separate GitHub org.
+
+**Do require:** 2FA (authenticator) on GitHub and Vercel.
+
+**Canonical doc:** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md)
+
+**Alternatives considered:** Production Supabase in GitHub (rejected — blast radius); `SUPABASE_DB_URL` in GitHub for full RLS CI (rejected — low solo risk, high credential power).
+
+---
 
 **Decision:** Daily cron `/api/cron/post-deploy-verify` (9:00 UTC) should **backfill** missing Voels `monte_carlo_results` before running the 7 verify checks — not only alert on failure. Manual `npm run verify:post-deploy-voels` stays verify-only (fail fast with `npm run smoke:mc-voels` hint). Up to ~24h lag if cache drops mid-day; sufficient for demo/ops gate.
 

@@ -21,6 +21,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) | Schema authority and session history |
 | [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) | **Go-live E2E user reset** — `npm run seed:e2e`, legacy cleanup |
 | [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) | **Complete Playwright suite** — commands, env, seeds |
+| [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) | **Local → preview → production** flow, credential placement, CI vs post-deploy checks |
 | [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) | **Pre-flip automated gate** — profile + inline prompt commands |
 | [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md) | Import expansion + attorney workflow (2026-05-29) |
 | [SPRINT_IMPORT_EXPANSION.md](./SPRINT_IMPORT_EXPANSION.md) | Import Phases 1–5 acceptance criteria & reference |
@@ -328,6 +329,12 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Funnel events — `persona_screen_shown`, `persona_selected`, `persona_skipped`, `persona_insight_*`
 - [x] Admin funnel tab — `persona_selected`, `persona_skipped`
 - [x] Master docs sync (this pass)
+
+## Environment testing policy (2026-06-07) — documented
+
+- [x] [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) — local → preview → production; credential placement; CI vs post-deploy
+- [x] GitHub: staging Supabase only; `SUPABASE_DB_URL` local-only; RLS CI = JWT only
+- [x] Master docs synced: GO_LIVE_E2E · LAUNCH_CHECKLIST · UPDATE_CHECKLIST · NEXT_SESSION · audits/README · workflows
 
 ## L4 consumer OpenAPI contract (2026-06-07) — shipped
 

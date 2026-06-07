@@ -4,6 +4,22 @@
 
 ---
 
+## Environment testing policy — documented ✅ (2026-06-07)
+
+**Canonical:** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md)
+
+| Policy | Detail |
+|--------|--------|
+| GitHub secrets | **Staging Supabase only** — never production service role |
+| `SUPABASE_DB_URL` | **Local-only** — post-deploy `verify:rls --require-sql` |
+| CI RLS workflow | JWT isolation on staging (no SQL in GitHub) |
+| CI E2E | Localhost app + staging Supabase |
+| Solo ops | 2FA GitHub + Vercel; no read-only DB roles / rotation theater |
+
+**Workflows updated:** `rls-verify.yml` (behavioral only), `e2e-smoke.yml` (comment).
+
+---
+
 ## L4 consumer OpenAPI contract — shipped ✅ (2026-06-07)
 
 **L4 (competitive backlog):** Typed API contract for all `/api/consumer/*` routes.
@@ -36,7 +52,7 @@ npm run verify:rls -- --require-sql   # fail if SUPABASE_DB_URL / DATABASE_URL u
 
 **Env:** `SUPABASE_DB_URL` or `DATABASE_URL` (Session pooler URI from Supabase → Database settings); `NEXT_PUBLIC_SUPABASE_*` + `SUPABASE_SERVICE_ROLE_KEY`; optional `PLAYWRIGHT_CONSUMER_*` (defaults to `@mywealthmaps.test`).
 
-**CI:** `.github/workflows/rls-verify.yml` — off until `RLS_VERIFY_IN_CI=true`. Secret: `SUPABASE_DB_URL` + same Supabase/E2E secrets as E2E smoke.
+**CI:** `.github/workflows/rls-verify.yml` — JWT isolation on **staging** when `RLS_VERIFY_IN_CI=true`. **SQL invariants:** local post-deploy only (`SUPABASE_DB_URL` never in GitHub). See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
 
 **Files:** `lib/verify/runRlsVerification.ts` · `scripts/verify-rls-post-migration.ts`
 

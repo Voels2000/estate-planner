@@ -621,6 +621,8 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 
 **Full Production env matrix (Sprint 15 go-live):** [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live).
 
+**Testing & credential placement (local / preview / CI / prod):** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) — staging Supabase for GitHub; `SUPABASE_DB_URL` local-only.
+
 ---
 
 ## Production environment variables (Sprint 15 go-live)

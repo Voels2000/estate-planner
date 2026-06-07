@@ -1,5 +1,7 @@
 # Playwright E2E
 
+**Environment:** CI and daily E2E use **staging Supabase**; production smoke is manual post-deploy. See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
+
 ## Go-live test identities (v2)
 
 **Reset guide:** [E2E_TEST_RESET.md](./E2E_TEST_RESET.md)

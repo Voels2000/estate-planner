@@ -1,7 +1,7 @@
 name: E2E smoke
 
-# Off by default — set repository variable E2E_SMOKE_IN_CI=true and configure secrets.
-# Pre-launch checklist: docs/LAUNCH_CHECKLIST.md § GitHub Actions E2E smoke
+# Off by default — set repository variable E2E_SMOKE_IN_CI=true and STAGING Supabase secrets only.
+# See docs/ENVIRONMENT_TESTING.md — never put production keys or SUPABASE_DB_URL in GitHub.
 
 on:
   push:

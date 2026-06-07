@@ -2,6 +2,8 @@
 
 One-time migration from legacy Playwright accounts to canonical **`@mywealthmaps.test`** identities that do not receive production mail.
 
+**Staging vs production:** Run `seed:e2e` on your **staging Supabase project** for CI and `.env.test`. Production seeds only when intentionally testing prod. Full flow: [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
+
 **Drip verification:** `npm run verify:drip` — replaces manual `consumer21@rolobe` inbox check (historical).
 
 **Source of truth:** [scripts/e2e-test-identities.ts](../scripts/e2e-test-identities.ts)
