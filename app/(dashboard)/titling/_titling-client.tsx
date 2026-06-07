@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import AssetTitlingCard from '@/components/titling/AssetTitlingCard'
+import VirtualTitlingCardList from '@/components/titling/VirtualTitlingCardList'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { buildTitlingLookups, beneficiaryMatchesEntity } from '@/lib/titling/buildTitlingLookups'
@@ -382,10 +383,11 @@ export default function TitlingClient({
                 defaultOpen={group.id === 'person1'}
                 storageKey={group.storageKey}
               >
-                <div className="space-y-4">
-                  {group.rows.map(asset => (
+                <VirtualTitlingCardList
+                  items={group.rows}
+                  getItemKey={(asset) => asset.id}
+                  renderItem={(asset) => (
                     <AssetTitlingCard
-                      key={asset.id}
                       name={asset.name}
                       subtitle={asset.type.replace(/_/g, ' ')}
                       value={asset.value}
@@ -407,8 +409,8 @@ export default function TitlingClient({
                       })}
                       onDeleteBeneficiary={handleDeleteBeneficiary}
                     />
-                  ))}
-                </div>
+                  )}
+                />
               </CollapsibleSection>
             ))
           )}
@@ -426,36 +428,38 @@ export default function TitlingClient({
           {realEstate.length === 0 ? (
             <EmptyState icon="🏠" message="No properties found" sub="Add properties on the Real Estate page first" href="/real-estate" />
           ) : (
-            realEstate.map(re => (
-              <AssetTitlingCard
-                key={re.id}
-                name={re.name}
-                subtitle={re.property_type.replace(/_/g, ' ')}
-                value={re.current_value}
-                ownerLabel={ownerLabel(
-                  re.owner,
-                  displayPersonFirstName(person1LegalName, 'Person 1'),
-                  displayPersonFirstName(person2LegalName),
-                )}
-                titling={getTitlingFor('re', re.id)}
-                primaryBens={getBeneficiariesFor('re', re.id, 'primary')}
-                contingentBens={getBeneficiariesFor('re', re.id, 'contingent')}
-                onEditTitling={() => setTitlingModal({
-                  kind: 're', id: re.id, name: re.name,
-                  existing: getTitlingFor('re', re.id) as RealEstateTitling | null,
-                  asset: null,
-                  entityRow: re,
-                })}
-                onAddBeneficiary={(type) => setBeneficiaryModal({
-                  kind: 're', id: re.id, name: re.name, existing: null, beneficiaryType: type,
-                })}
-                onEditBeneficiary={(ben) => setBeneficiaryModal({
-                  kind: 're', id: re.id, name: re.name, existing: ben, beneficiaryType: ben.beneficiary_type,
-
-                })}
-                onDeleteBeneficiary={handleDeleteBeneficiary}
-              />
-            ))
+            <VirtualTitlingCardList
+              items={realEstate}
+              getItemKey={(re) => re.id}
+              renderItem={(re) => (
+                <AssetTitlingCard
+                  name={re.name}
+                  subtitle={re.property_type.replace(/_/g, ' ')}
+                  value={re.current_value}
+                  ownerLabel={ownerLabel(
+                    re.owner,
+                    displayPersonFirstName(person1LegalName, 'Person 1'),
+                    displayPersonFirstName(person2LegalName),
+                  )}
+                  titling={getTitlingFor('re', re.id)}
+                  primaryBens={getBeneficiariesFor('re', re.id, 'primary')}
+                  contingentBens={getBeneficiariesFor('re', re.id, 'contingent')}
+                  onEditTitling={() => setTitlingModal({
+                    kind: 're', id: re.id, name: re.name,
+                    existing: getTitlingFor('re', re.id) as RealEstateTitling | null,
+                    asset: null,
+                    entityRow: re,
+                  })}
+                  onAddBeneficiary={(type) => setBeneficiaryModal({
+                    kind: 're', id: re.id, name: re.name, existing: null, beneficiaryType: type,
+                  })}
+                  onEditBeneficiary={(ben) => setBeneficiaryModal({
+                    kind: 're', id: re.id, name: re.name, existing: ben, beneficiaryType: ben.beneficiary_type,
+                  })}
+                  onDeleteBeneficiary={handleDeleteBeneficiary}
+                />
+              )}
+            />
           )}
           </div>
         </CollapsibleSection>
@@ -474,13 +478,14 @@ export default function TitlingClient({
                 defaultOpen={group.id === 'person1'}
                 storageKey={group.storageKey}
               >
-                <div className="space-y-4">
-                  {group.rows.map(pol => {
+                <VirtualTitlingCardList
+                  items={group.rows}
+                  getItemKey={(pol) => pol.id}
+                  renderItem={(pol) => {
                     const displayName = pol.policy_name?.trim() || 'Insurance policy'
                     const sub = (pol.insurance_type ?? 'policy').replace(/_/g, ' ')
                     return (
                       <AssetTitlingCard
-                        key={pol.id}
                         name={displayName}
                         subtitle={sub}
                         value={pol.death_benefit ?? 0}
@@ -503,8 +508,8 @@ export default function TitlingClient({
                         onDeleteBeneficiary={handleDeleteBeneficiary}
                       />
                     )
-                  })}
-                </div>
+                  }}
+                />
               </CollapsibleSection>
             ))
           )}
@@ -522,31 +527,34 @@ export default function TitlingClient({
           {businesses.length === 0 ? (
             <EmptyState icon="🏢" message="No business interests found" sub="Add closely-held interests on the Businesses page first" href="/businesses" />
           ) : (
-            businesses.map(biz => (
-              <AssetTitlingCard
-                key={biz.id}
-                name={biz.name}
-                subtitle={(biz.entity_type ?? 'entity').replace(/_/g, ' ')}
-                value={biz.estimated_value ?? 0}
-                ownerLabel="—"
-                titling={getTitlingFor('business', biz.id)}
-                primaryBens={getBeneficiariesFor('business', biz.id, 'primary')}
-                contingentBens={getBeneficiariesFor('business', biz.id, 'contingent')}
-                onEditTitling={() => setTitlingModal({
-                  kind: 'business', id: biz.id, name: biz.name,
-                  existing: getTitlingFor('business', biz.id),
-                  asset: null,
-                  entityRow: biz,
-                })}
-                onAddBeneficiary={(type) => setBeneficiaryModal({
-                  kind: 'business', id: biz.id, name: biz.name, existing: null, beneficiaryType: type,
-                })}
-                onEditBeneficiary={(ben) => setBeneficiaryModal({
-                  kind: 'business', id: biz.id, name: biz.name, existing: ben, beneficiaryType: ben.beneficiary_type,
-                })}
-                onDeleteBeneficiary={handleDeleteBeneficiary}
-              />
-            ))
+            <VirtualTitlingCardList
+              items={businesses}
+              getItemKey={(biz) => biz.id}
+              renderItem={(biz) => (
+                <AssetTitlingCard
+                  name={biz.name}
+                  subtitle={(biz.entity_type ?? 'entity').replace(/_/g, ' ')}
+                  value={biz.estimated_value ?? 0}
+                  ownerLabel="—"
+                  titling={getTitlingFor('business', biz.id)}
+                  primaryBens={getBeneficiariesFor('business', biz.id, 'primary')}
+                  contingentBens={getBeneficiariesFor('business', biz.id, 'contingent')}
+                  onEditTitling={() => setTitlingModal({
+                    kind: 'business', id: biz.id, name: biz.name,
+                    existing: getTitlingFor('business', biz.id),
+                    asset: null,
+                    entityRow: biz,
+                  })}
+                  onAddBeneficiary={(type) => setBeneficiaryModal({
+                    kind: 'business', id: biz.id, name: biz.name, existing: null, beneficiaryType: type,
+                  })}
+                  onEditBeneficiary={(ben) => setBeneficiaryModal({
+                    kind: 'business', id: biz.id, name: biz.name, existing: ben, beneficiaryType: ben.beneficiary_type,
+                  })}
+                  onDeleteBeneficiary={handleDeleteBeneficiary}
+                />
+              )}
+            />
           )}
           </div>
         </CollapsibleSection>

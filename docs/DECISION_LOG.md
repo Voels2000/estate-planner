@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (titling modal code-split)
+# Last updated: 2026-06-07 (titling list virtualization)
+
+---
+
+## Titling list virtualization — window virtualizer for card lists (2026-06-07)
+
+**Decision:** Virtualize titling card rows with **`@tanstack/react-virtual`** (`useWindowVirtualizer`) when a list has **≥ 20** items. **`VirtualTitlingCardList`** measures variable-height **`AssetTitlingCard`** rows dynamically; falls back to a plain map for smaller lists. Applied per owner bucket (assets/insurance) and per tab list (real estate, business).
+
+**Files:** `components/titling/VirtualTitlingCardList.tsx` · `lib/titling/virtualizeConstants.ts` · `app/(dashboard)/titling/_titling-client.tsx`
 
 ---
 
@@ -8,7 +16,7 @@
 
 **Decision:** Extract **`TitlingModal`**, **`BeneficiaryModal`**, and **`BeneficiaryGapModal`** to **`components/titling/`** and load via **`next/dynamic`** (`ssr: false`) only when opened. Shared **`ModalShell`** / form constants in **`titlingModalShared.tsx`**; beneficiary picklist logic in **`lib/titling/beneficiaryPicklist.ts`**; row types in **`lib/titling/titlingEntityTypes.ts`**.
 
-**Deferred:** table virtualization for large asset lists on `/titling`.
+**Deferred:** (none — titling perf sprint complete).
 
 **Files:** `components/titling/TitlingModal.tsx` · `BeneficiaryModal.tsx` · `BeneficiaryGapModal.tsx` · `app/(dashboard)/titling/_titling-client.tsx`
 
@@ -18,7 +26,7 @@
 
 **Decision:** Extract O(1) titling/beneficiary lookups to **`lib/titling/buildTitlingLookups.ts`**; memoize **`getTitlingWarnings`** in **`lib/titling/getTitlingWarnings.ts`**; extract memoized **`AssetTitlingCard`**; share display helpers in **`lib/titling/titlingDisplayHelpers.ts`**. **`/titling`** page loads **`household_people`** in parallel with other queries (join on **`households.owner_id`**).
 
-**Deferred:** table virtualization for large asset lists.
+**Deferred:** (none).
 
 **Files:** `lib/titling/*` · `components/titling/AssetTitlingCard.tsx` · `app/(dashboard)/titling/_titling-client.tsx` · `app/(dashboard)/titling/page.tsx`
 

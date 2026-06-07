@@ -32,8 +32,6 @@
 | Perf — memo `EstateOutlookChart`, extract `MonteCarloFanChart`, scenarios row `Map` index | `[x]` |
 | Fetch dedup — `getFullHouseholdForOwner` (`React.cache`) on dashboard | `[x]` |
 
-**Deferred:** titling table virtualization.
-
 ---
 
 ### Sprint — MC Phase 3 UI wiring `[x]` **complete**
@@ -151,7 +149,8 @@
 | **Export federal → bracket engine B** | `[x]` — `computeFederalExportTax` + `federal_estate_tax_brackets` |
 | **Federal flat 40% elimination (all surfaces)** | `[x]` — horizons, composability, Tax stress, MC, projection death-year, heuristics |
 | **Logo file-upload UI** | `[x]` — `advisor-branding` bucket + settings upload |
-| **Titling perf / memoization** | `[x]` — lookups + memoized warnings + `AssetTitlingCard` extract |
+| **Titling perf / memoization** | `[x]` — lookups + memoized warnings + `AssetTitlingCard` + modal code-split |
+| **Titling list virtualization** | `[x]` — `VirtualTitlingCardList` + `@tanstack/react-virtual` (threshold 20) |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
 **Recent commits (2026-06-05 → 07):** `8f7df08` · `a5b93e3` · `004c591` · `556e773` · `ca0bd00` · `adb7e88` · `9440315` · `284e569` · `23584f3` · `72fb91d`

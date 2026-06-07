@@ -1,6 +1,16 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-07 (titling modal code-split)
+# Updated: 2026-06-07 (titling list virtualization)
+
+---
+
+## Titling list virtualization — shipped ✅ (2026-06-07)
+
+**Shipped:** Window-scrolled virtual lists for titling cards via **`@tanstack/react-virtual`** and **`VirtualTitlingCardList`** — activates at **`TITLING_VIRTUALIZE_THRESHOLD` (20)** rows per owner group / tab list; dynamic row measurement for variable-height beneficiary sections.
+
+**Titling sprint:** complete (lookups · memoized warnings · modal code-split · virtualization).
+
+**Next code sprint:** (pick from ROADMAP backlog).
 
 ---
 
@@ -8,7 +18,7 @@
 
 **Shipped:** Lazy-load **`TitlingModal`**, **`BeneficiaryModal`**, and **`BeneficiaryGapModal`** via **`next/dynamic`** (`ssr: false`). Shared shell/constants in **`components/titling/titlingModalShared.tsx`**; picklist helpers in **`lib/titling/beneficiaryPicklist.ts`**; entity types in **`lib/titling/titlingEntityTypes.ts`**. **`_titling-client.tsx`** ~650 lines (was ~2,000).
 
-**Deferred:** table virtualization for large asset lists.
+**Titling perf sprint:** complete — lookups · memoized warnings · modal code-split · list virtualization.
 
 **Next code sprint:** (pick from ROADMAP backlog).
 
@@ -18,7 +28,7 @@
 
 **Shipped:** O(1) titling/beneficiary lookups via **`lib/titling/buildTitlingLookups.ts`**; memoized **`getTitlingWarnings`**; extracted memoized **`AssetTitlingCard`**; shared display helpers in **`lib/titling/titlingDisplayHelpers.ts`**; parallel **`household_people`** fetch on **`/titling`** page (join on `households.owner_id`).
 
-**Deferred:** table virtualization.
+**Deferred:** (none — titling perf sprint complete).
 
 ---
 
