@@ -1,10 +1,33 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Last updated: 2026-06-07 (roth-analysis YearRow tsc fix)
+# Last updated: 2026-06-07 (Voels demo account sync)
+
+---
+
+## Voels demo account sync — shipped ✅ (2026-06-07)
+
+**Problem:** **`avoels@comcast.net`** (advisor “My Plan”) and **`avoels@outlook.com`** (consumer “Voels Household”) are duplicate demo datasets with different row UUIDs — asset values had drifted (~$319k).
+
+**Source of truth:** **`avoels@comcast.net`** → sync pushes assets, real estate, businesses, insurance, liabilities, and household profile fields to the linked consumer client, then **`POST /api/recompute-estate-health`** on Voels Household.
+
+**Commands:**
+```bash
+npm run sync:voels-demo              # live sync
+DRY_RUN=1 npm run sync:voels-demo    # preview only
+npx dotenv-cli -e .env.local -- npx tsx scripts/compare-voels-accounts.ts  # before/after diff
+```
+
+**Workflow:** Edit demo data as comcast (advisor My Plan) → run **`npm run sync:voels-demo`** → outlook client view matches for advisor smoke.
+
+**IDs:** advisor `854051be-…` · consumer `dbff0d6c-…` · active **`advisor_clients`** link · households My Plan `23c8d2fb-…` / Voels `5ea14f56-…`
 
 ---
 
 ## Roth analysis unit test — YearRow tsc fix ✅ (2026-06-07)
+
+**Fixed:** `tests/unit/roth-analysis.spec.ts` **`makeRow()`** now sets **`rmd_required`**, **`rmd_user_withdrawal`**, **`rmd_shortfall`**, **`rmd_penalty`** on mock **`YearRow`** objects. **`npx tsc --noEmit`** clean again.
+
+---
 
 **Fixed:** `tests/unit/roth-analysis.spec.ts` **`makeRow()`** now sets **`rmd_required`**, **`rmd_user_withdrawal`**, **`rmd_shortfall`**, **`rmd_penalty`** on mock **`YearRow`** objects (added to **`projection-complete.ts`** earlier). **`npx tsc --noEmit`** clean again.
 
@@ -147,6 +170,8 @@
 | `verify-state-tax-coverage.ts` | Estate + income + inheritance tax DB coverage |
 | `verify-export-federal-brackets.ts` | Export panel / Excel / PDF page 3 federal tax — bracket engine parity |
 | `verify-engine-b-tax-surfaces.ts` | Composition cache gross vs **`/api/export-estate-plan`** Engine B tax payload |
+| `compare-voels-accounts.ts` | Side-by-side comcast vs outlook asset/composition totals |
+| `sync-voels-demo-accounts.ts` | Push comcast My Plan → outlook Voels Household (**`npm run sync:voels-demo`**) |
 
 **Next code sprint:** titling perf.
 

@@ -156,9 +156,22 @@
 | **Attorney portal collaboration v2** | `[x]` — requests inbox, matter workflow, doc requests, firm notes, settings |
 | **Attorney weekly digest email** | `[x]` — cron §10 Fridays; gaps, doc requests, stale matter stage |
 | **Engine B export standardization** | `[x]` — estate-plan PDF API + remove dead advisor `estateTax` RPC loader; trust guidance cache fallback |
+| **Voels demo account sync** | `[x]` — `npm run sync:voels-demo` (comcast → outlook); `compare-voels-accounts.ts` |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
-**Recent commits (2026-06-05 → 07):** `9488024` · `996a087` · `4d22809` · `56135ca`
+**Recent commits (2026-06-05 → 07):** *(this commit)* · `9488024` · `996a087` · `4d22809`
+
+---
+
+### Sprint — Voels demo account sync `[x]` **complete (2026-06-07)**
+
+| Item | Status |
+|------|--------|
+| **`scripts/sync-voels-demo-accounts.ts`** + **`npm run sync:voels-demo`** | `[x]` |
+| **`scripts/compare-voels-accounts.ts`** — diff comcast vs outlook totals | `[x]` |
+| Prod sync run — asset + composition gross aligned (~$9.81M) | `[x]` |
+
+**Workflow:** Edit **`avoels@comcast.net`** My Plan → run sync → **`avoels@outlook.com`** client view matches.
 
 ---
 

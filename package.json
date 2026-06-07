@@ -38,7 +38,8 @@
     "verify:drip": "dotenv -e .env.local -- npx tsx scripts/verify-drip-sequence.ts",
     "cleanup:rolobe": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --rolobe",
     "repair:orphaned-user": "dotenv -e .env.local -- npx tsx scripts/repair-orphaned-auth-user.ts",
-    "verify:deletion": "dotenv -e .env.local -- npx tsx scripts/verify-deletion.ts"
+    "verify:deletion": "dotenv -e .env.local -- npx tsx scripts/verify-deletion.ts",
+    "sync:voels-demo": "dotenv -e .env.local -- npx tsx scripts/sync-voels-demo-accounts.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

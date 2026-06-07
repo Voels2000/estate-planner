@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (engine B export standardization)
+# Last updated: 2026-06-07 (Voels demo account sync)
+
+---
+
+## Voels demo account sync — comcast source of truth (2026-06-07)
+
+**Decision:** **`avoels@comcast.net`** (advisor “My Plan”) and **`avoels@outlook.com`** (consumer client) are intentionally separate households for the advisor/client demo, but must stay value-aligned for smoke. No automatic DB mirror — ops script **`npm run sync:voels-demo`** copies financial rows (match by name + type, multiset pairing for duplicate names) from comcast → outlook and triggers **`recompute-estate-health`** on Voels Household.
+
+**Why not a trigger:** Demo-only pair; explicit script avoids prod coupling and duplicate-name pairing bugs.
+
+**Files:** `scripts/sync-voels-demo-accounts.ts`, `scripts/compare-voels-accounts.ts`, `package.json` (`sync:voels-demo`).
 
 ---
 

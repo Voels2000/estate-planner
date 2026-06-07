@@ -1745,6 +1745,14 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
   - `/advisor/presets` — `PresetManager` (CRUD + set default); `MonteCarloAssumptionsPanel` auto-loads default on mount + “Load preset” dropdown (UI-only until advisor saves scenario).
 - E2E: `tests/e2e/advisor/advisor-presets.spec.ts` (API CRUD, consumer 403, UI pre-fill). Playwright seeds: `scripts/seed-michael-johnson-advisor-demo.ts` (Johnson client for advisor2), `scripts/seed-advisor2-playwright-fixture.ts` (household `90cc8759-…` strategy-recommendation link).
 
+## Session 130 Note
+
+- No new schema migration. Voels demo data ops scripts.
+- Application-layer:
+  - **`scripts/sync-voels-demo-accounts.ts`** — sync **`avoels@comcast.net`** My Plan → **`avoels@outlook.com`** Voels Household (assets, RE, business, insurance, liabilities, household profile fields); **`npm run sync:voels-demo`**
+  - **`scripts/compare-voels-accounts.ts`** — side-by-side totals / asset diffs for the two accounts
+  - **`DRY_RUN=1`** supported on sync script
+
 ## Session 129 Note
 
 - No new schema migration. Code-only Engine B export alignment.
