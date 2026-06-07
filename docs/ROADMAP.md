@@ -159,7 +159,7 @@
 | **Voels demo account sync** | `[x]` — `npm run sync:voels-demo` (comcast → outlook); `compare-voels-accounts.ts` |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
-**Recent commits (2026-06-05 → 07):** *(this commit)* · `9488024` · `996a087` · `4d22809`
+**Recent commits (2026-06-05 → 07):** `bff7ecd` · `9488024` · `996a087` · `4d22809`
 
 ---
 
