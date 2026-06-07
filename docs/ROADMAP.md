@@ -153,7 +153,7 @@
 | **Titling list virtualization** | `[x]` — `VirtualTitlingCardList` + `@tanstack/react-virtual` (threshold 20) |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
-**Recent commits (2026-06-05 → 07):** `8f7df08` · `a5b93e3` · `004c591` · `556e773` · `ca0bd00` · `adb7e88` · `9440315` · `284e569` · `23584f3` · `72fb91d`
+**Recent commits (2026-06-05 → 07):** `8f7df08` · `a5b93e3` · `004c591` · `556e773` · `ca0bd00` · `adb7e88` · `9440315` · `284e569` · `23584f3` · `72fb91d` · `1649b77`
 
 ---
 
