@@ -1,6 +1,12 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Last updated: 2026-06-07 (engine B export standardization)
+# Last updated: 2026-06-07 (roth-analysis YearRow tsc fix)
+
+---
+
+## Roth analysis unit test — YearRow tsc fix ✅ (2026-06-07)
+
+**Fixed:** `tests/unit/roth-analysis.spec.ts` **`makeRow()`** now sets **`rmd_required`**, **`rmd_user_withdrawal`**, **`rmd_shortfall`**, **`rmd_penalty`** on mock **`YearRow`** objects (added to **`projection-complete.ts`** earlier). **`npx tsc --noEmit`** clean again.
 
 ---
 

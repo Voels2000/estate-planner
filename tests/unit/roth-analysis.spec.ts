@@ -69,6 +69,10 @@ function makeRow(year: number, age1: number, age2: number, income: number, rmd: 
     liabilities_total: 0,
     estate_excl_home: 0,
     estate_incl_home: 0,
+    rmd_required: rmd,
+    rmd_user_withdrawal: rmd,
+    rmd_shortfall: 0,
+    rmd_penalty: 0,
     net_cash_flow: 0,
     net_worth: 0,
   }

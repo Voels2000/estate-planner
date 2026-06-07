@@ -1754,6 +1754,7 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
   - **`lib/advisor/loaders.ts`** — removed dead **`estateTax`** dataset slice (**`calculate_state_estate_tax`**); Tax tab already uses **`advisorHorizons.today`**
   - **`lib/trusts/loadTrustWillGuidance.ts`** — fallback uses **`getCachedComposition`** instead of live **`classifyEstateAssets`**
   - **`scripts/verify-engine-b-tax-surfaces.ts`** — composition gross vs export API tax payload alignment check
+  - **`tests/unit/roth-analysis.spec.ts`** — **`makeRow()`** includes RMD fields on mock **`YearRow`**; **`npx tsc --noEmit`** clean
 
 ## Session 128 Note
 
