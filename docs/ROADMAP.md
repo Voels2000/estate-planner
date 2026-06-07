@@ -157,7 +157,7 @@
 | **Attorney weekly digest email** | `[x]` — cron §10 Fridays; gaps, doc requests, stale matter stage |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
-**Recent commits (2026-06-05 → 07):** `10cd004` · `0b375ae` · `fde50cc` · `e1047a7`
+**Recent commits (2026-06-05 → 07):** `56135ca` · `10cd004` · `0b375ae` · `fde50cc` · `e1047a7`
 
 ---
 
