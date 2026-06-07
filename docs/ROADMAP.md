@@ -163,7 +163,7 @@
 | **Admin deletion email lookup** | `[x]` — Execute tab Look up → UUID; shortcuts from schedule/privacy |
 | **Competitive scan H1–H4** | `[x]` — attorney FKs, import Phase A, e2e-smoke workflow, privileged MFA flag |
 | **Competitive scan M1–M4** | `[x]` — household access sweep, consumer vault, post-deploy cron, Upstash rate limits |
-| **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
+| **Post-deploy Voels gate** | `[x]` — `npm run verify:post-deploy-voels`; daily cron self-heals MC + verify; `npm run smoke:mc-voels` |
 
 **Recent commits (2026-06-05 → 07):** `bff7ecd` · `9488024` · `996a087` · `4d22809`
 

@@ -1,8 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (competitive scan H1–H4, GitHub E2E smoke)
+# Last updated: 2026-06-07 (Voels cron MC self-heal)
 
 ---
+
+---
+
+## Voels post-deploy cron — MC self-heal (2026-06-07)
+
+**Decision:** Daily cron `/api/cron/post-deploy-verify` (9:00 UTC) should **backfill** missing Voels `monte_carlo_results` before running the 7 verify checks — not only alert on failure. Manual `npm run verify:post-deploy-voels` stays verify-only (fail fast with `npm run smoke:mc-voels` hint). Up to ~24h lag if cache drops mid-day; sufficient for demo/ops gate.
+
+**Why not regen on every household write:** Base case + MC is expensive; consumer writes only bump staleness and regen on page load. Voels cron is the ops safety net for the prod smoke account.
+
+**Files:** `lib/verify/runPostDeployVoelsChecks.ts` (`ensureVoelsMonteCarloCached`, `remediate` option), `app/api/cron/post-deploy-verify/route.ts`, `vercel.json`
 
 ---
 
@@ -14,7 +24,7 @@
 |------|----------|
 | M1 | `requireHouseholdAccess` + Zod `householdId` on RPC/composition/document/advisor routes |
 | M2 | Consumer `/settings/documents` vault — PDF upload via existing `/api/documents/upload` |
-| M3 | `runPostDeployVoelsChecks` + daily cron `/api/cron/post-deploy-verify` + `npm run verify:post-deploy-voels` |
+| M3 | `runPostDeployVoelsChecks` + daily cron (self-heals MC) + `npm run verify:post-deploy-voels` + `npm run smoke:mc-voels` |
 | M4 | `@upstash/ratelimit` when `UPSTASH_REDIS_*` set; memory fallback for dev/CI |
 
 **Files:** `lib/api/schemas/householdAccess.ts`, `lib/api/requireVaultAccess.ts`, `components/consumer/ConsumerDocumentVault.tsx`, `lib/verify/runPostDeployVoelsChecks.ts`, `lib/api/simpleRateLimit.ts`

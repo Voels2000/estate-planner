@@ -68,10 +68,12 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
-## Post-deploy Voels verify script (2026-06-06) — shipped
+## Post-deploy Voels verify script (2026-06-06) — shipped; cron self-heal (2026-06-07)
 
-- [x] `scripts/verify-post-deploy-voels.ts` — MC Phase 3 + PDF narrative gate (7 checks)
-- [x] ROADMAP · DECISION_LOG · NEXT_SESSION verify script index
+- [x] `lib/verify/runPostDeployVoelsChecks.ts` + `npm run verify:post-deploy-voels` — 7 checks
+- [x] `npm run smoke:mc-voels` — immediate MC backfill for Voels base case
+- [x] Daily cron `/api/cron/post-deploy-verify` (9:00 UTC) — self-heals missing MC then verifies
+- [x] ROADMAP · DECISION_LOG · MASTER_ARCHITECTURE · LAUNCH_CHECKLIST · GO_LIVE_E2E synced
 
 ## Advisor logo file-upload (2026-06-07) — shipped
 

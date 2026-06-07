@@ -186,13 +186,16 @@ npx dotenv-cli -e .env.local -- npx tsx scripts/compare-voels-accounts.ts  # bef
 
 ---
 
-## Post-deploy verification scripts — indexed ✅ (2026-06-06)
+## Post-deploy verification scripts — indexed ✅ (2026-06-06, cron self-heal 2026-06-07)
 
-**Voels prod gate:** `npx dotenv-cli -e .env.local -- npx tsx scripts/verify-post-deploy-voels.ts`
+**Voels prod gate (manual):** `npm run verify:post-deploy-voels` — 7 checks, no auto-remediate.
 
-| Script | Purpose |
-|--------|---------|
-| `verify-post-deploy-voels.ts` | MC Phase 3 surfaces + PDF narrative line (7 checks) |
+**Daily cron (production):** `GET /api/cron/post-deploy-verify` — 9:00 UTC (`vercel.json`); **backfills missing Voels MC cache** then verifies. Immediate fix: `npm run smoke:mc-voels`.
+
+| Script / npm | Purpose |
+|--------------|---------|
+| `verify-post-deploy-voels.ts` / `npm run verify:post-deploy-voels` | MC Phase 3 surfaces + PDF narrative line (7 checks) |
+| `smoke-mc-precompute-voels.ts` / `npm run smoke:mc-voels` | Force Voels MC precompute when cache empty |
 | `regenerate-base-case-voels.ts` | Force base-case regenerate; death-year **2057** engine B parity |
 | `verify-state-tax-panel-states.ts` | All **13** modeled estate-tax states — engine B brackets |
 | `verify-state-tax-coverage.ts` | Estate + income + inheritance tax DB coverage |

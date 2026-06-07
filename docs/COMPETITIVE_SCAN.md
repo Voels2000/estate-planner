@@ -61,7 +61,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done
 |---|------|--------|
 | M1 | Expand `assertHouseholdAccess` to all household-scoped API routes + shared Zod schemas | `[x]` |
 | M2 | Consumer document vault (self-upload) — without full doc generation | `[x]` `/settings/documents` |
-| M3 | Wire `verify:estate:voels` into post-deploy checklist / cron | `[x]` daily cron + `npm run verify:post-deploy-voels` |
+| M3 | Wire `verify:estate:voels` into post-deploy checklist / cron | `[x]` daily cron self-heals Voels MC + verify; manual `verify:post-deploy-voels` |
 | M4 | Shared rate-limit store (Upstash/Redis) — replace in-memory `simpleRateLimit` | `[x]` Upstash when env set; memory fallback |
 | M5 | Attorney Stripe products live + attorney E2E suite expansion | `[ ]` |
 
@@ -210,6 +210,8 @@ You have invested heavily in E2E; without CI, regressions ship silently — espe
 
 **Shipped (2026-06-07):** `.github/workflows/e2e-smoke.yml` — off until `E2E_SMOKE_IN_CI=true`. Pre-launch enable steps: [LAUNCH_CHECKLIST § GitHub Actions E2E smoke](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live).
 
+**M3 cron (2026-06-07):** `/api/cron/post-deploy-verify` daily 9:00 UTC — `ensureVoelsMonteCarloCached()` then 7 checks. Manual: `npm run verify:post-deploy-voels`; immediate: `npm run smoke:mc-voels`.
+
 ---
 
 ### H4: Mandatory MFA for privileged roles
@@ -323,6 +325,7 @@ Quarter 3+ (scale)
 
 | Date | Change |
 |------|--------|
+| 2026-06-07 | Voels cron MC self-heal — daily `/api/cron/post-deploy-verify` backfills then verifies |
 | 2026-06-07 | M1–M4 shipped: household access sweep, consumer document vault, post-deploy verify cron, Upstash rate limits |
 | 2026-06-07 | H1–H4 wired: attorney FK fix, custodian import Phase A, e2e-smoke workflow, privileged MFA flag |
 | 2026-06-07 | Initial competitive scan + prioritized backlog (code review session) |
