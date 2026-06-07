@@ -4,6 +4,29 @@
 
 ---
 
+## L3 RLS post-migration verify — shipped ✅ (2026-06-07)
+
+**L3 (competitive backlog):** Automate post-migration RLS invariants in CI against staging/production Supabase.
+
+**Command:**
+```bash
+npm run verify:rls                    # behavioral JWT isolation (SQL skipped without DB URL)
+npm run verify:rls -- --require-sql   # fail if SUPABASE_DB_URL / DATABASE_URL unset
+```
+
+| Layer | Checks |
+|-------|--------|
+| **SQL** (`scripts/verify-rls-invariants.sql`) | RLS enabled on all public tables; authenticated grants; zero loose household policies; no permissive PII policies; household tables have policies |
+| **Behavioral** | E2E consumer JWT cannot `SELECT` advisor-client `assets` by `owner_id` |
+
+**Env:** `SUPABASE_DB_URL` or `DATABASE_URL` (Session pooler URI from Supabase → Database settings); `NEXT_PUBLIC_SUPABASE_*` + `SUPABASE_SERVICE_ROLE_KEY`; optional `PLAYWRIGHT_CONSUMER_*` (defaults to `@mywealthmaps.test`).
+
+**CI:** `.github/workflows/rls-verify.yml` — off until `RLS_VERIFY_IN_CI=true`. Secret: `SUPABASE_DB_URL` + same Supabase/E2E secrets as E2E smoke.
+
+**Files:** `lib/verify/runRlsVerification.ts` · `scripts/verify-rls-post-migration.ts`
+
+---
+
 ## L1 accessibility program — shipped ✅ (2026-06-07)
 
 **L1 (competitive backlog):** eslint-jsx-a11y baseline + axe-playwright on critical consumer/public paths.

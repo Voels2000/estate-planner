@@ -34,6 +34,22 @@ Re-export after future policy changes:
 npx supabase db query --linked --agent=no -o csv -f scripts/audit-rls-high-risk-policies.sql > docs/audits/rls-policies-post-fix-$(date +%Y-%m-%d).csv
 ```
 
+## Automated post-migration verify (L3)
+
+After `supabase db push` or applying RLS migrations on staging/production:
+
+```bash
+# Full SQL + JWT isolation (requires Session pooler URI)
+SUPABASE_DB_URL=postgresql://... npm run verify:rls -- --require-sql
+
+# JWT isolation only (no direct Postgres)
+npm run verify:rls
+```
+
+**CI:** `.github/workflows/rls-verify.yml` — set repo variable `RLS_VERIFY_IN_CI=true` and secret `SUPABASE_DB_URL` (Supabase → Project Settings → Database → Connection string → Session pooler). Reuses E2E Supabase secrets for behavioral checks.
+
+**SQL invariants:** `scripts/verify-rls-invariants.sql` — expect **zero rows** (same loose-policy tables as `verify-loose-rls-policies.sql`).
+
 ## New migrations
 
 Use [supabase/MIGRATION_TEMPLATE.sql](../../supabase/MIGRATION_TEMPLATE.sql) — explicit `GRANT` + RLS block in every new table migration.

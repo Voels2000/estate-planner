@@ -49,6 +49,7 @@
     "verify:estate": "dotenv -e .env.local -- npx tsx scripts/verify-estate-suite.ts",
     "verify:estate:voels": "dotenv -e .env.local -- npx tsx scripts/verify-estate-suite.ts --preset voels --check-goldens --http",
     "verify:post-deploy-voels": "dotenv -e .env.local -- npx tsx scripts/verify-post-deploy-voels.ts",
+    "verify:rls": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/verify-rls-post-migration.ts",
     "smoke:mc-voels": "dotenv -e .env.local -- npx tsx scripts/smoke-mc-precompute-voels.ts",
     "verify:estate:e2e": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/verify-estate-suite.ts --preset e2e --lifecycle --check-goldens --http"
   },
@@ -91,6 +92,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "eslint-plugin-jsx-a11y": "^6.10.2",
+    "postgres": "^3.4.9",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

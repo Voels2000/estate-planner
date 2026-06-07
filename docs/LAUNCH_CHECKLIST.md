@@ -284,6 +284,39 @@ Optional (defaults to canonical `@mywealthmaps.test` accounts if omitted):
 
 **Also run locally against production** before go-live: [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (`PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com` in `.env.test`).
 
+#### GitHub Actions RLS verify (pre-go-live)
+
+Enable after staging Supabase has latest migrations (`supabase db push`). Workflow: `.github/workflows/rls-verify.yml` (off until repo variable is set).
+
+**1. Supabase → Project Settings → Database → Connection string**
+
+Copy the **Session pooler** URI (IPv4-friendly). Use as GitHub secret `SUPABASE_DB_URL` (include password; do not commit).
+
+**2. GitHub → Settings → Secrets and variables → Actions → Secrets**
+
+| Secret | Value |
+|--------|--------|
+| `SUPABASE_DB_URL` | Session pooler `postgresql://...` URI |
+| `NEXT_PUBLIC_SUPABASE_URL` | Same as E2E smoke |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same as E2E smoke |
+| `SUPABASE_SERVICE_ROLE_KEY` | Same as E2E smoke |
+| `PLAYWRIGHT_CONSUMER_EMAIL` / `PASSWORD` | Optional — defaults to `@mywealthmaps.test` |
+
+**3. GitHub → Settings → Secrets and variables → Actions → Variables**
+
+| Variable | Value |
+|----------|--------|
+| `RLS_VERIFY_IN_CI` | `true` |
+
+**4. Verify**
+
+- **Actions → RLS verify → Run workflow** → green
+- After any RLS migration PR merges, workflow must stay green
+
+**What runs:** `npm run verify:rls -- --require-sql` — SQL invariants (`verify-rls-invariants.sql`) + consumer JWT cannot read foreign `assets`.
+
+**Local:** `SUPABASE_DB_URL=postgresql://... npm run verify:rls -- --require-sql`
+
 #### Pre-go-live — keep Supabase Auth settings OFF
 
 These are **runtime switches** in the Supabase Dashboard (Authentication → Settings). They take effect immediately for all **new** signups once enabled:
@@ -346,7 +379,7 @@ In **Authentication → Settings**:
 - [x] **UX Language Audit (Sprint C-2b)** — All consumer-facing strings audited; `audit-ux-language.sh` 0 findings; all `DISCLAIMER_STRINGS` surfaces wired. Completed: 2026-05-24 (`788aa08`)
 - [x] **RLS security (Sprint C-3 Phase 1)** — `20260602000000_sprint_c3_rls_fixes.sql` applied or ready to push; advisor joins `active` + `accepted`. Completed: 2026-06-02 (`236890c`)
 - [x] **RLS policy fix (pre-launch)** — `20260527150000_prelaunch_rls_household_scope.sql` on prod (`1f41ce1`); GST via `/api/advisor/gst-entry` (`7cab1be` — deploy app); `verify-loose-rls-policies.sql` → 0 rows; post-fix CSV in `docs/audits/`
-- [ ] **RLS isolation smoke (manual)** — Two consumers + connected advisor/client; confirm cross-household reads return `[]` — `docs/audits/README.md`
+- [ ] **RLS isolation smoke (manual)** — Two consumers + connected advisor/client; confirm cross-household reads return `[]` — `docs/audits/README.md`. **Automated:** `npm run verify:rls` (JWT + SQL with `SUPABASE_DB_URL`); CI: [§ GitHub Actions RLS verify](#github-actions-rls-verify-pre-go-live)
 - [x] **Auth + security (Sprint C-3 Phase 1b + Phase 3)** — `/auth/callback`, confirm-email, MFA middleware, security headers, PII logging. Completed: 2026-06-02 (`56a4407`)
 - [x] **Billing disclosures (Sprint C-4 — code)** — RCW 19.316, FTC cancel, renewal reminders (`462bda9`). **Manual:** Stripe Dashboard + walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
 - [x] **Privacy + Terms (Sprint C-5 — code)** — `/privacy`, `/terms`, footer links, sitemap (`2e1dff3`, `695a860`). **Manual:** [LEGAL_TODO.md](./LEGAL_TODO.md) — placeholders + counsel sign-off
