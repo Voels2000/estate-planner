@@ -1,6 +1,28 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-06 (export federal bracket engine)
+# Updated: 2026-06-06 (federal bracket engine — all surfaces)
+
+---
+
+## Federal bracket engine — all remaining flat 40% paths — shipped ✅ (2026-06-06)
+
+**Shipped:** Progressive **`federal_estate_tax_brackets`** via **`lib/tax/federalExportTax.ts`** helpers (`computeFederalTaxOnly`, `computeCombinedEstateTax`, `federalTaxSavedByReduction`) across:
+
+| Tier | Surfaces |
+|------|----------|
+| 1 | **`StrategyHorizonTable`**, **`CompositeOverlay`**, **`validateComposability.ts`** |
+| 2 | Advisor **Tax tab** `no_exemption` stress test |
+| 3 | **Estate MC** lib + async + edge (`federalBrackets` POST/fetch) |
+| 4 | **`estate-tax-projection.ts`** death-year federal + **`generate-base-case`** |
+| 5 | ILIT/CST modules, **`strategyAlertRules`**, **`fetchNarrativePdfFields`** / narrative ILIT savings |
+
+**Horizons:** **`horizonSnapshots.ts`** / **`strategyMappers.ts`** already delegate federal to **`computeFederalExportTax`** (prior session).
+
+**Edge redeploy required:** `supabase functions deploy estate-monte-carlo` (federal logic changed in Deno).
+
+**Verify:** `npx dotenv-cli -e .env.local -- npx tsx scripts/verify-export-federal-brackets.ts` · `scripts/verify-estate-mc-voels-smoke.ts` · regenerate base case for death-year federal rows.
+
+**Next code sprint:** logo file-upload · titling perf.
 
 ---
 
@@ -62,7 +84,7 @@
 
 **Voels verify:** **`scripts/regenerate-base-case-voels.ts`** — POST **`/api/advisor/generate-base-case`**; death year **2057** state tax **$18,273,170** (engine B parity).
 
-**Next:** export federal flat 40% → bracket engine (deferred) · titling perf (deferred).
+**Next:** titling perf (deferred).
 
 ---
 

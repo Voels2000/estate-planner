@@ -11,6 +11,10 @@
 //   - Crummey notice: annual premium payments to ILIT must use Crummey
 //     powers to qualify as present-interest gifts
 
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
+import type { EstateScenario } from '@/lib/tax/estate-tax-constants'
+import { federalTaxSavedByReduction } from '@/lib/tax/federalExportTax'
+
 export interface ILITConfig {
   // Annual premium paid into the ILIT
   annualPremium: number
@@ -26,6 +30,12 @@ export interface ILITConfig {
   crummeyBeneficiaries: number
   // Whether policy was transferred into ILIT (vs. ILIT purchasing new policy)
   isPolicyTransfer: boolean
+  /** Progressive federal tax context — when omitted, marginal savings use top rate. */
+  grossEstate?: number
+  federalBrackets?: EstateTaxBracket[]
+  filingStatus?: string | null
+  hasSpouse?: boolean
+  lawScenario?: EstateScenario
 }
 
 export interface ILITResult {
@@ -101,7 +111,17 @@ export function applyILIT(config: ILITConfig): ILITResult {
     : false
 
   const section2035InclusionAmount = section2035Flag ? deathBenefit : 0
-  const estateTaxSaved = section2035Flag ? 0 : deathBenefit * ESTATE_TAX_RATE
+  const federalCtx = {
+    filingStatus: config.filingStatus,
+    hasSpouse: config.hasSpouse ?? false,
+    brackets: config.federalBrackets ?? [],
+    lawScenario: config.lawScenario ?? 'current_law',
+  }
+  const estateTaxSaved = section2035Flag
+    ? 0
+    : config.grossEstate && config.federalBrackets?.length
+      ? federalTaxSavedByReduction(config.grossEstate, deathBenefit, federalCtx)
+      : deathBenefit * ESTATE_TAX_RATE
 
   // IRR calculation
   const effectiveYears = policyTermYears > 0

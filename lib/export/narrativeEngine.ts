@@ -424,7 +424,9 @@ export function enrichActionItems(items: ActionItem[], data: PDFReportData): Act
     }
 
     if (t.includes('ilit') || t.includes('life insurance')) {
-      const potentialSavings = Math.round(lifeInsuranceOutsideILIT * 0.40)
+      const potentialSavings = Math.round(
+        data.ilitTaxSavingsEstimate ?? lifeInsuranceOutsideILIT * 0.4,
+      )
       return {
         ...item,
         theme: 'tax_planning' as const,

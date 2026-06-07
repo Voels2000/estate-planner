@@ -17,6 +17,7 @@ import type {
 } from '@/lib/estate/strategyLedger'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import type { MonteCarloSummary as PrecomputedMonteCarloSummary } from '@/lib/advisor/loadScenarioMonteCarlo'
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
 import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import type { RothAnalysisResult } from '@/lib/calculations/roth-analysis'
@@ -392,6 +393,7 @@ export interface ClientViewShellProps {
     exemption_amount: number
   }>
   stateIncomeTaxBrackets?: StateIncomeTaxBracket[]
+  federalBrackets?: EstateTaxBracket[]
   conflictReport?: {
     conflicts: Array<{
       conflict_type: string

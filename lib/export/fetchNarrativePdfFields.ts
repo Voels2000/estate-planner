@@ -5,6 +5,11 @@
 import { CST_STRATEGY_SOURCES, deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
 import { createClient } from '@/lib/supabase/server'
 import { normalizePdfFilingStatus, type PdfFilingStatus } from '@/lib/export/pdfFilingStatus'
+import {
+  computeFederalExportTax,
+  federalTaxSavedByReduction,
+  latestFederalBracketsFromRows,
+} from '@/lib/tax/federalExportTax'
 
 export type { PdfFilingStatus }
 export { normalizePdfFilingStatus }
@@ -19,6 +24,7 @@ export type NarrativePdfFields = {
   lifeInsuranceOutsideILIT: number
   priorHealthScore?: number
   sunsetTaxEstimate: number
+  ilitTaxSavingsEstimate: number
   annualGiftingCapacity: number
   lifetimeExemptionRemaining: number
 }
@@ -33,7 +39,7 @@ export async function fetchNarrativePdfFields(params: {
   const supabase = await createClient()
   const filingStatus = normalizePdfFilingStatus(params.filingStatus)
 
-  const [trustRes, irrevocableRes, cstLineRes, giftingRes, insuranceRes, priorScoreRes, giftingSummaryRes] =
+  const [trustRes, irrevocableRes, cstLineRes, giftingRes, insuranceRes, priorScoreRes, giftingSummaryRes, federalBracketsRes] =
     await Promise.all([
       supabase
         .from('estate_documents')
@@ -73,11 +79,22 @@ export async function fetchNarrativePdfFields(params: {
         .order('computed_at', { ascending: false })
         .range(1, 1),
       supabase.rpc('calculate_gifting_summary', { p_household_id: params.householdId }),
+      supabase
+        .from('federal_estate_tax_brackets')
+        .select('tax_year, min_amount, max_amount, rate_pct')
+        .order('tax_year', { ascending: false })
+        .order('min_amount', { ascending: true }),
     ])
 
-  const sunsetExempt = filingStatus === 'mfj' ? 14_000_000 : 7_000_000
-  const taxable = Math.max(0, params.grossEstate - sunsetExempt)
-  const sunsetTaxEstimate = taxable > 0 ? Math.round(taxable * 0.40) : 0
+  const federalBrackets = latestFederalBracketsFromRows(federalBracketsRes.data ?? [])
+  const hasSpouse = filingStatus === 'mfj'
+  const sunsetTaxEstimate = computeFederalExportTax({
+    grossEstate: params.grossEstate,
+    filingStatus,
+    hasSpouse,
+    brackets: federalBrackets,
+    lawScenario: 'no_exemption',
+  }).federalTax
 
   const giftingData = giftingSummaryRes.data as { lifetime_remaining?: number } | null
   const fullExempt = filingStatus === 'mfj' ? 27_980_000 : 13_990_000
@@ -89,6 +106,15 @@ export async function fetchNarrativePdfFields(params: {
   const lifeInsuranceOutsideILIT = (insuranceRes.data ?? [])
     .filter((p) => !p.is_ilit)
     .reduce((sum, p) => sum + Number(p.death_benefit ?? 0), 0)
+
+  const ilitTaxSavingsEstimate =
+    federalBrackets.length > 0
+      ? federalTaxSavedByReduction(params.grossEstate, lifeInsuranceOutsideILIT, {
+          filingStatus,
+          hasSpouse,
+          brackets: federalBrackets,
+        })
+      : Math.round(lifeInsuranceOutsideILIT * 0.4)
 
   const hasBypassTrust = deriveHasBypassTrustFromLineItems(cstLineRes.data ?? [], 'consumer_accepted')
 
@@ -102,6 +128,7 @@ export async function fetchNarrativePdfFields(params: {
     lifeInsuranceOutsideILIT,
     priorHealthScore: priorScoreRes.data?.[0]?.score ?? undefined,
     sunsetTaxEstimate,
+    ilitTaxSavingsEstimate,
     annualGiftingCapacity: filingStatus === 'mfj' ? 38_000 : 19_000,
     lifetimeExemptionRemaining,
   }

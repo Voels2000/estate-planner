@@ -22,6 +22,7 @@ import type {
 import type { StrategyLineItemRow } from '@/lib/consumer/strategyLineItemViews'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
+import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
 import { perRecipientLimitFromSplit } from '@/lib/gifting/perRecipientLimit'
@@ -212,14 +213,7 @@ export default async function MyEstateTrustStrategyPage({
 
   const totalLiabilities = (liabilitiesRows ?? []).reduce((sum, row) => sum + num(row.balance), 0)
   const trustsExcluded = trustsExcludedSum(trustWillGuidance.trusts)
-  const latestYear = Math.max(...(federalBracketRows ?? []).map((b) => num(b.tax_year)), 0)
-  const federalBrackets: EstateTaxBracket[] = (federalBracketRows ?? [])
-    .filter((b) => num(b.tax_year) === latestYear)
-    .map((b) => ({
-      min_amount: num(b.min_amount),
-      max_amount: num(b.max_amount),
-      rate_pct: num(b.rate_pct),
-    }))
+  const federalBrackets = latestFederalBracketsFromRows(federalBracketRows ?? [])
 
   const filing = filingForTax(householdRow.filing_status)
   const grossEstate = num(composition.gross_estate)
@@ -340,6 +334,7 @@ export default async function MyEstateTrustStrategyPage({
     liveNetWorth: grossEstate,
     strategyLineItems: horizonStrategyItems,
     stateBrackets,
+    federalBrackets,
     lifetimeGiftsUsed,
     household: {
       state_primary: householdFull.state_primary,
@@ -560,6 +555,12 @@ export default async function MyEstateTrustStrategyPage({
         advisorLineItems={advisorLineItemRows ?? []}
         consumerLineItems={consumerLineItemRows ?? []}
         advisorHorizons={advisorHorizons}
+        federalBrackets={federalBrackets}
+        stateBrackets={stateBrackets}
+        filingStatus={householdFull?.filing_status}
+        hasSpouse={householdFull?.has_spouse ?? false}
+        hasBypassTrust={hasBypassTrust}
+        statePrimary={householdFull?.state_primary}
         estateContext={estateContext}
         strategyImpact={{
           strategyItems,

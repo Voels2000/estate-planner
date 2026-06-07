@@ -14,6 +14,7 @@ import {
   computeColumnTaxes,
   findAtDeathRow,
 } from '@/lib/my-estate-strategy/horizonSnapshots'
+import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
 
 // ─── Node types ──────────────────────────────────────────────────────────────
@@ -289,6 +290,8 @@ export async function generateEstateFlow(
     estateDocsRes,
     scenarioMetaRes,
     scenarioS2Res,
+    giftingSummaryRes,
+    federalBracketsRes,
     stateBracketsRes,
   ] = await Promise.all([
     supabase.from('assets').select('*').eq('owner_id', userId),
@@ -308,6 +311,12 @@ export async function generateEstateFlow(
     supabase.from('estate_documents').select('doc_type,status').eq('household_id', householdId),
     scenarioMetaPromise,
     scenarioS2Promise,
+    supabase.rpc('calculate_gifting_summary', { p_household_id: householdId }),
+    supabase
+      .from('federal_estate_tax_brackets')
+      .select('tax_year, min_amount, max_amount, rate_pct')
+      .order('tax_year', { ascending: false })
+      .order('min_amount', { ascending: true }),
     supabase
       .from('state_estate_tax_rules')
       .select('min_amount, max_amount, rate_pct, exemption_amount')
@@ -333,6 +342,13 @@ export async function generateEstateFlow(
     rate_pct: number
     exemption_amount: number
   }[]
+  const federalBrackets = latestFederalBracketsFromRows(federalBracketsRes.data ?? [])
+  const lifetimeGiftsUsed = Math.max(
+    0,
+    Number(
+      (giftingSummaryRes.data as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0,
+    ) || 0,
+  )
   const scenario = scenarioMetaRes.data
     ? {
         ...scenarioMetaRes.data,
@@ -400,6 +416,8 @@ export async function generateEstateFlow(
     filingStatus: household.filing_status,
     hasSpouse: Boolean(household.has_spouse),
     stateBrackets,
+    federalBrackets,
+    lifetimeGiftsUsed,
   })
   const computedEstateTaxFederal = hypothetical.federalTax
   const computedEstateTaxState = hypothetical.stateExposure

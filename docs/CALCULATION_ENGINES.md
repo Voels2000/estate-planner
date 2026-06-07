@@ -42,7 +42,7 @@ from `lib/calculations/stateEstateTax.ts`. Hardcoded flat rates are not permitte
 
 | Function | File | Use for |
 |----------|------|---------|
-| `estimateFederalEstateTaxSnapshot()` | `lib/my-estate-strategy/horizonSnapshots.ts` | Horizon snapshot columns (flat top rate on exposure) |
+| `estimateFederalEstateTaxSnapshot()` | `lib/my-estate-strategy/horizonSnapshots.ts` | Horizon columns — delegates to **`computeFederalExportTax()`** when **`federalBrackets`** supplied |
 | `computeFederalEstateTax()` | `lib/calculations/estate-tax.ts` | Progressive brackets + exemption credit (`/estate-tax`, trust strategy) |
 | `computeFederalExportTax()` | `lib/tax/federalExportTax.ts` | Advisor export panel, Excel, PDF (`exportMappers` → `PDFReportData.federalTax`) |
 | `computeEstateTaxProjection()` | `lib/calculations/estate-tax-projection.ts` | Year-by-year projection rows (engine B at death years) |
@@ -90,10 +90,11 @@ Two separate engines — do not merge.
 |--|--|
 | **Files** | `lib/calculations/estate-monte-carlo.ts` + `supabase/functions/estate-monte-carlo/index.ts` |
 | **State tax** | Engine B (`calculateStateEstateTax` + `resolveActiveStateTax`) per simulated estate — **not** flat rate (removed 2026-06-01) |
-| **Inputs** | `stateCode`, `stateBrackets`, `filingStatus`, `hasBypassTrust` via POST from Strategy tab (`MonteCarloPanel`) |
+| **Federal tax** | Progressive brackets via `computeFederalTaxOnly` / inlined edge equivalent — **`federalBrackets`** from DB (POST or edge fetch) |
+| **Inputs** | `stateCode`, `stateBrackets`, `filingStatus`, `hasBypassTrust`, `federalBrackets` via POST from Strategy tab (`MonteCarloPanel`) |
 | **Storage** | `monte_carlo_results` — edge on Strategy tab Run; **`runEstateMonteCarloAsync`** after **`generateBaseCase`** (precompute + Phase 3 signals) |
 | **Precomputed** | Yes — `percentiles_by_year` + Phase 3 signals via **`loadScenarioMonteCarlo`** |
-| **Engine version** | Flat rate deprecated; engine B unified as of `fc85ff8` |
+| **Engine version** | Federal + state unified bracket engines as of 2026-06-05 |
 
 **`success_rate`:** Share of simulated final estates where federal + state estate tax both equal $0 (UI: **Zero-Tax Paths**).
 
@@ -118,11 +119,12 @@ Two separate engines — do not merge.
 |---------|-------------------------|--------------|
 | PDF cover metric + callout | B via `narrativeEngine` + `stateBrackets` | Yes — `hasBypassTrust` |
 | PDF page 3 scenario table | B — `calculateStateTaxScenarios` | Yes — both scenarios |
-| Strategy horizons | B via `computeColumnTaxes` | Yes — `hasBypassTrust` threaded |
+| Strategy horizons | B via `computeColumnTaxes` | Yes — `hasBypassTrust` threaded; federal via **`federalBrackets`** |
 | Advisor tax tab | B via `StateTaxPanel` | Yes — `stateTaxWithCST` / `cstBenefit` |
 | Consumer estate strategy | B via `computeColumnTaxes` | Yes — accepted CST line items |
-| Estate tax projection rows | B — `calculateStateEstateTax` + `resolveActiveStateTax` at death years | Yes — `hasBypassTrust` from line items |
+| Estate tax projection rows | B — `calculateStateEstateTax` + `resolveActiveStateTax` at death years; federal via **`federalBrackets`** | Yes — `hasBypassTrust` from line items |
 | Prospect mode | B via `calculateStateEstateTax` | Yes |
+| Strategy composability / horizon overlay | Progressive federal via `validateComposability` + `computeHorizonStrategyTaxes` | Optional state when brackets passed |
 | Estate Monte Carlo (advisor Strategy tab) | B — see [Monte Carlo engines](#monte-carlo-engines) | Yes — `hasBypassTrust` |
 
 **Export / PDF tax (2026-06-05):** PDF page 3 metric cards — engine B at render. Export panel + Excel **Tax Analysis** — engine B via `exportMappers.ts`. Excel **Projection** sheet + PDF SVG chart — per-row `estate_tax_*` from stored `outputs_s1_first` (engine B at death years after `generateBaseCase` regenerate).

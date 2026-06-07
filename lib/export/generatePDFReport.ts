@@ -134,6 +134,7 @@ export interface PDFReportData {
   lifeInsuranceOutsideILIT: number
   priorHealthScore?: number
   sunsetTaxEstimate?: number
+  ilitTaxSavingsEstimate?: number
   annualGiftingCapacity: number
   lifetimeExemptionRemaining: number
 }

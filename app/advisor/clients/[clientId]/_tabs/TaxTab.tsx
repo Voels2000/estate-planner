@@ -13,6 +13,8 @@ import { ClientViewShellProps } from '../_client-view-shell'
 import { formatCurrency } from '../_utils'
 import { getPortabilityGapLabel, getStateDisplayName, isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 import { OBBBA_2026, type EstateScenario, type FilingStatus } from '@/lib/tax/estate-tax-constants'
+import { computeFederalExportTax } from '@/lib/tax/federalExportTax'
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
 
 const LAW_SCENARIO_OPTIONS: { value: EstateScenario; label: string; description: string }[] = [
   {
@@ -34,9 +36,21 @@ function getFederalExemption(lawScenario: EstateScenario, filingStatus: FilingSt
     : OBBBA_2026.BASIC_EXCLUSION_SINGLE
 }
 
-function estimateFederalTaxStress(grossEstate: number, federalExemption: number) {
-  const taxable = Math.max(0, grossEstate - federalExemption)
-  return Math.round(taxable * OBBBA_2026.TOP_RATE)
+function estimateFederalTaxStress(
+  grossEstate: number,
+  federalExemption: number,
+  filingStatus: FilingStatus,
+  hasSpouse: boolean,
+  federalBrackets: EstateTaxBracket[],
+) {
+  return computeFederalExportTax({
+    grossEstate,
+    filingStatus,
+    hasSpouse,
+    brackets: federalBrackets,
+    lawScenario: 'no_exemption',
+    exemptionCapOverride: federalExemption,
+  }).federalTax
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -52,6 +66,7 @@ export default function TaxTab({
   estateComposition,
   stateEstateTaxRules,
   projectionRowsDomicile,
+  federalBrackets = [],
 }: ClientViewShellProps) {
   // ENG-1 AUDIT NOTE:
   // Tax tab current-law numbers are horizon-driven (advisorHorizons.today).
@@ -75,7 +90,13 @@ export default function TaxTab({
   const federalTax =
     lawScenario === 'current_law'
       ? (hasHorizonFederalInputs ? Number(advisorHorizons?.today.federalTaxEstimate) : 0)
-      : estimateFederalTaxStress(grossEstate, federalExemption)
+      : estimateFederalTaxStress(
+          grossEstate,
+          federalExemption,
+          filingStatus,
+          household?.has_spouse ?? false,
+          federalBrackets,
+        )
 
   const statePrimary = (household?.state_primary ?? '').trim().toUpperCase()
   const stateCode = parseStateTaxCode(statePrimary || null)

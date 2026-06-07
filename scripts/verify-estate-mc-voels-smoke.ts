@@ -7,6 +7,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { buildAdvisorStrategyViewModels } from '@/lib/advisor/strategyMappers'
+import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import {
   fetchStrategyLineItemsWithClient,
@@ -143,6 +144,13 @@ async function main() {
 
   const stateBrackets = (bracketRows ?? []) as StateBracket[]
 
+  const { data: federalBracketRows } = await admin
+    .from('federal_estate_tax_brackets')
+    .select('tax_year, min_amount, max_amount, rate_pct')
+    .order('tax_year', { ascending: false })
+    .order('min_amount', { ascending: true })
+  const federalBrackets = latestFederalBracketsFromRows(federalBracketRows ?? [])
+
   const [advisorItems, consumerItems, composition, scenarioRes] = await Promise.all([
     fetchStrategyLineItemsWithClient(admin, household.id, 'advisor'),
     fetchStrategyLineItemsWithClient(admin, household.id, 'consumer'),
@@ -174,6 +182,7 @@ async function main() {
     currentYear,
     household,
     stateBrackets,
+    federalBrackets,
     estateCompositionGrossEstate: Number(composition?.gross_estate ?? 0),
     lifetimeGiftsUsed: 0,
     scenario,
@@ -198,6 +207,7 @@ async function main() {
     scenarioId: scenario?.id ?? undefined,
     grossEstate,
     federalExemption,
+    federalBrackets,
     stateCode,
     stateBrackets,
     filingStatus,

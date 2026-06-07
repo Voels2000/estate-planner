@@ -125,6 +125,19 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     lifetimeGiftsUsed,
   )
 
+  const needsFederalBrackets = needsStrategyVm || datasetInclude.exportWiring
+  const federalBrackets = needsFederalBrackets
+    ? latestFederalBracketsFromRows(
+        (
+          await supabase
+            .from('federal_estate_tax_brackets')
+            .select('tax_year, min_amount, max_amount, rate_pct')
+            .order('tax_year', { ascending: false })
+            .order('min_amount', { ascending: true })
+        ).data ?? [],
+      )
+    : []
+
   if (isStale) {
     const [
       { data: incomeRows },
@@ -369,6 +382,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       currentYear,
       household,
       stateBrackets,
+      federalBrackets,
       estateCompositionGrossEstate: Number(estateComposition?.gross_estate ?? 0),
       lifetimeGiftsUsed,
       scenario,
@@ -443,20 +457,13 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   let exportExcelData = undefined
   if (datasetInclude.exportWiring) {
     const grossForExport = Number(latestOutput?.estate_incl_home ?? 0)
-    const [{ data: federalBracketRows }, narrativeFields] = await Promise.all([
-      supabase
-        .from('federal_estate_tax_brackets')
-        .select('tax_year, min_amount, max_amount, rate_pct')
-        .order('tax_year', { ascending: false })
-        .order('min_amount', { ascending: true }),
-      fetchNarrativePdfFields({
+    const narrativeFields = await fetchNarrativePdfFields({
         householdId: household.id,
         clientId,
         grossEstate: advisorHorizons?.today?.grossEstate ?? grossForExport,
         filingStatus: household.filing_status,
         statePrimary: household.state_primary,
-      }),
-    ])
+    })
     const exportPayloads = await buildAdvisorExportPayloads({
       household,
       scenarioId,
@@ -477,7 +484,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       scenarioForStrategy,
       narrativeFields,
       stateBrackets,
-      federalBrackets: latestFederalBracketsFromRows(federalBracketRows ?? []),
+      federalBrackets,
       lifetimeGiftsUsed,
       assets,
       realEstate,
@@ -662,6 +669,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       stateBrackets={stateBrackets}
       stateEstateTaxRules={stateTaxRulesAllYears}
       stateIncomeTaxBrackets={stateIncomeTaxBrackets}
+      federalBrackets={federalBrackets}
       conflictReport={conflictReport}
       estateComposition={estateComposition}
       advisorEstateComposition={advisorEstateComposition}

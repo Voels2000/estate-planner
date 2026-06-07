@@ -149,6 +149,7 @@
 | StateTaxPanel multi-state | `[x]` `004c591` |
 | PDF cover logo from `firm_logo_url` | `[x]` `556e773` |
 | **Export federal → bracket engine B** | `[x]` — `computeFederalExportTax` + `federal_estate_tax_brackets` |
+| **Federal flat 40% elimination (all surfaces)** | `[x]` — horizons, composability, Tax stress, MC, projection death-year, heuristics |
 | **Logo file-upload UI** | `[ ]` deferred — `firm_logo_url` write path |
 | **Titling perf / memoization** | `[ ]` deferred |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |

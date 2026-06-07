@@ -125,6 +125,53 @@ type EstateTaxContext = {
   stateBrackets: StateBracket[]
   filingStatus: 'single' | 'mfj'
   hasBypassTrust: boolean
+  federalBrackets: FederalBracket[]
+}
+
+type FederalBracket = {
+  min_amount: number
+  max_amount: number
+  rate_pct: number
+}
+
+function computeProgressiveTaxFromBrackets(taxableBase: number, brackets: FederalBracket[]): number {
+  if (taxableBase <= 0 || brackets.length === 0) return 0
+  const sorted = [...brackets].sort((a, b) => a.min_amount - b.min_amount)
+  let tax = 0
+  for (const bracket of sorted) {
+    const bracketMin = bracket.min_amount
+    const bracketMax =
+      !Number.isFinite(bracket.max_amount) || bracket.max_amount >= 1e15
+        ? Infinity
+        : bracket.max_amount
+    if (taxableBase <= bracketMin) break
+    const taxableInBracket = Math.min(taxableBase, bracketMax) - bracketMin
+    if (taxableInBracket > 0) {
+      tax += taxableInBracket * (bracket.rate_pct / 100)
+    }
+  }
+  return Math.round(tax * 100) / 100
+}
+
+function computeFederalEstateTaxInline(
+  grossEstate: number,
+  exemption: number,
+  brackets: FederalBracket[],
+  filingStatus: 'single' | 'mfj',
+  lawScenario: string,
+): number {
+  if (grossEstate <= 0) return 0
+  const effectiveExemption = lawScenario === 'no_exemption' ? 0 : exemption
+  if (brackets.length === 0) {
+    return Math.max(0, Math.round((grossEstate - effectiveExemption) * 0.4))
+  }
+  if (lawScenario === 'no_exemption') {
+    return computeProgressiveTaxFromBrackets(grossEstate, brackets)
+  }
+  const taxBefore = computeProgressiveTaxFromBrackets(grossEstate, brackets)
+  const credit = computeProgressiveTaxFromBrackets(effectiveExemption, brackets)
+  void filingStatus
+  return Math.max(0, Math.round((taxBefore - credit) * 100) / 100)
 }
 
 function randomNormal(mean: number, stdDev: number): number {
@@ -142,9 +189,13 @@ function calcEstateTax(
   taxCtx: EstateTaxContext,
   lawScenario: string,
 ): number {
-  const FEDERAL_RATE = 0.4
-  const effectiveExemption = lawScenario === 'no_exemption' ? 0 : exemption
-  const federalTax = Math.max(0, estate - effectiveExemption) * FEDERAL_RATE
+  const federalTax = computeFederalEstateTaxInline(
+    estate,
+    exemption,
+    taxCtx.federalBrackets ?? [],
+    taxCtx.filingStatus,
+    lawScenario,
+  )
   const isMFJ = taxCtx.filingStatus === 'mfj'
   const stateResult = calculateStateEstateTax(
     estate,
@@ -164,6 +215,7 @@ function pct(sorted: number[], p: number): number {
 function runEstateMonteCarlo(inputs: {
   grossEstate: number
   federalExemption: number
+  federalBrackets?: FederalBracket[]
   stateCode: string
   stateBrackets: StateBracket[]
   filingStatus: 'single' | 'mfj'
@@ -178,6 +230,7 @@ function runEstateMonteCarlo(inputs: {
   const {
     grossEstate,
     federalExemption,
+    federalBrackets = [],
     stateCode,
     stateBrackets,
     filingStatus,
@@ -195,6 +248,7 @@ function runEstateMonteCarlo(inputs: {
     stateBrackets,
     filingStatus,
     hasBypassTrust,
+    federalBrackets,
   }
 
   const returnMean = (returnMeanPct ?? 7) / 100
@@ -343,6 +397,7 @@ serve(async (req) => {
       federalExemption,
       stateCode = '',
       stateBrackets = [],
+      federalBrackets: federalBracketsBody = [],
       filingStatus = 'single',
       hasBypassTrust = false,
       yearsUntilDeath = 20,
@@ -394,10 +449,32 @@ serve(async (req) => {
       })
     }
 
+    let federalBrackets = federalBracketsBody as FederalBracket[]
+    if (!federalBrackets.length) {
+      const adminClient = createClient(supabaseUrl, serviceRoleKey)
+      const { data: bracketRows } = await adminClient
+        .from('federal_estate_tax_brackets')
+        .select('tax_year, min_amount, max_amount, rate_pct')
+        .order('tax_year', { ascending: false })
+        .order('min_amount', { ascending: true })
+      const latestYear = Math.max(...(bracketRows ?? []).map((b) => Number(b.tax_year ?? 0)), 0)
+      federalBrackets =
+        latestYear > 0
+          ? (bracketRows ?? [])
+              .filter((b) => Number(b.tax_year) === latestYear)
+              .map((b) => ({
+                min_amount: Number(b.min_amount ?? 0),
+                max_amount: Number(b.max_amount ?? 0),
+                rate_pct: Number(b.rate_pct ?? 0),
+              }))
+          : []
+    }
+
     // Run Monte Carlo
     const result = runEstateMonteCarlo({
       grossEstate,
       federalExemption,
+      federalBrackets,
       stateCode,
       stateBrackets,
       filingStatus: filingStatus === 'mfj' ? 'mfj' : 'single',

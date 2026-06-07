@@ -1,6 +1,22 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-06 (export federal bracket engine)
+# Last updated: 2026-06-06 (federal bracket engine — all surfaces)
+
+---
+
+## Federal bracket engine — eliminate remaining flat 40% paths (2026-06-06)
+
+**Decision:** Extend **`computeFederalExportTax()`** / **`computeFederalTaxOnly()`** / **`federalTaxSavedByReduction()`** to every production path that still used flat **`gross × 0.40`** or **`taxable × TOP_RATE`** for federal estate tax. Shared bracket fetch: **`latestFederalBracketsFromRows()`** on **`federal_estate_tax_brackets`**.
+
+**Surfaces:** strategy horizon overlay + composability; Tax tab stress; estate MC (lib, **`runEstateMonteCarloAsync`**, edge); projection death-year federal; ILIT/CST heuristics; strategy alert ILIT savings; PDF narrative sunset + **`ilitTaxSavingsEstimate`**.
+
+**MC async fix:** **`householdFederalExemption()`** (OBBBA) replaces **`currentFederalExemption()`** from narrativeEngine.
+
+**Edge:** Inlined progressive federal in **`supabase/functions/estate-monte-carlo/index.ts`**; accepts **`federalBrackets`** in POST or fetches from DB. **Redeploy required** after merge.
+
+**Fallback:** When bracket rows empty, helpers fall back to top rate on taxable base (same as export path).
+
+**Files:** `lib/tax/federalExportTax.ts` · `lib/strategy/validateComposability.ts` · `lib/calculations/estate-monte-carlo.ts` · `lib/calculations/estate-tax-projection.ts` · `lib/my-estate-strategy/horizonSnapshots.ts` · advisor Strategy/Tax tabs · consumer trust-strategy horizon table.
 
 ---
 
@@ -380,6 +396,8 @@
 
 **Follow-up:** `MonteCarloPanel` footnote + **Zero-Tax Paths** label (`4bdda56`); edge redeploy; `scripts/verify-estate-mc-voels-smoke.ts`. Prior cached runs with omitted state tax inflated `success_rate` (~45% federal-only ghost on Voels).
 
+**Federal follow-up (2026-06-06):** Federal portion of **`calcEstateTax`** now uses progressive brackets (lib + edge); **`federalBrackets`** on MC POST; async runner uses **`householdFederalExemption`**. Redeploy edge after merge.
+
 ---
 
 ## PDF beneficiary summary page (2026-06-01)
@@ -528,7 +546,7 @@
 
 **Engine (`lib/export/narrativeEngine.ts`):** Executive summary (tiered by estate size), tax callout (`clear` / `sunset_risk` / `exposed`), health score trend, enriched action items (dollar impact + next step + owner), gifting capacity bar, theme grouping.
 
-**Data wiring (`lib/export/fetchNarrativePdfFields.ts`):** Six async reads in one **`Promise.all`** — `estate_documents` (trust), `strategy_configs` (irrevocable + gifting), `insurance_policies` (non-ILIT death benefit sum), prior `estate_health_scores` row, `calculate_gifting_summary` RPC. **`sunsetTaxEstimate`** = `max(0, gross − sunsetExempt) × 0.40` with MFJ sunset exempt $14M. **`filingStatus`** normalized from `married_filing_jointly` → `mfj` before all narrative branches.
+**Data wiring (`lib/export/fetchNarrativePdfFields.ts`):** Parallel fetch includes **`federal_estate_tax_brackets`**. **`sunsetTaxEstimate`** = **`computeFederalExportTax({ lawScenario: 'no_exemption' })`**. **`ilitTaxSavingsEstimate`** = **`federalTaxSavedByReduction()`** on non-ILIT death benefit (fallback top rate when brackets empty). **`filingStatus`** normalized from `married_filing_jointly` → `mfj` before all narrative branches.
 
 **Action items:** `household_alerts` selects **`title` + `description`**; fetch maps to **`title`** + **`message`** (not `body` at source). PDF uses enriched **`ActionItem`** from `@/lib/export-wiring`.
 

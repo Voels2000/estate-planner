@@ -12,34 +12,34 @@ import {
   resolveActiveStateTax,
   type StateBracket,
 } from '@/lib/calculations/stateEstateTax'
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
-import { OBBBA_2026 } from '@/lib/tax/estate-tax-constants'
+import type { EstateScenario } from '@/lib/tax/estate-tax-constants'
+import { computeFederalExportTax } from '@/lib/tax/federalExportTax'
 
-function isMarriedFilingJoint(filingStatus: string | null | undefined): boolean {
-  return isMFJFilingStatus(filingStatus)
-}
-
-/** Returns OBBBA 2026 basic exclusion for the household. */
-export function householdFederalExemption(
-  filingStatus: string | null | undefined,
-  hasSpouse: boolean,
-): number {
-  if (isMarriedFilingJoint(filingStatus) && hasSpouse) return OBBBA_2026.BASIC_EXCLUSION_MFJ
-  return OBBBA_2026.BASIC_EXCLUSION_SINGLE
-}
+export { householdFederalExemption } from '@/lib/tax/estate-tax-constants'
 
 export function estimateFederalEstateTaxSnapshot(params: {
   grossEstate: number
   filingStatus: string | null | undefined
   hasSpouse: boolean
   lifetimeGiftsUsed?: number
+  federalBrackets?: EstateTaxBracket[]
+  lawScenario?: EstateScenario
 }): { exemption: number; federalExposure: number; federalTax: number } {
-  const { grossEstate, filingStatus, hasSpouse, lifetimeGiftsUsed = 0 } = params
-  const statutoryExemption = householdFederalExemption(filingStatus, hasSpouse)
-  const exemption = Math.max(0, statutoryExemption - lifetimeGiftsUsed)
-  const federalExposure = Math.max(0, grossEstate - exemption)
-  const federalTax = Math.round(federalExposure * OBBBA_2026.TOP_RATE)
-  return { exemption, federalExposure, federalTax }
+  const result = computeFederalExportTax({
+    grossEstate: params.grossEstate,
+    filingStatus: params.filingStatus,
+    hasSpouse: params.hasSpouse,
+    brackets: params.federalBrackets ?? [],
+    lifetimeGiftsUsed: params.lifetimeGiftsUsed,
+    lawScenario: params.lawScenario,
+  })
+  return {
+    exemption: result.federalExemption,
+    federalExposure: Math.max(0, params.grossEstate - result.federalExemption),
+    federalTax: result.federalTax,
+  }
 }
 
 export function longevityAndSurvivor(params: {
@@ -124,8 +124,10 @@ export function computeColumnTaxes(params: {
   filingStatus: string | null | undefined
   hasSpouse: boolean
   stateBrackets: StateBracket[]
+  federalBrackets?: EstateTaxBracket[]
   lifetimeGiftsUsed?: number
   hasBypassTrust?: boolean
+  lawScenario?: EstateScenario
 }): {
   federalExemption: number
   federalExposure: number
@@ -147,11 +149,28 @@ export function computeColumnTaxes(params: {
   // Legacy alias kept so existing UI destructuring doesn't break
   stateExposure: number
 } {
-  const { grossEstate, statePrimary, filingStatus, hasSpouse, stateBrackets, lifetimeGiftsUsed = 0, hasBypassTrust = false } = params
+  const {
+    grossEstate,
+    statePrimary,
+    filingStatus,
+    hasSpouse,
+    stateBrackets,
+    federalBrackets = [],
+    lifetimeGiftsUsed = 0,
+    hasBypassTrust = false,
+    lawScenario = 'current_law',
+  } = params
 
   const isMFJ = isMFJFilingStatus(filingStatus)
   const { exemption: federalExemption, federalExposure, federalTax } =
-    estimateFederalEstateTaxSnapshot({ grossEstate, filingStatus, hasSpouse, lifetimeGiftsUsed })
+    estimateFederalEstateTaxSnapshot({
+      grossEstate,
+      filingStatus,
+      hasSpouse,
+      lifetimeGiftsUsed,
+      federalBrackets,
+      lawScenario,
+    })
 
   if (grossEstate <= 0) {
     return {
@@ -253,6 +272,10 @@ export type BuildHorizonsInput = {
   lifetimeGiftsUsed?: number
   /** Credit shelter trust active for this viewer context (see strategyTypes.ts). */
   hasBypassTrust?: boolean
+  /** Progressive federal estate tax brackets (latest tax year). */
+  federalBrackets?: EstateTaxBracket[]
+  /** Law scenario for federal exemption (default current_law). */
+  lawScenario?: EstateScenario
 }
 
 export type MyEstateStrategyHorizonsResult = ReturnType<typeof buildStrategyHorizons>
@@ -301,6 +324,8 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     strategyLineItems,
     lifetimeGiftsUsed = 0,
     hasBypassTrust = false,
+    federalBrackets = [],
+    lawScenario = 'current_law',
   } = input
 
   const hasSpouse = household.has_spouse ?? false
@@ -335,8 +360,10 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     filingStatus: fs,
     hasSpouse,
     stateBrackets,
+    federalBrackets,
     lifetimeGiftsUsed,
     hasBypassTrust,
+    lawScenario,
   }
 
   // ── Today column ───────────────────────────────────────────────────────────

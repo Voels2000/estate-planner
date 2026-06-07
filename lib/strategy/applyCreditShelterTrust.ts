@@ -7,6 +7,8 @@
 // portability alone (DSUE election).
 
 import { ProjectionScenario } from '@/lib/types/projection-scenario'
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
+import { computeFederalTaxOnly } from '@/lib/tax/federalExportTax'
 
 export interface CSTConfig {
   // Gross estate at first death
@@ -23,6 +25,9 @@ export interface CSTConfig {
   survivingSpouseAssets: number
   // Law scenario for second death tax calculation
   lawScenario: 'current_law' | 'no_exemption'
+  federalBrackets?: EstateTaxBracket[]
+  filingStatus?: string | null
+  hasSpouse?: boolean
 }
 
 export interface CSTResult {
@@ -53,13 +58,24 @@ const ESTATE_TAX_RATE = 0.40 // Federal estate tax top rate
 function calcEstateTax(
   taxableEstate: number,
   exemption: number,
-  lawScenario: 'current_law' | 'no_exemption'
+  lawScenario: 'current_law' | 'no_exemption',
+  federalBrackets: EstateTaxBracket[] = [],
+  filingStatus?: string | null,
+  hasSpouse?: boolean,
 ): number {
+  if (federalBrackets.length > 0) {
+    return computeFederalTaxOnly(taxableEstate, {
+      filingStatus,
+      hasSpouse: hasSpouse ?? false,
+      brackets: federalBrackets,
+      lawScenario,
+      exemptionCapOverride: lawScenario === 'no_exemption' ? 0 : exemption,
+    })
+  }
   if (lawScenario === 'no_exemption') {
     return taxableEstate * ESTATE_TAX_RATE
   }
-  const effectiveExemption = exemption
-  const taxable = Math.max(0, taxableEstate - effectiveExemption)
+  const taxable = Math.max(0, taxableEstate - exemption)
   return taxable * ESTATE_TAX_RATE
 }
 
@@ -77,6 +93,9 @@ export function applyCreditShelterTrust(
     federalExemptionAtSecondDeath,
     survivingSpouseAssets,
     lawScenario,
+    federalBrackets = [],
+    filingStatus,
+    hasSpouse,
   } = config
 
   const advisoryNotes: string[] = []
@@ -93,7 +112,14 @@ export function applyCreditShelterTrust(
   // --- WITH CST ---
   // Surviving spouse's taxable estate = their own assets + inherited assets (NOT CST)
   const survivingSpouseEstate = survivingSpouseAssets + assetsToSurvivingSpouse
-  const taxWithCST = calcEstateTax(survivingSpouseEstate, federalExemptionAtSecondDeath, lawScenario)
+  const taxWithCST = calcEstateTax(
+    survivingSpouseEstate,
+    federalExemptionAtSecondDeath,
+    lawScenario,
+    federalBrackets,
+    filingStatus,
+    hasSpouse,
+  )
   const netToHeirsWithCST = survivingSpouseEstate + cstValueAtSecondDeath - taxWithCST
 
   // --- WITH PORTABILITY ONLY (no CST) ---
@@ -105,7 +131,10 @@ export function applyCreditShelterTrust(
   const taxWithPortabilityOnly = calcEstateTax(
     totalEstateAtSecondDeathPortability,
     combinedExemption,
-    lawScenario
+    lawScenario,
+    federalBrackets,
+    filingStatus,
+    hasSpouse,
   )
   const netToHeirsWithPortability = totalEstateAtSecondDeathPortability - taxWithPortabilityOnly
 

@@ -47,6 +47,7 @@ export default function StrategyTab({
   initialGiftingActuals,
   advisorId,
   stateBrackets = [],
+  federalBrackets = [],
   mcSummary = null,
 }: ClientViewShellProps) {
   const householdId = household?.id ?? null
@@ -566,6 +567,13 @@ export default function StrategyTab({
                 horizons={advisorHorizons}
                 pendingItems={[]}
                 federalExemption={federalExemption}
+                federalBrackets={federalBrackets}
+                filingStatus={household?.filing_status}
+                hasSpouse={household?.has_spouse ?? false}
+                statePrimary={stateCode}
+                stateBrackets={stateBrackets}
+                hasBypassTrust={hasBypassTrust}
+                lawScenario={lawScenario}
                 mode="advisor"
                 mcSummary={mcSummary}
               />
@@ -575,6 +583,13 @@ export default function StrategyTab({
                 horizons={advisorHorizonsProjected}
                 pendingItems={[]}
                 federalExemption={federalExemption}
+                federalBrackets={federalBrackets}
+                filingStatus={household?.filing_status}
+                hasSpouse={household?.has_spouse ?? false}
+                statePrimary={stateCode}
+                stateBrackets={stateBrackets}
+                hasBypassTrust={hasBypassTrust}
+                lawScenario={lawScenario}
                 mode="advisor"
                 mcSummary={mcSummary}
               />
@@ -589,6 +604,12 @@ export default function StrategyTab({
               advisorHorizons={advisorHorizons}
               advisorHorizonsProjected={advisorHorizonsProjected}
               estateViewMode={combinedMode}
+              federalBrackets={federalBrackets}
+              filingStatus={household?.filing_status}
+              hasSpouse={household?.has_spouse ?? false}
+              statePrimary={stateCode}
+              stateBrackets={stateBrackets}
+              hasBypassTrust={hasBypassTrust}
             />
           </div>
         )}
@@ -657,6 +678,7 @@ export default function StrategyTab({
             scenarioId={scenario?.id ?? undefined}
             grossEstate={grossEstate}
             federalExemption={federalExemption}
+            federalBrackets={federalBrackets}
             estimatedStateTax={estimatedStateTax}
             stateCode={stateCode}
             stateBrackets={stateBrackets}

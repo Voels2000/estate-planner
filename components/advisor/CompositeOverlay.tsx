@@ -12,26 +12,28 @@ import {
   validateStrategyComposability,
   build30MArchetype,
   build100MArchetype,
-  StrategyLayer,
+  type ComposabilityTaxContext,
+  type StrategyLayer,
 } from '@/lib/strategy/validateComposability'
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
+import type { EstateScenario } from '@/lib/tax/estate-tax-constants'
+import type { StateBracket } from '@/lib/calculations/stateEstateTax'
 
 interface CompositeOverlayProps {
   grossEstate: number
   federalExemption: number
   estimatedFederalTax: number
-  lawScenario: 'current_law' | 'no_exemption'
+  lawScenario: EstateScenario
   householdId?: string
   advisorHorizons?: MyEstateStrategyHorizonsResult
   advisorHorizonsProjected?: MyEstateStrategyHorizonsResult
   estateViewMode?: 'actual' | 'projected'
-}
-
-const ESTATE_TAX_RATE = 0.40
-
-function calcTax(estate: number, exemption: number, lawScenario: string): number {
-  const effectiveExemption =
-    lawScenario === 'no_exemption' ? 0 : exemption
-  return Math.max(0, estate - effectiveExemption) * ESTATE_TAX_RATE
+  federalBrackets?: EstateTaxBracket[]
+  filingStatus?: string | null
+  hasSpouse?: boolean
+  statePrimary?: string | null
+  stateBrackets?: StateBracket[]
+  hasBypassTrust?: boolean
 }
 
 const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
@@ -73,6 +75,12 @@ export default function CompositeOverlay({
   advisorHorizons,
   advisorHorizonsProjected,
   estateViewMode = 'actual',
+  federalBrackets = [],
+  filingStatus,
+  hasSpouse = false,
+  statePrimary,
+  stateBrackets = [],
+  hasBypassTrust = false,
 }: CompositeOverlayProps) {
   const [mode, setMode] = useState<'recommendations' | '30m' | '100m'>('recommendations')
   const [recommendedItems, setRecommendedItems] = useState<Array<{
@@ -131,14 +139,28 @@ export default function CompositeOverlay({
         ? build100MArchetype(federalExemption)
         : { grossEstate, strategies: recommendedStrategies, federalExemption }
 
+  const taxContext: ComposabilityTaxContext | undefined =
+    federalBrackets.length > 0
+      ? {
+          federalBrackets,
+          filingStatus,
+          hasSpouse,
+          statePrimary,
+          stateBrackets,
+          hasBypassTrust,
+          lawScenario,
+        }
+      : undefined
+
   const result = validateStrategyComposability(
     activeConfig.grossEstate,
     activeConfig.federalExemption,
-    activeConfig.strategies
+    activeConfig.strategies,
+    taxContext,
   )
 
-  const baselineTax = calcTax(activeConfig.grossEstate, federalExemption, lawScenario)
-  const strategyTax = calcTax(result.adjustedEstate, federalExemption, lawScenario)
+  const baselineTax = activeConfig.grossEstate - result.netToHeirsBaseline
+  const strategyTax = result.adjustedEstate - result.netToHeirsWithStrategies
   const selectedHorizons =
     estateViewMode === 'projected' && advisorHorizonsProjected ? advisorHorizonsProjected : advisorHorizons
   const insideOutsideToday = selectedHorizons?.today

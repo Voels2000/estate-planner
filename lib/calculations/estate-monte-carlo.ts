@@ -16,6 +16,8 @@ import {
   resolveActiveStateTax,
   type StateBracket,
 } from './stateEstateTax'
+import type { EstateTaxBracket } from './estate-tax'
+import { computeFederalTaxOnly } from '@/lib/tax/federalExportTax'
 
 export type { StateBracket }
 
@@ -25,6 +27,7 @@ export const MC_DEPLETION_FLOOR = 500_000
 export interface EstateMCInputs {
   grossEstate: number
   federalExemption: number
+  federalBrackets: EstateTaxBracket[]
   stateCode: string
   stateBrackets: StateBracket[]
   filingStatus: 'single' | 'mfj'
@@ -88,7 +91,7 @@ export interface EstateMCResult {
 
 type EstateTaxContext = Pick<
   EstateMCInputs,
-  'stateCode' | 'stateBrackets' | 'filingStatus' | 'hasBypassTrust'
+  'stateCode' | 'stateBrackets' | 'filingStatus' | 'hasBypassTrust' | 'federalBrackets'
 >
 
 function randomNormal(mean: number, stdDev: number): number {
@@ -106,9 +109,13 @@ export function calcEstateTax(
   taxCtx: EstateTaxContext,
   lawScenario: 'current_law' | 'no_exemption',
 ): number {
-  const FEDERAL_RATE = 0.4
-  const effectiveExemption = lawScenario === 'no_exemption' ? 0 : exemption
-  const federalTax = Math.max(0, estate - effectiveExemption) * FEDERAL_RATE
+  const federalTax = computeFederalTaxOnly(estate, {
+    filingStatus: taxCtx.filingStatus,
+    hasSpouse: taxCtx.filingStatus === 'mfj',
+    brackets: taxCtx.federalBrackets ?? [],
+    lawScenario,
+    exemptionCapOverride: lawScenario === 'no_exemption' ? 0 : exemption,
+  })
   const isMFJ = taxCtx.filingStatus === 'mfj'
   const stateResult = calculateStateEstateTax(
     estate,
@@ -130,6 +137,7 @@ export function runEstateMonteCarlo(inputs: EstateMCInputs): EstateMCResult {
   const {
     grossEstate,
     federalExemption,
+    federalBrackets,
     stateCode,
     stateBrackets,
     filingStatus,
@@ -149,6 +157,7 @@ export function runEstateMonteCarlo(inputs: EstateMCInputs): EstateMCResult {
     stateBrackets,
     filingStatus,
     hasBypassTrust,
+    federalBrackets,
   }
 
   const returnMean = (returnMeanPct ?? 7) / 100

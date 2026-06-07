@@ -10,8 +10,13 @@
 import { useMemo } from 'react'
 import {
   validateStrategyComposability,
+  computeHorizonStrategyTaxes,
+  type ComposabilityTaxContext,
   type StrategyLayer,
 } from '@/lib/strategy/validateComposability'
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
+import type { EstateScenario } from '@/lib/tax/estate-tax-constants'
+import type { StateBracket } from '@/lib/calculations/stateEstateTax'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
 import type { MonteCarloSummary } from '@/lib/advisor/loadScenarioMonteCarlo'
 
@@ -29,6 +34,13 @@ interface StrategyHorizonTableProps {
   horizons: MyEstateStrategyHorizonsResult
   pendingItems: PendingAdvisorItem[]
   federalExemption: number
+  federalBrackets?: EstateTaxBracket[]
+  filingStatus?: string | null
+  hasSpouse?: boolean
+  statePrimary?: string | null
+  stateBrackets?: StateBracket[]
+  hasBypassTrust?: boolean
+  lawScenario?: EstateScenario
   mode: 'advisor' | 'consumer'
   onAccept?: (item: PendingAdvisorItem) => void | Promise<void>
   onReject?: (item: PendingAdvisorItem) => void | Promise<void>
@@ -70,13 +82,18 @@ function strategySourceToAsset(source: string): StrategyLayer['assetSource'] {
 }
 
 const fmt = (n: number) => `$${Math.round(n).toLocaleString()}`
-const ESTATE_TAX_RATE = 0.4
-const calcTax = (estate: number, exemption: number) => Math.max(0, estate - exemption) * ESTATE_TAX_RATE
 
 export default function StrategyHorizonTable({
   horizons,
   pendingItems,
   federalExemption,
+  federalBrackets = [],
+  filingStatus,
+  hasSpouse = false,
+  statePrimary,
+  stateBrackets = [],
+  hasBypassTrust = false,
+  lawScenario = 'current_law',
   mode,
   onAccept,
   onReject,
@@ -98,34 +115,54 @@ export default function StrategyHorizonTable({
   const columns = [horizons.today, horizons.tenYear, horizons.twentyYear, horizons.atDeath]
   const showStateTax = columns.some((col) => col.stateTax !== null && col.stateTax > 0)
 
+  const taxContext: ComposabilityTaxContext | undefined =
+    federalBrackets.length > 0
+      ? {
+          federalBrackets,
+          filingStatus,
+          hasSpouse,
+          statePrimary,
+          stateBrackets,
+          hasBypassTrust,
+          lawScenario,
+        }
+      : undefined
+
   const horizonRows = useMemo(
     () =>
       columns.map((col) => {
         const grossEstate = col.grossEstate ?? 0
-        const federalTaxBase = col.federalTaxEstimate ?? calcTax(grossEstate, federalExemption)
-        const stateTaxBase = col.stateTax ?? 0
-        const totalTaxBase = federalTaxBase + (showStateTax ? stateTaxBase : 0)
+        const result = validateStrategyComposability(
+          grossEstate,
+          federalExemption,
+          strategyLayers,
+          taxContext,
+        )
+        const taxes = computeHorizonStrategyTaxes({
+          grossEstate,
+          adjustedGross: result.adjustedEstate,
+          federalExemption,
+          baselineFederalTax: col.federalTaxEstimate,
+          baselineStateTax: col.stateTax,
+          taxContext,
+        })
+        const totalTaxBase = taxes.federalTaxBase + (showStateTax ? taxes.stateTaxBase : 0)
+        const strategyTotalTax =
+          taxes.strategyFederalTax + (showStateTax ? taxes.strategyStateTax : 0)
         const netBase = Math.max(0, grossEstate - totalTaxBase)
-
-        const result = validateStrategyComposability(grossEstate, federalExemption, strategyLayers)
-        const strategyGross = result.adjustedEstate
-        const strategyFederalTax = calcTax(strategyGross, federalExemption)
-        const stateTaxRatio = grossEstate > 0 ? strategyGross / grossEstate : 1
-        const strategyStateTax = stateTaxBase * stateTaxRatio
-        const strategyTotalTax = strategyFederalTax + (showStateTax ? strategyStateTax : 0)
-        const netWithStrategies = Math.max(0, strategyGross - strategyTotalTax)
+        const netWithStrategies = Math.max(0, result.adjustedEstate - strategyTotalTax)
 
         return {
           label: col.headerTitle,
           grossBase: grossEstate,
-          federalTaxBase,
-          stateTaxBase,
+          federalTaxBase: taxes.federalTaxBase,
+          stateTaxBase: taxes.stateTaxBase,
           netBase,
           netWithStrategies,
           deltaNet: netWithStrategies - netBase,
         }
       }),
-    [columns, federalExemption, showStateTax, strategyLayers],
+    [columns, federalExemption, showStateTax, strategyLayers, taxContext],
   )
 
   const hasStrategies = strategyLayers.length > 0

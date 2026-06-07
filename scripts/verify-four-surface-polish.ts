@@ -284,6 +284,7 @@ async function main() {
     currentYear,
     household,
     stateBrackets: mapped.stateBrackets,
+    federalBrackets,
     estateCompositionGrossEstate: Number(estateComposition?.gross_estate ?? 0),
     lifetimeGiftsUsed,
     scenario: mapped.scenario,

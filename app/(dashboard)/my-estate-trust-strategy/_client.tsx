@@ -15,6 +15,8 @@ import type { CharitableHouseholdContext } from '@/lib/charitable/buildPersonali
 import StrategyHorizonTable, { type PendingAdvisorItem } from '@/components/shared/StrategyHorizonTable'
 import type { OutsideStrategyItem } from '@/lib/estate/types'
 import type { MyEstateStrategyHorizonsResult } from '@/lib/my-estate-strategy/horizonSnapshots'
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
+import type { StateBracket } from '@/lib/calculations/stateEstateTax'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import type { GiftingSummary } from '@/components/GiftingDashboard'
 import type { CharitableSummary } from '@/components/CharitableGivingDashboard'
@@ -89,6 +91,12 @@ interface Props {
     consumer_withdrawn?: boolean
   }>
   advisorHorizons?: MyEstateStrategyHorizonsResult | null
+  federalBrackets?: EstateTaxBracket[]
+  stateBrackets?: StateBracket[]
+  filingStatus?: string | null
+  hasSpouse?: boolean
+  hasBypassTrust?: boolean
+  statePrimary?: string | null
   strategyImpact: {
     strategyItems: OutsideStrategyItem[]
     strategyReductionTotal: number
@@ -163,6 +171,12 @@ export default function MyEstateTrustStrategyClient({
   advisorLineItems,
   consumerLineItems = [],
   advisorHorizons,
+  federalBrackets = [],
+  stateBrackets = [],
+  filingStatus,
+  hasSpouse = false,
+  hasBypassTrust = false,
+  statePrimary,
   strategyImpact,
   giftingScenario,
   initialGiftingSummary,
@@ -468,6 +482,12 @@ export default function MyEstateTrustStrategyClient({
             horizons={advisorHorizons}
             pendingItems={pendingItems}
             federalExemption={estateContext?.federalExemption ?? 15_000_000}
+            federalBrackets={federalBrackets}
+            filingStatus={filingStatus}
+            hasSpouse={hasSpouse}
+            statePrimary={statePrimary}
+            stateBrackets={stateBrackets}
+            hasBypassTrust={hasBypassTrust}
             mode="consumer"
             onAccept={handleAccept}
             onReject={handleReject}

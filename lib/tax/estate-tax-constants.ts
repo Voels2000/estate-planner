@@ -7,6 +7,8 @@
 // tax constants. Do not hardcode them anywhere else in the codebase.
 // If federal law changes, update only this file.
 
+import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
+
 export const OBBBA_2026 = {
   /** Basic exclusion amount — single filer, 2026 */
   BASIC_EXCLUSION_SINGLE: 15_000_000,
@@ -35,6 +37,15 @@ export const OBBBA_2026 = {
 export type EstateScenario = 'current_law' | 'no_exemption'
 
 export type FilingStatus = 'single' | 'mfj'
+
+/** Returns OBBBA 2026 basic exclusion for the household filing status. */
+export function householdFederalExemption(
+  filingStatus: string | null | undefined,
+  hasSpouse: boolean,
+): number {
+  if (isMFJFilingStatus(filingStatus) && hasSpouse) return OBBBA_2026.BASIC_EXCLUSION_MFJ
+  return OBBBA_2026.BASIC_EXCLUSION_SINGLE
+}
 
 /**
  * Look up the federal estate tax exemption for a given scenario.

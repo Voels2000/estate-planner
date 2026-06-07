@@ -15,6 +15,7 @@ import { displayPersonFirstName } from '@/lib/display-person-name'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
+import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
 import MyEstateStrategyClient from './_my-estate-strategy-client'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
@@ -215,6 +216,7 @@ export default async function MyEstateStrategyPage() {
     { data: scenario },
     { data: realEstate },
     { data: stateBracketRows },
+    { data: federalBracketRows },
     { data: mcAssumptionRows },
     { data: healthScoreRow },
   ] = await Promise.all([
@@ -236,6 +238,11 @@ export default async function MyEstateStrategyPage() {
       .eq('tax_year', new Date().getFullYear())
       .order('min_amount', { ascending: true }),
     supabase
+      .from('federal_estate_tax_brackets')
+      .select('tax_year, min_amount, max_amount, rate_pct')
+      .order('tax_year', { ascending: false })
+      .order('min_amount', { ascending: true }),
+    supabase
       .from('advisor_projection_assumptions')
       .select(
         'id, scenario_name, shared_at, accepted_by_client, accepted_at, return_mean_pct, volatility_pct, withdrawal_rate_pct, success_threshold, simulation_count, planning_horizon_yr, inflation_rate_pct',
@@ -255,6 +262,7 @@ export default async function MyEstateStrategyPage() {
   )
 
   const stateBrackets = stateBracketRows ?? []
+  const federalBrackets = latestFederalBracketsFromRows(federalBracketRows ?? [])
 
   const now = new Date()
   const currentYear = new Date().getFullYear()
@@ -338,6 +346,7 @@ export default async function MyEstateStrategyPage() {
     liveNetWorth: composition.gross_estate,
     strategyLineItems: actualStrategyLineItems,
     stateBrackets,
+    federalBrackets,
     lifetimeGiftsUsed: lifetimeGiftsUsedForComposition,
     household: {
       state_primary: household.state_primary,
@@ -361,6 +370,7 @@ export default async function MyEstateStrategyPage() {
     liveNetWorth: composition.gross_estate,
     strategyLineItems: projectedStrategyLineItems,
     stateBrackets,
+    federalBrackets,
     lifetimeGiftsUsed: lifetimeGiftsUsedForComposition,
     household: {
       state_primary: household.state_primary,

@@ -89,6 +89,8 @@ export async function loadAdvisorExportWiringForClient(
     .order('tax_year', { ascending: false })
     .order('min_amount', { ascending: true })
 
+  const federalBrackets = latestFederalBracketsFromRows(federalBracketRows ?? [])
+
   const datasetsBundle = await loadAdvisorClientDatasets(supabase, {
     clientId,
     userId: advisorUserId,
@@ -167,6 +169,7 @@ export async function loadAdvisorExportWiringForClient(
     currentYear,
     household,
     stateBrackets,
+    federalBrackets,
     estateCompositionGrossEstate: Number(estateComposition?.gross_estate ?? 0),
     lifetimeGiftsUsed,
     scenario,

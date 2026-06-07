@@ -6,6 +6,7 @@ import {
   type MyEstateStrategyHorizonsResult,
 } from '@/lib/my-estate-strategy/horizonSnapshots'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
 import type { StateBracket } from '@/lib/calculations/stateEstateTax'
 
 type HouseholdLike = {
@@ -26,6 +27,7 @@ export function buildAdvisorStrategyViewModels(params: {
   currentYear: number
   household: HouseholdLike
   stateBrackets: StateBracket[]
+  federalBrackets?: EstateTaxBracket[]
   estateCompositionGrossEstate: number
   lifetimeGiftsUsed?: number
   scenario: Record<string, unknown> | null
@@ -113,6 +115,7 @@ export function buildAdvisorStrategyViewModels(params: {
     currentMonthYearLabel,
     liveNetWorth: Number(params.estateCompositionGrossEstate ?? 0),
     stateBrackets: params.stateBrackets,
+    federalBrackets: params.federalBrackets,
     lifetimeGiftsUsed,
     household: {
       state_primary: params.household.state_primary,
@@ -137,6 +140,7 @@ export function buildAdvisorStrategyViewModels(params: {
     currentMonthYearLabel,
     liveNetWorth: Number(params.estateCompositionGrossEstate ?? 0),
     stateBrackets: params.stateBrackets,
+    federalBrackets: params.federalBrackets,
     lifetimeGiftsUsed,
     household: {
       state_primary: params.household.state_primary,

@@ -14,6 +14,10 @@ import {
   calculateStateEstateTax,
   resolveActiveStateTax,
 } from '@/lib/calculations/stateEstateTax'
+import {
+  computeFederalEstateTax,
+  type EstateTaxBracket,
+} from '@/lib/calculations/estate-tax'
 
 export type StateBracket = {
   min_amount: number
@@ -70,6 +74,7 @@ export function computeEstateTaxProjection(
   stateBrackets: StateBracket[],
   stateCode?: string,
   hasBypassTrust?: boolean,
+  federalBrackets: EstateTaxBracket[] = [],
 ): {
   s1_first: DeathSequenceOutput
   s2_first: DeathSequenceOutput | null
@@ -99,6 +104,8 @@ export function computeEstateTaxProjection(
     stateCode: _stateCode,
     hasBypassTrust: _hasBypassTrust,
     sequence: 'S1_first',
+    federalBrackets,
+    filingStatus,
   })
 
   // -- S2 first sequence (person 2 dies first) -- only for married ----------
@@ -115,6 +122,8 @@ export function computeEstateTaxProjection(
           stateCode: _stateCode,
           hasBypassTrust: _hasBypassTrust,
           sequence: 'S2_first',
+          federalBrackets,
+          filingStatus,
         })
       : null
 
@@ -132,6 +141,8 @@ function computeSequence({
   stateCode,
   hasBypassTrust,
   sequence,
+  federalBrackets,
+  filingStatus,
 }: {
   rows: YearRow[]
   firstDeathYear: number
@@ -143,6 +154,8 @@ function computeSequence({
   stateCode: string
   hasBypassTrust: boolean
   sequence: 'S1_first' | 'S2_first' | 'single'
+  federalBrackets: EstateTaxBracket[]
+  filingStatus: string
 }): DeathSequenceOutput {
   let dsue_amount = 0
   const outputRows: EstateTaxYearRow[] = []
@@ -170,7 +183,13 @@ function computeSequence({
         // Single or widowed - estate tax applies at first (only) death
         const exemption = exemptionIndividual + dsue_amount
         taxable_estate = Math.max(0, grossEstate - exemption)
-        estate_tax_federal = computeProgressiveEstateTax(taxable_estate, topRate)
+        estate_tax_federal = computeFederalTaxAtDeath(
+          grossEstate,
+          exemption,
+          topRate,
+          federalBrackets,
+          filingStatus,
+        )
         estate_tax_state =
           taxable_estate > 0
             ? calculateStateEstateTax(
@@ -188,7 +207,13 @@ function computeSequence({
       // Both federal and state estate tax apply against the combined estate.
       const exemption = exemptionIndividual + dsue_amount
       taxable_estate = Math.max(0, grossEstate - exemption)
-      estate_tax_federal = computeProgressiveEstateTax(taxable_estate, topRate)
+      estate_tax_federal = computeFederalTaxAtDeath(
+        grossEstate,
+        exemption,
+        topRate,
+        federalBrackets,
+        filingStatus,
+      )
       estate_tax_state =
         taxable_estate > 0
           ? resolveActiveStateTax(
@@ -239,15 +264,32 @@ function computeSequence({
   }
 }
 
-// Simple progressive estate tax -- top rate applies above exemption
-// Federal estate tax has a flat 40% rate above the exemption in practice
-function computeProgressiveEstateTax(taxableEstate: number, topRate: number): number {
-  if (taxableEstate <= 0) return 0
-  // Federal estate tax: graduated brackets up to top rate
-  // Simplified: use the existing computeFederalEstateTax function brackets
-  // For the projection engine we use the top rate directly since
-  // the full bracket table is applied in the estate-tax page
-  return Math.round(taxableEstate * topRate)
+// Progressive federal estate tax at death — bracket engine when available, else top rate on taxable base.
+function computeFederalTaxAtDeath(
+  grossEstate: number,
+  exemption: number,
+  topRate: number,
+  federalBrackets: EstateTaxBracket[],
+  filingStatus: string,
+): number {
+  if (grossEstate <= 0) return 0
+  if (federalBrackets.length > 0) {
+    const filing = filingStatus === 'mfj' ? 'married_joint' : 'single'
+    return computeFederalEstateTax(
+      grossEstate,
+      0,
+      0,
+      filing,
+      federalBrackets,
+      0,
+      1,
+      undefined,
+      0,
+      exemption,
+    ).net_estate_tax
+  }
+  const taxable = Math.max(0, grossEstate - exemption)
+  return Math.round(taxable * topRate)
 }
 
 // -- Scenario comparison ------------------------------------------------------

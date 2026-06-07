@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { MonteCarloAssumptions } from '@/lib/calculations/monteCarlo'
 import { MC_DEPLETION_FLOOR } from '@/lib/calculations/estate-monte-carlo'
 import type { StateBracket } from '@/lib/calculations/stateEstateTax'
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
 import { MonteCarloFanChart } from '@/components/advisor/MonteCarloFanChart'
 
 interface MonteCarloResult {
@@ -49,6 +50,7 @@ interface MonteCarloProps {
   scenarioId?: string
   grossEstate: number
   federalExemption: number
+  federalBrackets?: EstateTaxBracket[]
   estimatedStateTax: number
   stateCode: string
   stateBrackets: StateBracket[]
@@ -71,6 +73,7 @@ export default function MonteCarloPanel({
   scenarioId,
   grossEstate,
   federalExemption,
+  federalBrackets = [],
   estimatedStateTax,
   stateCode,
   stateBrackets,
@@ -136,6 +139,7 @@ export default function MonteCarloPanel({
           scenarioId,
           grossEstate,
           federalExemption,
+          federalBrackets,
           stateCode,
           stateBrackets,
           filingStatus,

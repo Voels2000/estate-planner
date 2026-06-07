@@ -7,7 +7,8 @@ import {
   type StateBracket,
 } from '@/lib/calculations/estate-monte-carlo'
 import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
-import { currentFederalExemption } from '@/lib/export/narrativeEngine'
+import { householdFederalExemption } from '@/lib/tax/estate-tax-constants'
+import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
 import { longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
 
 async function fetchStateBrackets(
@@ -91,7 +92,19 @@ export async function runEstateMonteCarloAsync(
   const bracketsData = stateCode ? await fetchStateBrackets(supabase, stateCode) : []
 
   const isMFJ = household.filing_status === 'mfj' && !!household.has_spouse
-  const federalExemption = currentFederalExemption(household.filing_status ?? 'single')
+  const federalExemption = householdFederalExemption(
+    household.filing_status ?? 'single',
+    !!household.has_spouse,
+  )
+  const federalBrackets = latestFederalBracketsFromRows(
+    (
+      await supabase
+        .from('federal_estate_tax_brackets')
+        .select('tax_year, min_amount, max_amount, rate_pct')
+        .order('tax_year', { ascending: false })
+        .order('min_amount', { ascending: true })
+    ).data ?? [],
+  )
   const hasBypassTrust = deriveHasBypassTrustFromLineItems(
     lineItemsRes.data ?? [],
     'consumer_accepted',
@@ -124,6 +137,7 @@ export async function runEstateMonteCarloAsync(
   const result = runEstateMonteCarlo({
     grossEstate,
     federalExemption,
+    federalBrackets,
     stateCode,
     stateBrackets: bracketsData,
     filingStatus: isMFJ ? 'mfj' : 'single',
@@ -141,6 +155,7 @@ export async function runEstateMonteCarloAsync(
     stateBrackets: bracketsData,
     filingStatus: (isMFJ ? 'mfj' : 'single') as 'single' | 'mfj',
     hasBypassTrust,
+    federalBrackets,
   }
 
   const person1BirthYear = household.person1_birth_year ?? currentYear - 65

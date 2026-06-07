@@ -8,6 +8,7 @@ import {
   buildScenarioComparison,
 } from '@/lib/calculations/estate-tax-projection'
 import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
+import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
 
 export const dynamic = 'force-dynamic'
 
@@ -74,6 +75,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Tax config not found' }, { status: 500 })
   }
 
+  const { data: federalBracketRows } = await admin
+    .from('federal_estate_tax_brackets')
+    .select('tax_year, min_amount, max_amount, rate_pct')
+    .order('tax_year', { ascending: false })
+    .order('min_amount', { ascending: true })
+  const federalBrackets = latestFederalBracketsFromRows(federalBracketRows ?? [])
+
   // Build scenario summaries for all law scenarios
   const scenarioOutputs: Record<string, unknown> = {}
 
@@ -88,6 +96,9 @@ export async function GET(request: NextRequest) {
       household.person2_birth_year,
       household.person2_longevity_age,
       [], // no state brackets in this path — cross-scenario comparison uses federal only
+      undefined,
+      undefined,
+      federalBrackets,
     )
 
     const seq = sequenceParam === 'S2_first' ? s2_first : s1_first
@@ -112,6 +123,9 @@ export async function GET(request: NextRequest) {
     household.person2_birth_year,
     household.person2_longevity_age,
     [],
+    undefined,
+    undefined,
+    federalBrackets,
   )
 
   const rows = sequenceParam === 'S2_first' ? s2_first?.rows ?? [] : s1_first.rows

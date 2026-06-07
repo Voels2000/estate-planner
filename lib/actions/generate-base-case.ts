@@ -16,6 +16,7 @@ import type {
 } from '@/lib/types/planner-rows'
 import { parseGrowthAssumptions } from '@/lib/types/growthAssumptions'
 import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
+import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
 import { runEstateMonteCarloAsync } from './run-estate-monte-carlo-async'
 
 export async function generateBaseCase(householdId: string): Promise<{
@@ -194,6 +195,13 @@ export async function generateBaseCase(householdId: string): Promise<{
       : { data: [] }
     const stateBrackets = stateBracketRows ?? []
 
+    const { data: federalBracketRows } = await admin
+      .from('federal_estate_tax_brackets')
+      .select('tax_year, min_amount, max_amount, rate_pct')
+      .order('tax_year', { ascending: false })
+      .order('min_amount', { ascending: true })
+    const federalBrackets = latestFederalBracketsFromRows(federalBracketRows ?? [])
+
     const { data: lineItemsForProjection } = await admin
       .from('strategy_line_items')
       .select(
@@ -234,6 +242,7 @@ export async function generateBaseCase(householdId: string): Promise<{
       stateBrackets,
       stateCodeForProjection,
       hasBypassTrustForProjection,
+      federalBrackets,
     )
 
     // Build assumption snapshot

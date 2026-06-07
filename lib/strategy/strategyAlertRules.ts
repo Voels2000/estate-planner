@@ -10,6 +10,9 @@
 //   strategy_grat_opportunity  — household has appreciating business/PE assets, no GRAT
 //   strategy_roth_window       — household has large pre-tax IRA in low-income year
 
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
+import { federalTaxSavedByReduction } from '@/lib/tax/federalExportTax'
+
 export interface StrategyAlertInput {
   householdId: string
   grossEstate: number
@@ -23,6 +26,8 @@ export interface StrategyAlertInput {
   preIRABalance: number
   estimatedCurrentYearIncome: number
   marginalTaxRate: number
+  federalBrackets?: EstateTaxBracket[]
+  hasSpouse?: boolean
 }
 
 export interface StrategyAlertOutput {
@@ -71,6 +76,14 @@ export function evaluateStrategyAlerts(input: StrategyAlertInput): StrategyAlert
   })
 
   // Rule 2: Life insurance outside ILIT
+  const ilitTaxSavings =
+    input.federalBrackets?.length
+      ? federalTaxSavedByReduction(grossEstate, lifeInsuranceOutsideILIT, {
+          filingStatus: input.filingStatus,
+          hasSpouse: input.hasSpouse ?? false,
+          brackets: input.federalBrackets,
+        })
+      : lifeInsuranceOutsideILIT * 0.40
   alerts.push({
     ruleId: 'strategy_no_ilit',
     severity: lifeInsuranceOutsideILIT > 1_000_000 ? 'critical' : 'warning',
@@ -79,9 +92,9 @@ export function evaluateStrategyAlerts(input: StrategyAlertInput): StrategyAlert
       `$${Math.round(lifeInsuranceOutsideILIT).toLocaleString()} in life insurance death benefit ` +
       `is included in the gross estate. Transferring this policy to an ILIT (or having the ILIT ` +
       `purchase a new policy) would remove it from the taxable estate, ` +
-      `saving approximately $${Math.round(lifeInsuranceOutsideILIT * 0.40).toLocaleString()} in estate tax.`,
+      `saving approximately $${Math.round(ilitTaxSavings).toLocaleString()} in estate tax.`,
     shouldFire: lifeInsuranceOutsideILIT > 0 && !hasILIT,
-    contextData: { lifeInsuranceOutsideILIT, estimatedTaxSavings: lifeInsuranceOutsideILIT * 0.40 },
+    contextData: { lifeInsuranceOutsideILIT, estimatedTaxSavings: ilitTaxSavings },
   })
 
   // Rule 3: GRAT opportunity on business/PE assets
