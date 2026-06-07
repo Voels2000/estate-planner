@@ -71,13 +71,22 @@ export function computeFederalEstateTax(
   annualGifting = 0,
   giftingYears = 1,
   taxYear?: number,
+  lifetimeExemptionUsed = 0,
+  exemptionCapOverride?: number,
 ): FederalEstateTaxResult {
   const gifting_reduction = Math.max(0, annualGifting * giftingYears)
   const taxable_estate = Math.max(
     0,
     grossEstate - liabilities - trustsExcluded - gifting_reduction,
   )
-  const exemptionCap = applicableExemptionAmount(filingStatus, taxYear)
+  const baseCap =
+    exemptionCapOverride !== undefined
+      ? exemptionCapOverride
+      : applicableExemptionAmount(filingStatus, taxYear)
+  const exemptionCap = Math.max(
+    0,
+    baseCap - (exemptionCapOverride === undefined ? lifetimeExemptionUsed : 0),
+  )
   const tax_before_credit = computeProgressiveTaxFromBrackets(taxable_estate, brackets)
   const applicable_credit = computeProgressiveTaxFromBrackets(exemptionCap, brackets)
   const net_estate_tax = Math.max(

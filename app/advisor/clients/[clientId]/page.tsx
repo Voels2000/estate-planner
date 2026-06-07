@@ -47,6 +47,7 @@ import { resolveDeduction } from '@/lib/tax/resolve-deduction'
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
 import { buildAdvisorStatesToFetch } from '@/lib/tax/advisorStateFetchScope'
+import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
 import ClientViewShell from './_client-view-shell'
 
 interface PageProps {
@@ -442,13 +443,20 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   let exportExcelData = undefined
   if (datasetInclude.exportWiring) {
     const grossForExport = Number(latestOutput?.estate_incl_home ?? 0)
-    const narrativeFields = await fetchNarrativePdfFields({
-      householdId: household.id,
-      clientId,
-      grossEstate: advisorHorizons?.today?.grossEstate ?? grossForExport,
-      filingStatus: household.filing_status,
-      statePrimary: household.state_primary,
-    })
+    const [{ data: federalBracketRows }, narrativeFields] = await Promise.all([
+      supabase
+        .from('federal_estate_tax_brackets')
+        .select('tax_year, min_amount, max_amount, rate_pct')
+        .order('tax_year', { ascending: false })
+        .order('min_amount', { ascending: true }),
+      fetchNarrativePdfFields({
+        householdId: household.id,
+        clientId,
+        grossEstate: advisorHorizons?.today?.grossEstate ?? grossForExport,
+        filingStatus: household.filing_status,
+        statePrimary: household.state_primary,
+      }),
+    ])
     const exportPayloads = await buildAdvisorExportPayloads({
       household,
       scenarioId,
@@ -469,6 +477,8 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       scenarioForStrategy,
       narrativeFields,
       stateBrackets,
+      federalBrackets: latestFederalBracketsFromRows(federalBracketRows ?? []),
+      lifetimeGiftsUsed,
       assets,
       realEstate,
       beneficiaries: (beneficiariesResult.data ?? []) as AssetBeneficiaryRow[],

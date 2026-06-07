@@ -13,8 +13,10 @@ import { fetchNarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
 import { advisorDatasetIncludeForTab, loadAdvisorClientDatasets } from '@/lib/advisor/loaders'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import type { PDFReportData } from '@/lib/export/generatePDFReport'
+import type { ExcelExportData } from '@/lib/export/generateExcelExport'
 import type { AdvisorExportPanelProps } from '@/lib/advisor/types'
 import { buildAdvisorStatesToFetch } from '@/lib/tax/advisorStateFetchScope'
+import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>
 
@@ -80,6 +82,12 @@ export async function loadAdvisorExportWiringForClient(
       (giftingSummaryRes.data as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0,
     ) || 0,
   )
+
+  const { data: federalBracketRows } = await supabase
+    .from('federal_estate_tax_brackets')
+    .select('tax_year, min_amount, max_amount, rate_pct')
+    .order('tax_year', { ascending: false })
+    .order('min_amount', { ascending: true })
 
   const datasetsBundle = await loadAdvisorClientDatasets(supabase, {
     clientId,
@@ -198,6 +206,8 @@ export async function loadAdvisorExportWiringForClient(
     scenarioForStrategy: strategyVm.scenarioForStrategy,
     narrativeFields,
     stateBrackets,
+    federalBrackets: latestFederalBracketsFromRows(federalBracketRows ?? []),
+    lifetimeGiftsUsed,
     assets,
     realEstate,
     beneficiaries: (beneficiariesResult.data ?? []) as AssetBeneficiaryRow[],

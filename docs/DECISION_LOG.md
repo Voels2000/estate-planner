@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-06 (doc sync — post-deploy verify scripts)
+# Last updated: 2026-06-06 (export federal bracket engine)
+
+---
+
+## Export federal — bracket engine for advisor export (2026-06-06)
+
+**Decision:** Replace flat 40% in **`exportMappers`** / PDF page 3 with **`computeFederalExportTax()`** — wraps **`computeFederalEstateTax()`** + **`federal_estate_tax_brackets`**, OBBBA exemption minus **`lifetimeGiftsUsed`**, **`no_exemption`** via zero credit. PDF page 3 uses precomputed **`PDFReportData.federalTax`** (no duplicate inline calc). Fallback when brackets empty: **`estimateFederalEstateTaxSnapshot`** (horizons parity).
+
+**Verify:** `scripts/verify-export-federal-brackets.ts`
+
+**Files:** `lib/tax/federalExportTax.ts` · `lib/advisor/exportMappers.ts` · `lib/advisor/loadAdvisorExportWiring.ts` · `lib/export/generatePDFReport.ts`
 
 ---
 

@@ -1,6 +1,16 @@
 # NEXT_SESSION.md
 # Sprint 19 — Session Start Document
-# Updated: 2026-06-06 (doc sync — post-deploy verify scripts + sprint handoff)
+# Updated: 2026-06-06 (export federal bracket engine)
+
+---
+
+## Export federal → bracket engine — shipped ✅ (2026-06-06)
+
+**Shipped:** Advisor export panel, Excel tax sheet, and PDF page 3 use **`computeFederalExportTax()`** (`lib/tax/federalExportTax.ts`) — progressive **`federal_estate_tax_brackets`** + OBBBA exemption credit, **`lifetimeGiftsUsed`** from **`calculate_gifting_summary`**, **`no_exemption`** law scenario. PDF page 3 reads **`PDFReportData.federalTax`** (no inline flat 40%).
+
+**Verify:** `npx dotenv-cli -e .env.local -- npx tsx scripts/verify-export-federal-brackets.ts`
+
+**Next code sprint:** logo file-upload · titling perf.
 
 ---
 
@@ -14,9 +24,9 @@
 | `regenerate-base-case-voels.ts` | Force base-case regenerate; death-year **2057** engine B parity |
 | `verify-state-tax-panel-states.ts` | All **13** modeled estate-tax states — engine B brackets |
 | `verify-state-tax-coverage.ts` | Estate + income + inheritance tax DB coverage |
-| `verify-advisor-settings-voels.ts` | Advisor profile API + PDF firm name |
+| `verify-export-federal-brackets.ts` | Export panel / Excel / PDF page 3 federal tax — bracket engine parity |
 
-**Next code sprint:** export federal → bracket engine B (deferred) · logo file-upload · titling perf.
+**Next code sprint:** logo file-upload · titling perf.
 
 ---
 

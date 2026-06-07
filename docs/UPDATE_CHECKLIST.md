@@ -138,7 +138,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Master docs: MASTER_ARCHITECTURE · ROADMAP · NEXT_SESSION · UPDATE_CHECKLIST
 - [x] **Domain 1 closed** — engine B on estate MC display path
 - [x] PDF page 3 metric cards — engine B (`generatePDFReport.ts`)
-- [ ] **Deferred:** `exportMappers.ts` `fedTaxExport` / `stTaxExport` → engine B or horizons today (Excel + export panel)
+- [x] **2026-06-06:** `exportMappers.ts` `fedTaxExport` → `computeFederalExportTax` (Excel + export panel + PDF)
 
 ## State estate tax unification (2026-05-29) — shipped
 

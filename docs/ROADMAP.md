@@ -32,7 +32,7 @@
 | Perf — memo `EstateOutlookChart`, extract `MonteCarloFanChart`, scenarios row `Map` index | `[x]` |
 | Fetch dedup — `getFullHouseholdForOwner` (`React.cache`) on dashboard | `[x]` |
 
-**Deferred:** titling memo/code-split · table virtualization · export panel flat 40% federal → bracket engine.
+**Deferred:** titling memo/code-split · table virtualization · logo file-upload UI.
 
 ---
 
@@ -148,12 +148,12 @@
 | Base-case regenerate (all households) | `[x]` `a5b93e3` — migration `20260605130000` |
 | StateTaxPanel multi-state | `[x]` `004c591` |
 | PDF cover logo from `firm_logo_url` | `[x]` `556e773` |
-| **Export federal → bracket engine B** | `[ ]` deferred — Excel/export panel flat 40% |
+| **Export federal → bracket engine B** | `[x]` — `computeFederalExportTax` + `federal_estate_tax_brackets` |
 | **Logo file-upload UI** | `[ ]` deferred — `firm_logo_url` write path |
 | **Titling perf / memoization** | `[ ]` deferred |
 | **Post-deploy Voels gate** | `[x]` script — `scripts/verify-post-deploy-voels.ts` |
 
-**Recent commits (2026-06-05 → 06):** `8f7df08` · `a5b93e3` · `004c591` · `556e773`
+**Recent commits (2026-06-05 → 06):** `8f7df08` · `a5b93e3` · `004c591` · `556e773` · `ca0bd00` · export federal bracket engine (pending)
 
 ---
 

@@ -12,6 +12,7 @@ import { mapHealthComponentsForPdf } from '@/lib/advisor/advisorBriefHelpers'
 import { advisorDatasetIncludeForTab } from '@/lib/advisor/loaders'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { buildAdvisorStrategyViewModels } from '@/lib/advisor/strategyMappers'
+import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -264,11 +265,19 @@ async function main() {
     beneficiaryGrantsResult: datasetsBundle.beneficiaryGrantsResult,
   })
 
-  const giftingSummaryRes = await admin.rpc('calculate_gifting_summary', { p_household_id: household.id })
+  const [{ data: federalBracketRows }, giftingSummaryRes] = await Promise.all([
+    admin
+      .from('federal_estate_tax_brackets')
+      .select('tax_year, min_amount, max_amount, rate_pct')
+      .order('tax_year', { ascending: false })
+      .order('min_amount', { ascending: true }),
+    admin.rpc('calculate_gifting_summary', { p_household_id: household.id }),
+  ])
   const lifetimeGiftsUsed = Math.max(
     0,
     Number((giftingSummaryRes.data as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0),
   )
+  const federalBrackets = latestFederalBracketsFromRows(federalBracketRows ?? [])
 
   const estateComposition = await getCachedComposition(admin, household.id, 'consumer', lifetimeGiftsUsed)
   const strategyVm = buildAdvisorStrategyViewModels({
@@ -326,6 +335,8 @@ async function main() {
     scenarioForStrategy: strategyVm.scenarioForStrategy,
     narrativeFields,
     stateBrackets: mapped.stateBrackets,
+    federalBrackets,
+    lifetimeGiftsUsed,
     assets: mapped.assets,
     realEstate: mapped.realEstate,
     businesses: mapped.businesses,

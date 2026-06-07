@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-05-30 (dashboard cleanup; Sprint 19)
+# Last updated: 2026-06-06 (export federal bracket engine)
 
 ---
 
@@ -174,7 +174,7 @@ Auto-detection uses existing data; consumer checkbox is an override that persist
 
 | Tax | Data Source | Engine | Notes |
 |-----|-------------|--------|-------|
-| Federal estate tax | `federal_tax_config` | `lib/calculations/estate-tax.ts` | Admin-managed |
+| Federal estate tax | `federal_estate_tax_brackets` + `federal_tax_config` | `lib/calculations/estate-tax.ts` | Admin-managed; **`computeFederalExportTax()`** for advisor export panel / Excel / PDF |
 | State estate tax | `state_estate_tax_rules` | `lib/calculations/stateEstateTax.ts` | Admin-managed |
 | Federal income tax | `federal_tax_brackets` (canonical) | `computeCompleteProjection()` | Admin-managed only; canonical engine now requires DB brackets |
 | State income tax | `state_income_tax_brackets` (canonical) | `stateIncomeTax.ts` (shared) | Canonical for user-facing calculations |
@@ -918,6 +918,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 | Advisor strategy horizons | State estate | `advisorHorizons` | Implemented |
 | Advisor Strategy/Tax/Domicile parity | State estate | Shared `advisorHorizons.today.grossEstate` basis + `household.state_primary` state source | Implemented |
 | Advisor + Consumer federal parity | Federal estate | Shared horizon outputs (`federalExemption`, `federalTaxEstimate`) with guarded fallback only | Implemented |
+| Advisor export (PDF / Excel / panel) | Federal estate | `computeFederalExportTax()` + `federal_estate_tax_brackets`; `lifetimeGiftsUsed` from `calculate_gifting_summary` | Implemented (2026-06-06) |
 | Advisor tax label basis | Estate basis mapping | `buildEstateTaxYearBasis` (`today`=actual, future=projection) | Implemented |
 | Domicile State Tax panel | State estate | `state_estate_tax_rules` | Implemented |
 | Move breakeven | State income + estate | `stateIncomeTax.ts` + estate tax logic | Implemented |
@@ -1067,6 +1068,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Advisor roster net worth uses `lib/advisor/rosterNetWorth.ts` (`loadRosterNetWorthByOwner`) — batched reads on `/advisor`, not per-client `calculate_estate_composition`.
 - Advisor client post-fetch normalization/mapping is now extracted into `lib/advisor/mappers.ts` (`mapAdvisorClientDatasets`) for beneficiary normalization, scenario output selection, and dataset shaping before route composition.
 - Advisor export payload assembly is now extracted into `lib/advisor/exportMappers.ts` (`buildAdvisorExportPayloads`) so the advisor client route no longer owns PDF/Excel/export-panel payload construction logic.
+- **Export federal tax (2026-06-06):** **`lib/tax/federalExportTax.ts`** — **`computeFederalExportTax()`** wraps **`computeFederalEstateTax()`** with latest **`federal_estate_tax_brackets`**, OBBBA exemption minus **`lifetimeGiftsUsed`**, and **`no_exemption`** (zero credit). Wired in **`exportMappers.ts`**, **`loadAdvisorExportWiring.ts`**, advisor **`page.tsx`**. PDF page 3 reads precomputed **`PDFReportData.federalTax`** (no inline flat 40%). Verify: **`scripts/verify-export-federal-brackets.ts`**.
 - **PDF narrative engine (2026-05-30):** `lib/export/narrativeEngine.ts` — executive summary, tax callout, health trend, gifting bar, themed action items, **`dedupeActionItems()`**, **`enrichActionItems()`**. Strategy summary page (no active strategies): gap list uses same **`enrichedActions`** dedupe as action-items — not raw alerts. Payload via **`loadAdvisorExportWiring.ts`** + **`GET /api/advisor/meeting-prep-pdf/[clientId]?type=report`**. **`lib/export/pdfFilingStatus.ts`** — client-safe `normalizePdfFilingStatus` (do not import from `fetchNarrativePdfFields.ts` in `'use client'` modules). **Four-surface polish (2026-06-01):** **`lib/advisor/advisorBriefHelpers.ts`** shared by PDF export, meeting brief print (`?type=brief`, template `sprint-four-surface-polish-v2`), meeting prep tab/modal; **`advisor_notes.note_type`**; **PDF page 2 chart (2026-06-01):** `projectionChartRows` from `scenarioOutputs`; **`buildEstateSVGChart()`** inline SVG (print-safe, no Chart.js); tax cliff callout; two-column asset/health below chart (Excel keeps full projection table). **MC fan bands (Phase 2C, 2026-06-05):** optional **`projectionChartBands`** (`PercentileByYear[]` from **`loadScenarioMonteCarlo`**) overlaid in **`buildEstateSVGChart()`**; wiring via **`loadAdvisorExportWiring.ts`** + **`exportMappers.ts`**. **MC narrative line (Phase 2D):** **`buildMCNarrativeLine()`** in **`narrativeEngine.ts`** — appended to cover tax callout detail when bands present; age from **`projectionChartRows`** year join. **PDF beneficiary summary (2026-06-01):** **`lib/advisor/beneficiaryHelpers.ts`** (`buildBeneficiaryAccountGroups`) → **`PDFReportData.beneficiaryData`** in **`exportMappers.ts`**; raw **`asset_beneficiaries`** from loader (already fetched, not mapped UI rows); conditional page **`beneficiary_summary`** between snapshot and tax. Estate tab UI grouping unchanged (separate local helper). brief print uses same enrichment context as export via `loadAdvisorExportWiringForClient`. **Print brief stat cards (2026-06-01):** `findAtDeathRow` for projected estate gross; 3-card layout (health · tax at death · projected at death); alert enrichment uses current-year gross. **At-death tax:** `loadAdvisorExportWiringForClient` → **`meetingPrepAtDeath.totalTaxLiability`** (`computeColumnTaxes`, same as modal); do not use projection row `estate_tax_federal`/`estate_tax_state` for MFJ brief display (first-death rows are $0).
 - Shared advisor export panel contract typing is now centralized in `lib/advisor/types.ts` (`AdvisorExportPanelProps`) and consumed by both export mappers and advisor client shell props.
 - Advisor dataset mapper typing is now hardened in `lib/advisor/mappers.ts` with explicit mapper interfaces and typed output shaping; advisor route composition now consumes typed mapper outputs without broad `any` payload contracts.

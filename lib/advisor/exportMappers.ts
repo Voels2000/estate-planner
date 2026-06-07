@@ -5,14 +5,14 @@ import type { ExportProjectionRow, TaxSummaryExport } from '@/components/advisor
 import type { ActionItem, MonteCarloSummary, ScenarioVersion } from '@/lib/export-wiring'
 import type { AdvisorExportPanelProps } from '@/lib/advisor/types'
 import type { NarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
-import { normalizePdfFilingStatus } from '@/lib/export/pdfFilingStatus'
-import { currentFederalExemption } from '@/lib/export/narrativeEngine'
 import {
   calculateStateEstateTax,
   resolveActiveStateTax,
   isMFJFilingStatus,
   type StateBracket,
 } from '@/lib/calculations/stateEstateTax'
+import type { EstateTaxBracket } from '@/lib/calculations/estate-tax'
+import { computeFederalExportTax } from '@/lib/tax/federalExportTax'
 import { buildPdfAssetBreakdown, resolveAdvisorBranding } from '@/lib/advisor/advisorBriefHelpers'
 import {
   buildBeneficiaryAccountGroups,
@@ -66,6 +66,8 @@ export async function buildAdvisorExportPayloads(params: {
   scenarioForStrategy: { law_scenario?: 'current_law' | 'no_exemption' } | null
   narrativeFields: NarrativePdfFields
   stateBrackets: StateBracket[]
+  federalBrackets?: EstateTaxBracket[]
+  lifetimeGiftsUsed?: number
   beneficiaries?: AssetBeneficiaryRow[]
   assets?: Array<{
     id?: string
@@ -107,8 +109,16 @@ export async function buildAdvisorExportPayloads(params: {
     params.todayGrossEstate && params.todayGrossEstate > 0
       ? params.todayGrossEstate
       : Number(params.latestOutput?.estate_incl_home ?? 0)
-  const exemptionExport = currentFederalExemption(normalizePdfFilingStatus(household.filing_status))
   const lawScenarioExport = params.scenarioForStrategy?.law_scenario ?? 'current_law'
+
+  const { federalTax: fedTaxExport, federalExemption: exemptionExport } = computeFederalExportTax({
+    grossEstate: grossForExport,
+    filingStatus: household.filing_status,
+    hasSpouse: Boolean(household.has_spouse),
+    brackets: params.federalBrackets ?? [],
+    lifetimeGiftsUsed: params.lifetimeGiftsUsed ?? 0,
+    lawScenario: lawScenarioExport,
+  })
 
   // Engine B state tax (aligned with generatePDFReport page 3)
   const exportStateResult = calculateStateEstateTax(
@@ -122,11 +132,6 @@ export async function buildAdvisorExportPayloads(params: {
     exportStateResult,
     params.narrativeFields.hasBypassTrust ?? false,
   )
-
-  // Engine B federal tax
-  const FEDERAL_RATE = 0.4
-  const exportExemption = lawScenarioExport === 'no_exemption' ? 0 : exemptionExport
-  const fedTaxExport = Math.max(0, grossForExport - exportExemption) * FEDERAL_RATE
 
   const projectionRowsForExcel: Array<Record<string, number | string>> = params.scenarioOutputs.map((row) => {
     const out: Record<string, number | string> = {}

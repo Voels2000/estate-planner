@@ -616,10 +616,7 @@ export function generatePDFHTML(data: PDFReportData): string {
     false,
   )
   const page3StateTax = resolveActiveStateTax(page3StateResult, data.hasBypassTrust ?? false)
-  const FEDERAL_RATE = 0.4
-  const effectiveExemption =
-    data.lawScenario === 'no_exemption' ? 0 : (data.federalExemption ?? 0)
-  const page3FederalTax = Math.max(0, data.grossEstate - effectiveExemption) * FEDERAL_RATE
+  const page3FederalTax = data.federalTax ?? 0
   const page3NetToHeirs = data.grossEstate - page3FederalTax - page3StateTax
 
   const pages = determinePDFPages(data)

@@ -1,6 +1,6 @@
 # Calculation engine registry
 
-Last updated: 2026-06-06 (StateTaxPanel multi-state + tax coverage audit)
+Last updated: 2026-06-06 (export federal → bracket engine)
 
 This document is the **authoritative list** of calculation engines in the codebase.
 
@@ -42,7 +42,9 @@ from `lib/calculations/stateEstateTax.ts`. Hardcoded flat rates are not permitte
 
 | Function | File | Use for |
 |----------|------|---------|
-| `estimateFederalEstateTaxSnapshot()` | `lib/my-estate-strategy/horizonSnapshots.ts` | Horizon snapshot columns |
+| `estimateFederalEstateTaxSnapshot()` | `lib/my-estate-strategy/horizonSnapshots.ts` | Horizon snapshot columns (flat top rate on exposure) |
+| `computeFederalEstateTax()` | `lib/calculations/estate-tax.ts` | Progressive brackets + exemption credit (`/estate-tax`, trust strategy) |
+| `computeFederalExportTax()` | `lib/tax/federalExportTax.ts` | Advisor export panel, Excel, PDF (`exportMappers` → `PDFReportData.federalTax`) |
 | `computeEstateTaxProjection()` | `lib/calculations/estate-tax-projection.ts` | Year-by-year projection rows (engine B at death years) |
 | `currentFederalExemption()` | `lib/export/narrativeEngine.ts` | Display copy only |
 
