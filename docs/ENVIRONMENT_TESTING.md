@@ -115,10 +115,10 @@ Not required for solo go-live if branch protection + local post-deploy checks ar
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │  CI (GitHub Actions on main / PR)                                │
-│  ci.yml: lint, build, verify:consumer-openapi, unit tests       │
+│  ci.yml: lint, build (dummy env — see below), audits, unit tests │
 │  e2e-smoke.yml (E2E_SMOKE_IN_CI): localhost app + STAGING keys   │
 │  rls-verify.yml (RLS_VERIFY_IN_CI): JWT isolation on STAGING    │
-│  — no SUPABASE_DB_URL; no production keys                       │
+│  — no SUPABASE_DB_URL; no production keys in GitHub secrets      │
 └────────────────────────────┬────────────────────────────────────┘
                              │ deploy Production (Vercel)
                              ▼
@@ -172,6 +172,17 @@ Enable **before** `PUBLIC_SIGNUP_OPEN` — all secrets are **staging Supabase** 
 | `PLAYWRIGHT_CONSUMER_EMAIL` / `PASSWORD` | Optional — defaults `@mywealthmaps.test` |
 
 **Do not add:** `SUPABASE_DB_URL`, production service role, production anon key.
+
+### CI `Production build` step (compile-only placeholders)
+
+The `verify` job in `.github/workflows/ci.yml` sets **dummy** env vars on `npm run build` so Next.js can import API routes that initialize Stripe/Resend at module load. These values are **not secrets** and are **not** used by Vercel.
+
+| Variable | CI value | Vercel Production / Preview |
+|----------|----------|----------------------------|
+| `RESEND_API_KEY` | `re_placeholder_ci_build_only` | Real key in Vercel dashboard |
+| `STRIPE_SECRET_KEY` | `sk_test_placeholder_ci_build_only` | Real key in Vercel dashboard |
+| `SUPABASE_SERVICE_ROLE_KEY` | `placeholder-service-role-key` | Real key in Vercel dashboard |
+| `NEXT_PUBLIC_SUPABASE_*` | placeholder URLs/keys | Real project keys in Vercel |
 
 Workflows keep `REQUIRE_PRIVILEGED_MFA=false` so CI is not blocked by MFA gates.
 

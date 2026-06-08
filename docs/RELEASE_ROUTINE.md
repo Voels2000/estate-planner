@@ -80,6 +80,8 @@ On every push/PR to `main`:
 | [E2E smoke](../.github/workflows/e2e-smoke.yml) | When `E2E_SMOKE_IN_CI=true` | `e2e-smoke` |
 | [RLS verify](../.github/workflows/rls-verify.yml) | When `RLS_VERIFY_IN_CI=true` | `rls-verify` |
 
+**CI build env:** The `Production build` step uses **dummy** `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` so route collection succeeds. Vercel Production and Preview use real secrets from the Vercel dashboard — never from `ci.yml`. See [ENVIRONMENT_TESTING.md § CI Production build](./ENVIRONMENT_TESTING.md#ci-production-build-step-compile-only-placeholders).
+
 **Rule:** Do not merge until required checks are green.
 
 ---

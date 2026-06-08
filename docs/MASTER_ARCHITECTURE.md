@@ -1183,6 +1183,8 @@ All user-facing and admin surfaces use **`state_income_tax_brackets`** via `stat
 
 **All merges:** follow [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (build, doc sync, spot-check affected surfaces).
 
+**CI vs Vercel secrets:** GitHub Actions `ci.yml` uses compile-only placeholder env on the `Production build` step (`RESEND_API_KEY`, `STRIPE_SECRET_KEY`, etc.). Vercel Production and Preview deployments use real credentials from the Vercel project settings — placeholders are never deployed. See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md#ci-production-build-step-compile-only-placeholders).
+
 **Additional spot-checks when tax/engine logic changes:**
 
 - `/projections` — base case still regenerates when stale

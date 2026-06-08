@@ -1,8 +1,30 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-08 (pre-go-live tax data cleanup)
+# Last updated: 2026-06-08 (CI build placeholders · tax cleanup)
 
 ---
+
+---
+
+## CI build placeholders — not production secrets (2026-06-08)
+
+**Decision:** Add **non-functional dummy env vars** to the GitHub Actions `Production build` step in `.github/workflows/ci.yml` so `next build` can collect API route modules without real credentials.
+
+**Reasoning:** Several routes import `lib/resend` and instantiate `Stripe` at module load. CI previously had only Supabase `NEXT_PUBLIC_*` placeholders; build failed on `Missing RESEND_API_KEY` / `Neither apiKey nor config.authenticator provided`. Vercel Production and Preview use **real** secrets from the Vercel dashboard — they never read `ci.yml`. Placeholder strings are committed in plain text by design (not secrets).
+
+**CI build env (GitHub only):**
+
+| Variable | Value (dummy) |
+|----------|----------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://placeholder.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `placeholder-anon-key` |
+| `SUPABASE_SERVICE_ROLE_KEY` | `placeholder-service-role-key` |
+| `RESEND_API_KEY` | `re_placeholder_ci_build_only` |
+| `STRIPE_SECRET_KEY` | `sk_test_placeholder_ci_build_only` |
+
+**Still open:** CI `verify` job may fail on UX language audit (13 flagged phrases) — unrelated to build; does not affect Vercel env. Manual Vercel redeploy or fix audit to unblock auto-deploy if deployment protection waits on checks.
+
+**Commits:** `201e9be`, `b9eef05`
 
 ---
 

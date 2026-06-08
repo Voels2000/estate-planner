@@ -10,6 +10,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## CI build placeholders (2026-06-08)
+
+**No migration.** `.github/workflows/ci.yml` — `Production build` step env only.
+
+| Change | Detail |
+|--------|--------|
+| **Problem** | `next build` imports Stripe/Resend at route collection; CI lacked keys → build failed → blocked deploys when GitHub checks required |
+| **Fix** | Dummy `RESEND_API_KEY`, `STRIPE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY` on CI build step only |
+| **Not in scope** | Real secrets stay in Vercel env (Production + Preview); placeholders never deployed |
+| **Remaining** | UX language audit still fails CI (13 instances) — separate from build |
+
+**Commits:** `201e9be`, `b9eef05`
+
+---
+
 ## Pre-go-live tax data cleanup + inheritance seed (2026-06-08)
 
 **Migrations:** `20260708120000_cleanup_legacy_tax_tables.sql`, `20260708130000_seed_state_inheritance_tax_rules_2026.sql`
