@@ -252,6 +252,61 @@ export default function AssessClient() {
   const [showSaveCTA, setShowSaveCTA] = useState(false)
   const [showRestoredBanner, setShowRestoredBanner] = useState(false)
 
+  function computeScores() {
+    const raw: Record<string, number> = {}
+    QUESTIONS.forEach(q => {
+      const idx = answers[q.id]
+      raw[q.id] = idx !== undefined ? q.options[idx].score : 0
+    })
+    const financial = ['f1','f2','f3','f4','f5','f6','f7']
+      .reduce((a, k) => a + (raw[k] || 0), 0)
+    const retirement = ['r1','r2','r3','r4','r5','r6','r7']
+      .reduce((a, k) => a + (raw[k] || 0), 0)
+    const estate = ['e1','e2','e3','e4','e5','e6']
+      .reduce((a, k) => a + (raw[k] || 0), 0)
+    return { financial, retirement, estate, raw }
+  }
+
+  async function saveResults(
+    fp: number, rp: number, ep: number,
+    overall: number, resultAnswers: Answers
+  ) {
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setShowSaveCTA(true)
+        try {
+          localStorage.setItem('mwm_pending_assessment', JSON.stringify({
+            overall,
+            financialScore: fp,
+            retirementScore: rp,
+            estateScore: ep,
+            answers: resultAnswers,
+            savedAt: Date.now(),
+          }))
+        } catch {
+          // localStorage unavailable
+        }
+        return
+      }
+      await supabase.from('assessment_results').insert({
+        user_id: user.id,
+        overall_score: overall,
+        financial_score: fp,
+        retirement_score: rp,
+        estate_score: ep,
+        financial_pct: fp,
+        retirement_pct: rp,
+        estate_pct: ep,
+        answers: resultAnswers,
+      })
+      setShowSaveCTA(false)
+    } catch {
+      // Fail silently
+    }
+  }
+
   useEffect(() => {
     if (screen !== 'results') return
     const { financial, retirement, estate } = computeScores()
@@ -263,7 +318,7 @@ export default function AssessClient() {
       (MAX_SCORES.financial + MAX_SCORES.retirement + MAX_SCORES.estate)) * 100
     )
     saveResults(fp, rp, ep, overall, answers)
-  }, [screen])
+  }, [screen, answers])
 
   useEffect(() => {
     async function restorePendingAssessment() {
@@ -328,61 +383,6 @@ export default function AssessClient() {
     setCurrent(0)
     setScreen('intro')
     window.scrollTo(0, 0)
-  }
-
-  function computeScores() {
-    const raw: Record<string, number> = {}
-    QUESTIONS.forEach(q => {
-      const idx = answers[q.id]
-      raw[q.id] = idx !== undefined ? q.options[idx].score : 0
-    })
-    const financial = ['f1','f2','f3','f4','f5','f6','f7']
-      .reduce((a, k) => a + (raw[k] || 0), 0)
-    const retirement = ['r1','r2','r3','r4','r5','r6','r7']
-      .reduce((a, k) => a + (raw[k] || 0), 0)
-    const estate = ['e1','e2','e3','e4','e5','e6']
-      .reduce((a, k) => a + (raw[k] || 0), 0)
-    return { financial, retirement, estate, raw }
-  }
-
-  async function saveResults(
-    fp: number, rp: number, ep: number,
-    overall: number, answers: Answers
-  ) {
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setShowSaveCTA(true)
-        try {
-          localStorage.setItem('mwm_pending_assessment', JSON.stringify({
-            overall,
-            financialScore: fp,
-            retirementScore: rp,
-            estateScore: ep,
-            answers,
-            savedAt: Date.now(),
-          }))
-        } catch {
-          // localStorage unavailable — fail silently
-        }
-        return
-      }
-
-      await supabase.from('assessment_results').insert({
-        user_id: user.id,
-        overall_score: overall,
-        financial_score: fp,
-        retirement_score: rp,
-        estate_score: ep,
-        financial_pct: fp,
-        retirement_pct: rp,
-        estate_pct: ep,
-        answers: answers,
-      })
-    } catch {
-      // Fail silently — don't interrupt the user experience
-    }
   }
 
   const q = QUESTIONS[current]

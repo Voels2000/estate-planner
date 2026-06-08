@@ -602,7 +602,7 @@ export default async function HomePage() {
                   fontSize: 24, color: item.color,
                   marginBottom: 10, lineHeight: 1,
                   fontFamily: 'Georgia, serif',
-                }}>"</div>
+                }}>&ldquo;</div>
                 <p style={{
                   fontSize: 13,
                   color: 'var(--mwm-text-secondary)',

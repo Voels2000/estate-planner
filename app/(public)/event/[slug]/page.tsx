@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getEventContent, EVENT_SLUGS } from '@/lib/events/content'
 import { getSignupHref } from '@/lib/waitlist-mode'
@@ -268,7 +269,7 @@ export default async function EventPage({
             fontSize: 12, color: 'rgba(255,255,255,0.45)',
             marginBottom: 16,
           }}>
-            <a href="/" style={{ color: 'rgba(255,255,255,0.45)', textDecoration: 'none' }}>Home</a>
+            <Link href="/" style={{ color: 'rgba(255,255,255,0.45)', textDecoration: 'none' }}>Home</Link>
             {' / '}
             <span style={{ color: 'rgba(255,255,255,0.65)' }}>{event.title}</span>
           </div>
@@ -379,7 +380,7 @@ export default async function EventPage({
           <p style={{
             fontSize: 13, color: '#718096', marginBottom: 24, lineHeight: 1.6,
           }}>
-            Ordered by urgency. Items marked "Immediate" should be addressed
+            Ordered by urgency. Items marked &quot;Immediate&quot; should be addressed
             within {event.urgency === 'critical' ? '2–4 weeks' : '60–90 days'}.
           </p>
 

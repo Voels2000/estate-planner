@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { getSignupHref } from '@/lib/waitlist-mode'
 
 const NAV_LINKS = [
@@ -30,7 +31,7 @@ export function PublicNav({ waitlistMode }: { waitlistMode: boolean }) {
         height: 56,
       }}
     >
-      <a
+      <Link
         href="/"
         style={{
           display: 'flex',
@@ -68,7 +69,7 @@ export function PublicNav({ waitlistMode }: { waitlistMode: boolean }) {
         >
           My Wealth Maps
         </span>
-      </a>
+      </Link>
 
       <div
         style={{

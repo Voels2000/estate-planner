@@ -1,5 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getSignupHref } from '@/lib/waitlist-mode'
 
@@ -143,8 +144,8 @@ export function PublicAdvisorDirectoryClient({
             My Wealth Maps
           </span>
         </div>
-        <a href="/" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)',
-          textDecoration: 'none' }}>← Back to home</a>
+        <Link href="/" style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)',
+          textDecoration: 'none' }}>← Back to home</Link>
       </nav>
 
       {/* Disclaimer */}
@@ -412,7 +413,7 @@ export function PublicAdvisorDirectoryClient({
               Connect with {modalAdvisor.firm_name}
             </h2>
             <p style={{ fontSize: 13, color: '#718096', marginBottom: 20, lineHeight: 1.6 }}>
-              Send a connection request. They'll be able to view your planning
+              Send a connection request. They&apos;ll be able to view your planning
               summary and reach out to you directly.
             </p>
             <textarea
