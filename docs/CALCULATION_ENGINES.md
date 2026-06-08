@@ -1,6 +1,6 @@
 # Calculation engine registry
 
-Last updated: 2026-06-06 (export federal → bracket engine)
+Last updated: 2026-06-07 (admin tax scan · rollover · commit)
 
 This document is the **authoritative list** of calculation engines in the codebase.
 
@@ -69,6 +69,26 @@ from `lib/calculations/stateEstateTax.ts`. Hardcoded flat rates are not permitte
 | `calculateInheritanceTax()` | `lib/projection/stateRegistry.ts` | Advisor **`InheritanceTaxWaterfall`** |
 
 **Coverage:** **`MODELED_INHERITANCE_TAX_STATES`**: IA, KY, MD, NE, NJ, PA — rules in **`state_inheritance_tax_rules`**.
+
+---
+
+## Admin tax data maintenance
+
+Bracket tables above are **admin-managed** — not hardcoded in engines. Use this workflow for annual updates:
+
+| Step | Entry | File |
+|------|-------|------|
+| Scan coverage | `/admin` Tax Rules → **1. Scan** or `npm run verify:tax-coverage` | `lib/tax/admin/scanTaxCoverage.ts` |
+| Build rollover draft | **2. Rollover Y → Y+1** | `lib/tax/admin/buildTaxRolloverDraft.ts` |
+| Commit to DB | **3. Commit** (after manual-verify ack) | `lib/tax/admin/applyTaxRollover.ts` |
+
+**APIs:** `app/api/admin/tax-rules/{scan,rollover,apply}/route.ts` — `requireAdminApi()`.
+
+**Manual verify config:** `data/tax-rollover/manual-verify.json` — flag states/sections that changed (e.g. NY estate exemption) before commit.
+
+**Not in rollover:** `federal_tax_config` — update exemption and gift exclusion manually when IRS publishes annual figures.
+
+**Verify after bracket edits:** `npm run verify:tax-coverage` · `npm run verify:estate -- --preset voels --check-goldens`
 
 ---
 

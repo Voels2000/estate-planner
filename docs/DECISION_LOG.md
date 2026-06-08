@@ -1,8 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (B2B2C billing policy + seat pricing benchmarks)
+# Last updated: 2026-06-07 (admin tax scan · rollover · commit)
 
 ---
+
+---
+
+## Admin tax rules — scan · rollover · commit (2026-06-07)
+
+**Decision:** Three-phase admin workflow for annual tax table updates — read-only scan, client-held rollover draft (copy Y→Y+1), admin-approved commit. No external tax API; manual verify flags in `data/tax-rollover/manual-verify.json`. `federal_tax_config` never auto-copied.
+
+**Reasoning:** Reduces year-end ops risk — scan catches gaps before projections break; rollover copies unchanged jurisdictions in bulk; commit requires explicit ack for flagged states/sections. Shared scan engine powers UI and `npm run verify:tax-coverage` CLI.
+
+**Files:** `lib/tax/admin/*`, `app/api/admin/tax-rules/*`, `app/admin/tax-rules-workflow.tsx`, `data/tax-rollover/manual-verify.json`
+
+**Canonical doc:** [MASTER_ARCHITECTURE § Admin tax rules maintenance](./MASTER_ARCHITECTURE.md#admin-tax-rules-maintenance-scan--rollover--commit) · [CALCULATION_ENGINES § Admin tax data maintenance](./CALCULATION_ENGINES.md#admin-tax-data-maintenance)
 
 ---
 

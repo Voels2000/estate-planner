@@ -186,6 +186,30 @@ Important:
 - `state_income_tax_rates` is **legacy** and retained only as a read-only admin archive.
 - User-facing calculations are bracket-based; remaining legacy table usage is admin archive/maintenance only.
 
+### Admin tax rules maintenance (scan · rollover · commit)
+
+Annual bracket updates use a three-phase admin workflow on **`/admin` → Tax Rules** (`app/admin/tax-rules-tab.tsx` + `app/admin/tax-rules-workflow.tsx`):
+
+| Phase | Action | Implementation |
+|-------|--------|----------------|
+| 1 — Scan | Read-only coverage report for selected tax year | `GET /api/admin/tax-rules/scan?year=` → `lib/tax/admin/scanTaxCoverage.ts` |
+| 2 — Rollover | Draft copy source year → target year (client-held) | `POST /api/admin/tax-rules/rollover` → `lib/tax/admin/buildTaxRolloverDraft.ts` |
+| 3 — Commit | Admin-approved apply + audit log | `POST /api/admin/tax-rules/apply` → `lib/tax/admin/applyTaxRollover.ts` |
+
+**Tables in rollover apply:** `federal_estate_tax_brackets`, `federal_tax_brackets`, `state_estate_tax_rules`, `state_income_tax_brackets`, `state_inheritance_tax_rules`, `irmaa_brackets`.
+
+**Never auto-copied:** `federal_tax_config` (exemption, annual gift exclusion) — update manually in Supabase or a future admin surface.
+
+**Manual verify flags:** `data/tax-rollover/manual-verify.json` — per target year, lists federal sections and state codes that require human verification before commit (checkbox gate in UI).
+
+**Audit:** Last 50 apply events in `app_config` key `tax_rollover_audit_log`.
+
+**CLI (same scan engine):** `npm run verify:tax-coverage` (`scripts/verify-state-tax-coverage.ts`).
+
+**Auth:** All three API routes use `requireAdminApi()` + `createAdminClient()` (privileged MFA when enabled).
+
+**Federal income nuance:** `federal_tax_brackets` has `UNIQUE(filing_status, bracket_order)` without `tax_year` — apply deletes by `filing_status` before insert (same pattern as migration `20260430100000_seed_federal_tax_brackets_2026.sql`).
+
 ---
 
 ## Tax Engine Architecture
@@ -524,7 +548,7 @@ Coherent advisor path with no duplicate entry points or dead-end panels:
 - **`success_rate` / Zero-Tax Paths:** Percent of simulated paths where federal + state estate tax both equal $0 (not federal exemption alone). Stale runs with omitted state tax inflated this metric.
 - **PDF page 3 cards (2026-06-01):** `page3FederalTax` + `page3StateTax` + `page3NetToHeirs` at HTML render — engine B; bypass via `hasBypassTrust` on `PDFReportData`.
 - **Verify:** `scripts/verify-estate-mc-voels-smoke.ts`; redeploy edge after `index.ts` changes.
-- **Post-deploy Voels gate (2026-06-06, cron self-heal 2026-06-07):** `lib/verify/runPostDeployVoelsChecks.ts` + `npm run verify:post-deploy-voels` (7 checks). **Daily cron** `GET /api/cron/post-deploy-verify` (9:00 UTC, `CRON_SECRET`, `vercel.json`) **backfills missing Voels `monte_carlo_results`** via `ensureVoelsMonteCarloCached()` then verifies. Immediate backfill: `npm run smoke:mc-voels`. Also: `scripts/regenerate-base-case-voels.ts`; `scripts/verify-state-tax-panel-states.ts`; `scripts/verify-state-tax-coverage.ts` — see [NEXT_SESSION.md § Post-deploy verification scripts](./NEXT_SESSION.md#post-deploy-verification-scripts--indexed--2026-06-06).
+- **Post-deploy Voels gate (2026-06-06, cron self-heal 2026-06-07):** `lib/verify/runPostDeployVoelsChecks.ts` + `npm run verify:post-deploy-voels` (7 checks). **Daily cron** `GET /api/cron/post-deploy-verify` (9:00 UTC, `CRON_SECRET`, `vercel.json`) **backfills missing Voels `monte_carlo_results`** via `ensureVoelsMonteCarloCached()` then verifies. Immediate backfill: `npm run smoke:mc-voels`. Also: `scripts/regenerate-base-case-voels.ts`; `scripts/verify-state-tax-panel-states.ts`; **`npm run verify:tax-coverage`** (`lib/tax/admin/scanTaxCoverage.ts`).
 
 ### Consumer + advisor assumption Monte Carlo
 
@@ -936,10 +960,10 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 This section enumerates the remaining place where the legacy flat-rate table is still read.
 
-### Still reading `state_income_tax_rates`
+### Admin tax rules tab
 
-- `app/admin/tax-rules-tab.tsx`
-  - Legacy archive view for `state_income_tax_rates` remains for historical reference.
+- `app/admin/tax-rules-tab.tsx` — manual CRUD for state estate, federal estate, IRMAA; read-only coverage guardrails for federal/state income brackets; legacy archive for `state_income_tax_rates`.
+- `app/admin/tax-rules-workflow.tsx` — scan · rollover · commit workflow (see [Admin tax rules maintenance](#admin-tax-rules-maintenance-scan--rollover--commit)).
 
 ### Already on bracket-based path
 

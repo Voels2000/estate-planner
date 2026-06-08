@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import TaxRulesWorkflow from '@/app/admin/tax-rules-workflow'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -399,6 +400,13 @@ export default function TaxRulesTab() {
         </div>
         <span className="text-xs text-neutral-400 ml-2">Changes apply to all projections and scenarios immediately.</span>
       </div>
+
+      <TaxRulesWorkflow
+        yearFilter={yearFilter}
+        onApplied={(targetYear) => {
+          setYearFilter(targetYear)
+        }}
+      />
 
       <div className={`rounded-lg border px-4 py-3 text-sm ${
         loadingFederalIncomeCoverage

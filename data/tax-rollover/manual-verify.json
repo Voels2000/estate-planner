@@ -1,0 +1,22 @@
+{
+  "default": {
+    "alwaysVerify": [
+      "federal_tax_config",
+      "federal_tax_brackets",
+      "irmaa_brackets"
+    ],
+    "stateEstate": [],
+    "stateIncome": [],
+    "notes": "Review federal exemption, annual gift exclusion, IRS brackets, and CMS IRMAA thresholds before committing a rollover."
+  },
+  "2027": {
+    "alwaysVerify": [
+      "federal_tax_config",
+      "federal_tax_brackets",
+      "irmaa_brackets"
+    ],
+    "stateEstate": ["NY", "MN", "WA"],
+    "stateIncome": ["NY", "MN", "IA"],
+    "notes": "Example year — replace state lists when Tax Foundation / state DOR publish changes."
+  }
+}
