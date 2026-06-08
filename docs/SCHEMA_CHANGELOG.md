@@ -10,6 +10,23 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Pre-go-live tax data cleanup + inheritance seed (2026-06-08)
+
+**Migrations:** `20260708120000_cleanup_legacy_tax_tables.sql`, `20260708130000_seed_state_inheritance_tax_rules_2026.sql`
+
+| Change | Detail |
+|--------|--------|
+| **Purge** | Delete `tax_year` 2023–2025 from `federal_tax_brackets`, `state_income_tax_brackets`, `state_estate_tax_rules`, `state_inheritance_tax_rules`, `irmaa_brackets`, `federal_estate_tax_brackets` |
+| **Drop** | `state_income_tax_rates` (flat-rate legacy; engines use `state_income_tax_brackets`) |
+| **Backfill** | `federal_estate_tax_brackets.tax_year = 2026` where null |
+| **Seed** | `state_inheritance_tax_rules` — 24 rows for 2026 (IA, KY, MD, NE, NJ, PA × spouse/child/sibling/other) |
+| **App** | Admin tax-rules tab: removed deprecated flat-rate section; year picker 2026+; removed `computeStateEstateTaxFromBrackets` |
+| **Test** | `tests/unit/tax-year-selection.spec.ts` — 2026-only bracket selection |
+
+**Verify:** `npm run verify:tax-coverage` → all 7 domains PASS for 2026.
+
+---
+
 ## B2B2C connection billing columns + attorney_managed (2026-06-07)
 
 **Migration:** `20260704120000_b2b2c_connection_billing.sql`

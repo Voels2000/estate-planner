@@ -1,6 +1,6 @@
 # Calculation engine registry
 
-Last updated: 2026-06-07 (admin tax scan · rollover · commit)
+Last updated: 2026-06-08 (pre-go-live tax data cleanup)
 
 This document is the **authoritative list** of calculation engines in the codebase.
 
@@ -20,7 +20,6 @@ Strategy type/source strings: **`lib/constants/strategyTypes.ts`** — never har
 | `calculateStateEstateTax()` | `lib/calculations/stateEstateTax.ts` | All display surfaces — progressive brackets, portability gap, NY cliff; returns `stateTax`, `stateTaxWithCST`, `cstBenefit` |
 | `calculateStateTaxScenarios()` | same | Advisor PDF with/without bypass trust comparison |
 | `resolveActiveStateTax()` | same | Pick status-quo vs with-CST amount when `hasBypassTrust` is set |
-| `computeStateEstateTaxFromBrackets()` | same | **DEPRECATED** — projection death-year rows only |
 
 **Modeled states:** **`MODELED_ESTATE_TAX_STATES`** in `stateEstateTax.ts` — CT, DC, HI, IL, MA, MD, ME, MN, NY, OR, RI, VT, WA (brackets in **`state_estate_tax_rules`**). **`stateHasEstateTax()`** / **`StateTaxPanel`** use this list — not a WA-only path.
 
@@ -68,7 +67,7 @@ from `lib/calculations/stateEstateTax.ts`. Hardcoded flat rates are not permitte
 | `computeStateInheritanceTax()` | `lib/calculations/estate-tax.ts` | Consumer **`/estate-tax`** waterfall |
 | `calculateInheritanceTax()` | `lib/projection/stateRegistry.ts` | Advisor **`InheritanceTaxWaterfall`** |
 
-**Coverage:** **`MODELED_INHERITANCE_TAX_STATES`**: IA, KY, MD, NE, NJ, PA — rules in **`state_inheritance_tax_rules`**.
+**Coverage:** **`MODELED_INHERITANCE_TAX_STATES`**: IA, KY, MD, NE, NJ, PA — rules in **`state_inheritance_tax_rules`** (seeded 2026: `20260708130000`). Iowa repealed 2025+.
 
 ---
 

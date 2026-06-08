@@ -183,8 +183,8 @@ Auto-detection uses existing data; consumer checkbox is an override that persist
 
 Important:
 
-- `state_income_tax_rates` is **legacy** and retained only as a read-only admin archive.
-- User-facing calculations are bracket-based; remaining legacy table usage is admin archive/maintenance only.
+- **Go-live tax anchor year:** **2026** — pre-2026 rows purged from rollover tables (`20260708120000`). Annual updates use scan · rollover · commit (see below).
+- `state_income_tax_rates` (flat-rate legacy table) **dropped** pre-go-live — all engines use `state_income_tax_brackets`.
 
 ### Admin tax rules maintenance (scan · rollover · commit)
 
@@ -225,7 +225,7 @@ Annual bracket updates use a three-phase admin workflow on **`/admin` → Tax Ru
 5. **`hasBypassTrust` sources:** consumer horizons = accepted `strategy_line_items` only (`consumer_accepted`); advisor actual = same; advisor projected = any active CST line item; advisor PDF = accepted CST line items + `stateBrackets` on `PDFReportData`.
 6. Pass typed horizon outputs to UI; UI should not recalculate estate tax.
 
-**Display surfaces (engine B):** horizons, StateTaxPanel, prospect, PDF cover/callout/page 3 (`calculateStateTaxScenarios`), narrative engine. **Deprecated engine C:** `computeStateEstateTaxFromBrackets` — projection death-year rows only (`estate-tax-projection.ts`).
+**Display surfaces (engine B):** horizons, StateTaxPanel, prospect, PDF cover/callout/page 3 (`calculateStateTaxScenarios`), narrative engine. Engine C (`computeStateEstateTaxFromBrackets`) **removed** — death-year rows use engine B.
 
 **Deleted engine A (2026-05-29):** hardcoded flat rates in `narrativeEngine.ts` (`STATE_TAX`, `calcStateTax`) — removed.
 
@@ -956,30 +956,21 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 ---
 
-## Legacy State Income Tax Usage Trace (Current)
+## State income tax (canonical — pre-go-live cleanup complete)
 
-This section enumerates the remaining place where the legacy flat-rate table is still read.
+All user-facing and admin surfaces use **`state_income_tax_brackets`** via `stateIncomeTax.ts`. The flat-rate **`state_income_tax_rates`** table and admin archive UI were removed pre-go-live (`20260708120000`).
 
 ### Admin tax rules tab
 
-- `app/admin/tax-rules-tab.tsx` — manual CRUD for state estate, federal estate, IRMAA; read-only coverage guardrails for federal/state income brackets; legacy archive for `state_income_tax_rates`.
+- `app/admin/tax-rules-tab.tsx` — manual CRUD for state estate, federal estate, IRMAA; read-only coverage guardrails for federal/state income brackets (year picker: 2026+, grows via rollover).
 - `app/admin/tax-rules-workflow.tsx` — scan · rollover · commit workflow (see [Admin tax rules maintenance](#admin-tax-rules-maintenance-scan--rollover--commit)).
 
-### Already on bracket-based path
+### Bracket-based surfaces
 
-- `lib/calculations/projection-complete.ts`
-  - Uses `stateIncomeTax.ts` with `state_income_tax_brackets` inputs.
-- `lib/domicile/moveBreakeven.ts`
-  - Uses shared progressive engine in `lib/calculations/stateIncomeTax.ts`.
-- `app/(dashboard)/domicile-analysis/page.tsx` + `app/(dashboard)/domicile-analysis/_domicile-results.tsx`
-  - Now read/display from `state_income_tax_brackets` (no legacy `state_income_tax_rates` read).
-- `app/(dashboard)/roth/page.tsx` + `lib/calculations/roth-analysis.ts`
-  - Now read `state_income_tax_brackets` and use shared `stateIncomeTax.ts` functions for state marginal and incremental state tax.
-
-### Optional cleanup target
-
-1. Keep `state_income_tax_rates` as a compatibility archive only, or remove the table/admin archive surface once historical visibility is no longer needed.
-2. Continue retiring non-canonical/legacy helpers as part of the `projection.ts` deprecation cleanup path.
+- `lib/calculations/projection-complete.ts` — `stateIncomeTax.ts` + `state_income_tax_brackets`
+- `lib/domicile/moveBreakeven.ts` — shared progressive engine
+- `app/(dashboard)/domicile-analysis/*` — `state_income_tax_brackets`
+- `app/(dashboard)/roth/page.tsx` + `lib/calculations/roth-analysis.ts` — `state_income_tax_brackets`
 
 ### Federal income tax consistency target
 
@@ -1183,9 +1174,8 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 
 ## Known Transitional Exceptions
 
-1. User-facing Roth + Domicile surfaces are now bracket-based; remaining `state_income_tax_rates` usage is admin legacy maintenance only.
-2. Legacy `lib/calculations/projection.ts` has been removed; canonical projection path is `projection-complete.ts`.
-3. Consumer save/progress still uses legacy-named `/api/strategy-line-items` (single endpoint path).
+1. Legacy `lib/calculations/projection.ts` has been removed; canonical projection path is `projection-complete.ts`.
+2. Consumer save/progress still uses legacy-named `/api/strategy-line-items` (single endpoint path).
 
 ---
 
@@ -1341,7 +1331,7 @@ succession, invite-advisor onboarding, A/B criteria in DECISION_LOG. See [ROADMA
 | `gift_history` lifetime rows | Planning UX + `calculate_gifting_summary` | Stay separate until ATG design | Form 709 prior gifts section |
 | Consumer Monte Carlo | Full advisor assumption set (7 fields) on `/monte-carlo` | Full advisor assumption parity | Shipped |
 | Federal income tax | `federal_tax_brackets` required in canonical projection | No hardcoded fallback | Implemented |
-| State income tax | `state_income_tax_brackets` in user paths | Retire `state_income_tax_rates` archive | Admin archive only |
+| State income tax | `state_income_tax_brackets` in user paths | — | `state_income_tax_rates` dropped pre-go-live |
 | Estate health recompute | Server `afterHouseholdWrite` + secret header; persists score, conflicts, recommendations | No client `/api/recompute-estate-health` | Session 101+; recommendations cache P-2 |
 | Projections load | Cache-first `outputs_s1_first` when fresh | Full 11-query compute when stale or overrides | Sprint P-2 |
 | Trust UI | Single page `/my-estate-trust-strategy` tabs | `/trust-will` redirect only | Session 116 |

@@ -1,17 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import TaxRulesWorkflow from '@/app/admin/tax-rules-workflow'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-
-type StateIncomeTaxRate = {
-  id?: string
-  state_code: string
-  rate_pct: number
-  tax_year: number
-}
 
 type StateEstateTaxRule = {
   id?: string
@@ -51,7 +44,7 @@ type StateIncomeBracketCoverageRow = {
   filing_status: string
 }
 
-type ActiveSection = 'state_income' | 'state_estate' | 'federal_estate' | 'irmaa'
+type ActiveSection = 'state_estate' | 'federal_estate' | 'irmaa'
 
 const US_STATES = [
   'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
@@ -72,12 +65,8 @@ function formatAmount(n: number): string {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function TaxRulesTab() {
-  const [activeSection, setActiveSection] = useState<ActiveSection>('state_income')
+  const [activeSection, setActiveSection] = useState<ActiveSection>('state_estate')
   const [yearFilter, setYearFilter] = useState<number>(new Date().getFullYear())
-
-  // State income tax rates
-  const [stateIncomeRates, setStateIncomeRates] = useState<StateIncomeTaxRate[]>([])
-  const [loadingStateIncome, setLoadingStateIncome] = useState(false)
 
   // State estate tax rules
   const [stateEstateRules, setStateEstateRules] = useState<StateEstateTaxRule[]>([])
@@ -107,18 +96,6 @@ export default function TaxRulesTab() {
   const [error, setError] = useState<string | null>(null)
 
   // ── Loaders ────────────────────────────────────────────────────────────────
-
-  const loadStateIncomeRates = useCallback(async (year: number) => {
-    setLoadingStateIncome(true)
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('state_income_tax_rates')
-      .select('*')
-      .eq('tax_year', year)
-      .order('state_code')
-    setStateIncomeRates(data ?? [])
-    setLoadingStateIncome(false)
-  }, [])
 
   const loadStateEstateRules = useCallback(async (year: number, state: string) => {
     setLoadingStateEstate(true)
@@ -180,7 +157,6 @@ export default function TaxRulesTab() {
     setLoadingStateIncomeCoverage(false)
   }, [])
 
-  useEffect(() => { loadStateIncomeRates(yearFilter) }, [yearFilter, loadStateIncomeRates])
   useEffect(() => { loadStateEstateRules(yearFilter, stateEstateFilter) }, [yearFilter, stateEstateFilter, loadStateEstateRules])
   useEffect(() => { loadFederalBrackets(yearFilter) }, [yearFilter, loadFederalBrackets])
   useEffect(() => { loadIrmaaBrackets(yearFilter) }, [yearFilter, loadIrmaaBrackets])
@@ -334,13 +310,19 @@ export default function TaxRulesTab() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const SECTIONS: { key: ActiveSection; label: string; description: string }[] = [
-    { key: 'state_income',  label: 'State Income Tax Rates (Deprecated)',   description: 'Legacy flat/effective rate table. Projection engines now use progressive state_income_tax_brackets.' },
     { key: 'state_estate',  label: 'State Estate Tax Rules',   description: 'Progressive estate tax brackets by state. Select a state to view and edit its brackets.' },
     { key: 'federal_estate', label: 'Federal Estate Tax',      description: 'Federal estate tax brackets used in estate tax calculations.' },
     { key: 'irmaa',         label: 'IRMAA Brackets',           description: 'Medicare premium surcharges by income level. Used in retirement projections.' },
   ]
 
-  const years = [2023, 2024, 2025, 2026]
+  const years = useMemo(() => {
+    const y = new Set<number>([new Date().getFullYear()])
+    for (const r of federalIncomeCoverageRows) y.add(Number(r.tax_year))
+    for (const r of stateIncomeCoverageRows) y.add(Number(r.tax_year))
+    return Array.from(y)
+      .filter((n) => n >= 2026 && Number.isFinite(n))
+      .sort((a, b) => a - b)
+  }, [federalIncomeCoverageRows, stateIncomeCoverageRows])
   const normalizedFederalStatusesForYear = new Set(
     federalIncomeCoverageRows
       .filter((r) => Number(r.tax_year) === yearFilter)
@@ -463,68 +445,6 @@ export default function TaxRulesTab() {
           </button>
         ))}
       </div>
-
-      {/* ── State Income Tax Rates ───────────────────────────────────────────── */}
-      {activeSection === 'state_income' && (
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
-          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <p className="font-medium">Deprecated: flat-rate state income tax table</p>
-            <p className="mt-1 text-xs">
-              Projection and strategy engines now use progressive brackets from
-              <code className="mx-1">state_income_tax_brackets</code>. Updates here no longer affect projection outputs.
-            </p>
-          </div>
-          <div className="relative rounded-xl">
-            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/70">
-              <div className="max-w-sm rounded-lg border border-amber-200 bg-amber-50 p-4 text-center">
-                <p className="text-sm font-medium text-amber-800">Legacy Table — Deprecated</p>
-                <p className="mt-1 text-xs text-amber-700">
-                  State income tax is managed via the progressive brackets table
-                  (<code className="mx-1">state_income_tax_brackets</code>). This flat-rate section is retired.
-                </p>
-              </div>
-            </div>
-            <div className="pointer-events-none opacity-40">
-              <div className="flex items-center justify-between mb-1">
-                <h2 className="text-base font-semibold text-neutral-900">State Income Tax Rates (Legacy) — {yearFilter}</h2>
-                <span className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-600 bg-white">
-                  Read-only archive
-                </span>
-              </div>
-              <p className="text-sm text-neutral-500 mb-5">
-                Legacy effective income tax rate per state retained for backward compatibility and historical admin reference.
-              </p>
-
-              {loadingStateIncome ? (
-                <p className="text-sm text-neutral-400 py-8 text-center animate-pulse">Loading…</p>
-              ) : stateIncomeRates.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-neutral-300 py-10 text-center">
-                  <p className="text-sm text-neutral-500">No rates for {yearFilter}.</p>
-                  <p className="text-xs text-neutral-400 mt-1">No legacy flat rates found for this year.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {stateIncomeRates.map(row => {
-                    const key = `${row.state_code}-${row.tax_year}`
-                    return (
-                      <div key={key} className="rounded-xl border border-neutral-200 p-3 flex items-center gap-2">
-                        <span className="text-sm font-mono font-bold text-neutral-700 w-8">{row.state_code}</span>
-                        <span className="w-16 rounded-lg border border-neutral-300 px-2 py-1 text-sm text-center bg-white">
-                          {row.rate_pct}
-                        </span>
-                        <span className="text-xs text-neutral-400">%</span>
-                        <span className="ml-auto rounded-lg border border-neutral-300 px-2 py-1 text-xs text-neutral-500 bg-white">
-                          Archived
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── State Estate Tax Rules ────────────────────────────────────────────── */}
       {activeSection === 'state_estate' && (

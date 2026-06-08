@@ -9,7 +9,6 @@
  * Exported functions:
  *   calculateStateEstateTax()    — both no-CST and with-CST scenarios
  *   calculateStateTaxScenarios() — advisor PDF comparison table
- *   computeStateEstateTaxFromBrackets() — DEPRECATED, projection death rows only
  *
  * @see docs/CALCULATION_ENGINES.md
  */
@@ -238,19 +237,6 @@ export function calculateStateTaxScenarios(params: {
     hasPortability: !result.hasPortabilityGap,
     showScenarioTable: result.cstBenefit > 0,
   }
-}
-
-/**
- * @deprecated Use calculateStateEstateTax instead.
- * Kept for computeEstateTaxProjection death-year rows only.
- */
-export function computeStateEstateTaxFromBrackets(
-  grossEstate: number,
-  brackets: StateBracket[],
-): number {
-  if (brackets.length === 0) return 0
-  const exemption = brackets[0].exemption_amount ?? 0
-  return applyBrackets(Math.max(0, grossEstate - exemption), brackets)
 }
 
 export function isMFJFilingStatus(filingStatus: string | null | undefined): boolean {

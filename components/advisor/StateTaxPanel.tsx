@@ -56,7 +56,7 @@ interface Props {
   projectionTimelineNote?: string
 }
 
-const DEFAULT_YEARS = [2025, 2026, 2027, 2028, 2029, 2030]
+const DEFAULT_YEARS = [2026, 2027, 2028, 2029, 2030]
 
 function fmt(n: number) {
   if (!isFinite(n)) return 'N/A'

@@ -1,8 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-07 (admin tax scan · rollover · commit)
+# Last updated: 2026-06-08 (pre-go-live tax data cleanup)
 
 ---
+
+---
+
+## Pre-go-live tax data cleanup (2026-06-08)
+
+**Decision:** Remove deprecated `state_income_tax_rates` table and purge tax years 2023–2025 from all rollover tables before go-live. Anchor year **2026** only; annual updates via existing scan · rollover · commit workflow.
+
+**Reasoning:** No production users yet — historical years added dev noise and blocked clean scan. Engines select latest year ≤ projection year, so 2026-only is sufficient until 2027 rollover. Flat-rate table was admin-archive-only (no engine reads). Inheritance rules needed explicit 2026 seed after purge (previously only existed for older years).
+
+**Migrations:** `20260708120000_cleanup_legacy_tax_tables.sql`, `20260708130000_seed_state_inheritance_tax_rules_2026.sql`
+
+**Verify:** `npm run verify:tax-coverage` — all domains PASS for 2026.
 
 ---
 

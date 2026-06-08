@@ -328,12 +328,14 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 
 - **Key columns:** `state`, `tax_year`, `filing_status`, `min_amount`, `max_amount`, `rate_pct`
 - **Purpose:** progressive state income tax brackets.
-- **Status:** canonical target source.
+- **Status:** canonical source (all engines; `state_income_tax_rates` dropped pre-go-live).
 
-### `state_income_tax_rates` (legacy)
+### `state_inheritance_tax_rules`
 
-- **Purpose:** older flat-rate table.
-- **Status:** transition/cleanup remaining; phase out queries over time.
+- **Key columns:** `state`, `tax_year`, `beneficiary_class`, `min_amount`, `max_amount`, `rate_pct`, `exemption_amount`
+- **Purpose:** state inheritance tax by beneficiary class (spouse, child, sibling, other).
+- **Coverage:** 6 states — IA, KY, MD, NE, NJ, PA (`MODELED_INHERITANCE_TAX_STATES`). Iowa repealed 2025+ (0% rows).
+- **Migration:** `20260708130000_seed_state_inheritance_tax_rules_2026.sql` (24 rows for tax year 2026).
 
 ### `advisor_projection_assumptions`
 
@@ -396,10 +398,10 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 - `businesses` (vs legacy business-interest-only paths)
 - `state_estate_tax_rules` for state estate tax
 - `state_income_tax_brackets` for bracket-based state income tax behavior
+- `state_inheritance_tax_rules` for state inheritance tax (6 modeled states)
 
 ### Legacy/transition
 
-- `state_income_tax_rates` (still read in some non-engine surfaces)
 - consumer path still uses legacy-named `/api/strategy-line-items` endpoint (single canonical consumer path today)
 - consumer accept/reject path for advisor recommendations now lives in `/api/consumer/strategy-recommendation` (application-layer route only; no schema change)
 
@@ -441,7 +443,7 @@ After each schema-affecting session:
 
 ## Migration Reference (Recent)
 
-**Total in repo:** **75** timestamped SQL files — `supabase/migrations/[0-9]*.sql` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Count with: `ls -1 supabase/migrations/[0-9]*.sql | wc -l`
+**Total in repo:** **77** timestamped SQL files — `supabase/migrations/[0-9]*.sql` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Count with: `ls -1 supabase/migrations/[0-9]*.sql | wc -l`
 
 - `20260427190300_create_state_income_tax_brackets_2026.sql`
 - `20260428000001_create_advisor_projection_assumptions.sql`
@@ -473,6 +475,8 @@ After each schema-affecting session:
 - `20260701120000_restore_atg_in_calculate_estate_composition.sql` — ATG add-back in `calculate_estate_composition` RPC
 - `20260702120000_attorney_collaboration_workflow.sql` — `attorney_clients` workflow columns; `attorney_notes`; `attorney_document_requests`
 - `20260703120000_attorney_digest_sent_at.sql` — `profiles.attorney_digest_sent_at` (weekly digest cooldown for cron §10)
+- `20260708120000_cleanup_legacy_tax_tables.sql` — purge tax years 2023–2025 from rollover tables; drop `state_income_tax_rates`; backfill `federal_estate_tax_brackets.tax_year`
+- `20260708130000_seed_state_inheritance_tax_rules_2026.sql` — 24 inheritance rows for 2026 (6 states × 4 beneficiary classes)
 
 **`app_config`:** Terms and other feature keys. Pre-launch A/B rows `ab_upgrade_copy` / `ab_assessment_gate` removed in `20260531000000_remove_ab_test_app_config.sql` (Sprint 12 — personalized upgrade copy and score-visible assess shipped in code).
 

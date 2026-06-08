@@ -314,7 +314,7 @@ export default function EstateTaxClient({
 
   // ── State estate tax results ─────────────────────────────────
   // Uses gross_estate from composition RPC as base — consistent with all other pages.
-  // computeStateEstateTaxFromBrackets uses the bracket exemption amount directly.
+  // calculateStateEstateTax uses the bracket exemption amount directly.
   const isMFJ = filing === 'married_joint'
   const hasSpouse = household?.has_spouse === true
 
