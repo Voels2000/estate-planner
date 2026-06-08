@@ -2,7 +2,7 @@
 
 **Canonical pricing + handoff policy** for professional subscriptions, firm seats, and optional consumer billing transfer when a client connects.
 
-**Related:** [LAUNCH_CHECKLIST.md § Stripe](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) · [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) · [DECISION_LOG.md](./DECISION_LOG.md)
+**Related:** [LAUNCH_CHECKLIST.md § Stripe](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) · [DECISION_LOG.md](./DECISION_LOG.md)
 
 ---
 
@@ -237,7 +237,7 @@ Consumer handoff toggles work **independently** of firm seat billing — you can
 
 ## Ops / compliance
 
-- **Washington auto-renewal / FTC:** Consumer handoff must still allow self-serve cancel **after** disconnect restores billing — see [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md).
+- **Washington auto-renewal / FTC:** Consumer handoff must still allow self-serve cancel **after** disconnect restores billing — see [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md).
 - **Terms:** Disclose when a professional connection changes who pays (advisor/attorney-managed language in ToS § billing).
 - **Webhook:** Never overwrite `advisor_managed` / `attorney_managed` from Stripe subscription events.
 

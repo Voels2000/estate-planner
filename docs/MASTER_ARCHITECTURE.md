@@ -12,7 +12,7 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (current sprint handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) (legal/ops go-live blockers) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (product + technical go-live) · [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) (professional + consumer handoff toggles) · [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) (local → preview → prod gates) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) (gap backlog) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (pre-flip automated gate) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) (compliance language policy) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) (C-4 billing) · [LEGAL_TODO.md](./LEGAL_TODO.md) (C-5 legal gate) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) (P-1 + P-2 perf) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (session handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) (legal/ops go-live blockers) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (product + technical go-live) · [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) (professional + consumer handoff toggles) · [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) (local → preview → prod gates) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) (gap backlog) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (pre-flip automated gate) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) (compliance language policy) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (billing go-live verify) · [LEGAL_TODO.md](./LEGAL_TODO.md) (legal gate) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
 
 ---
 
@@ -107,7 +107,7 @@ Consumers and advisors share one **household** data model but operate in separat
 | Superuser sidebar (SU-1) | `isSuperuser` on `SidebarNav`; `isLockedUser = hasHousehold === false && !isSuperuser && !isAdvisor && !isAdmin` |
 | Layout household (OB-3b fix) | `getDashboardLayoutContext` selects `id, state_primary, filing_status, person1_birth_year` only — **not** legacy `date_of_birth_1` (no DB column) |
 | Sidebar active route (NAV-1) | `isNavItemActive()` + `groupContainsActiveItem()` in `sidebar-nav.tsx`; groups auto-expand when a child is active; `NAV_ACTIVE` navy + gold left accent |
-| Advisor portal perf | Roster: `loadRosterNetWorthByOwner` (batched reads). Client workspace: parallel staleness/composition/datasets; scoped tax tables — [PERF_SPRINT_P1.md § Advisor portal](./PERF_SPRINT_P1.md#advisor-portal-quick-wins-2026-05-26) |
+| Advisor portal perf | Roster: `loadRosterNetWorthByOwner` (batched reads). Client workspace: parallel staleness/composition/datasets; scoped tax tables — [PERF_SPRINT_P1.md § Advisor portal](./archive/sprints/PERF_SPRINT_P1.md#advisor-portal-quick-wins-2026-05-26) |
 | Advisor portal UX-2 | Navy/gold brand; `advisorDatasetIncludeForTab()`; `PlanStatusCard` + `advisor_gap_statuses`; `getCachedAdvisoryMetrics` (120s cache); estate composition advisor variant — SCHEMA_CHANGELOG UX-2 |
 | Advisor portal UX-3 | Strategy tab three-step workflow (`StrategyTabContent`): Situation / Opportunities / Recommendations; `advisoryMetricSeverity` + `StrategyAlertBanners`; `OpportunitiesPanel` catalog; `RecommendationsPanel` + client questions; benchmarks behind `ADVISOR_BENCHMARKS` — SCHEMA_CHANGELOG UX-3 |
 | Advisor portal UX-4 | Step 2 Opportunities rows expand inline to `SLATILITPanel` / `AdvancedStrategyPanel` via `InlineStrategyPanel` + `catalogToPanel.ts` (CST: catalog `cst`, chip `credit_shelter_trust`) — SCHEMA_CHANGELOG UX-4 |
@@ -648,7 +648,7 @@ Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 **Not in Vercel Production:** `SUPABASE_URL` — only for local/staging seed scripts. Vercel Supabase integration supplies project URL/keys for deploys.
 
-**Opening signups (go-live flip):** Complete [LEGAL_TODO.md](./LEGAL_TODO.md) and C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)) first. Go-live day: Supabase Auth ON → verify `/auth/callback` → set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → Core §1–3 smoke with fresh email. See [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
+**Opening signups (go-live flip):** Complete [LEGAL_TODO.md](./LEGAL_TODO.md) and C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)) first. Go-live day: Supabase Auth ON → verify `/auth/callback` → set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → Core §1–3 smoke with fresh email. See [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 
 ### Supabase Data API access (grants + RLS)
 
@@ -1098,7 +1098,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 - Charitable consumer form: `components/consumer/CharitableStrategyForm.tsx` (DAF panel; `daf` or `charitable` source).
 - Consumer strategy writes: `lib/consumer/consumerStrategyLineItems.ts` → `app/api/strategy-line-items/route.ts` → `lib/strategy/upsertStrategyLineItem.ts` + `lib/consumer/afterHouseholdWrite.ts`.
 - Trust-strategy page: `app/(dashboard)/my-estate-trust-strategy/page.tsx` (server fetch, `ownerUserId`, `estateContext`, `filingStatus`); `my-estate-trust-strategy/_client.tsx` (tabs, passes props to panel).
-- **Financial data import (Sprint F-1 + F-2 + expansion 2026-05-29):** `app/(dashboard)/import/`; `lib/import/type-normalizer.ts`, `multiSheet.ts`, `reviewTypeHelpers.ts`; `POST /api/ingest`, `POST /api/import/commit`; persona XLSX templates; tests: `tests/unit/import-type-normalizer.spec.ts`, `import-parse.spec.ts`. **Attorney portal (expansion + monetization 2026-05-29):** `profiles.attorney_tier`; `legal_documents.doc_status`; `document_gap_dismissals`; `/attorney/billing` + `POST /api/stripe/attorney-checkout`; `AttorneyUpgradePrompt`; attorney drip — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md). **Projections readiness (2026-05-29):** `lib/planning/projectionReadiness.ts`; inline prompts on `/projections`.
+- **Financial data import (Sprint F-1 + F-2 + expansion 2026-05-29):** `app/(dashboard)/import/`; `lib/import/type-normalizer.ts`, `multiSheet.ts`, `reviewTypeHelpers.ts`; `POST /api/ingest`, `POST /api/import/commit`; persona XLSX templates; tests: `tests/unit/import-type-normalizer.spec.ts`, `import-parse.spec.ts`. **Attorney portal (expansion + monetization 2026-05-29):** `profiles.attorney_tier`; `legal_documents.doc_status`; `document_gap_dismissals`; `/attorney/billing` + `POST /api/stripe/attorney-checkout`; `AttorneyUpgradePrompt`; attorney drip — [SPRINT_IMPORT_ATTORNEY.md](./archive/sprints/SPRINT_IMPORT_ATTORNEY.md). **Projections readiness (2026-05-29):** `lib/planning/projectionReadiness.ts`; inline prompts on `/projections`.
 
 ---
 
@@ -1121,7 +1121,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 
 **Post-launch backlog:** PDF/DOCX extraction; update/merge re-import mode; advisor bulk client import.
 
-**Sprint doc:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md).
+**Build spec (archived):** [SPRINT_IMPORT_ATTORNEY.md](./archive/sprints/SPRINT_IMPORT_ATTORNEY.md).
 
 ---
 
@@ -1153,7 +1153,7 @@ This section enumerates the remaining place where the legacy flat-rate table is 
 
 **Manual before go-live:** Create Stripe products; set `STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY`, `STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY`.
 
-**Post-ship ops:** Attorney drip steps 2–3 — manual SQL check ~3 days after first real attorney ([SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops)). Dashboard `canShowPartial` nudge — deferred low priority ([ROADMAP.md](./ROADMAP.md)).
+**Post-ship ops:** Attorney drip steps 2–3 — [LAUNCH_CHECKLIST § Attorney drip cron (ops)](./LAUNCH_CHECKLIST.md#attorney-drip-cron-ops). Dashboard `canShowPartial` nudge — deferred low priority ([ROADMAP.md](./ROADMAP.md)).
 
 ---
 
@@ -1286,17 +1286,17 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Sprint 12 (closed):** A/B collapse (personalized + score_visible); persona dashboard alerts; mobile drawer nav; full in-app copy audit (`DisclaimerBanner`, public surfaces, upgrade gates).
 
-**Sprint C-2b (closed 2026-05-24):** Compliance language policy — `lib/compliance/language-policy.ts`, `scripts/audit-ux-language.sh`, CI workflow; all `DISCLAIMER_STRINGS` surfaces wired. See [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md).
+**Sprint C-2b (closed 2026-05-24):** Compliance language policy — `lib/compliance/language-policy.ts`, `scripts/audit-ux-language.sh`, CI workflow; all `DISCLAIMER_STRINGS` surfaces wired. See [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md).
 
 **Sprint C-3 (closed 2026-06-02):** RLS policy fixes — `20260602000000_sprint_c3_rls_fixes.sql` (`236890c`). Auth callback, confirm-email, MFA middleware, security headers, PII logging (`56a4407`). Advisor-scoped policies use `CONNECTED_ADVISOR_CLIENT_STATUSES` (`active`, `accepted`) via `lib/advisor/clientConnectionStatus.ts`. Critical fix: `businesses` advisor SELECT no longer uses `auth.uid() IS NOT NULL`.
 
-**Sprint C-4 (code complete 2026-06-02):** Billing disclosures — `lib/compliance/billing-disclosures.ts`; pre-checkout copy; self-serve cancel; `invoice.upcoming` renewal reminders (`462bda9`). Manual Stripe Dashboard verify remains — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md).
+**Sprint C-4 (code complete 2026-06-02):** Billing disclosures — `lib/compliance/billing-disclosures.ts`; pre-checkout copy; self-serve cancel; `invoice.upcoming` renewal reminders (`462bda9`). Manual Stripe Dashboard verify remains — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md).
 
 **Sprint 4 consumer pricing (2026-05-28):** $29/$79/$149 monthly + annual option; 14-day Estate trial; `lib/billing/stripePrices.ts`; billing + `/pricing` period toggle; checkout/webhook tier wiring. Stripe Dashboard price creation + env vars + functional verify — [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
 
 **Sprint P-1 (closed 2026-06-02):** Performance quick wins — dashboard `Promise.all`, advisor conflict cache read, 3s recompute debounce, server-fetched notification count, `next/font`, owner_id indexes on `assets`/`liabilities` (`5c24160`). Production indexes verified. Diagnostics: [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql).
 
-**Sprint P-2 (closed 2026-06-02):** Pre-launch perf refactors — `estate_health_scores.recommendations` cache (recompute persists RPC output; dashboard reads cache); projections cache-first in `loadProjectionData`; layout auth dedup via `getDashboardLayoutContext` (`47a38f3`). Migration: `20260602130000_sprint_p2_recommendations_cache.sql`. See [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors).
+**Sprint P-2 (closed 2026-06-02):** Pre-launch perf refactors — `estate_health_scores.recommendations` cache (recompute persists RPC output; dashboard reads cache); projections cache-first in `loadProjectionData`; layout auth dedup via `getDashboardLayoutContext` (`47a38f3`). Migration: `20260602130000_sprint_p2_recommendations_cache.sql`. See [PERF_SPRINT_P1.md § Sprint P-2](./archive/sprints/PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors).
 
 **Sprint C-5 (code complete 2026-06-02):** Privacy Policy (`/privacy`), Terms of Service (`/terms`), `LegalFooterLinks`, sitemap/robots (`2e1dff3`, `695a860`). Post-checkout terms accept at `/terms/accept`. Legal placeholders + counsel sign-off — [LEGAL_TODO.md](./LEGAL_TODO.md).
 
@@ -1346,7 +1346,7 @@ Two concepts must stay separate until product designs unified intake:
 ### High priority — Sprint 17 (go-live prep)
 
 1. **LEGAL_TODO.md** — counsel handoff (flag ToS §10/§11/§13; one consolidated redline); placeholders + redlines in one commit — **blocks `PUBLIC_SIGNUP_OPEN`**
-2. **C-4 manual verify** — Stripe Dashboard + production walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
+2. **C-4 manual verify** — Stripe Dashboard + production walkthrough — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)
 3. **Stripe production billing** — production keys; checkout + webhook on production.
 4. **Go-live day ops** — Supabase Auth ON → `PUBLIC_SIGNUP_OPEN=true`; Core §1–3 smoke with fresh email. [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)
 5. **Drip step 2 production verify** — `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` (day 3+).

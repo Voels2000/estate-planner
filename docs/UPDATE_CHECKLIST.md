@@ -9,13 +9,13 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [BUSINESS_READINESS_PLAN.md](./BUSINESS_READINESS_PLAN.md) | Washington business formation, compliance sprint summary, go-live readiness (85%) |
 | [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) | Segment, personas, pricing, UX principles |
 | [ROADMAP.md](./ROADMAP.md) | Sprint plan and item status |
-| [NEXT_SESSION.md](./NEXT_SESSION.md) | Current sprint handoff — paste block, task list, file paths |
+| [NEXT_SESSION.md](./NEXT_SESSION.md) | **Current session handoff** — paste block, go-live blockers, queued ops |
 | [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Go-live checklist — SEO, domain, Resend (update at launch, not each sprint) |
 | [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) | Legal/business/ops blockers before `PUBLIC_SIGNUP_OPEN=true` |
 | [DECISION_LOG.md](./DECISION_LOG.md) | Settled product/UX decisions — add new entries, do not edit old |
 | [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | Engineering architecture |
 | [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) | **Canonical calculation registry** — read before any tax/projection/strategy math |
-| [SPRINT_UNIFY_STATE_TAX.md](./SPRINT_UNIFY_STATE_TAX.md) | Queued — unify state estate tax to engine B (delete narrative flat-rate engine A) |
+| [archive/sprints/README.md](./archive/sprints/README.md) | Shipped sprint playbooks (historical — do not use for new work) |
 | [DESIGN_SYSTEM.md](../DESIGN_SYSTEM.md) · [CURSOR_PROMPT_TEMPLATE.md](../CURSOR_PROMPT_TEMPLATE.md) | Brand tokens, UI primitives, Cursor prompts (Tailwind v4 `color:` prefix) |
 | [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) | Consumer journeys and routes |
 | [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) | Schema authority and session history |
@@ -23,16 +23,12 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) | **Complete Playwright suite** — commands, env, seeds |
 | [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) | **Local → preview → production** flow, credential placement, CI vs post-deploy checks |
 | [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) | **Pre-flip automated gate** — profile + inline prompt commands |
-| [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md) | Import expansion + attorney workflow (2026-05-29) |
-| [SPRINT_IMPORT_EXPANSION.md](./SPRINT_IMPORT_EXPANSION.md) | Import Phases 1–5 acceptance criteria & reference |
-| [SPRINT_INLINE_PROFILE_PROMPTS.md](./SPRINT_INLINE_PROFILE_PROMPTS.md) | Inline profile prompts sprint |
 | [.env.test.example](../.env.test.example) | Template after `seed:e2e` |
 | [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) | Playwright vs manual smoke map |
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Human release smoke checklist |
-| [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) | Compliance language policy — education vs. advice framing |
-| [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) | Sprint C-4 — auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
-| [LEGAL_TODO.md](./LEGAL_TODO.md) | Sprint C-5 — pre-go-live legal checklist; [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
-| [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) | Sprint P-1 + P-2 — performance quick wins and pre-launch refactors |
+| [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) | Compliance language policy — education vs. advice framing |
+| [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) | Auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
+| [LEGAL_TODO.md](./LEGAL_TODO.md) | Pre-go-live legal checklist; [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
 | [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | WCPA deletion SOP, C-6/C-7 automated checks, privacy request SOP |
 
 ## New table migrations (mandatory — every PR with `supabase/migrations/*.sql`)
@@ -61,7 +57,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Source-of-truth changes (e.g., table swaps, fallback removals)
 - Workflow changes (advisor/consumer acceptance, recommendation writes, Monte Carlo sharing)
 - Consumer route, profile gate, tab/sub-tab, CTA label, or save/refresh behavior → `docs/CONSUMER_FLOWS.md`
-- Consumer-facing copy, disclaimers, or compliance language → `docs/UX_LANGUAGE_AUDIT_SPRINT.md` + run `bash scripts/audit-ux-language.sh`
+- Consumer-facing copy, disclaimers, or compliance language → `docs/UX_LANGUAGE_POLICY.md` + run `bash scripts/audit-ux-language.sh`
 - Schema-only session notes (no table/RPC shape change) → one line in `docs/SCHEMA_CHANGELOG.md`
 - Sprint item completed or new product decision → `docs/ROADMAP.md` and/or `docs/DECISION_LOG.md` (new entry)
 - End of UI sprint session → update `docs/NEXT_SESSION.md` (completed tasks, remaining work, discovered file paths)
@@ -153,7 +149,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 ## State estate tax unification (2026-05-29) — shipped
 
 - [x] [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) — canonical engine registry + regression greps
-- [x] [SPRINT_UNIFY_STATE_TAX.md](./SPRINT_UNIFY_STATE_TAX.md) — sprint script (Phases 0–8)
+- [x] [SPRINT_UNIFY_STATE_TAX.md](./archive/sprints/SPRINT_UNIFY_STATE_TAX.md) — sprint script (Phases 0–8)
 - [x] [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) § State Estate Tax Chain
 - [x] [DECISION_LOG.md](./DECISION_LOG.md) · [ROADMAP.md](./ROADMAP.md) · [NEXT_SESSION.md](./NEXT_SESSION.md)
 - [x] `lib/constants/strategyTypes.ts` — CST string single source of truth
@@ -235,7 +231,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Domicile: `StateTaxPanel` horizon callouts + survivor-timeline note (parity with Tax tab)
 - [x] Domicile: critical transition risk red banner (≥ 71)
 - [x] [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) — `advisor_gap_statuses`
-- [x] [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) · [DECISION_LOG.md](./DECISION_LOG.md)
+- [x] [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · [PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md) · [DECISION_LOG.md](./DECISION_LOG.md)
 
 ## Advisor portal UX-3 — Strategy tab restructure (2026-05-26)
 
@@ -370,7 +366,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 ## Queued next (2026-05-29) — not scheduled
 
 - [ ] **Dashboard `canShowPartial` nudge** — low priority; revisit after ~2 weeks traffic ([ROADMAP.md](./ROADMAP.md))
-- [ ] **Attorney drip cron verification** — SQL ~3 days after first real attorney ([SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops), [NEXT_SESSION.md](./NEXT_SESSION.md#queued-next-post-ship-ops))
+- [ ] **Attorney drip cron verification** — SQL ~3 days after first real attorney ([LAUNCH_CHECKLIST § Attorney drip cron (ops)](./LAUNCH_CHECKLIST.md#attorney-drip-cron-ops), [NEXT_SESSION.md](./NEXT_SESSION.md#queued-next-post-ship-ops))
 
 ## Inline profile prompts E2E (2026-05-27) — shipped
 
@@ -497,7 +493,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Post-cutover smoke §1–3 on production
 - [x] Completion log entry in LAUNCH_CHECKLIST
 - [x] Sprint 15 cont. (2026-05-24) — Preview waitlist; sitemap/middleware infra bypass (`73648e5`); test cleanup (`3f732e3`); dev workflow local → preview → production
-- [x] **UX Language Audit** — Sprint C-2b complete (automated grep + all `DISCLAIMER_STRINGS` surfaces wired: PDF cover, estate-tax, my-estate-strategy, footer). Manual per-surface checklist QA remains open in [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md). Run `bash scripts/audit-ux-language.sh` before any PR that touches consumer-facing strings.
+- [x] **UX Language Audit** — Sprint C-2b complete (automated grep + all `DISCLAIMER_STRINGS` surfaces wired: PDF cover, estate-tax, my-estate-strategy, footer). Manual per-surface checklist QA remains open in [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md). Run `bash scripts/audit-ux-language.sh` before any PR that touches consumer-facing strings.
 
 | [LEGAL_TODO.md](./LEGAL_TODO.md) | Sprint C-5 — pre-go-live legal checklist; [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) (one redline, one commit) |
 
@@ -505,7 +501,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 
 - [x] Dashboard `Promise.all`, advisor conflict cache read, recompute debounce, next/font, notification server count (`5c24160`)
 - [x] Indexes `idx_assets_owner_id`, `idx_liabilities_owner_id` — applied in production
-- [x] [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) + [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql)
+- [x] [PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md) + [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql)
 
 ## Sprint P-2 focus — closed ✅ 2026-06-02
 
@@ -513,7 +509,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Projections cache-first in `loadProjectionData` — serve `outputs_s1_first` when fresh
 - [x] Layout auth dedup via `getDashboardLayoutContext` (React `cache()`)
 - [x] Migration `20260602130000_sprint_p2_recommendations_cache.sql` — apply in prod before deploy
-- [x] [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) § Sprint P-2
+- [x] [PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md) § Sprint P-2
 
 ## Sprint C-6 focus — closed ✅ 2026-05-25 (prod)
 
@@ -584,12 +580,12 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 | Item | Notes |
 |------|-------|
 | [ ] **LEGAL_TODO.md** | Counsel handoff: §10/§11/§13 flagged, one consolidated redline; placeholders + redlines in one commit — [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
-| [ ] **Stripe Dashboard config** | invoice.upcoming, portal cancel, receipts — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
+| [ ] **Stripe Dashboard config** | invoice.upcoming, portal cancel, receipts — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) |
 | [ ] **C-4 manual walkthrough** | Signup → paid → receipt → self-serve cancel on production |
 | [ ] **Stripe production billing** | Required before opening signups |
 | [ ] **Go-live day** | Supabase Auth ON → verify `/auth/callback` → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke with fresh email |
 | [ ] **Drip step 2 check** | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` |
-| [x] **Sprint P-1 perf quick wins** | `5c24160` — see [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) |
+| [x] **Sprint P-1 perf quick wins** | `5c24160` — see [PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md) |
 | [x] **Sprint P-2 pre-launch refactors** | `47a38f3` — recommendations cache, projections cache-first, auth dedup |
 
 **Compliance code (C-2b–C-5):** ✅ All closed on `main` — see [NEXT_SESSION.md](./NEXT_SESSION.md) commit log.
@@ -604,7 +600,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 ## Sprint C-4 focus — closed ✅ 2026-06-02 (code)
 
 - [x] **Billing disclosures** — `lib/compliance/billing-disclosures.ts`; pre-checkout, cancel, renewal reminders (`462bda9`)
-- [ ] **Manual Stripe walkthrough** — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
+- [ ] **Manual Stripe walkthrough** — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)
 
 ## Sprint 16 focus — closed ✅ 2026-05-24
 

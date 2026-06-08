@@ -1,6 +1,6 @@
-# Billing Disclosures — Sprint C-4
+# BILLING_DISCLOSURES_CHECKLIST.md
 # My Wealth Maps — Washington auto-renewal + FTC negative option compliance
-# Created: 2026-05-24 | Owner: Product + Ops
+# Created: 2026-05-24 (Sprint C-4) | Owner: Product + Ops
 # Status: **Code complete (`462bda9`) — manual Stripe verify + legal review remain**
 
 ---
@@ -132,7 +132,7 @@ Sprint C-4 **code** is done when manual verify passes:
 
 | Doc | Relationship |
 |-----|-------------|
-| [UX_LANGUAGE_AUDIT_SPRINT.md](./UX_LANGUAGE_AUDIT_SPRINT.md) | C-2b complete — separate from billing disclosures |
+| [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) | C-2b complete — separate from billing disclosures |
 | [LEGAL_TODO.md](./LEGAL_TODO.md) | C-5 legal gate — placeholders, counsel, email aliases |
 | [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Go-live gate; legal + C-4 manual verify before open signups |
 | [NEXT_SESSION.md](./NEXT_SESSION.md) | Sprint 17 handoff |

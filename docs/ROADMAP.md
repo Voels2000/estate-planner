@@ -6,7 +6,7 @@
 
 ## How to use this document
 
-**At the start of a session:** Read the "Current sprint" section and [NEXT_SESSION.md](./NEXT_SESSION.md) (task detail, file paths, paste block). Update the status of any items worked on. Add any new items discovered. Move completed sprints to the "Completed" section at the bottom.
+**At the start of a session:** Read [NEXT_SESSION.md](./NEXT_SESSION.md) (current focus, paste block) and the "Current sprint" section below. Update item status as you work. Move completed sprints to the "Completed" section at the bottom.
 
 **Status key:**
 - `[ ]` Not started
@@ -718,7 +718,7 @@
 | E2E partial-payload + UI prompt smoke | `[x]` |
 | Go-live pre-flight script + doc | `[x]` |
 
-See [SPRINT_INLINE_PROFILE_PROMPTS.md](./SPRINT_INLINE_PROFILE_PROMPTS.md). **Follow-up (2026-05-29):** `/projections` readiness fix shipped — `checkProjectionReadiness()` + inline prompts; see DECISION_LOG.
+See [SPRINT_INLINE_PROFILE_PROMPTS.md](./archive/sprints/SPRINT_INLINE_PROFILE_PROMPTS.md). **Follow-up (2026-05-29):** `/projections` readiness fix shipped — `checkProjectionReadiness()` + inline prompts; see DECISION_LOG.
 
 ---
 
@@ -761,7 +761,7 @@ See [SPRINT_INLINE_PROFILE_PROMPTS.md](./SPRINT_INLINE_PROFILE_PROMPTS.md). **Fo
 | Wizard drop-off instrumentation (`wizard_completed` / `wizard_abandoned`) | `[x]` |
 | Assessment restore smoke test doc | `[x]` — run at go-live (`PUBLIC_SIGNUP_OPEN`); blocked by waitlist on prod 2026-05-27 |
 
-See [SPRINT_FRICTION_REDUCTION.md](./SPRINT_FRICTION_REDUCTION.md).
+See [SPRINT_FRICTION_REDUCTION.md](./archive/sprints/SPRINT_FRICTION_REDUCTION.md).
 
 ---
 
@@ -915,7 +915,7 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 | **Security post-deploy smoke** | `[x]` | 7/7 on prod 2026-05-30 — [LAUNCH_CHECKLIST § Security](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) |
 | **Prod API routes** | `[x]` | Documents slug conflict fix `af12ff0`; `/api/health` live |
 | **LEGAL_TODO.md** | `[ ]` | **Blocker** — counsel handoff (§10/§11/§13, one redline); placeholders batched with redlines; email aliases — see [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) |
-| **Stripe Dashboard config** | `[ ]` | invoice.upcoming, portal cancel, receipts — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) |
+| **Stripe Dashboard config** | `[ ]` | invoice.upcoming, portal cancel, receipts — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) |
 | **Stripe production billing** | `[ ]` | Production keys; checkout + webhook verified |
 | **Open signups** | `[ ]` | `PUBLIC_SIGNUP_OPEN=true` — go-live day ([LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
 | **Go-live smoke** | `[ ]` | Core §1–3 + signup → confirm email → login → dashboard |
@@ -949,7 +949,7 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 | **Nav consistency (homepage, billing, utility)** | `[x]` | Homepage → `(public)/page.tsx` + PublicNav; MinimalAuthNav billing; WordmarkOnly utility layouts — SCHEMA_CHANGELOG 2026-05-27 |
 | **ENG-2 — Growth assumptions (2A–2E)** | `[x]` | RE/business engine fix; `growth_assumptions` jsonb; insurance/income growth; MC alignment UI — commits `5589b89`–`8e90fa4`; SCHEMA_CHANGELOG ENG-2 |
 | **Sprint P-1 perf quick wins** | `[x]` | Dashboard Promise.all, advisor conflict cache, recompute debounce, next/font, indexes — `5c24160` |
-| **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)) |
+| **Sprint P-2 pre-launch refactors** | `[x]` | Recommendations cache, projections cache-first, auth dedup — `47a38f3` ([PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md)) |
 
 **Compliance commit log (all on `main`):**
 
@@ -1048,7 +1048,7 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 - `[x]` `next/font` — Playfair Display + DM Sans
 - `[x]` Indexes applied in production — `idx_assets_owner_id`, `idx_liabilities_owner_id`
 
-**Commits:** `5c24160` · **Doc:** [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)
+**Commits:** `5c24160` · **Doc:** [PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md)
 
 ---
 
@@ -1061,7 +1061,7 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 - `[x]` `loadProjectionData` cache-first — serve `outputs_s1_first` when projection is fresh
 - `[x]` `getDashboardLayoutContext` — React `cache()` dedup for layout auth/profile/household/notifications
 
-**Commits:** `47a38f3` · **Doc:** [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors)
+**Commits:** `47a38f3` · **Doc:** [PERF_SPRINT_P1.md § Sprint P-2](./archive/sprints/PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors)
 
 ---
 
@@ -1153,7 +1153,7 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 **Goal:** RCW 19.316 auto-renewal + FTC negative option compliance.
 
 - `[x]` `lib/compliance/billing-disclosures.ts`; pre-checkout, cancel flow, renewal reminders (`462bda9`)
-- `[ ]` Manual Stripe Dashboard verify + production walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
+- `[ ]` Manual Stripe Dashboard verify + production walkthrough — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)
 
 **Commits:** `462bda9`
 
@@ -1457,7 +1457,7 @@ See LAUNCH_CHECKLIST § “Vercel Production env vars”. `NEXT_PUBLIC_GOOGLE_SI
 
 ## Import expansion + attorney workflow ✅ shipped 2026-05-29
 
-**Doc:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md)
+**Doc:** [SPRINT_IMPORT_ATTORNEY.md](./archive/sprints/SPRINT_IMPORT_ATTORNEY.md)
 
 **Import (Phases 1–5):**
 - `[x]` Type normalization — `lib/import/type-normalizer.ts`; review UI badges + override dropdowns
@@ -1516,7 +1516,7 @@ invite-your-advisor Path A onboarding; A/B exit criteria.
 
 - **Dashboard projection-setup nudge (low priority)** — When `checkProjectionReadiness().canShowPartial` is true (assets/income present but birth year or retirement age missing), show a subtle card on `/dashboard` (“Add your retirement age to see your full timeline” → `/projections` or inline prompt). **Deferred:** add noise before funnel data; revisit after ~2 weeks of real traffic on the scenarios → projections path. Projections page already shows inline `ProfileFieldPrompt` for partial users.
 
-- **Attorney drip cron verification (ops)** — After the first real attorney registers, confirm steps 2–3 fire via daily `GET /api/cron/notifications` → `POST /api/email/attorney-drip`. Cron schedules step 2 when `attorney_drip_step_1_sent_at` is ≥3 days ago; step 3 when step 1 is ≥7 days ago (same pattern as advisor drip — **not** `profiles.created_at`). Manual check ~3 days after first signup: SQL + Resend inbox. See [NEXT_SESSION.md § Queued next](./NEXT_SESSION.md#queued-next-post-ship-ops), [SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops), [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
+- **Attorney drip cron verification (ops)** — After the first real attorney registers, confirm steps 2–3 fire via daily `GET /api/cron/notifications` → `POST /api/email/attorney-drip`. Manual check ~3 days after first signup: SQL + Resend inbox. See [NEXT_SESSION.md § Queued next](./NEXT_SESSION.md#queued-next-post-ship-ops), [LAUNCH_CHECKLIST § Attorney drip cron (ops)](./LAUNCH_CHECKLIST.md#attorney-drip-cron-ops).
 
 ---
 

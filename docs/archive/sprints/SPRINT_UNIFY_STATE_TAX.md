@@ -1,3 +1,5 @@
+> **Archived sprint doc (shipped).** See [README.md](./README.md) for canonical references.
+
 # SPRINT — Unify State Estate Tax to Engine B
 # My Wealth Maps — Estate Planning
 # ─────────────────────────────────────────────────────────────────

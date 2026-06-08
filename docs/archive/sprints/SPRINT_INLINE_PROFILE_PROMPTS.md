@@ -1,3 +1,5 @@
+> **Archived sprint doc (shipped).** See [README.md](./README.md) for canonical references.
+
 # SPRINT — Inline Profile Prompts
 # My Wealth Maps
 # Status: Shipped · 2026-05-27

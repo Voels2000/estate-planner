@@ -1,7 +1,7 @@
-# UX Language Audit — Sprint C-2b
+# UX_LANGUAGE_POLICY.md
 # My Wealth Maps — Compliance language policy & surface checklist
 # Purpose: Enforce "education & preparation" framing across all consumer surfaces
-# Created: 2026-05-24 | Owner: Product + Engineering
+# Created: 2026-05-24 (Sprint C-2b) | Owner: Product + Engineering
 # Status: Engineering complete — all `DISCLAIMER_STRINGS` surfaces wired (2026-05-24); manual surface QA ongoing
 
 ---
@@ -630,7 +630,7 @@ This sprint is done when:
 | [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) | Source of truth for all consumer surfaces audited here |
 | [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) | Route and tier reference |
 | [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Go-live gates; legal + C-4 manual verify before open signups |
-| [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) | C-4 manual Stripe verify (code complete) |
+| [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) | C-4 manual Stripe verify (code complete) |
 | [LEGAL_TODO.md](./LEGAL_TODO.md) | C-5 legal gate |
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Add spot-check of disclaimer presence to smoke test §1–3 |
 | [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) | Follow doc sync process when strings change |
@@ -640,4 +640,4 @@ This sprint is done when:
 ---
 
 *Sprint C-2b created 2026-05-24. Owner: Product + Engineering.  
-C-2b engineering complete (`788aa08`). Compliance code C-2b–C-5 closed on `main`. **Remaining signup gates (non-code):** [LEGAL_TODO.md](./LEGAL_TODO.md) + C-4 manual verify — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md).*
+C-2b engineering complete (`788aa08`). Compliance code C-2b–C-5 closed on `main`. **Remaining signup gates (non-code):** [LEGAL_TODO.md](./LEGAL_TODO.md) + C-4 manual verify — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md).*

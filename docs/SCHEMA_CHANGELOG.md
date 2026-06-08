@@ -884,7 +884,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 - Cache invalidation: `revalidateTag` in `afterHouseholdWrite`.
 - Tax tab: “Sunset / No Exemption Stress Test” label.
 
-**Docs:** [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) · [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)
+**Docs:** [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md) · [PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md)
 
 ---
 
@@ -896,7 +896,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 - `app/advisor/clients/[clientId]/page.tsx` — parallel staleness + composition + `loadAdvisorClientDatasets`; parallel link/household; non-blocking access log and strategy-question mark-read.
 - `lib/advisor/loaders.ts` — state estate/income tax queries scoped to advisor states + projection years; `skipGlobalTaxTableStaleness` on advisor client staleness check.
 
-**Commit:** `8c526de` · **Detail:** [PERF_SPRINT_P1.md § Advisor portal](./PERF_SPRINT_P1.md#advisor-portal-quick-wins-2026-05-26)
+**Commit:** `8c526de` · **Detail:** [PERF_SPRINT_P1.md § Advisor portal](./archive/sprints/PERF_SPRINT_P1.md#advisor-portal-quick-wins-2026-05-26)
 
 ---
 
@@ -980,7 +980,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 **APIs:** `PATCH /api/documents/[id]/status`; `POST /api/attorney/gap-dismissals`.
 
-**Docs:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md), [DECISION_LOG.md](./DECISION_LOG.md).
+**Docs:** [SPRINT_IMPORT_ATTORNEY.md](./archive/sprints/SPRINT_IMPORT_ATTORNEY.md), [DECISION_LOG.md](./DECISION_LOG.md).
 
 ---
 
@@ -1100,7 +1100,7 @@ All `@rolobe.resend.app` accounts deleted; soft-deleted scrambled accounts hard-
 
 **Apply:** Run in Supabase SQL Editor or `npx supabase db push` before deploying code that selects this column.
 
-**Code (same commit):** Recompute persists recommendations; dashboard reads cache; projections cache-first in `loadProjectionData`; layout auth dedup via `getDashboardLayoutContext`. See [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors).
+**Code (same commit):** Recompute persists recommendations; dashboard reads cache; projections cache-first in `loadProjectionData`; layout auth dedup via `getDashboardLayoutContext`. See [PERF_SPRINT_P1.md § Sprint P-2](./archive/sprints/PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors).
 
 ---
 
@@ -1115,7 +1115,7 @@ All `@rolobe.resend.app` accounts deleted; soft-deleted scrambled accounts hard-
 
 **Apply:** Applied in production 2026-06-02. Repo migration for other environments via `npx supabase db push`.
 
-**Code (same commit):** Dashboard `Promise.all`; advisor conflict cache read; recompute debounce; `next/font`; notification server count. See [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md).
+**Code (same commit):** Dashboard `Promise.all`; advisor conflict cache read; recompute debounce; `next/font`; notification server count. See [PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md).
 
 ---
 
@@ -1139,7 +1139,7 @@ All `@rolobe.resend.app` accounts deleted; soft-deleted scrambled accounts hard-
 - **Commit:** `462bda9`
 - **Copy:** `lib/compliance/billing-disclosures.ts` — preCheckout, activeSubscription, cancellationConfirm, renewalReminderEmail
 - **Surfaces:** `app/billing/_billing-client.tsx`, pricing page; cancel via Stripe portal; `invoice.upcoming` webhook renewal reminder
-- **Manual remaining:** Stripe Dashboard config + production walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
+- **Manual remaining:** Stripe Dashboard config + production walkthrough — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)
 
 ---
 
@@ -1186,7 +1186,7 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 - **Sprint P-1 closed 2026-06-02:** Performance quick wins (`5c24160`); indexes in prod.
 - **Sprint P-2 closed 2026-06-02:** Recommendations cache, projections cache-first, auth dedup (`47a38f3`); migration `20260602130000_sprint_p2_recommendations_cache.sql`.
 - **Sprint 17 remaining (non-code):** [LEGAL_TODO.md](./LEGAL_TODO.md); Stripe Dashboard + C-4 walkthrough; counsel sign-off; go-live day Supabase Auth + `PUBLIC_SIGNUP_OPEN=true` + Core §1–3 smoke
-- **Docs:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) · [LEGAL_TODO.md](./LEGAL_TODO.md)
+- **Docs:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [LEGAL_TODO.md](./LEGAL_TODO.md)
 
 ## Sprint 16 — C-2b UX language audit (May 2026)
 
@@ -1202,7 +1202,7 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 - **E2E:** `93aa6f5` — `consumer-core-recompute.spec.ts`, `estate-health-poll.ts`
 - **Manual smoke:** `1e092d7` — Core §1–3 + estate §4–7 passed staging 2026-05-23
 - **Open before launch:** Admin Portal in consumer sidebar; asset form save below viewport
-- **Post-launch:** estate composition read model — materialize `calculate_estate_composition` at recompute (recommendations done in P-2); see [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)
+- **Post-launch:** estate composition read model — materialize `calculate_estate_composition` at recompute (recommendations done in P-2); see [PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md)
 
 ## Sprint 14 — consumer-core-recompute E2E (May 2026)
 

@@ -1,3 +1,5 @@
+> **Archived sprint doc (shipped).** See [README.md](./README.md) for canonical references.
+
 # SPRINT — Import Expansion + Attorney Workflow Enhancement
 # My Wealth Maps
 # Last updated: 2026-05-29

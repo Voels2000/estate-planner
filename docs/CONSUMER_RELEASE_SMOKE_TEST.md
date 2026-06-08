@@ -33,8 +33,8 @@ Tester: Manual
 
 ### Post-launch (not blockers)
 
-- **Sprint P-1 + P-2 (2026-06-02):** Pre-launch perf shipped (`5c24160`, `47a38f3`) — Promise.all, indexes, debounce, next/font, recommendations cache, projections cache-first, auth dedup. Re-verify dashboard TTFB after deploy; remaining ceiling is estate composition read model ([PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md)).
-- **Before open signups (non-code):** [LEGAL_TODO.md](./LEGAL_TODO.md) + C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)); go-live day: signup → **confirm email** → login → dashboard
+- **Sprint P-1 + P-2 (2026-06-02):** Pre-launch perf shipped (`5c24160`, `47a38f3`) — Promise.all, indexes, debounce, next/font, recommendations cache, projections cache-first, auth dedup. Re-verify dashboard TTFB after deploy; remaining ceiling is estate composition read model ([PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md)).
+- **Before open signups (non-code):** [LEGAL_TODO.md](./LEGAL_TODO.md) + C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)); go-live day: signup → **confirm email** → login → dashboard
 - E2E staging flakiness under parallel workers — re-run with `--workers=1`
 
 ### Sprint 17 — production drip verify

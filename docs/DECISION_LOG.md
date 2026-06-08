@@ -1233,7 +1233,7 @@
 
 **Connection lookup fix:** `attorney_clients.attorney_id` stores `attorney_listings.id` (not `auth.uid()`). Portal APIs and client detail page updated to resolve listing by `profile_id` first.
 
-**Docs:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md), migrations `20260529120000_sprint_import_attorney.sql`, `20260529130000_attorney_drip_columns.sql`.
+**Docs:** [SPRINT_IMPORT_ATTORNEY.md](./archive/sprints/SPRINT_IMPORT_ATTORNEY.md), migrations `20260529120000_sprint_import_attorney.sql`, `20260529130000_attorney_drip_columns.sql`.
 
 ---
 
@@ -1248,7 +1248,7 @@
 - Multi-sheet workbooks: per-sheet tabs, single **Commit All** with progress.
 - Onboarding: primary CTA "Upload a spreadsheet" → `/import?onboarding=true` → `/dashboard?setup=imported` toast after commit.
 
-**Docs:** [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md), [CONSUMER_FLOWS.md § Bulk import](./CONSUMER_FLOWS.md).
+**Docs:** [SPRINT_IMPORT_ATTORNEY.md](./archive/sprints/SPRINT_IMPORT_ATTORNEY.md), [CONSUMER_FLOWS.md § Bulk import](./CONSUMER_FLOWS.md).
 
 ---
 
@@ -1270,7 +1270,7 @@
 
 **Reasoning:** Spreadsheet import is the fastest onboarding path for HNW users (business owners, executives). Gating upload behind Tier 2 added friction without protecting revenue — import depth is a retention feature, not a paywall. Prior onboarding-only bypass (`allowOnboardingImport`) was inconsistent with `POST /api/ingest` tier checks.
 
-**Audit trail:** `lib/tiers.ts` (inline comment), `tests/e2e/consumer/consumer-import-access.spec.ts`, `docs/CONSUMER_NAV_MAP.md`, `docs/SPRINT_FRICTION_REDUCTION.md`.
+**Audit trail:** `lib/tiers.ts` (inline comment), `tests/e2e/consumer/consumer-import-access.spec.ts`, `docs/CONSUMER_NAV_MAP.md`, `docs/archive/sprints/SPRINT_FRICTION_REDUCTION.md`.
 
 ---
 
@@ -1917,7 +1917,7 @@ Session-only “Your advisor has been notified” confirmation (refresh resets U
 
 **Remaining post-launch perf:** ~~Materialize `calculate_estate_composition` at recompute~~ — shipped 2026-05-27 (`estate_composition_cache`).
 
-**Doc:** [PERF_SPRINT_P1.md § Sprint P-2](./PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors) · Migration: `20260602130000_sprint_p2_recommendations_cache.sql`
+**Doc:** [PERF_SPRINT_P1.md § Sprint P-2](./archive/sprints/PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors) · Migration: `20260602130000_sprint_p2_recommendations_cache.sql`
 
 ---
 
@@ -1927,7 +1927,7 @@ Session-only “Your advisor has been notified” confirmation (refresh resets U
 
 **Post-launch engineering priority (Sprint P-2):** Production `pg_stat_statements` (Query A) shows top load from `projection_scenarios` INSERTs and estate RPCs (`calculate_estate_composition`, `generate_estate_recommendations`) on the dashboard path. **Sprint P-2 addressed** recommendations cache + projections cache-first + auth dedup (`47a38f3`). **Remaining:** materialize `calculate_estate_composition` at recompute.
 
-**Doc:** [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) · [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql)
+**Doc:** [PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md) · [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql)
 
 ---
 

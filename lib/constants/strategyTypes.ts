@@ -2,7 +2,7 @@
  * Single source of truth for strategy type/source string values.
  * Import from here — never hardcode these strings at DB query or comparison call sites.
  *
- * @see docs/SPRINT_UNIFY_STATE_TAX.md Phase 0
+ * @see docs/CALCULATION_ENGINES.md
  */
 
 /** Values used in strategy_configs.strategy_type for credit shelter / bypass trust */

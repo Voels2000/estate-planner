@@ -241,7 +241,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | `/insurance`, `/property-casualty` | insurance form clients | `/api/insurance`, `/api/insurance/[id]` | Same pattern as businesses |
 | `/rmd` | `rmd/_rmd-client.tsx` | Read-only (client-side projection from assets + household) | Tier 2; RMD start age from `getRmdStartAge(personN_birth_year)` — **75** if born ≥1960, **73** if 1951–1959, **72** if ≤1950 · **UI polish 2026-05-30** — see § below |
 | `/roth` | `roth/_roth-client.tsx` | Read-heavy; optional **Use in Transfer Strategies →** (when `totalConversions > 0`) writes `illustrative` `roth` line item → `/my-estate-trust-strategy?tab=strategies&openPanel=roth` | Tier 2; **UI polish 2026-05-30** — see § below |
-| `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit`, `DELETE /api/import/jobs/[id]` | Tier 1 upload + commit; **real_estate** target; multi-sheet + type normalization; persona templates; onboarding fork — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md) |
+| `/import` | `_import-client.tsx` | `POST /api/ingest`, `POST /api/import/commit`, `DELETE /api/import/jobs/[id]` | Tier 1 upload + commit; **real_estate** target; multi-sheet + type normalization; persona templates; onboarding fork — [SPRINT_IMPORT_ATTORNEY.md](./archive/sprints/SPRINT_IMPORT_ATTORNEY.md) |
 
 ### Roth Conversion — `/roth` (2026-05-30 polish)
 
@@ -300,7 +300,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 | **Write APIs** | `POST /api/ingest` (multi-sheet); `POST /api/import/commit` (type/property normalization); `DELETE /api/import/jobs/[id]` |
 | **Formats** | `.csv`, `.xlsx`, `.xls` only (PDF/DOCX deferred post-launch) |
 | **Migrations** | F-1/F-2 as before; **apply** `20260529120000_sprint_import_attorney.sql` for attorney doc columns (separate from import tables) |
-| **Tests** | `npm run test:import:unit` (**19**); `npm run test:import:api` — [SPRINT_IMPORT_ATTORNEY.md](./SPRINT_IMPORT_ATTORNEY.md) |
+| **Tests** | `npm run test:import:unit` (**19**); `npm run test:import:api` — [SPRINT_IMPORT_ATTORNEY.md](./archive/sprints/SPRINT_IMPORT_ATTORNEY.md) |
 
 **Dashboard RMD strip:** `lib/dashboard/rmdStatus.ts` — `p1StartYear` / `p2StartYear` = birth year + `getRmdStartAge`; `calcRmdAmount` only when current age ≥ cohort start age.
 

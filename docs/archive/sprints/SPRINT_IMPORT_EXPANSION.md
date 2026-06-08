@@ -1,3 +1,5 @@
+> **Archived sprint doc (shipped).** See [README.md](./README.md) for canonical references.
+
 # SPRINT_IMPORT_EXPANSION.md
 # Import Expansion — Acceptance Criteria & Reference
 # Status: COMPLETE

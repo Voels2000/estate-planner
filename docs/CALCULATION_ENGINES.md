@@ -173,7 +173,7 @@ grep -rn "calculate_federal_estate_tax\|calculate_state_estate_tax" \
 
 On the first grep, ignore `STATE_HAS_ESTATE_TAX` in `stateRegistry.ts` (boolean flags, not engine A).
 On the third grep, UI label maps and planning-topic branches are documented exceptions in
-[SPRINT_UNIFY_STATE_TAX.md Phase 0](./SPRINT_UNIFY_STATE_TAX.md).
+[SPRINT_UNIFY_STATE_TAX.md Phase 0](./archive/sprints/SPRINT_UNIFY_STATE_TAX.md).
 
 ---
 

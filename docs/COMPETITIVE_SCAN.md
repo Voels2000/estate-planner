@@ -129,7 +129,7 @@ Leading consumer and advisor platforms assume **automatic account sync** (Plaid,
 
 Explicit product decision deferred Plaid:
 
-- `docs/SPRINT_FRICTION_REDUCTION.md` — “No Plaid. No new tables.”
+- `docs/archive/sprints/SPRINT_FRICTION_REDUCTION.md` — “No Plaid. No new tables.”
 - `docs/ROADMAP.md` — friction sprint without aggregation
 
 **What exists today**

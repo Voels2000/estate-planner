@@ -124,7 +124,7 @@ These must be complete before launch. Update status as sprints close them.
 - [ ] **Health Score + Advisor Playbook manual smoke (2026-05-29)** — [18-step checklist below](#health-score--advisor-playbook-manual-smoke-2026-05-29)
 - [ ] **Prospect + Mobile manual smoke (2026-05-29)** — [19-step checklist below](#prospect--mobile-review-mode-manual-smoke-2026-05-29); Track 1 (prospect/PDF/intake) before Track 2 (mobile)
 - [ ] **PDF narrative engine manual smoke (2026-05-30)** — [checklist below](#pdf-narrative-engine-manual-smoke-2026-05-30)
-- [ ] **Attorney drip cron (ops)** — ~3 days after first real attorney signup: run SQL in [SPRINT_IMPORT_ATTORNEY.md § Post-ship ops](./SPRINT_IMPORT_ATTORNEY.md#post-ship-ops); confirm `attorney_drip_step_2_sent_at` populates; step 3 by day 7 after step 1
+- [ ] **Attorney drip cron (ops)** — ~3 days after first real attorney signup: [Attorney drip cron (ops)](#attorney-drip-cron-ops) below
 - [ ] **End-to-end smoke test** — new consumer signup → household setup → assessment → email capture → drip step 1 → advisor connection → advisor portal view; all steps verified on production URL
 
 **Sprint 14 manual smoke (2026-05-23):** Core §1–3, estate §4–7, §8, §11 **passed** on staging; §9 skipped (needs linked advisor); §10 E2E 19/19; bugs fixed `f4e9160`. See CONSUMER_RELEASE_SMOKE_TEST.md sign-off block.
@@ -218,6 +218,32 @@ SELECT scenario_id, estate_exemption_individual, estate_exemption_married
 FROM federal_tax_config WHERE scenario_id IN ('current_law', 'sunset_2026');
 ```
 
+### Attorney drip cron (ops)
+
+After the first **real** attorney registers, check ~**3 days** later that step 2 populated (step 3 ~7 days after step 1).
+
+```sql
+SELECT email,
+       created_at,
+       attorney_drip_step_1_sent_at,
+       attorney_drip_step_2_sent_at,
+       attorney_drip_step_3_sent_at
+FROM profiles
+WHERE role = 'attorney' OR is_attorney = true
+ORDER BY created_at DESC
+LIMIT 10;
+```
+
+| Step | When | Column |
+|------|------|--------|
+| 1 | Immediately on activation (signup callback, claim-listing, or first `/attorney` visit) | `attorney_drip_step_1_sent_at` non-null |
+| 2 | ~3+ days after step 1 sent | `attorney_drip_step_2_sent_at` |
+| 3 | ~7+ days after step 1 sent | `attorney_drip_step_3_sent_at` |
+
+Steps 2 & 3 depend on `GET /api/cron/notifications` (14:00 UTC) and elapsed time since **step 1 sent** (not account `created_at`). If step 2 is null after day 3: inspect cron logs, `CRON_SECRET`, and `role` / `is_attorney` filter in `app/api/cron/notifications/route.ts`.
+
+**Build spec (archived):** [docs/archive/sprints/SPRINT_IMPORT_ATTORNEY.md](./archive/sprints/SPRINT_IMPORT_ATTORNEY.md)
+
 ---
 
 ## Section 2 — Technical go-live steps
@@ -226,7 +252,7 @@ Run these on launch day after all Section 1 gates are checked. Do not run early.
 
 ### Opening signups — go-live flip
 
-The site is in waitlist mode by default on `VERCEL_ENV=production`. Do **not** flip `PUBLIC_SIGNUP_OPEN` until Section 1 product gates, **legal review** ([LEGAL_TODO.md](./LEGAL_TODO.md)), **C-4 manual Stripe walkthrough** ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)), and production drip smoke are signed off.
+The site is in waitlist mode by default on `VERCEL_ENV=production`. Do **not** flip `PUBLIC_SIGNUP_OPEN` until Section 1 product gates, **legal review** ([LEGAL_TODO.md](./LEGAL_TODO.md)), **C-4 manual Stripe walkthrough** ([BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)), and production drip smoke are signed off.
 
 #### Pre-go-live — legal and config (before go-live day)
 
@@ -236,7 +262,7 @@ Complete before flipping Supabase Auth or `PUBLIC_SIGNUP_OPEN`:
 - [ ] **Counsel sign-off** — ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration). **Handoff:** flag those three sections; ask for one consolidated redline — [LEGAL_TODO.md § Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos). Apply redlines + TODO placeholder find-and-replace in **one final commit** before go-live.
 - [ ] **Email aliases** — privacy@, security@, legal@ forwarding to monitored inbox
 - [ ] **Stripe Dashboard** — `invoice.upcoming` webhook enabled; Customer Portal cancellation enabled; receipt emails on
-- [ ] **C-4 manual walkthrough** — signup → paid → receipt → self-serve cancel ([BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md))
+- [ ] **C-4 manual walkthrough** — signup → paid → receipt → self-serve cancel ([BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md))
 - [ ] **GitHub Actions E2E smoke** — complete [GitHub Actions E2E smoke (pre-go-live)](#github-actions-e2e-smoke-pre-go-live) before go-live day (blocks silent regressions on `main`)
 
 #### GitHub Actions E2E smoke (pre-go-live)
@@ -370,7 +396,7 @@ In **Authentication → Settings**:
 - [x] **RLS policy fix (pre-launch)** — `20260527150000_prelaunch_rls_household_scope.sql` on prod (`1f41ce1`); GST via `/api/advisor/gst-entry` (`7cab1be` — deploy app); `verify-loose-rls-policies.sql` → 0 rows; post-fix CSV in `docs/audits/`
 - [ ] **RLS isolation smoke (manual)** — Two consumers + connected advisor/client; confirm cross-household reads return `[]` — `docs/audits/README.md`. **Automated:** `npm run verify:rls` on staging in CI; **SQL:** local post-deploy only ([ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md))
 - [x] **Auth + security (Sprint C-3 Phase 1b + Phase 3)** — `/auth/callback`, confirm-email, MFA middleware, security headers, PII logging. Completed: 2026-06-02 (`56a4407`)
-- [x] **Billing disclosures (Sprint C-4 — code)** — RCW 19.316, FTC cancel, renewal reminders (`462bda9`). **Manual:** Stripe Dashboard + walkthrough — [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
+- [x] **Billing disclosures (Sprint C-4 — code)** — RCW 19.316, FTC cancel, renewal reminders (`462bda9`). **Manual:** Stripe Dashboard + walkthrough — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)
 - [x] **Privacy + Terms (Sprint C-5 — code)** — `/privacy`, `/terms`, footer links, sitemap (`2e1dff3`, `695a860`). **Manual:** [LEGAL_TODO.md](./LEGAL_TODO.md) — placeholders + counsel sign-off
 
 ### Vercel Production env vars (Sprint 15 go-live — verified 2026-05-24)
@@ -530,7 +556,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 
 ## Stripe Setup (required before `PUBLIC_SIGNUP_OPEN=true`)
 
-**Source of truth in code:** `lib/billing/stripePrices.ts` · Checkout: `app/api/stripe/checkout/route.ts` · Webhook: `app/api/stripe/webhook/route.ts` · Disclosures walkthrough: [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md)
+**Source of truth in code:** `lib/billing/stripePrices.ts` · Checkout: `app/api/stripe/checkout/route.ts` · Webhook: `app/api/stripe/webhook/route.ts` · Disclosures walkthrough: [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)
 
 **Consumer pricing (Sprint 4):**
 
@@ -642,7 +668,7 @@ Stripe → Settings → Billing → Customer portal (test mode):
 
 - [ ] **invoice.upcoming** enabled for renewal reminders (webhook handler in app)
 - [ ] Receipt emails / branding reviewed
-- [ ] Manual walkthrough: [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) on preview with test card `4242 4242 4242 4242`
+- [ ] Manual walkthrough: [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) on preview with test card `4242 4242 4242 4242`
 
 #### 6. Functional verification — test keys only
 
@@ -748,7 +774,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 ### Go/no-go (Stripe)
 
 - [ ] Phase 1 complete on preview with **test** keys
-- [ ] [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) walkthrough signed off
+- [ ] [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) walkthrough signed off
 - [ ] Phase 2 live catalog + env vars + webhook on production
 - [ ] One live checkout smoke passed
 - [ ] **Do not** point production at test price IDs or test secret keys
@@ -780,13 +806,13 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 |------|-------|-------|
 | **LEGAL_TODO.md** | You | Counsel handoff + one-commit legal update — [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
 | **Stripe Phase 1 (test mode)** | You | [§ Stripe Setup — Phase 1](./LAUNCH_CHECKLIST.md#phase-1--test-mode-sandbox--complete-before-live-keys) — 6 prices + preview env + webhook |
-| **C-4 manual walkthrough** | You | [BILLING_DISCLOSURES_SPRINT.md](./BILLING_DISCLOSURES_SPRINT.md) on preview |
+| **C-4 manual walkthrough** | You | [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) on preview |
 | **GitHub E2E smoke (pre-go-live)** | You | [§ GitHub Actions E2E smoke](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live) — `E2E_SMOKE_IN_CI=true` + secrets before open signups |
 | **GitHub RLS verify (pre-go-live)** | You | [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) — staging JWT check in CI; SQL invariants local post-deploy |
 | **Stripe Phase 2 (live mode)** | You | [§ Stripe Setup — Phase 2](./LAUNCH_CHECKLIST.md#phase-2--live-mode-production--go-live-day-only) — go-live day only |
 | **Go-live day ops** | You | Supabase Auth ON → verify callback → `PUBLIC_SIGNUP_OPEN=true` → Core §1–3 smoke |
 | **Drip step 2 check** | Ops | `npm run verify:drip -- --email e2e-drip@mywealthmaps.test` |
-| **Sprint P-2 pre-launch refactors** | ✅ `47a38f3` — recommendations cache, projections cache-first, auth dedup — [PERF_SPRINT_P1.md](./PERF_SPRINT_P1.md) |
+| **Sprint P-2 pre-launch refactors** | ✅ `47a38f3` — recommendations cache, projections cache-first, auth dedup — [PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md) |
 
 ---
 
