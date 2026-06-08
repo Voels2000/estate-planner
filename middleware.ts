@@ -4,6 +4,11 @@ import {
   isLocalDevHost,
   isWaitlistMode,
   shouldBypassWaitlistForSignup,
+  BETA_SIGNUP_ACCESS_COOKIE,
+  BETA_SIGNUP_ACCESS_LABEL_COOKIE,
+  BETA_SIGNUP_ACCESS_PARAM,
+  BETA_SIGNUP_ACCESS_LABEL_PARAM,
+  isValidBetaSignupAccessToken,
 } from '@/lib/waitlist-mode'
 import {
   isPrivilegedMfaEnforcementEnabled,
@@ -95,14 +100,39 @@ export async function middleware(request: NextRequest) {
     pathname === '/signup' &&
     !isLocalhost &&
     isWaitlistMode({ hostname }) &&
-    !shouldBypassWaitlistForSignup(searchParams)
+    !shouldBypassWaitlistForSignup(searchParams, {
+      betaAccessCookie: request.cookies.get(BETA_SIGNUP_ACCESS_COOKIE)?.value,
+    })
   ) {
     return NextResponse.redirect(new URL('/waitlist', request.url))
   }
 
   // Infra + public paths — no auth or role checks
   if (isPublicPath(pathname)) {
-    return nextWithPathname(request, pathname)
+    const response = nextWithPathname(request, pathname)
+    if (
+      pathname === '/signup' &&
+      isValidBetaSignupAccessToken(searchParams.get(BETA_SIGNUP_ACCESS_PARAM))
+    ) {
+      response.cookies.set(BETA_SIGNUP_ACCESS_COOKIE, '1', {
+        httpOnly: true,
+        secure: request.nextUrl.protocol === 'https:',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 30,
+        path: '/',
+      })
+      const label = searchParams.get(BETA_SIGNUP_ACCESS_LABEL_PARAM)?.trim()
+      if (label) {
+        response.cookies.set(BETA_SIGNUP_ACCESS_LABEL_COOKIE, label, {
+          httpOnly: true,
+          secure: request.nextUrl.protocol === 'https:',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 30,
+          path: '/',
+        })
+      }
+    }
+    return response
   }
 
   let supabaseResponse = nextWithPathname(request, pathname)

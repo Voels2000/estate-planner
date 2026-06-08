@@ -183,6 +183,7 @@ The `verify` job in `.github/workflows/ci.yml` sets **dummy** env vars on `npm r
 | `STRIPE_SECRET_KEY` | `sk_test_placeholder_ci_build_only` | Real key in Vercel dashboard |
 | `SUPABASE_SERVICE_ROLE_KEY` | `placeholder-service-role-key` | Real key in Vercel dashboard |
 | `NEXT_PUBLIC_SUPABASE_*` | placeholder URLs/keys | Real project keys in Vercel |
+| `BETA_SIGNUP_TOKEN` | not set (optional) | Set in Production when sharing private beta signup links |
 
 Workflows keep `REQUIRE_PRIVILEGED_MFA=false` so CI is not blocked by MFA gates.
 

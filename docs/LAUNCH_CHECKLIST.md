@@ -389,6 +389,18 @@ In **Authentication → Settings**:
 
 **Pre-launch (current):** waitlist is on by default on Vercel Production — no env vars required. Optionally set `WAITLIST_MODE=true` / `NEXT_PUBLIC_WAITLIST_MODE=true` for explicit control or local dev. Invite/token signups bypass the gate: `?invite=`, `?invite_token=` + `?firm_id=`, `?connectionToken=`.
 
+**Private beta signup (friends while waitlist stays on):**
+
+1. In **Vercel → Production env**, set `BETA_SIGNUP_TOKEN` to a long random string (server-only — never `NEXT_PUBLIC_`).
+2. Share links like:
+   `https://mywealthmaps.com/signup?access=YOUR_TOKEN&label=friends-june`
+   - `label` is optional but recommended — tracks cohorts in Admin → Funnel → **Private Beta Signup Links**.
+3. First visit sets HttpOnly cookies (`mwm_beta_signup`, optional `mwm_beta_signup_label`) for 30 days so friends do not need the token on every visit.
+4. **Monitor:** Admin → **Funnel** tab — link views, accounts, conversion by cohort; or run the SQL in the Funnel tab cheat sheet.
+5. **Revoke:** Change `BETA_SIGNUP_TOKEN` in Vercel and redeploy — old links stop working; existing cookies still work until expiry (rotate token + wait 30 days, or accept residual access).
+
+**Do not** use `?connectionToken=` for friends — it bypasses waitlist with no monitoring.
+
 ### Code
 
 - [x] **`app/robots.ts`** — permissive rules deployed at `https://mywealthmaps.com/robots.txt` (2026-05-24)
@@ -420,6 +432,7 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 | `WAITLIST_MODE` | `middleware.ts` + server signup redirect | Optional — default on in Production |
 | `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` CTAs | Optional — redeploy when changed |
 | `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | **Pending** — legal review + C-4 manual verify + Stripe production |
+| `BETA_SIGNUP_TOKEN` | Private `/signup?access=` links while waitlist on | Optional — set before sharing friend links; rotate to revoke |
 | `REQUIRE_PRIVILEGED_MFA` | Mandatory TOTP for admin/advisor/attorney | **Pending** — flip `true` with `PUBLIC_SIGNUP_OPEN` on go-live; keep **false** in test/CI |
 | `E2E_SMOKE_IN_CI` | GitHub Actions repo variable — PR/push E2E smoke | **Pending** — set `true` [pre-go-live](#github-actions-e2e-smoke-pre-go-live); keep privileged MFA off in workflow |
 | `RLS_VERIFY_IN_CI` | GitHub Actions — JWT RLS isolation on **staging** (no DB URL in GitHub) | **Pending** — [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) |

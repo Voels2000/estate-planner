@@ -1,12 +1,17 @@
 import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { Suspense } from 'react'
 import {
   isLocalDevHost,
   isWaitlistMode,
   shouldBypassWaitlistForSignup,
+  BETA_SIGNUP_ACCESS_COOKIE,
+  BETA_SIGNUP_ACCESS_LABEL_COOKIE,
+  isBetaSignupAccessActive,
+  getBetaSignupAccessLabel,
 } from '@/lib/waitlist-mode'
 import { SignupForm } from './_signup-form'
+import { BetaSignupViewTracker } from './_beta-signup-tracker'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,18 +46,29 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
 
   const hostHeader = (await headers()).get('host') ?? ''
   const isLocalhost = isLocalDevHost(hostHeader)
+  const cookieStore = await cookies()
+  const betaAccessCookie = cookieStore.get(BETA_SIGNUP_ACCESS_COOKIE)?.value ?? null
+  const betaLabelCookie = cookieStore.get(BETA_SIGNUP_ACCESS_LABEL_COOKIE)?.value ?? null
+
+  const betaAccessActive = isBetaSignupAccessActive(urlSearchParams, betaAccessCookie)
+  const betaLabel =
+    getBetaSignupAccessLabel(urlSearchParams) ?? betaLabelCookie
 
   if (
     !isLocalhost &&
     isWaitlistMode({ hostname: hostHeader }) &&
-    !shouldBypassWaitlistForSignup(urlSearchParams)
+    !shouldBypassWaitlistForSignup(urlSearchParams, { betaAccessCookie })
   ) {
     redirect('/waitlist')
   }
 
   return (
     <Suspense fallback={<SignupFallback />}>
-      <SignupForm />
+      <BetaSignupViewTracker
+        betaAccessActive={betaAccessActive}
+        betaLabel={betaLabel}
+      />
+      <SignupForm betaAccessActive={betaAccessActive} betaLabel={betaLabel} />
     </Suspense>
   )
 }

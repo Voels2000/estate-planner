@@ -105,6 +105,7 @@ type Props = {
   }[]
   funnelStepCounts: Record<string, number>
   tierConversion: { tier: string; counts: Record<string, number> }[]
+  betaSignupCohorts: { label: string; linkViews: number; accounts: number }[]
 }
 
 type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'funnel' | 'compliance' | 'settings' | 'tiers' | 'categories' | 'tax_rules' | 'terms' | 'debug'
@@ -131,6 +132,7 @@ export function AdminClient({
   recentFunnelEvents,
   funnelStepCounts,
   tierConversion,
+  betaSignupCohorts,
   ...rest
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('overview')
@@ -674,6 +676,7 @@ export function AdminClient({
           recentFunnelEvents={recentFunnelEvents}
           funnelStepCounts={funnelStepCounts}
           tierConversion={tierConversion}
+          betaSignupCohorts={betaSignupCohorts}
         />
       )}
 

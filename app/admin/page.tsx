@@ -119,6 +119,8 @@ export default async function AdminPage() {
     { data: funnelStepCounts },
     // NEW: event → tier conversion (funnel_events joined to profiles.consumer_tier)
     { data: tierConversionRaw },
+    { data: betaLinkViewEvents },
+    { data: betaAccountEvents },
   ] = await Promise.all([
     admin
       .from('funnel_events')
@@ -154,6 +156,19 @@ export default async function AdminPage() {
       .select('event_name, profiles!inner(consumer_tier)')
       .gte('created_at', thirtyDaysAgoISO)
       .not('user_id', 'is', null),
+
+    admin
+      .from('funnel_events')
+      .select('properties')
+      .eq('event_name', 'beta_signup_link_viewed')
+      .gte('created_at', thirtyDaysAgoISO),
+
+    admin
+      .from('funnel_events')
+      .select('properties')
+      .eq('event_name', 'account_created')
+      .contains('properties', { signup_source: 'beta_access_link' })
+      .gte('created_at', thirtyDaysAgoISO),
   ])
 
   // Aggregate step counts server-side (avoids raw SQL RPC)
@@ -183,6 +198,26 @@ export default async function AdminPage() {
     tier,
     counts,
   }))
+
+  type FunnelProperties = { label?: string; beta_label?: string } | null
+  const betaCohortMap = new Map<string, { linkViews: number; accounts: number }>()
+  const cohortLabelFromProps = (properties: FunnelProperties) => {
+    const label = properties?.label?.trim() || properties?.beta_label?.trim()
+    return label || '(no label)'
+  }
+  for (const row of betaLinkViewEvents ?? []) {
+    const label = cohortLabelFromProps(row.properties as FunnelProperties)
+    if (!betaCohortMap.has(label)) betaCohortMap.set(label, { linkViews: 0, accounts: 0 })
+    betaCohortMap.get(label)!.linkViews += 1
+  }
+  for (const row of betaAccountEvents ?? []) {
+    const label = cohortLabelFromProps(row.properties as FunnelProperties)
+    if (!betaCohortMap.has(label)) betaCohortMap.set(label, { linkViews: 0, accounts: 0 })
+    betaCohortMap.get(label)!.accounts += 1
+  }
+  const betaSignupCohorts = Array.from(betaCohortMap.entries())
+    .map(([label, counts]) => ({ label, ...counts }))
+    .sort((a, b) => b.accounts - a.accounts || b.linkViews - a.linkViews)
 
   // ─── Compute stats ───
   const now = new Date()
@@ -244,6 +279,7 @@ export default async function AdminPage() {
       // NEW props
       funnelStepCounts={stepCountMap}
       tierConversion={tierConversion}
+      betaSignupCohorts={betaSignupCohorts}
     />
   )
 }

@@ -25,6 +25,12 @@ type TierConversionEntry = {
   counts: Record<string, number>
 }
 
+type BetaSignupCohort = {
+  label: string
+  linkViews: number
+  accounts: number
+}
+
 type Props = {
   funnelBySlug: SlugRow[]
   funnelByReferral: ReferralRow[]
@@ -33,6 +39,8 @@ type Props = {
   funnelStepCounts: Record<string, number>
   /** NEW: event → tier conversion breakdown */
   tierConversion: TierConversionEntry[]
+  /** Private beta signup links (waitlist bypass) — last 30 days by cohort label */
+  betaSignupCohorts: BetaSignupCohort[]
 }
 
 const FUNNEL_STEPS = [
@@ -41,6 +49,7 @@ const FUNNEL_STEPS = [
   { name: 'event_assess_complete',label: 'Assessment Completed', color: '#a855f7' },
   { name: 'email_captured',       label: 'Email Captured',       color: '#c9a84c' },
   { name: 'account_created',      label: 'Account Created',      color: '#10b981' },
+  { name: 'beta_signup_link_viewed', label: 'Beta Signup Link Viewed', color: '#14b8a6' },
   { name: 'persona_screen_shown', label: 'Persona Screen Shown', color: '#64748b' },
   { name: 'persona_selected',     label: 'Persona Selected',     color: '#0ea5e9' },
   { name: 'persona_skipped',      label: 'Persona Skipped',      color: '#94a3b8' },
@@ -76,6 +85,7 @@ export function FunnelTab({
   recentFunnelEvents,
   funnelStepCounts,
   tierConversion,
+  betaSignupCohorts,
 }: Props) {
   const [detailTab, setDetailTab] = useState<'slug' | 'referral' | 'tier' | 'feed'>('slug')
 
@@ -136,10 +146,70 @@ export function FunnelTab({
   const assessComplete = stepCounts['event_assess_complete'] ?? 0
   const emails         = stepCounts['email_captured']        ?? 0
   const accounts       = stepCounts['account_created']       ?? 0
+  const betaLinkViews  = stepCounts['beta_signup_link_viewed'] ?? 0
+  const betaAccounts   = betaSignupCohorts.reduce((sum, c) => sum + c.accounts, 0)
   const upgrades       = stepCounts['tier_upgraded']         ?? 0
 
   return (
     <div className="space-y-8">
+
+      {/* ── Private beta signup links (waitlist bypass) ── */}
+      <section>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-400 mb-1">
+          Private Beta Signup Links
+        </h2>
+        <p className="text-xs text-neutral-400 mb-4">
+          Last 30 days · `/signup?access=…` while waitlist is on · Revoke by rotating `BETA_SIGNUP_TOKEN` in Vercel
+        </p>
+        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6 space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Link views', value: fmt(betaLinkViews) },
+              { label: 'Accounts created', value: fmt(betaAccounts) },
+              { label: 'View → Account', value: pct(betaAccounts, betaLinkViews) },
+              { label: 'Cohorts (labels)', value: fmt(betaSignupCohorts.length) },
+            ].map(stat => (
+              <div key={stat.label} className="text-center">
+                <p className="text-xs text-neutral-500 mb-1">{stat.label}</p>
+                <p className="text-xl font-bold text-neutral-900">{stat.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {betaSignupCohorts.length === 0 ? (
+            <p className="text-sm text-neutral-400 text-center py-4">
+              No beta link activity yet — share `/signup?access=TOKEN&amp;label=cohort-name`
+            </p>
+          ) : (
+            <div className="overflow-x-auto border border-neutral-100 rounded-xl">
+              <table className="min-w-full divide-y divide-neutral-100">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    {['Cohort label', 'Link views', 'Accounts', 'View → Account'].map(h => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500 whitespace-nowrap"
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {betaSignupCohorts.map(row => (
+                    <tr key={row.label} className="hover:bg-neutral-50">
+                      <td className="px-4 py-3 text-xs font-mono text-neutral-700">{row.label}</td>
+                      <td className="px-4 py-3 text-sm text-neutral-900 font-medium">{fmt(row.linkViews)}</td>
+                      <td className="px-4 py-3 text-sm text-green-700 font-medium">{fmt(row.accounts)}</td>
+                      <td className="px-4 py-3 text-sm text-neutral-600">{pct(row.accounts, row.linkViews)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* ── Conversion Funnel Bar Chart ── */}
       <section>
@@ -513,6 +583,19 @@ export function FunnelTab({
                           )}
                         </p>
                       )}
+                      {!e.event_slug && e.properties && (
+                        <p className="text-xs text-neutral-400 font-mono truncate">
+                          {typeof e.properties.label === 'string' && (
+                            <span>label:{e.properties.label}</span>
+                          )}
+                          {typeof e.properties.beta_label === 'string' && (
+                            <span>label:{e.properties.beta_label}</span>
+                          )}
+                          {typeof e.properties.signup_source === 'string' && (
+                            <span className="ml-2">source:{e.properties.signup_source}</span>
+                          )}
+                        </p>
+                      )}
                     </div>
                     <p className="text-xs text-neutral-400 shrink-0">
                       {new Date(e.created_at).toLocaleDateString('en-US', {
@@ -566,6 +649,21 @@ where created_at >= now() - interval '30 days'
   and event_slug is not null
 group by event_slug
 order by accounts desc;`,
+            },
+            {
+              label: 'Private beta signup cohorts',
+              sql: `select
+  coalesce(properties->>'label', properties->>'beta_label', '(no label)') as cohort,
+  count(*) filter (where event_name = 'beta_signup_link_viewed') as link_views,
+  count(*) filter (
+    where event_name = 'account_created'
+      and properties->>'signup_source' = 'beta_access_link'
+  ) as accounts
+from funnel_events
+where created_at >= now() - interval '30 days'
+  and event_name in ('beta_signup_link_viewed', 'account_created')
+group by 1
+order by accounts desc, link_views desc;`,
             },
             {
               label: 'Event → tier conversion (authenticated users)',

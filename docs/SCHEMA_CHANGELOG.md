@@ -10,6 +10,23 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Private beta signup links (2026-06-08)
+
+**No migration.** Waitlist bypass for friends via secret URL while `PUBLIC_SIGNUP_OPEN` stays off.
+
+| Change | Detail |
+|--------|--------|
+| **Env** | `BETA_SIGNUP_TOKEN` — Vercel Production only (server-side; not `NEXT_PUBLIC_`) |
+| **URL** | `/signup?access=TOKEN&label=cohort-name` — label optional, used for cohort tracking |
+| **Cookies** | `mwm_beta_signup`, `mwm_beta_signup_label` — HttpOnly, 30 days, set in `middleware.ts` |
+| **Funnel** | `beta_signup_link_viewed`; `account_created` with `properties.signup_source: beta_access_link` |
+| **Admin** | Funnel tab — **Private Beta Signup Links** (views, accounts, conversion by label) |
+| **Tests** | `tests/unit/waitlist-mode.spec.ts` — token + cookie bypass |
+
+**Files:** `lib/waitlist-mode.ts`, `middleware.ts`, `app/(auth)/signup/page.tsx`, `_beta-signup-tracker.tsx`, `_signup-form.tsx`, `app/admin/page.tsx`, `app/admin/funnel-tab.tsx`
+
+---
+
 ## CI build placeholders (2026-06-08)
 
 **No migration.** `.github/workflows/ci.yml` — `Production build` step env only.

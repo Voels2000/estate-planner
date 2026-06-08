@@ -3,7 +3,7 @@
  * Run: npx playwright test tests/unit/waitlist-mode.spec.ts --project=import-unit
  */
 import { test, expect } from '@playwright/test'
-import { isWaitlistMode, getSignupHref } from '../../lib/waitlist-mode'
+import { isWaitlistMode, getSignupHref, shouldBypassWaitlistForSignup, isValidBetaSignupAccessToken } from '../../lib/waitlist-mode'
 
 test.describe('isWaitlistMode', () => {
   const prodHost = { hostname: 'mywealthmaps.com' }
@@ -91,5 +91,45 @@ test.describe('isWaitlistMode', () => {
       if (prevWaitlistMode === undefined) delete process.env.WAITLIST_MODE
       else process.env.WAITLIST_MODE = prevWaitlistMode
     }
+  })
+})
+
+test.describe('private beta signup access', () => {
+  const params = (access?: string, label?: string) => {
+    const sp = new URLSearchParams()
+    if (access) sp.set('access', access)
+    if (label) sp.set('label', label)
+    return sp
+  }
+
+  test('valid access token bypasses waitlist gate', () => {
+    const prev = process.env.BETA_SIGNUP_TOKEN
+    process.env.BETA_SIGNUP_TOKEN = 'secret-friends-token'
+    try {
+      expect(isValidBetaSignupAccessToken('secret-friends-token')).toBe(true)
+      expect(isValidBetaSignupAccessToken('wrong')).toBe(false)
+      expect(
+        shouldBypassWaitlistForSignup(params('secret-friends-token', 'friends-june')),
+      ).toBe(true)
+      expect(shouldBypassWaitlistForSignup(params('wrong'))).toBe(false)
+    } finally {
+      if (prev === undefined) delete process.env.BETA_SIGNUP_TOKEN
+      else process.env.BETA_SIGNUP_TOKEN = prev
+    }
+  })
+
+  test('beta access cookie bypasses waitlist without query param', () => {
+    expect(
+      shouldBypassWaitlistForSignup(new URLSearchParams(), { betaAccessCookie: '1' }),
+    ).toBe(true)
+    expect(
+      shouldBypassWaitlistForSignup(new URLSearchParams(), { betaAccessCookie: '0' }),
+    ).toBe(false)
+  })
+
+  test('invite flows still bypass waitlist', () => {
+    expect(shouldBypassWaitlistForSignup(params('x'))).toBe(false)
+    const invite = new URLSearchParams({ invite: 'abc' })
+    expect(shouldBypassWaitlistForSignup(invite)).toBe(true)
   })
 })

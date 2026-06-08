@@ -2432,6 +2432,18 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Private beta signup links while waitlist stays on
+
+**Decision:** Allow selected friends to self-serve signup via a secret URL (`/signup?access=TOKEN&label=cohort`) without opening public signup (`PUBLIC_SIGNUP_OPEN`). Token is server-only (`BETA_SIGNUP_TOKEN`); optional `label` tags cohorts for monitoring.
+
+**Reasoning:** Admin-created accounts (Option A) do not scale for a small friend beta. The legacy `?connectionToken=` bypass had no attribution. Secret links are shareable, revocable (rotate token), and instrumented in `funnel_events`.
+
+**Implementation:** `lib/waitlist-mode.ts` (`isValidBetaSignupAccessToken`, cookies), `middleware.ts` (bypass + HttpOnly cookies), `app/(auth)/signup/_beta-signup-tracker.tsx`, `_signup-form.tsx` (`signup_source: beta_access_link`), admin **Funnel** tab cohort table + SQL cheat sheet. See [LAUNCH_CHECKLIST.md § Private beta signup](./LAUNCH_CHECKLIST.md).
+
+**Revoke:** Change `BETA_SIGNUP_TOKEN` in Vercel and redeploy; existing cookies valid up to 30 days.
+
+---
+
 ### May 2026 — Block all crawlers pre-launch
 
 **Decision:** `app/robots.ts` returns `disallow: /` for `userAgent: *` and omits the `sitemap` URL until product launch. `app/sitemap.ts` stays in the codebase. Google Search Console setup deferred.

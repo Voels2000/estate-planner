@@ -7,11 +7,17 @@ import { storeIntakeToken } from '@/lib/attorney/intakeTokenSession'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
+import { BETA_SIGNUP_ACCOUNT_SOURCE } from '@/lib/waitlist-mode'
 
 // FIX: canonical role values — 'advisor' not 'financial_advisor'
 type Role = 'consumer' | 'advisor' | 'attorney'
 
-export function SignupForm() {
+type SignupFormProps = {
+  betaAccessActive?: boolean
+  betaLabel?: string | null
+}
+
+export function SignupForm({ betaAccessActive = false, betaLabel = null }: SignupFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -216,6 +222,12 @@ export function SignupForm() {
           referral_code: referralCode ?? attorneyReferralCode,
           properties: {
             role: effectiveRole,
+            ...(betaAccessActive
+              ? {
+                  signup_source: BETA_SIGNUP_ACCOUNT_SOURCE,
+                  ...(betaLabel ? { beta_label: betaLabel } : {}),
+                }
+              : {}),
             ...(referralCode ? { advisor_referral_code: referralCode } : {}),
             ...(attorneyReferralCode ? { attorney_referral_code: attorneyReferralCode } : {}),
           },

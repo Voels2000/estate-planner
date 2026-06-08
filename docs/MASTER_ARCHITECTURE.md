@@ -667,6 +667,7 @@ Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 | `SUPABASE_SERVICE_ROLE_KEY` | Admin client, webhooks, server writes bypassing RLS | Confirm set (often via Vercel Supabase integration) |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | `app/layout.tsx` Search Console meta | Set at launch only |
 | `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | Set `true` at go-live |
+| `BETA_SIGNUP_TOKEN` | Private `/signup?access=` links while waitlist on | Optional — server-only; rotate to revoke old links |
 | `WAITLIST_MODE` | `middleware.ts` + server signup redirect | Optional — default on in Production |
 | `NEXT_PUBLIC_WAITLIST_MODE` | Client `getSignupHref()` in public CTAs | Optional — redeploy when changed |
 
@@ -691,7 +692,7 @@ Two layers — do not conflate them:
 
 **Checklist:** [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) → “New table migrations (mandatory)”.
 
-**Waitlist mode (pre-launch):** Default on when `VERCEL_ENV=production`. `middleware.ts` redirects `/signup` → `/waitlist` (renamed from `proxy.ts` in `3ceb125`). Invite query params bypass.
+**Waitlist mode (pre-launch):** Default on when `VERCEL_ENV=production`. `middleware.ts` redirects `/signup` → `/waitlist` (renamed from `proxy.ts` in `3ceb125`). Invite query params bypass. **Private beta signup:** `/signup?access=TOKEN&label=cohort` bypasses waitlist when `BETA_SIGNUP_TOKEN` matches; sets HttpOnly cookies; funnel events `beta_signup_link_viewed` + `account_created` with `signup_source: beta_access_link`. Admin **Funnel** tab → **Private Beta Signup Links**.
 
 **Test account seed scripts (staging / local, not Vercel env):**
 
@@ -850,7 +851,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - `app/(public)/layout.tsx` renders shared sticky top nav via `app/(public)/_components/public-nav.tsx` (Education · **Life Events** · Assessment · Find Advisor · Find Attorney · Pricing · Log in · Get started).
 - Routes under `(public)/` inherit this nav: assess, find-advisor, find-attorney, **pricing**, **`/events`**, event pages. **`/education/*` is excluded** — education layout provides its own header.
 - Root landing `app/(public)/page.tsx` inherits `PublicNav` from `(public)/layout.tsx`; includes social proof section and life-event quick-start (links to `/events`). Homepage copy targets **$2M–$30M** segment.
-- `middleware.ts` `PUBLIC_PATHS` includes `/event`, `/events`, `/pricing`, `/education`, `/waitlist`, `/sitemap.xml`, `/robots.txt` for unauthenticated access. Sets `x-pathname` on all public routes for layout detection. **Matcher excludes `/api/`** — route handlers enforce auth per-route; API must not enter Edge middleware Supabase `getUser()` (2026-05-30). When waitlist mode is on, `/signup` is redirected to `/waitlist` in middleware before the public-path pass-through (invite/token query params bypass).
+- `middleware.ts` `PUBLIC_PATHS` includes `/event`, `/events`, `/pricing`, `/education`, `/waitlist`, `/sitemap.xml`, `/robots.txt` for unauthenticated access. Sets `x-pathname` on all public routes for layout detection. **Matcher excludes `/api/`** — route handlers enforce auth per-route; API must not enter Edge middleware Supabase `getUser()` (2026-05-30). When waitlist mode is on, `/signup` is redirected to `/waitlist` in middleware before the public-path pass-through (invite/token query params and valid `?access=` beta links bypass).
 
 **Life event hub (Sprint UX-1):**
 
@@ -1290,11 +1291,11 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 - **Vercel Analytics:** `@vercel/analytics` — `<Analytics />` in `app/layout.tsx` (automatic page views).
 - **Custom funnel:** table `funnel_events`; `POST /api/analytics/funnel`; `lib/analytics/useFunnelEvent.ts` (fire-and-forget).
-- **Instrumented events:** `event_page_view`, `event_assess_start`, `event_assess_complete`, `email_captured`, `account_created`, `tier_upgraded`, `advisor_connected`.
+- **Instrumented events:** `event_page_view`, `event_assess_start`, `event_assess_complete`, `email_captured`, `account_created`, `beta_signup_link_viewed`, `tier_upgraded`, `advisor_connected`.
 - **Upgrade copy (Sprint 12):** `getEventUpgradeValueProp()` in `lib/events/upgradeContext.ts` always uses personalized `EVENT_UPGRADE_COPY` (24 slugs × tier 2/3). Verify: `scripts/verify-event-upgrade-copy.ts`.
 - **Assessment (Sprint 12):** `/assess` always shows scores to logged-out users; full gap report gated behind signup (`_assess-client.tsx`). Pre-launch A/B flags removed from `app_config`.
 - **Signup attribution (Sprint 9):** `mwm_referral_*` and `mwm_attorney_referral_*` in sessionStorage → `profiles.referral_code` / `profiles.attorney_referral_code` + `account_created` funnel (`properties.advisor_referral_code`, `properties.attorney_referral_code`); keys cleared after signup.
-- **Waitlist mode (Sprint 15):** `lib/waitlist-mode.ts` — default on for `VERCEL_ENV=production`; flip with `PUBLIC_SIGNUP_OPEN=true` at go-live. `middleware.ts` runtime redirect (`3ceb125`, renamed from `proxy.ts`).
+- **Waitlist mode (Sprint 15):** `lib/waitlist-mode.ts` — default on for `VERCEL_ENV=production`; flip with `PUBLIC_SIGNUP_OPEN=true` at go-live. `middleware.ts` runtime redirect (`3ceb125`, renamed from `proxy.ts`). **Private beta signup (2026-06):** `BETA_SIGNUP_TOKEN` + `/signup?access=&label=`; cookies `mwm_beta_signup` / `mwm_beta_signup_label`; admin Funnel cohort table.
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 

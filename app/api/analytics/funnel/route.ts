@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/server'
  *   event_assess_complete  — user completed event assessment
  *   email_captured         — user submitted email on assess results
  *   account_created        — user signed up (fired from signup form)
+ *   beta_signup_link_viewed — private beta signup URL opened (waitlist bypass)
  *   tier_upgraded          — user upgraded to a paid tier
  *   advisor_connected      — user connected an advisor
  */

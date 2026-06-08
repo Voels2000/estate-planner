@@ -105,10 +105,53 @@ export function isWaitlistMode(options?: WaitlistModeOptions): boolean {
   return false
 }
 
+/** Query param + cookie for private beta signup while waitlist is on. */
+export const BETA_SIGNUP_ACCESS_PARAM = 'access'
+export const BETA_SIGNUP_ACCESS_LABEL_PARAM = 'label'
+export const BETA_SIGNUP_ACCESS_COOKIE = 'mwm_beta_signup'
+export const BETA_SIGNUP_ACCESS_LABEL_COOKIE = 'mwm_beta_signup_label'
+export const BETA_SIGNUP_FUNNEL_VIEW_EVENT = 'beta_signup_link_viewed'
+export const BETA_SIGNUP_ACCOUNT_SOURCE = 'beta_access_link'
+
+function readBetaSignupToken(): string | null {
+  const token = process.env.BETA_SIGNUP_TOKEN?.trim()
+  return token || null
+}
+
+/** True when `access` matches server env `BETA_SIGNUP_TOKEN`. */
+export function isValidBetaSignupAccessToken(token: string | null | undefined): boolean {
+  const expected = readBetaSignupToken()
+  if (!expected || !token) return false
+  const provided = token.trim()
+  if (provided.length !== expected.length) return false
+  return provided === expected
+}
+
+export function hasBetaSignupAccessCookie(cookieValue: string | null | undefined): boolean {
+  return cookieValue === '1'
+}
+
+export function isBetaSignupAccessActive(
+  searchParams: Pick<URLSearchParams, 'get'>,
+  betaAccessCookie?: string | null,
+): boolean {
+  if (isValidBetaSignupAccessToken(searchParams.get(BETA_SIGNUP_ACCESS_PARAM))) return true
+  return hasBetaSignupAccessCookie(betaAccessCookie)
+}
+
+export function getBetaSignupAccessLabel(
+  searchParams: Pick<URLSearchParams, 'get'>,
+): string | null {
+  const label = searchParams.get(BETA_SIGNUP_ACCESS_LABEL_PARAM)?.trim()
+  return label || null
+}
+
 /** Invite / token signup flows bypass the waitlist gate. */
 export function shouldBypassWaitlistForSignup(
   searchParams: Pick<URLSearchParams, 'get'>,
+  options?: { betaAccessCookie?: string | null },
 ): boolean {
+  if (isBetaSignupAccessActive(searchParams, options?.betaAccessCookie)) return true
   if (searchParams.get('invite')) return true
   if (searchParams.get('invite_token') && searchParams.get('firm_id')) return true
   if (searchParams.get('connectionToken')) return true
