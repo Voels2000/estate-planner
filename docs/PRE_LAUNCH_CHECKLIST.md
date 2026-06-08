@@ -1,6 +1,6 @@
 # PRE_LAUNCH_CHECKLIST.md
 # My Wealth Maps — Complete Pre-Launch Requirements
-# Last updated: 2026-05-30
+# Last updated: 2026-06-08
 #
 # HOW TO USE THIS FILE
 # Work through each section in order. Mark items [x] as completed.
@@ -8,6 +8,8 @@
 # Share this file with counsel when requesting sign-off.
 #
 # Related: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (product gates + go-live ops)
+#          [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (purge + re-seed detail)
+#          [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) (deletion SOP + compliance tables)
 #          [LEGAL_TODO.md](./LEGAL_TODO.md) · [BUSINESS_READINESS_PLAN.md](./BUSINESS_READINESS_PLAN.md)
 
 ---
@@ -217,19 +219,135 @@ Do not go live without written confirmation on each.
 
 ---
 
-## SECTION 7 — TEST ACCOUNT CLEANUP 🟡
+## SECTION 7 — DATABASE & COMPLIANCE CLEANUP 🔴
 
-- [x] Remove test1@rolobe.resend.app from production Auth and profiles (2026-06-07 go-live purge)
-      Command: `npm run cleanup:purge` (preferred — WCPA audit log)
-      Legacy: `npm run cleanup:rolobe` for rolobe list only
+Run this **before** `PUBLIC_SIGNUP_OPEN=true` — not on go-live day under pressure.
+Uses **production** Supabase via `.env.local` (`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`).
 
-- [ ] Confirm no other @rolobe.resend.app accounts remain in production Auth
-      SQL: SELECT email FROM auth.users WHERE email LIKE '%rolobe%'
-      Expected: 0 rows
+**Do not** truncate `households`, `profiles`, or `auth.users` in SQL — use the WCPA deletion path
+(`lib/compliance/deleteUser.ts`) so FKs, audit log, and verification stay correct.
 
-- [ ] Confirm @mywealthmaps.test E2E accounts are the only test accounts
-      SQL: SELECT email, role FROM profiles WHERE email LIKE '%test%' ORDER BY email
-      These are intentional and should remain
+**Canonical detail:** [E2E_TEST_RESET.md § Go-live database cleanup](./E2E_TEST_RESET.md#go-live-database-cleanup)
+
+### 7.1 Protect accounts to keep
+
+Edit `GO_LIVE_PROTECTED` in [scripts/cleanup-test-accounts.ts](../scripts/cleanup-test-accounts.ts)
+before purge. These are **always** kept automatically:
+
+| Category | Accounts |
+|----------|----------|
+| E2E automation | All `@mywealthmaps.test` (see [E2E_TEST_RESET.md](./E2E_TEST_RESET.md)) |
+| Demo / personal | `avoels@comcast.net`, `avoels@outlook.com`, `david@gmail.com`, `stephen.a.voels@sbcglobal.net` |
+
+- [ ] Add any other real beta users to `GO_LIVE_PROTECTED` in `cleanup-test-accounts.ts`
+- [ ] Commit protected-list change if you added emails
+
+### 7.2 Bulk auth + household purge (WCPA-safe)
+
+- [ ] **Dry run** — review KEEP vs DEL list:
+      ```bash
+      npm run cleanup:purge:dry-run
+      ```
+      Expected: only protected + canonical E2E accounts in KEEP; all other test signups in DEL
+
+- [ ] **Execute purge** (interactive or non-interactive):
+      ```bash
+      npm run cleanup:purge
+      # or:
+      npm run cleanup:purge -- --yes
+      ```
+      Each deletion uses `deleteUser.ts` + appends `deletion_audit_log`
+
+- [ ] **Spot-check** one deleted email:
+      ```bash
+      npm run verify:deletion -- --email deleted-user@example.com
+      ```
+      Must show **PASS**
+
+- [ ] **Auth table count** — Supabase SQL Editor:
+      ```sql
+      SELECT email, created_at FROM auth.users ORDER BY email;
+      ```
+      Expected after purge: protected real accounts + `@mywealthmaps.test` only (order of ~10)
+
+- [ ] **No rolobe stragglers:**
+      ```sql
+      SELECT email FROM auth.users WHERE email LIKE '%rolobe%';
+      ```
+      Expected: **0 rows**
+
+- [ ] **No soft-deleted Auth rows:**
+      ```sql
+      SELECT id, email FROM auth.users WHERE deleted_at IS NOT NULL;
+      ```
+      Expected: **0 rows**
+
+### 7.3 Re-seed automation accounts
+
+After purge, restore canonical Playwright / smoke fixtures:
+
+- [ ] ```bash
+      npm run seed:e2e
+      npm run verify:estate:e2e
+      ```
+- [ ] Copy printed `.env.test` block from seed output (or update `PLAYWRIGHT_HOUSEHOLD_ID`)
+- [ ] ```bash
+      npm run test:e2e:go-live-profile
+      ```
+
+### 7.4 Compliance tables (admin cleanup)
+
+Purge removes user data; **compliance** tables may still hold test noise. Clean in
+**`/admin` → Data & Compliance** (or Supabase SQL for audit-log test rows only).
+
+| Table | Action |
+|-------|--------|
+| `deletion_schedule` | Cancel any **pending** rows for deleted test users (prevents 2am cron retries) |
+| `privacy_requests` | Mark test intake rows **completed** or **denied** |
+| `deletion_audit_log` | **Append-only** — keep real audit history; optional: delete obvious test-only failure rows if daily compliance email reports stale `failureCount` |
+
+- [ ] Admin → **Scheduled Deletions** — no pending rows for deleted test accounts
+- [ ] Admin → **Privacy Requests** — no open test requests
+- [ ] Admin → **Audit Log** — review; resolve or document any `success=false` test failures
+- [ ] Compliance cron smoke (www only — apex strips auth):
+      ```bash
+      npx dotenv-cli -e .env.local -- bash -c '
+        curl -sS -H "Authorization: Bearer $CRON_SECRET" \
+          "https://www.mywealthmaps.com/api/cron/compliance-reminders"
+      '
+      ```
+      HTTP **200**; `failureCount` should be 0 or only documented real issues
+
+### 7.5 Single-account deletion (optional)
+
+For one-off test users not caught by purge:
+
+```bash
+npx dotenv-cli -e .env.local -- npx tsx scripts/gdpr-delete-user.ts --email user@example.com --dry-run
+npx dotenv-cli -e .env.local -- npx tsx scripts/gdpr-delete-user.ts --email user@example.com
+npm run verify:deletion -- --email user@example.com
+```
+
+Or Admin → Execute Deletion (Look up by email → Dry run → Execute).
+
+### 7.6 Legacy one-offs (only if purge missed specific emails)
+
+```bash
+npm run cleanup:rolobe
+dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --legacy
+```
+
+Superseded by `cleanup:purge` for go-live; use only for named rolobe/legacy lists.
+
+### 7.7 Sign-off
+
+- [ ] Auth user list matches expected keepers (Section 7.2 SQL)
+- [ ] E2E seed + `test:e2e:go-live-profile` passed
+- [ ] Compliance admin tabs clear of test pending work
+- [ ] Document purge date + final account count in [DECISION_LOG.md](./DECISION_LOG.md) or [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md)
+
+**Prior partial purge (2026-06-07):** `test1@rolobe.resend.app` removed via `npm run cleanup:purge`.
+Re-run Section 7.2 before flip if new test signups accumulated since then.
 
 ---
 
@@ -275,6 +393,9 @@ Do not go live without written confirmation on each.
 ## SECTION 10 — GO-LIVE DAY SEQUENCE
 
 Execute in this exact order on go-live day. Do not skip steps.
+
+**Prerequisite:** Section 7 (database & compliance cleanup) must be **complete** before this section.
+Do not run first-time purge on go-live day — only a quick SQL confirm (Step 1 below).
 
 ### Step 1 — Final code check (30 min before go-live)
 ```bash
