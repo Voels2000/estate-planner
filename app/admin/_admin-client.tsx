@@ -14,6 +14,8 @@ import {
   type CronHealthRow,
   type OpsInboxCounts,
 } from './ops-home-tab'
+import UserDetailPanel from './user-detail-panel'
+import WaitlistTab from './waitlist-tab'
 import type { OpsTaskRow } from '@/lib/admin/opsTasks'
 
 type Profile = {
@@ -128,6 +130,7 @@ type Tab =
   | 'usage'
   | 'feedback'
   | 'funnel'
+  | 'waitlist'
   | 'compliance'
   | 'directories'
   | 'settings'
@@ -169,6 +172,7 @@ export function AdminClient({
   ...rest
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('ops_home')
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [feedbackFilter, setFeedbackFilter] = useState<string>('all')
   const [configValues, setConfigValues] = useState<Record<string, string>>(
     Object.fromEntries(appConfig.map(c => [c.key, c.value]))
@@ -361,6 +365,7 @@ export function AdminClient({
     { key: 'usage',      label: 'Usage',           icon: '📈' },
     { key: 'feedback',   label: 'Feedback',        icon: '💬' },
     { key: 'funnel',     label: 'Funnel',          icon: '📉' },
+    { key: 'waitlist',   label: 'Waitlist',        icon: '📋' },
     { key: 'compliance', label: 'Data & Compliance', icon: '🔒' },
     { key: 'directories', label: 'Directories',    icon: '📇' },
     { key: 'settings',   label: 'Settings',        icon: '⚙️' },
@@ -490,44 +495,54 @@ export function AdminClient({
       )}
 
       {activeTab === 'users' && (
-        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-neutral-100">
-            <thead className="bg-neutral-50">
-              <tr>
-                {['Name', 'Email', 'Role', 'Plan', 'Status', 'Joined'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {rest.profiles.map(profile => (
-                <tr key={profile.id} className="hover:bg-neutral-50">
-                  <td className="px-4 py-3 text-sm font-medium text-neutral-900">{profile.full_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">{profile.email}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      profile.role === 'admin' ? 'bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]' :
-                      profile.role === 'advisor' ? 'bg-blue-100 text-blue-700' :
-                      'bg-neutral-100 text-neutral-600'
-                    }`}>{profile.role}</span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-neutral-500 capitalize">{profile.subscription_plan ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      profile.subscription_status === 'active' ? 'bg-green-100 text-green-700' :
-                      profile.subscription_status === 'trialing' ? 'bg-yellow-100 text-yellow-700' :
-                      profile.subscription_status === 'canceled' ? 'bg-red-100 text-red-700' :
-                      'bg-neutral-100 text-neutral-600'
-                    }`}>{profile.subscription_status ?? 'none'}</span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-neutral-500">
-                    {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </td>
+        <>
+          <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
+            <table className="min-w-full divide-y divide-neutral-100">
+              <thead className="bg-neutral-50">
+                <tr>
+                  {['Name', 'Email', 'Role', 'Plan', 'Status', 'Joined'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {rest.profiles.map(profile => (
+                  <tr
+                    key={profile.id}
+                    className="hover:bg-neutral-50 cursor-pointer"
+                    onClick={() => setSelectedUserId(profile.id)}
+                  >
+                    <td className="px-4 py-3 text-sm font-medium text-neutral-900">{profile.full_name ?? '—'}</td>
+                    <td className="px-4 py-3 text-sm text-neutral-500">{profile.email}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        profile.role === 'admin' ? 'bg-[var(--mwm-sage-pale)] text-[color:var(--mwm-sage)]' :
+                        profile.role === 'advisor' ? 'bg-blue-100 text-blue-700' :
+                        'bg-neutral-100 text-neutral-600'
+                      }`}>{profile.role}</span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-500 capitalize">{profile.subscription_plan ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        profile.subscription_status === 'active' ? 'bg-green-100 text-green-700' :
+                        profile.subscription_status === 'trialing' ? 'bg-yellow-100 text-yellow-700' :
+                        profile.subscription_status === 'canceled' ? 'bg-red-100 text-red-700' :
+                        'bg-neutral-100 text-neutral-600'
+                      }`}>{profile.subscription_status ?? 'none'}</span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-500">
+                      {new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <UserDetailPanel
+            userId={selectedUserId}
+            onClose={() => setSelectedUserId(null)}
+          />
+        </>
       )}
 
       {activeTab === 'usage' && (
@@ -720,6 +735,8 @@ export function AdminClient({
           />
         </div>
       )}
+
+      {activeTab === 'waitlist' && <WaitlistTab />}
 
       {activeTab === 'funnel' && (
         <FunnelTab

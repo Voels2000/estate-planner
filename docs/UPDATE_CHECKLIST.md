@@ -64,6 +64,16 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Admin P1 — federal tax config, user detail, waitlist (2026-06-09) — shipped
+
+- [x] Migration `20260709140000` — `email_captures.invited_at`, `invite_label` (applied via `supabase db push`)
+- [x] `GET/PATCH /api/admin/tax-config` — federal_tax_config editor + `federal_config_update` audit
+- [x] User detail panel — `GET /api/admin/users/[userId]` + tier-override, sync-stripe, send-password-reset
+- [x] `lib/billing/syncConsumerStripeSubscription.ts` — webhook-parity Stripe resync
+- [x] Waitlist tab — `GET /api/admin/waitlist`, invite, bulk-invite; converted via `profiles` email join
+- [x] `admin_user_actions_log` in `app_config` (last 100 support actions)
+- [x] ROADMAP · MASTER_ARCHITECTURE · SCHEMA_CHANGELOG · DATABASE_SCHEMA_REFERENCE · DECISION_LOG · NEXT_SESSION · CALCULATION_ENGINES synced
+
 ## Admin-A Ops Home + ops_tasks engine (2026-06-09) — shipped
 
 - [x] Migrations `20260610120000`, `20260610130000` — `ops_tasks`, `cron_health`, deletion retry columns

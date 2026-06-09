@@ -198,7 +198,7 @@ Annual bracket updates use a three-phase admin workflow on **`/admin` → Tax Ru
 
 **Tables in rollover apply:** `federal_estate_tax_brackets`, `federal_tax_brackets`, `state_estate_tax_rules`, `state_income_tax_brackets`, `state_inheritance_tax_rules`, `irmaa_brackets`.
 
-**Never auto-copied:** `federal_tax_config` (exemption, annual gift exclusion) — update manually in Supabase or a future admin surface.
+**Editable via Tax Rules tab → Federal Tax Configuration section** (`GET/PATCH /api/admin/tax-config`); audit entries in `tax_rollover_audit_log`. Not included in rollover apply — exemption and gift exclusion are updated separately when IRS publishes annual figures.
 
 **Manual verify flags:** `data/tax-rollover/manual-verify.json` — per target year, lists federal sections and state codes that require human verification before commit (checkbox gate in UI).
 
@@ -893,7 +893,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 | Cron Health | `cron_health` table | Last-run status for 5 Vercel crons (`recordCronHealth.ts`) |
 | Quick Links | Tab switcher | Jump to Compliance, Users, Tax Rules, Funnel, Directories, Debug |
 
-**Tabs (order):** Ops Home · Overview · Users · Usage · Feedback · Funnel · Data & Compliance · Directories · Settings · Advisor Tiers · Categories · Tax Rules · T&C · Debug.
+**Tabs (order):** Ops Home · Overview · Users · Usage · Feedback · Funnel · **Waitlist** · Data & Compliance · Directories · Settings · Advisor Tiers · Categories · Tax Rules · T&C · Debug.
 
 **Directories:** `DirectoriesTab` — pending counts + links to `/admin/advisor-directory`, `/admin/attorney-directory`.
 
@@ -987,6 +987,28 @@ All user-facing and admin surfaces use **`state_income_tax_brackets`** via `stat
 
 - `app/admin/tax-rules-tab.tsx` — manual CRUD for state estate, federal estate, IRMAA; read-only coverage guardrails for federal/state income brackets (year picker: 2026+, grows via rollover).
 - `app/admin/tax-rules-workflow.tsx` — scan · rollover · commit workflow (see [Admin tax rules maintenance](#admin-tax-rules-maintenance-scan--rollover--commit)).
+- `app/admin/federal-tax-config-section.tsx` — collapsible **Federal Tax Configuration** editor (all active `federal_tax_config` rows); confirmation dialog on save; `GET/PATCH /api/admin/tax-config`.
+
+### Admin P1 — pre-launch support surfaces (2026-06-09)
+
+Eliminates three raw-Supabase admin dependencies before billing goes live.
+
+| Surface | Route / API | Purpose |
+|---------|-------------|---------|
+| Federal tax config | Tax Rules tab · `/api/admin/tax-config` | Edit exemption, gift exclusion, top rate without SQL |
+| User detail panel | Users tab (click row) · `/api/admin/users/[userId]/*` | Stripe sync, tier override, password reset, Stripe dashboard link |
+| Waitlist | Waitlist tab · `/api/admin/waitlist/*` | View waiting/invited/converted; single + bulk Resend invite |
+
+**Stripe sync:** `lib/billing/syncConsumerStripeSubscription.ts` — same field updates as `customer.subscription.updated` webhook (`profiles.stripe_customer_id` confirmed).
+
+**Audit logs (`app_config`):**
+
+| Key | Cap | Actions |
+|-----|-----|---------|
+| `tax_rollover_audit_log` | 50 | `federal_config_update` (shared with rollover apply) |
+| `admin_user_actions_log` | 100 | `tier_override`, `stripe_sync`, `password_reset`, `waitlist_invite` |
+
+**Waitlist invite:** `lib/admin/waitlistInvite.ts` — Resend email with `/signup?access=BETA_SIGNUP_TOKEN&label=…`; sets `email_captures.invited_at` + `invite_label`. Converted = `profiles` row with same email.
 
 ### Bracket-based surfaces
 
@@ -1261,6 +1283,15 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Reactivation:** `customer.subscription.updated` with `status=active` → cancel pending `deletion_schedule` rows.
 - **Cron:** `app/api/cron/process-deletions/route.ts` — re-checks role and active subscription before execute; cancels schedule if user upgraded. **Retry (Admin-A):** exponential backoff (`retry_count`, `next_retry_at`, `last_error`); email after 3 failures.
 - **Admin:** `/admin` → Data & Compliance tab (`DeletionCompliance.tsx`); `GET /api/admin/deletions` (`view=schedule|audit|privacy|lookup`), `POST /api/admin/deletions/execute`. Execute tab: **Look up** by email auto-fills UUID; **Execute →** shortcuts from scheduled deletions and privacy requests.
+- **Admin user support routes (Admin P1):**
+
+| Route | Purpose |
+|-------|---------|
+| `GET /api/admin/users/[userId]` | Profile + subscription fields + `last_sign_in_at` |
+| `POST /api/admin/users/[userId]/tier-override` | Manual `consumer_tier` override (reason required; does not touch Stripe) |
+| `POST /api/admin/users/[userId]/sync-stripe` | Re-sync subscription from Stripe (`profiles.stripe_customer_id`) |
+| `POST /api/admin/users/[userId]/send-password-reset` | Resend recovery email (link not returned in response) |
+
 - **Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` — ✅ applied in production.
 - **Ops:** [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md).
 

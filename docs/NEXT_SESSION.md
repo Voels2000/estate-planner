@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-09
+# Last updated: 2026-06-09 (Admin P1 shipped)
 
 ---
 
@@ -12,9 +12,9 @@
 
 ---
 
-## Current focus (2026-06-07)
+## Current focus (2026-06-09)
 
-Engineering sprints through L4 (a11y, mobile E2E, RLS verify, consumer OpenAPI) are **complete**. Remaining work is **go-live prep** (legal, Stripe, smoke) plus low-priority deferred items.
+Engineering sprints through L4 and **Admin-A** + **Admin-P1** are **complete**. Remaining pre-launch work is **non-code**: [LAUNCH_GATE.md](./LAUNCH_GATE.md) Gate 1 (legal review, Stripe production config, smoke tests).
 
 | Area | Status | Canonical doc |
 |------|--------|---------------|
@@ -23,6 +23,7 @@ Engineering sprints through L4 (a11y, mobile E2E, RLS verify, consumer OpenAPI) 
 | Environment / CI credential policy | ✅ Documented | [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) |
 | Go-live blockers (legal, Stripe, smoke) | ☐ Blocker | [LAUNCH_GATE.md](./LAUNCH_GATE.md) |
 | Admin Ops Home + task engine | ✅ Shipped | `/admin` → Ops Home · `ops_tasks` · `cron_health` |
+| Admin P1 (tax config, user detail, waitlist) | ✅ Shipped | `/admin` → Tax Rules · Users · Waitlist |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
 ---
@@ -31,6 +32,9 @@ Engineering sprints through L4 (a11y, mobile E2E, RLS verify, consumer OpenAPI) 
 
 | Item | Command / entry point |
 |------|------------------------|
+| Admin P1 — federal tax config editor | `/admin` → Tax Rules → Federal Tax Configuration · `GET/PATCH /api/admin/tax-config` |
+| Admin P1 — user detail panel | `/admin` → Users (click row) · sync-stripe · tier override · password reset |
+| Admin P1 — waitlist management | `/admin` → Waitlist · `GET/POST /api/admin/waitlist/*` |
 | Admin-A Ops Home + ops_tasks engine | `/admin` → Ops Home · `GET/PATCH /api/admin/ops-tasks` |
 | Cron health + alert hardening | `cron_health` table · `lib/cron/recordCronHealth.ts` |
 | Privacy admin intake | Data & Compliance → **Add request** · `POST /api/admin/privacy-requests` |
@@ -69,11 +73,11 @@ Do NOT set `PUBLIC_SIGNUP_OPEN=true` until all Gate 1 items in [LAUNCH_GATE.md](
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **go-live prep.** L1–L4 competitive backlog shipped (2026-06-07). B2B2C billing policy + connection billing migration live. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
+> My Wealth Maps — **go-live prep.** Admin-A (Ops Home, ops_tasks, cron health) and Admin-P1 (federal tax config editor, user detail panel, waitlist tab) are **shipped**. L1–L4 + B2B2C billing complete. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
 >
-> **Blockers before open signups:** [LAUNCH_GATE.md](./LAUNCH_GATE.md) — Gate 1 must be fully checked.
+> **Remaining blockers before open signups:** [LAUNCH_GATE.md](./LAUNCH_GATE.md) Gate 1 only — legal review, Stripe production catalog/config, production smoke (drip, E2E, billing walkthrough). No further admin engineering sprints required for launch.
 >
-> **Go-live day:** Stripe Phase 2 live catalog → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
+> **Go-live day:** Stripe Phase 2 live catalog → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) · then `PUBLIC_SIGNUP_OPEN=true`.
 >
 > **Post-deploy:** `npm run verify:post-deploy-voels` · `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md).
 

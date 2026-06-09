@@ -10,6 +10,14 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Admin P1 — federal tax config editor, user detail, waitlist (2026-06-09)
+
+**Migration `20260709140000_email_captures_invite_tracking.sql`:** `invited_at timestamptz` + `invite_label text` added to `email_captures`.
+
+**No other schema changes;** all three fixes are application-layer on existing tables (`federal_tax_config`, `profiles`, `email_captures`, `app_config`).
+
+---
+
 ## Admin-A — Ops Home + ops_tasks engine (2026-06-09)
 
 **Migrations:** `20260610120000_admin_ops_tasks.sql`, `20260610130000_deletion_retry_policy.sql`

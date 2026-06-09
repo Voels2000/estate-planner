@@ -308,12 +308,13 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 
 ### `email_captures`
 
-- **Key columns:** `id`, `email`, `source`, `score`, `captured_at`, `created_at`, `drip_step_1_sent_at`, `drip_step_2_sent_at`, `drip_step_3_sent_at`, `unsubscribed_at`
-- **Purpose:** marketing leads from public assessment and event assessment email capture flows; Resend drip sequence tracking.
+- **Key columns:** `id`, `email`, `source`, `score`, `captured_at`, `created_at`, `drip_step_1_sent_at`, `drip_step_2_sent_at`, `drip_step_3_sent_at`, `unsubscribed_at`, `invited_at`, `invite_label`
+- **Purpose:** marketing leads from public assessment and event assessment email capture flows; Resend drip sequence tracking; waitlist invite tracking (Admin P1).
 - **Constraints:** unique `(email, source)` — duplicate inserts ignored by API.
 - **RLS:** service role full access; `anon` / `authenticated` may insert via `POST /api/email-capture` (no public read).
 - **Drip:** step 1 on capture (`POST /api/email-capture` → `POST /api/email/drip`); steps 2–3 via notifications cron; unsubscribe sets `unsubscribed_at`.
-- **Migrations:** `20260520000000_create_email_captures.sql`, `20260524000000_email_captures_drip.sql`
+- **Admin waitlist:** `/admin` → Waitlist tab — `GET /api/admin/waitlist` (converted = `profiles` row with same email); `POST …/invite`, `…/bulk-invite` sets `invited_at` + `invite_label`.
+- **Migrations:** `20260520000000_create_email_captures.sql`, `20260524000000_email_captures_drip.sql`, `20260709140000_email_captures_invite_tracking.sql`
 
 ### `connection_requests`
 
@@ -494,6 +495,7 @@ After each schema-affecting session:
 - `20260708130000_seed_state_inheritance_tax_rules_2026.sql` — 24 inheritance rows for 2026 (6 states × 4 beneficiary classes)
 - `20260610120000_admin_ops_tasks.sql` — `ops_tasks`, `cron_health` (Admin-A)
 - `20260610130000_deletion_retry_policy.sql` — `deletion_schedule` retry columns (Admin-A)
+- `20260709140000_email_captures_invite_tracking.sql` — `email_captures.invited_at`, `invite_label` (Admin P1)
 
 **`app_config`:** Terms and other feature keys. Pre-launch A/B rows `ab_upgrade_copy` / `ab_assessment_gate` removed in `20260531000000_remove_ab_test_app_config.sql` (Sprint 12 — personalized upgrade copy and score-visible assess shipped in code).
 

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-09 (Admin-A Ops Home; LAUNCH_GATE consolidation)
+# Last updated: 2026-06-09 (Admin P1; Admin-A Ops Home; LAUNCH_GATE consolidation)
 
 ---
 
@@ -18,6 +18,18 @@
 ---
 
 ## Current sprint
+
+### Sprint — Admin P1 (federal tax config, user detail, waitlist) `[x]` **shipped (2026-06-09)**
+
+| Fix | Status | Entry point |
+|-----|--------|-------------|
+| **1 — Federal tax config editor** | `[x]` shipped | `/admin` → Tax Rules → Federal Tax Configuration · `GET/PATCH /api/admin/tax-config` |
+| **2 — User detail panel** | `[x]` shipped | `/admin` → Users (click row) · tier override · Sync from Stripe · password reset |
+| **3 — Waitlist management** | `[x]` shipped | `/admin` → Waitlist · `GET/POST /api/admin/waitlist/*` · migration `20260709140000` |
+
+**Detail:** [MASTER_ARCHITECTURE.md § Admin P1](./MASTER_ARCHITECTURE.md#admin-p1--pre-launch-support-surfaces-2026-06-09)
+
+---
 
 ### Sprint — Admin-A Ops Home + task engine `[x]` **complete (2026-06-09)**
 

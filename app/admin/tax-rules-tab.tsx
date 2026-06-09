@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import TaxRulesWorkflow from '@/app/admin/tax-rules-workflow'
+import FederalTaxConfigSection from '@/app/admin/federal-tax-config-section'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -655,6 +656,8 @@ export default function TaxRulesTab() {
           )}
         </div>
       )}
+
+      <FederalTaxConfigSection />
     </div>
   )
 }

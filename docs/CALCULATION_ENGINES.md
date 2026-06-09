@@ -85,7 +85,7 @@ Bracket tables above are **admin-managed** — not hardcoded in engines. Use thi
 
 **Manual verify config:** `data/tax-rollover/manual-verify.json` — flag states/sections that changed (e.g. NY estate exemption) before commit.
 
-**Not in rollover:** `federal_tax_config` — update exemption and gift exclusion manually when IRS publishes annual figures.
+**Not in rollover:** `federal_tax_config` — update exemption and gift exclusion via `/admin` → Tax Rules → **Federal Tax Configuration** (`GET/PATCH /api/admin/tax-config`) when IRS publishes annual figures.
 
 **Verify after bracket edits:** `npm run verify:tax-coverage` · `npm run verify:estate -- --preset voels --check-goldens`
 

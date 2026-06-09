@@ -1,8 +1,28 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-09 (Admin-A ops task engine)
+# Last updated: 2026-06-09 (Admin P1 pre-launch support surfaces)
 
 ---
+
+---
+
+## Admin P1 — federal tax config, user detail, waitlist (2026-06-09)
+
+**Decision:** Ship three admin UI surfaces that currently require raw Supabase edits — federal exemption/gift exclusion, user billing support, and waitlist invites — before open signups and live billing.
+
+**Reasoning:** `federal_tax_config` feeds `computeFederalEstateTax()` on every PDF, export, and horizon column; one typo in SQL affects all households. Stripe webhook misses need a one-click resync, not manual `profiles` edits. Beta invites were hand-built URLs from the Funnel cheat sheet.
+
+**Shipped:**
+
+| Before | After |
+|--------|-------|
+| Raw Supabase edit for federal exemption | Tax Rules → Federal Tax Configuration + confirmation + audit |
+| Manual `profiles` tier fix | Users tab → Sync from Stripe |
+| Personal email with hand-built beta URL | Waitlist tab → Invite / Bulk invite |
+
+**Not in scope:** Impersonation (login-as-user), `app_config` key/value editor, revenue MRR panel — deferred post-launch.
+
+**Schema nuance — `federal_tax_config` is not a single row:** The table uses `scenario_id` + `is_active` (e.g. `current_law`, `no_exemption`). Engines and RPCs load `WHERE is_active = true LIMIT 1` (or all active rows for strategy tab). The sprint spec assumed one row; **GET returns all active rows** and **PATCH updates by row `id`** — the UI edits every active scenario. This matters when updating the 2027 exemption: confirm which `scenario_id` rows are active before saving, not just a lone config row.
 
 ---
 
