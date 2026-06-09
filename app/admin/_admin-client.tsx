@@ -8,6 +8,13 @@ import TaxRulesTab from './tax-rules-tab'
 import TermsTab from './terms-tab'
 import { FunnelTab } from './funnel-tab'
 import { DeletionCompliance } from './_components/DeletionCompliance'
+import {
+  DirectoriesTab,
+  OpsHomeTab,
+  type CronHealthRow,
+  type OpsInboxCounts,
+} from './ops-home-tab'
+import type { OpsTaskRow } from '@/lib/admin/opsTasks'
 
 type Profile = {
   id: string
@@ -106,9 +113,29 @@ type Props = {
   funnelStepCounts: Record<string, number>
   tierConversion: { tier: string; counts: Record<string, number> }[]
   betaSignupCohorts: { label: string; linkViews: number; accounts: number }[]
+  opsTasks: OpsTaskRow[]
+  cronHealth: CronHealthRow[]
+  inboxCounts: OpsInboxCounts
+  pendingAdvisorDirectory: number
+  pendingAttorneyDirectory: number
+  fetchedAt: string
 }
 
-type Tab = 'overview' | 'users' | 'usage' | 'feedback' | 'funnel' | 'compliance' | 'settings' | 'tiers' | 'categories' | 'tax_rules' | 'terms' | 'debug'
+type Tab =
+  | 'ops_home'
+  | 'overview'
+  | 'users'
+  | 'usage'
+  | 'feedback'
+  | 'funnel'
+  | 'compliance'
+  | 'directories'
+  | 'settings'
+  | 'tiers'
+  | 'categories'
+  | 'tax_rules'
+  | 'terms'
+  | 'debug'
 
 export function AdminClient({
   appConfig,
@@ -133,9 +160,15 @@ export function AdminClient({
   funnelStepCounts,
   tierConversion,
   betaSignupCohorts,
+  opsTasks,
+  cronHealth,
+  inboxCounts,
+  pendingAdvisorDirectory,
+  pendingAttorneyDirectory,
+  fetchedAt,
   ...rest
 }: Props) {
-  const [activeTab, setActiveTab] = useState<Tab>('overview')
+  const [activeTab, setActiveTab] = useState<Tab>('ops_home')
   const [feedbackFilter, setFeedbackFilter] = useState<string>('all')
   const [configValues, setConfigValues] = useState<Record<string, string>>(
     Object.fromEntries(appConfig.map(c => [c.key, c.value]))
@@ -322,12 +355,14 @@ export function AdminClient({
   }
 
   const TABS: { key: Tab; label: string; icon: string }[] = [
+    { key: 'ops_home',   label: 'Ops Home',        icon: '⚡' },
     { key: 'overview',   label: 'Overview',       icon: '📊' },
     { key: 'users',      label: 'Users',           icon: '👥' },
     { key: 'usage',      label: 'Usage',           icon: '📈' },
     { key: 'feedback',   label: 'Feedback',        icon: '💬' },
     { key: 'funnel',     label: 'Funnel',          icon: '📉' },
     { key: 'compliance', label: 'Data & Compliance', icon: '🔒' },
+    { key: 'directories', label: 'Directories',    icon: '📇' },
     { key: 'settings',   label: 'Settings',        icon: '⚙️' },
     { key: 'tiers',      label: 'Advisor Tiers',   icon: '🏷️' },
     { key: 'categories', label: 'Categories',      icon: '🗂️' },
@@ -389,6 +424,23 @@ export function AdminClient({
           </button>
         ))}
       </div>
+
+      {activeTab === 'ops_home' && (
+        <OpsHomeTab
+          initialTasks={opsTasks}
+          cronHealth={cronHealth}
+          inboxCounts={inboxCounts}
+          fetchedAt={fetchedAt}
+          onSwitchTab={(tab) => setActiveTab(tab as Tab)}
+        />
+      )}
+
+      {activeTab === 'directories' && (
+        <DirectoriesTab
+          pendingAdvisor={pendingAdvisorDirectory}
+          pendingAttorney={pendingAttorneyDirectory}
+        />
+      )}
 
       {activeTab === 'overview' && (
         <div className="space-y-8">

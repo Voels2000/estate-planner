@@ -1,8 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-08 (CI build placeholders · tax cleanup)
+# Last updated: 2026-06-09 (Admin-A ops task engine)
 
 ---
+
+---
+
+## Admin-A — Ops Home + ops_tasks engine (2026-06-09)
+
+**Decision:** Extend cron + Postgres with `ops_tasks` and `cron_health` tables instead of adopting a workflow engine (Inngest, Trigger.dev). Admin **Ops Home** is the default `/admin` tab.
+
+**Reasoning:** Solo-operator scale; compliance calendar obligations were documented but not enforced. Tax rules scan→rollover→apply is the model for human+system workflows. Cron already handles deletions and compliance email — ops tasks and cron health fit the same stack with no new vendors.
+
+**Shipped:** `ops_tasks` (13 seeded tasks), `cron_health`, `recordCronHealth`, extended `compliance-reminders`, deletion retry backoff, post-deploy failure email, privacy admin intake, Directories tab.
 
 ---
 

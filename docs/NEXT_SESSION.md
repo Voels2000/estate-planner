@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-07
+# Last updated: 2026-06-09
 
 ---
 
@@ -22,14 +22,18 @@ Engineering sprints through L4 (a11y, mobile E2E, RLS verify, consumer OpenAPI) 
 | Release routine (local → preview → prod) | ✅ Documented | [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) |
 | Environment / CI credential policy | ✅ Documented | [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) |
 | Go-live blockers (legal, Stripe, smoke) | ☐ Blocker | [LAUNCH_GATE.md](./LAUNCH_GATE.md) |
+| Admin Ops Home + task engine | ✅ Shipped | `/admin` → Ops Home · `ops_tasks` · `cron_health` |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
 ---
 
-## Recent shipped (2026-06-05 → 2026-06-07)
+## Recent shipped (2026-06-05 → 2026-06-09)
 
 | Item | Command / entry point |
 |------|------------------------|
+| Admin-A Ops Home + ops_tasks engine | `/admin` → Ops Home · `GET/PATCH /api/admin/ops-tasks` |
+| Cron health + alert hardening | `cron_health` table · `lib/cron/recordCronHealth.ts` |
+| Privacy admin intake | Data & Compliance → **Add request** · `POST /api/admin/privacy-requests` |
 | L1 a11y (eslint-jsx-a11y + axe E2E) | `npm run test:e2e:a11y` |
 | L2 mobile review E2E | `npm run test:e2e:mobile` |
 | L3 RLS post-migration verify | `npm run verify:rls` · `--require-sql` post-deploy |

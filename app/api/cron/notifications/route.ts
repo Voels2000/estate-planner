@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { sendNotificationEmail } from '@/lib/emails/send-notification-email'
+import { recordCronHealth } from '@/lib/cron/recordCronHealth'
 import { NextResponse } from 'next/server'
 
 const BASE_URL = 'https://mywealthmaps.com'
@@ -17,6 +18,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  try {
   const supabase = createAdminClient()
   const now = new Date()
   const results = { sent: 0, skipped: 0, errors: 0 }
@@ -532,7 +534,19 @@ export async function GET(request: Request) {
   }
 
   console.log('[cron:notifications]', results)
+  const status = results.errors > 0 ? 'warning' : 'ok'
+  await recordCronHealth(
+    'notifications',
+    status,
+    `sent=${results.sent} errors=${results.errors}`,
+  )
   return NextResponse.json({ ok: true, ...results })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'notifications cron failed'
+    console.error('[cron:notifications]', message)
+    await recordCronHealth('notifications', 'error', message)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
 
 async function loadAllAuthUsers(

@@ -65,9 +65,14 @@ Handled automatically:
 | Overdue deletions | Daily 8am UTC | Any pending deletion past due date |
 | Deletion failures | Daily 8am UTC | Any failure in last 7 days |
 | WCPA requests approaching deadline | Daily 8am UTC | Any request due within 7 days |
+| Ops tasks due/overdue | Daily 8am UTC | Any `ops_tasks` due within 7 days |
+| Cron health failures / stale | Daily 8am UTC | `cron_health` error or not run in 26h |
+| Post-deploy verify failure | Daily 9am UTC | Voels gate fails → immediate email |
 | Monthly compliance summary | 1st of month | Always — review and file |
 
-Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` (`avoels@comcast.net`) only when action needed (or monthly summary on the 1st). All-clear days send **no email**.
+Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` (`avoels@comcast.net`) when action needed (or monthly summary on the 1st). All-clear days send **no email**.
+
+**Ops task calendar:** Seeded in `ops_tasks` table (migration `20260610120000`). Track and complete at `/admin` → **Ops Home**. Weekly/monthly/quarterly/annual items from this doc are now system-tracked with due dates and email alerts.
 
 ## On alert email received
 
@@ -78,7 +83,7 @@ Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` (`avoel
 ## Privacy request SOP (WCPA)
 
 1. User submits via `/settings/security` → Privacy Rights OR emails privacy@mywealthmaps.com
-2. If email: admin creates record manually in Supabase (or future admin “Add” flow)
+2. If email: Admin → Data & Compliance → Privacy Requests → **Add request**
 3. System sends confirmation email to user with reference ID and 45-day deadline
 4. Admin works the request within 45 days:
    - Deletion: use Execute Deletion flow

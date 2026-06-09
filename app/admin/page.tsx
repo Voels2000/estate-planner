@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCanonicalTerms } from '@/lib/terms/getCanonicalTerms'
+import { computeOpsTaskUrgency } from '@/lib/admin/opsTasks'
+import type { OpsTaskRow } from '@/lib/admin/opsTasks'
+import type { CronHealthRow, OpsInboxCounts } from './ops-home-tab'
 import { AdminClient } from './_admin-client'
 
 export default async function AdminPage() {
@@ -241,6 +244,75 @@ export default async function AdminPage() {
   // MRR estimate
   const mrr = (consumerCount * 19) + (advisorCount * 159)
 
+  const nowIso = new Date().toISOString()
+  const sevenDaysFromNow = new Date()
+  sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7)
+
+  const [
+    { data: opsTasks },
+    { data: cronHealth },
+    { count: overdueDeletionsCount },
+    { count: urgentPrivacyCount },
+    { data: pendingAdvisors },
+    { data: pendingAttorneys },
+  ] = await Promise.all([
+    admin.from('ops_tasks').select('*').order('next_due_at', { ascending: true }),
+    admin.from('cron_health').select('*'),
+    admin
+      .from('deletion_schedule')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending')
+      .lt('scheduled_for', nowIso),
+    admin
+      .from('privacy_requests')
+      .select('*', { count: 'exact', head: true })
+      .in('status', ['pending', 'in_progress'])
+      .lte('due_at', sevenDaysFromNow.toISOString()),
+    admin
+      .from('advisor_directory')
+      .select('id')
+      .eq('is_active', false)
+      .eq('is_verified', false),
+    admin
+      .from('attorney_listings')
+      .select('id')
+      .eq('is_active', false)
+      .eq('is_verified', false),
+  ])
+
+  const taskRows = (opsTasks ?? []) as OpsTaskRow[]
+  const taskNow = new Date()
+  let overdueTasks = 0
+  let dueTodayTasks = 0
+  for (const t of taskRows) {
+    if (t.status === 'completed' && t.cadence === 'once') continue
+    const u = computeOpsTaskUrgency(t, taskNow)
+    if (u === 'overdue') overdueTasks++
+    if (u === 'due-today') dueTodayTasks++
+  }
+
+  const staleThreshold = new Date(Date.now() - 26 * 60 * 60 * 1000)
+  const healthRows = (cronHealth ?? []) as CronHealthRow[]
+  const cronFailures = healthRows.filter(
+    (j) => j.last_status === 'error' || (j.consecutive_failures ?? 0) > 1,
+  ).length
+  const staleCrons = healthRows.filter(
+    (j) => !j.last_run_at || new Date(j.last_run_at) < staleThreshold,
+  ).length
+
+  const inboxCounts: OpsInboxCounts = {
+    overdueTasks,
+    dueTodayTasks,
+    overdueDeletions: overdueDeletionsCount ?? 0,
+    urgentPrivacy: urgentPrivacyCount ?? 0,
+    pendingDirectories:
+      (pendingAdvisors?.length ?? 0) + (pendingAttorneys?.length ?? 0),
+    cronFailures,
+    staleCrons,
+  }
+
+  const fetchedAt = new Date().toISOString()
+
   return (
     <AdminClient
       totalUsers={totalUsers}
@@ -280,6 +352,12 @@ export default async function AdminPage() {
       funnelStepCounts={stepCountMap}
       tierConversion={tierConversion}
       betaSignupCohorts={betaSignupCohorts}
+      opsTasks={taskRows}
+      cronHealth={healthRows}
+      inboxCounts={inboxCounts}
+      pendingAdvisorDirectory={pendingAdvisors?.length ?? 0}
+      pendingAttorneyDirectory={pendingAttorneys?.length ?? 0}
+      fetchedAt={fetchedAt}
     />
   )
 }

@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isValidLifeEventType } from '@/lib/events/lifeEventSlugs'
+import { recordCronHealth } from '@/lib/cron/recordCronHealth'
 import { NextResponse } from 'next/server'
 
 /**
@@ -34,6 +35,7 @@ export async function GET(request: Request) {
 
   if (hhError) {
     console.error('[cron:age-triggers] households', hhError.message)
+    await recordCronHealth('age-triggers', 'error', hhError.message)
     return NextResponse.json({ error: hhError.message }, { status: 500 })
   }
 
@@ -85,5 +87,11 @@ export async function GET(request: Request) {
   }
 
   console.log('[cron:age-triggers]', results)
+  const status = results.errors > 0 ? 'warning' : 'ok'
+  await recordCronHealth(
+    'age-triggers',
+    status,
+    `inserted=${results.inserted} errors=${results.errors}`,
+  )
   return NextResponse.json({ ok: true, ...results })
 }

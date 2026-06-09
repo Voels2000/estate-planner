@@ -24,6 +24,19 @@ type MonthlySummary = {
   auditFailures30Days: number
 }
 
+type OpsTaskAlert = {
+  title: string
+  category: string
+  next_due_at: string
+}
+
+type CronJobAlert = {
+  job_name: string
+  last_status: string | null
+  last_message: string | null
+  consecutive_failures: number
+}
+
 export async function sendComplianceReportEmail(params: {
   to: string
   hasIssues: boolean
@@ -31,6 +44,10 @@ export async function sendComplianceReportEmail(params: {
   recentFailures: DeletionFailure[]
   urgentRequests: UrgentRequest[]
   monthlySummary: MonthlySummary | null
+  overdueOpsTasks?: OpsTaskAlert[]
+  dueTodayOpsTasks?: OpsTaskAlert[]
+  failingCrons?: CronJobAlert[]
+  staleCrons?: { job_name: string }[]
 }) {
   const {
     to,
@@ -39,6 +56,10 @@ export async function sendComplianceReportEmail(params: {
     recentFailures,
     urgentRequests,
     monthlySummary,
+    overdueOpsTasks = [],
+    dueTodayOpsTasks = [],
+    failingCrons = [],
+    staleCrons = [],
   } = params
 
   const dateStr = new Date().toLocaleDateString('en-US', {
@@ -53,6 +74,42 @@ export async function sendComplianceReportEmail(params: {
     dateStr,
     '',
   ]
+
+  if (overdueOpsTasks.length > 0) {
+    lines.push(`⚠️ Ops tasks overdue (${overdueOpsTasks.length}):`)
+    for (const t of overdueOpsTasks) {
+      lines.push(`- ${t.title} (${t.category})`)
+    }
+    lines.push('Action: Admin → Ops Home → Ops Tasks')
+    lines.push('')
+  }
+
+  if (dueTodayOpsTasks.length > 0) {
+    lines.push(`📅 Ops tasks due today (${dueTodayOpsTasks.length}):`)
+    for (const t of dueTodayOpsTasks) {
+      lines.push(`- ${t.title} (${t.category})`)
+    }
+    lines.push('')
+  }
+
+  if (failingCrons.length > 0) {
+    lines.push(`🔴 Cron failures (${failingCrons.length}):`)
+    for (const j of failingCrons) {
+      lines.push(
+        `- ${j.job_name}: ${j.last_message ?? j.last_status ?? 'error'} (failures: ${j.consecutive_failures})`,
+      )
+    }
+    lines.push('Action: Admin → Ops Home → Cron Health')
+    lines.push('')
+  }
+
+  if (staleCrons.length > 0) {
+    lines.push(`⚠️ Crons not heard from in 26h (${staleCrons.length}):`)
+    for (const j of staleCrons) {
+      lines.push(`- ${j.job_name}`)
+    }
+    lines.push('')
+  }
 
   if (overdueDeletions.length > 0) {
     lines.push(`⚠️ OVERDUE SCHEDULED DELETIONS: ${overdueDeletions.length}`)
@@ -96,7 +153,7 @@ export async function sendComplianceReportEmail(params: {
     lines.push(
       `Audit log failures (30 days): ${monthlySummary.auditFailures30Days}`,
     )
-    lines.push('Review: https://mywealthmaps.com/admin → Data & Compliance')
+    lines.push('Review: https://mywealthmaps.com/admin → Ops Home')
     lines.push('')
   }
 

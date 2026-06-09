@@ -77,6 +77,15 @@ export function DeletionCompliance() {
   const [lookupLoading, setLookupLoading] = useState(false)
   const [lookupResult, setLookupResult] = useState<LookupResult | null>(null)
   const [lookupError, setLookupError] = useState<string | null>(null)
+  const [showAddPrivacy, setShowAddPrivacy] = useState(false)
+  const [addPrivacyEmail, setAddPrivacyEmail] = useState('')
+  const [addPrivacyType, setAddPrivacyType] = useState('access')
+  const [addPrivacyDescription, setAddPrivacyDescription] = useState('')
+  const [addPrivacyReceived, setAddPrivacyReceived] = useState(
+    () => new Date().toISOString().slice(0, 10),
+  )
+  const [addPrivacySubmitting, setAddPrivacySubmitting] = useState(false)
+  const [addPrivacyMessage, setAddPrivacyMessage] = useState<string | null>(null)
 
   function fillExecuteForm(params: {
     userId: string
@@ -445,6 +454,27 @@ export function DeletionCompliance() {
       )}
 
       {view === 'privacy' && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-neutral-500">
+              Email-only intake (privacy@mywealthmaps.com) — create a tracked request here.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddPrivacy(true)
+                setAddPrivacyMessage(null)
+              }}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-neutral-300 hover:bg-neutral-50"
+            >
+              + Add request
+            </button>
+          </div>
+          {addPrivacyMessage && (
+            <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+              {addPrivacyMessage}
+            </p>
+          )}
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
           {loading ? (
             <p className="p-6 text-sm text-neutral-500">Loading…</p>
@@ -581,6 +611,97 @@ export function DeletionCompliance() {
               </tbody>
             </table>
           )}
+        </div>
+
+        {showAddPrivacy && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+              <h3 className="text-lg font-semibold text-neutral-900">Add privacy request</h3>
+              <input
+                type="email"
+                placeholder="Email"
+                value={addPrivacyEmail}
+                onChange={(e) => setAddPrivacyEmail(e.target.value)}
+                className={inputClass}
+              />
+              <select
+                value={addPrivacyType}
+                onChange={(e) => setAddPrivacyType(e.target.value)}
+                className={inputClass}
+              >
+                <option value="access">access</option>
+                <option value="deletion">deletion</option>
+                <option value="correction">correction</option>
+                <option value="portability">portability</option>
+                <option value="opt_out">opt out</option>
+              </select>
+              <textarea
+                placeholder="Description (optional)"
+                value={addPrivacyDescription}
+                onChange={(e) => setAddPrivacyDescription(e.target.value)}
+                rows={2}
+                className={inputClass}
+              />
+              <label className="block text-xs text-neutral-500">
+                Received date
+                <input
+                  type="date"
+                  value={addPrivacyReceived}
+                  onChange={(e) => setAddPrivacyReceived(e.target.value)}
+                  className={`${inputClass} mt-1`}
+                />
+              </label>
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowAddPrivacy(false)}
+                  className="text-sm text-neutral-500 px-4 py-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={addPrivacySubmitting || !addPrivacyEmail.trim()}
+                  onClick={async () => {
+                    setAddPrivacySubmitting(true)
+                    setFetchError(null)
+                    try {
+                      const res = await fetch('/api/admin/privacy-requests', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          email: addPrivacyEmail.trim(),
+                          request_type: addPrivacyType,
+                          description: addPrivacyDescription.trim() || undefined,
+                          received_at: addPrivacyReceived,
+                        }),
+                      })
+                      const data = await res.json()
+                      if (!res.ok) throw new Error(data.error ?? 'Create failed')
+                      const due = new Date(data.due_at).toLocaleDateString('en-US')
+                      setAddPrivacyMessage(
+                        `Request #${data.id.slice(0, 8)}… created. Due by ${due}.`,
+                      )
+                      setShowAddPrivacy(false)
+                      setAddPrivacyEmail('')
+                      setAddPrivacyDescription('')
+                      await fetchData()
+                    } catch (err) {
+                      setFetchError(
+                        err instanceof Error ? err.message : 'Create failed',
+                      )
+                    } finally {
+                      setAddPrivacySubmitting(false)
+                    }
+                  }}
+                  className="text-sm font-medium px-4 py-2 rounded-lg bg-neutral-900 text-white disabled:opacity-50"
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         </div>
       )}
 

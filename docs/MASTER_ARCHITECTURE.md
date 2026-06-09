@@ -1209,6 +1209,11 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 | Age-based life events | `GET /api/cron/age-triggers` | `0 15 * * *` (15:00 UTC daily) | **Vercel cron** (`vercel.json`) |
 | Scheduled deletions | `GET /api/cron/process-deletions` | `0 2 * * *` (02:00 UTC daily) | **Vercel cron** (Sprint C-6) |
 | Compliance reminders | `GET /api/cron/compliance-reminders` | `0 8 * * *` (08:00 UTC daily) | **Vercel cron** (Sprint C-7); emails `COMPLIANCE_EMAIL` |
+| Post-deploy verify | `GET /api/cron/post-deploy-verify` | `0 9 * * *` (09:00 UTC daily) | **Vercel cron**; Voels MC gate; emails on failure |
+
+**Cron health (Admin-A):** Each cron upserts `cron_health` via `lib/cron/recordCronHealth.ts`. Admin **Ops Home** tab shows last-run status. `compliance-reminders` alerts on cron failures/stale jobs (>26h).
+
+**Ops tasks (Admin-A):** `ops_tasks` table — calendar obligations seeded from `COMPLIANCE_CALENDAR.md` + `LAUNCH_GATE.md` Gate 3. Admin **Ops Home** → mark complete; `compliance-reminders` emails on due/overdue tasks.
 
 **Auth:** `Authorization: Bearer ${CRON_SECRET}` on every cron request.
 
@@ -1232,7 +1237,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Verification:** `verifyDeletion()` in-process; standalone `npm run verify:deletion -- --email …` — **PASS required** before WCPA response.
 - **Webhook:** `customer.subscription.deleted` → schedule deletion +30 days via `scheduleDeletionOnCancel.ts` — **skipped** if customer has another active/trialing subscription (plan change) or profile role is advisor/attorney/admin (`deletionGuards.ts`).
 - **Reactivation:** `customer.subscription.updated` with `status=active` → cancel pending `deletion_schedule` rows.
-- **Cron:** `app/api/cron/process-deletions/route.ts` — re-checks role and active subscription before execute; cancels schedule if user upgraded.
+- **Cron:** `app/api/cron/process-deletions/route.ts` — re-checks role and active subscription before execute; cancels schedule if user upgraded. **Retry (Admin-A):** exponential backoff (`retry_count`, `next_retry_at`, `last_error`); email after 3 failures.
 - **Admin:** `/admin` → Data & Compliance tab (`DeletionCompliance.tsx`); `GET /api/admin/deletions` (`view=schedule|audit|privacy|lookup`), `POST /api/admin/deletions/execute`. Execute tab: **Look up** by email auto-fills UUID; **Execute →** shortcuts from scheduled deletions and privacy requests.
 - **Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` — ✅ applied in production.
 - **Ops:** [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md).
