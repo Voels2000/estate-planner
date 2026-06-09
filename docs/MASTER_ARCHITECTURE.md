@@ -882,18 +882,32 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - `app/sitemap.ts` — static public routes + all `EVENT_SLUGS` event and assess URLs; base URL from `NEXT_PUBLIC_APP_URL`.
 - `app/robots.ts` — **pre-launch:** `disallow: /` for all crawlers; sitemap line commented out. **At launch:** allow public routes, disallow app routes, uncomment sitemap URL.
 
+### Admin portal — layout (Admin-Redesign, 2026-06-09)
+
+**Shell:** `app/admin/admin-shell.tsx` — left **sidebar nav** (200px) + main content. `app/admin/_admin-client.tsx` no longer renders the two-row tab strip; `app/admin/layout.tsx` is auth-only (no duplicate top nav). Per-tab heading via `AdminTabHeader` (title + `fetchedAt` refresh time).
+
+**Sidebar groups:**
+
+| Group | Items |
+|-------|--------|
+| Operations | Ops home · Compliance · Directories · Waitlist · Feedback |
+| Analytics | Overview · Users · Funnel · Usage |
+| Configuration | Tax rules · T&C · Categories · Advisor tiers · Settings |
+| Developer | Debug |
+
+Badges: Ops home (overdue + due-today tasks + stale crons); Directories (pending advisor + attorney listings).
+
 ### Admin portal — Ops Home (Admin-A)
 
-**Default tab:** `/admin` → **Ops Home** (`app/admin/ops-home-tab.tsx`). Answers “what needs attention today?” without hunting across tabs.
+**Default tab:** `/admin` → **Ops home** (`app/admin/ops-home-tab.tsx`). Answers “what needs attention today?” without hunting across tabs.
 
 | Section | Source | Purpose |
 |---------|--------|---------|
+| Metric tiles | `page.tsx` tier-aware MRR + inbox counts | Est. MRR, overdue/due today, cron issues, directory pending |
 | Ops Inbox | Server-computed counts | Overdue/due tasks, deletions, privacy SLA, directory pending, cron failures/stale |
 | Ops Tasks | `ops_tasks` table | Calendar obligations; mark complete advances `next_due_at`; add one-time tasks |
 | Cron Health | `cron_health` table | Last-run status for 5 Vercel crons (`recordCronHealth.ts`) |
 | Quick Links | Tab switcher | Jump to Compliance, Users, Tax Rules, Funnel, Directories, Debug |
-
-**Tabs (order):** Ops Home · Overview · Users · Usage · Feedback · Funnel · **Waitlist** · Data & Compliance · Directories · Settings · Advisor Tiers · Categories · Tax Rules · T&C · Debug.
 
 **Directories:** `DirectoriesTab` — pending counts + links to `/admin/advisor-directory`, `/admin/attorney-directory`.
 
@@ -1009,6 +1023,17 @@ Eliminates three raw-Supabase admin dependencies before billing goes live.
 | `admin_user_actions_log` | 100 | `tier_override`, `stripe_sync`, `password_reset`, `waitlist_invite` |
 
 **Waitlist invite:** `lib/admin/waitlistInvite.ts` — Resend email with `/signup?access=BETA_SIGNUP_TOKEN&label=…`; sets `email_captures.invited_at` + `invite_label`. Converted = `profiles` row with same email.
+
+### Admin Debug tab (`app/admin/debug-tab.tsx`)
+
+Per-user engine trace for support diagnostics. **Not** a second calculation engine.
+
+| Engine | Data source | Caveat |
+|--------|-------------|--------|
+| Income & Tax | `federal_tax_brackets` + **`state_income_tax_brackets`** (top bracket rate) | State tax is **approximation only** — not `stateIncomeTax.ts` (progressive Engine B path) |
+| Federal Estate Tax | `federal_tax_config` + `federal_estate_tax_brackets` | Live exemption from DB (Admin P1 editor); not hardcoded constants |
+
+**Admin-Redesign fixes (2026-06-09):** Removed `state_tax_rates` query (table dropped); Engine 3 reads `federal_tax_config`. Funnel slug/referral tables use 30-day queries only (no double-count with recent-50 feed). Overview MRR uses tier pricing (`$29/$79/$149` + advisor `$99`).
 
 ### Bracket-based surfaces
 

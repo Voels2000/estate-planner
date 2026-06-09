@@ -250,9 +250,7 @@ export default function TaxRulesTab() {
         max_amount: b.max_amount,
         rate_pct: b.rate_pct,
       }))
-      console.log('Copying federal brackets:', JSON.stringify(rows))
-      const { data, error } = await supabase.from('federal_estate_tax_brackets').insert(rows).select()
-      console.log('Federal copy result:', JSON.stringify({ data, error }))
+      const { error } = await supabase.from('federal_estate_tax_brackets').insert(rows).select()
       if (error) throw error
       setYearFilter(targetYear)
     } catch (err) {
@@ -298,9 +296,7 @@ export default function TaxRulesTab() {
         part_b_surcharge: b.part_b_surcharge,
         part_d_surcharge: b.part_d_surcharge,
       }))
-      console.log('Copying IRMAA rows:', JSON.stringify(rows))
-      const { data, error } = await supabase.from('irmaa_brackets').insert(rows).select()
-      console.log('IRMAA copy result:', JSON.stringify({ data, error }))
+      const { error } = await supabase.from('irmaa_brackets').insert(rows).select()
       if (error) throw error
       setYearFilter(targetYear)
     } catch (err) {

@@ -30,6 +30,7 @@ export default function WaitlistTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'waiting' | 'invited' | 'converted'>('all')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [invitingId, setInvitingId] = useState<string | null>(null)
   const [bulkOpen, setBulkOpen] = useState(false)
@@ -61,10 +62,14 @@ export default function WaitlistTab() {
   }, [load])
 
   const filtered = useMemo(() => {
+    let result = rows
     const q = search.trim().toLowerCase()
-    if (!q) return rows
-    return rows.filter((r) => r.email.toLowerCase().includes(q))
-  }, [rows, search])
+    if (q) result = result.filter((r) => r.email.toLowerCase().includes(q))
+    if (statusFilter !== 'all') {
+      result = result.filter((r) => rowStatus(r).toLowerCase() === statusFilter)
+    }
+    return result
+  }, [rows, search, statusFilter])
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -192,7 +197,30 @@ export default function WaitlistTab() {
             {summary.converted} converted
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-wrap gap-1">
+            {(
+              [
+                ['all', 'All', rows.length],
+                ['waiting', 'Waiting', summary.waiting],
+                ['invited', 'Invited', summary.invited],
+                ['converted', 'Converted', summary.converted],
+              ] as const
+            ).map(([key, label, count]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setStatusFilter(key)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                  statusFilter === key
+                    ? 'bg-neutral-900 text-white'
+                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                }`}
+              >
+                {label} ({count})
+              </button>
+            ))}
+          </div>
           <input
             type="search"
             placeholder="Search email…"

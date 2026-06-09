@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-09 (Admin P1; Admin-A Ops Home; LAUNCH_GATE consolidation)
+# Last updated: 2026-06-09 (Admin-Redesign; Admin P1; Admin-A; LAUNCH_GATE)
 
 ---
 
@@ -18,6 +18,20 @@
 ---
 
 ## Current sprint
+
+### Sprint — Admin-Redesign (sidebar nav, bug fixes, polish) `[x]` **shipped (2026-06-09)**
+
+| Area | Status |
+|------|--------|
+| Sidebar nav via `admin-shell.tsx` (4 groups) | `[x]` |
+| Debug: `federal_tax_config` + `state_income_tax_brackets` (not dropped tables) | `[x]` |
+| Funnel slug/referral double-count fix | `[x]` |
+| Tier-aware MRR in `page.tsx` | `[x]` |
+| Ops Home metric tiles · compliance polish · waitlist filters | `[x]` |
+
+**Detail:** [MASTER_ARCHITECTURE.md § Admin portal — layout](./MASTER_ARCHITECTURE.md#admin-portal--layout-admin-redesign-2026-06-09)
+
+---
 
 ### Sprint — Admin P1 (federal tax config, user detail, waitlist) `[x]` **shipped (2026-06-09)**
 

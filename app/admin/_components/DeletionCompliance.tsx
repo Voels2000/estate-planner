@@ -12,6 +12,7 @@ type ScheduledDeletion = {
   status: string
   stripe_customer_id?: string | null
   cancel_reason?: string | null
+  retry_count?: number | null
 }
 
 type AuditEntry = {
@@ -78,6 +79,8 @@ export function DeletionCompliance() {
   const [lookupResult, setLookupResult] = useState<LookupResult | null>(null)
   const [lookupError, setLookupError] = useState<string | null>(null)
   const [showAddPrivacy, setShowAddPrivacy] = useState(false)
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null)
+  const [editingNotesText, setEditingNotesText] = useState('')
   const [addPrivacyEmail, setAddPrivacyEmail] = useState('')
   const [addPrivacyType, setAddPrivacyType] = useState('access')
   const [addPrivacyDescription, setAddPrivacyDescription] = useState('')
@@ -279,6 +282,7 @@ export function DeletionCompliance() {
                     'Scheduled For',
                     'Status',
                     'Days Until',
+                    'Retries',
                     'Cancel reason',
                     '',
                   ].map((h) => (
@@ -335,6 +339,15 @@ export function DeletionCompliance() {
                             ? `${daysUntil}d`
                             : 'Due now'
                           : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-neutral-600">
+                        {(row.retry_count ?? 0) > 0 ? (
+                          <span className="text-amber-600 font-medium">
+                            {row.retry_count} retries
+                          </span>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                       <td className="px-4 py-3 text-xs text-neutral-500">
                         {row.cancel_reason?.replace(/_/g, ' ') ?? '—'}
@@ -412,10 +425,12 @@ export function DeletionCompliance() {
                     </td>
                     <td className="px-4 py-3 text-xs font-mono text-neutral-600">
                       {row.initiated_by === 'system'
-                        ? 'System (cron)'
+                        ? 'Cron'
                         : row.initiated_by === 'cli'
                           ? 'CLI'
-                          : `${row.initiated_by.slice(0, 8)}…`}
+                          : row.initiated_by.includes('@')
+                            ? row.initiated_by.split('@')[0]
+                            : `Admin (${row.initiated_by.slice(0, 8)}…)`}
                     </td>
                     <td className="px-4 py-3 text-sm text-neutral-600">
                       {new Date(row.completed_at).toLocaleDateString('en-US', {
@@ -553,23 +568,56 @@ export function DeletionCompliance() {
                       >
                         {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : `${daysLeft}d`}
                       </td>
-                      <td className="px-4 py-3 text-xs text-neutral-500 max-w-[12rem]">
-                        {row.notes ?? '—'}
+                      <td className="px-4 py-3 text-xs text-neutral-500 max-w-[14rem]">
+                        {editingNotesId === row.id ? (
+                          <textarea
+                            value={editingNotesText}
+                            onChange={(e) => setEditingNotesText(e.target.value)}
+                            rows={2}
+                            className={`${inputClass} text-xs`}
+                          />
+                        ) : (
+                          row.notes ?? '—'
+                        )}
                       </td>
                       <td className="px-4 py-3 space-y-1">
-                        <button
-                          type="button"
-                          disabled={savingPrivacyId === row.id}
-                          onClick={() => {
-                            const notes = prompt('Admin notes:', row.notes ?? '')
-                            if (notes !== null) {
-                              void handlePrivacyStatusUpdate(row.id, row.status, notes)
-                            }
-                          }}
-                          className="block text-xs font-medium text-neutral-700 hover:text-neutral-900"
-                        >
-                          Edit notes
-                        </button>
+                        {editingNotesId === row.id ? (
+                          <div className="flex flex-col gap-1">
+                            <button
+                              type="button"
+                              disabled={savingPrivacyId === row.id}
+                              onClick={() => {
+                                void handlePrivacyStatusUpdate(
+                                  row.id,
+                                  row.status,
+                                  editingNotesText,
+                                ).then(() => setEditingNotesId(null))
+                              }}
+                              className="text-xs font-medium text-neutral-900 hover:underline"
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingNotesId(null)}
+                              className="text-xs text-neutral-500 hover:underline"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={savingPrivacyId === row.id}
+                            onClick={() => {
+                              setEditingNotesId(row.id)
+                              setEditingNotesText(row.notes ?? '')
+                            }}
+                            className="block text-xs font-medium text-neutral-700 hover:text-neutral-900"
+                          >
+                            Edit notes
+                          </button>
+                        )}
                         {row.request_type === 'deletion' && row.status !== 'completed' ? (
                           row.user_id ? (
                             <button

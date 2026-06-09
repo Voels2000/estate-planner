@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-09 (Admin P1 shipped)
+# Last updated: 2026-06-09 (Admin-Redesign shipped)
 
 ---
 
@@ -14,7 +14,7 @@
 
 ## Current focus (2026-06-09)
 
-Engineering sprints through L4 and **Admin-A** + **Admin-P1** are **complete**. Remaining pre-launch work is **non-code**: [LAUNCH_GATE.md](./LAUNCH_GATE.md) Gate 1 (legal review, Stripe production config, smoke tests).
+Engineering sprints through L4 and **Admin-A**, **Admin-P1**, and **Admin-Redesign** are **complete**. Remaining pre-launch work is **non-code**: [LAUNCH_GATE.md](./LAUNCH_GATE.md) Gate 1 only (legal review, Stripe production config, smoke tests).
 
 | Area | Status | Canonical doc |
 |------|--------|---------------|
@@ -24,6 +24,7 @@ Engineering sprints through L4 and **Admin-A** + **Admin-P1** are **complete**. 
 | Go-live blockers (legal, Stripe, smoke) | ☐ Blocker | [LAUNCH_GATE.md](./LAUNCH_GATE.md) |
 | Admin Ops Home + task engine | ✅ Shipped | `/admin` → Ops Home · `ops_tasks` · `cron_health` |
 | Admin P1 (tax config, user detail, waitlist) | ✅ Shipped | `/admin` → Tax Rules · Users · Waitlist |
+| Admin-Redesign (sidebar, debug/funnel fixes) | ✅ Shipped | `/admin` sidebar nav · `admin-shell.tsx` |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
 ---
@@ -32,6 +33,7 @@ Engineering sprints through L4 and **Admin-A** + **Admin-P1** are **complete**. 
 
 | Item | Command / entry point |
 |------|------------------------|
+| Admin-Redesign — sidebar + bug fixes | `/admin` sidebar · Debug tab reads `federal_tax_config` · funnel 30d-only counts |
 | Admin P1 — federal tax config editor | `/admin` → Tax Rules → Federal Tax Configuration · `GET/PATCH /api/admin/tax-config` |
 | Admin P1 — user detail panel | `/admin` → Users (click row) · sync-stripe · tier override · password reset |
 | Admin P1 — waitlist management | `/admin` → Waitlist · `GET/POST /api/admin/waitlist/*` |
@@ -73,9 +75,9 @@ Do NOT set `PUBLIC_SIGNUP_OPEN=true` until all Gate 1 items in [LAUNCH_GATE.md](
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **go-live prep.** Admin-A (Ops Home, ops_tasks, cron health) and Admin-P1 (federal tax config editor, user detail panel, waitlist tab) are **shipped**. L1–L4 + B2B2C billing complete. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
+> My Wealth Maps — **go-live prep.** All three admin sprints are **shipped**: Admin-A (Ops Home), Admin-P1 (tax config, user detail, waitlist), Admin-Redesign (sidebar nav, debug/funnel fixes). L1–L4 + B2B2C billing complete. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
 >
-> **Remaining blockers before open signups:** [LAUNCH_GATE.md](./LAUNCH_GATE.md) Gate 1 only — legal review, Stripe production catalog/config, production smoke (drip, E2E, billing walkthrough). No further admin engineering sprints required for launch.
+> **Remaining blockers before open signups:** [LAUNCH_GATE.md](./LAUNCH_GATE.md) **Gate 1 only** — legal review, Stripe production catalog/config, production smoke (drip, E2E, billing walkthrough). No further engineering sprints required for launch.
 >
 > **Go-live day:** Stripe Phase 2 live catalog → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) · then `PUBLIC_SIGNUP_OPEN=true`.
 >

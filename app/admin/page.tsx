@@ -12,7 +12,7 @@ export default async function AdminPage() {
   // User stats
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, email, full_name, role, subscription_status, subscription_plan, created_at')
+    .select('id, email, full_name, role, consumer_tier, subscription_status, subscription_plan, created_at')
     .order('created_at', { ascending: false })
 
   // Usage stats
@@ -241,8 +241,19 @@ export default async function AdminPage() {
   const consumerCount = profiles?.filter(p => p.subscription_plan === 'consumer').length ?? 0
   const advisorCount = profiles?.filter(p => p.subscription_plan === 'advisor').length ?? 0
 
-  // MRR estimate
-  const mrr = (consumerCount * 19) + (advisorCount * 159)
+  const activePaid = (p: { subscription_status: string | null }) =>
+    p.subscription_status === 'active' || p.subscription_status === 'trialing'
+
+  const tier1Count =
+    profiles?.filter((p) => p.consumer_tier === 1 && activePaid(p)).length ?? 0
+  const tier2Count =
+    profiles?.filter((p) => p.consumer_tier === 2 && activePaid(p)).length ?? 0
+  const tier3Count =
+    profiles?.filter((p) => p.consumer_tier === 3 && activePaid(p)).length ?? 0
+  const advisorActiveCount =
+    profiles?.filter((p) => p.role === 'advisor' && activePaid(p)).length ?? 0
+
+  const mrr = tier1Count * 29 + tier2Count * 79 + tier3Count * 149 + advisorActiveCount * 99
 
   const nowIso = new Date().toISOString()
   const sevenDaysFromNow = new Date()

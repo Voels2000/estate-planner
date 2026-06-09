@@ -94,16 +94,14 @@ export function FunnelTab({
   // used for the recent feed and slug/referral breakdowns that supplement the 30-day query.
   const stepCounts = funnelStepCounts
 
-  const topCount = Math.max(1, stepCounts['event_page_view'] ?? 1)
+  const topCount = Math.max(1, ...FUNNEL_STEPS.map((s) => stepCounts[s.name] ?? 0))
 
   const bySlug = useMemo(() => {
     const map = new Map<string, Record<string, number>>()
-    const allEvents = [
-      ...funnelBySlug.map(e => ({ slug: e.event_slug ?? 'unknown', name: e.event_name })),
-      ...recentFunnelEvents
-        .filter(e => e.event_slug)
-        .map(e => ({ slug: e.event_slug!, name: e.event_name })),
-    ]
+    const allEvents = funnelBySlug.map((e) => ({
+      slug: e.event_slug ?? 'unknown',
+      name: e.event_name,
+    }))
     for (const e of allEvents) {
       if (!map.has(e.slug)) map.set(e.slug, {})
       const m = map.get(e.slug)!
@@ -112,16 +110,14 @@ export function FunnelTab({
     return Array.from(map.entries())
       .map(([slug, counts]) => ({ slug, counts }))
       .sort((a, b) => (b.counts['event_page_view'] ?? 0) - (a.counts['event_page_view'] ?? 0))
-  }, [funnelBySlug, recentFunnelEvents])
+  }, [funnelBySlug])
 
   const byReferral = useMemo(() => {
     const map = new Map<string, Record<string, number>>()
-    const allEvents = [
-      ...funnelByReferral.map(e => ({ code: e.referral_code ?? 'unknown', name: e.event_name })),
-      ...recentFunnelEvents
-        .filter(e => e.referral_code)
-        .map(e => ({ code: e.referral_code!, name: e.event_name })),
-    ]
+    const allEvents = funnelByReferral.map((e) => ({
+      code: e.referral_code ?? 'unknown',
+      name: e.event_name,
+    }))
     for (const e of allEvents) {
       if (!map.has(e.code)) map.set(e.code, {})
       const m = map.get(e.code)!
@@ -130,7 +126,7 @@ export function FunnelTab({
     return Array.from(map.entries())
       .map(([code, counts]) => ({ code, counts }))
       .sort((a, b) => (b.counts['account_created'] ?? 0) - (a.counts['account_created'] ?? 0))
-  }, [funnelByReferral, recentFunnelEvents])
+  }, [funnelByReferral])
 
   // Sort tiers in canonical order; include any unexpected tiers at the end
   const sortedTierConversion = useMemo(() => {

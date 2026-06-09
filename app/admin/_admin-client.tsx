@@ -16,6 +16,7 @@ import {
 } from './ops-home-tab'
 import UserDetailPanel from './user-detail-panel'
 import WaitlistTab from './waitlist-tab'
+import { AdminSidebar, AdminTabHeader, type AdminTabKey } from './admin-shell'
 import type { OpsTaskRow } from '@/lib/admin/opsTasks'
 
 type Profile = {
@@ -123,22 +124,7 @@ type Props = {
   fetchedAt: string
 }
 
-type Tab =
-  | 'ops_home'
-  | 'overview'
-  | 'users'
-  | 'usage'
-  | 'feedback'
-  | 'funnel'
-  | 'waitlist'
-  | 'compliance'
-  | 'directories'
-  | 'settings'
-  | 'tiers'
-  | 'categories'
-  | 'tax_rules'
-  | 'terms'
-  | 'debug'
+type Tab = AdminTabKey
 
 export function AdminClient({
   appConfig,
@@ -358,24 +344,6 @@ export function AdminClient({
     }
   }
 
-  const TABS: { key: Tab; label: string; icon: string }[] = [
-    { key: 'ops_home',   label: 'Ops Home',        icon: '⚡' },
-    { key: 'overview',   label: 'Overview',       icon: '📊' },
-    { key: 'users',      label: 'Users',           icon: '👥' },
-    { key: 'usage',      label: 'Usage',           icon: '📈' },
-    { key: 'feedback',   label: 'Feedback',        icon: '💬' },
-    { key: 'funnel',     label: 'Funnel',          icon: '📉' },
-    { key: 'waitlist',   label: 'Waitlist',        icon: '📋' },
-    { key: 'compliance', label: 'Data & Compliance', icon: '🔒' },
-    { key: 'directories', label: 'Directories',    icon: '📇' },
-    { key: 'settings',   label: 'Settings',        icon: '⚙️' },
-    { key: 'tiers',      label: 'Advisor Tiers',   icon: '🏷️' },
-    { key: 'categories', label: 'Categories',      icon: '🗂️' },
-    { key: 'tax_rules',  label: 'Tax Rules',       icon: '🏛️' },
-    { key: 'terms',      label: 'T&C',             icon: '📋' },
-    { key: 'debug',      label: 'Debug',           icon: '🐛' },
-  ]
-
   const CATEGORY_SECTIONS: {
     title?: string
     items: { table: CategoryTable; label: string; description: string }[]
@@ -411,24 +379,17 @@ export function AdminClient({
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-neutral-900">Admin Dashboard</h1>
-        <p className="mt-1 text-sm text-neutral-600">Monitor your app&apos;s growth, usage and feedback</p>
-      </div>
+    <div className="grid min-h-screen" style={{ gridTemplateColumns: '200px 1fr' }}>
+      <AdminSidebar
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        inboxCounts={inboxCounts}
+        pendingAdvisorDirectory={pendingAdvisorDirectory}
+        pendingAttorneyDirectory={pendingAttorneyDirectory}
+      />
 
-      <div className="flex gap-1 border-b border-neutral-200 mb-8 flex-wrap">
-        {TABS.map((tab) => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors ${
-              activeTab === tab.key
-                ? 'border-b-2 border-neutral-900 text-neutral-900'
-                : 'text-neutral-500 hover:text-neutral-700'
-            }`}>
-            <span>{tab.icon}</span>{tab.label}
-          </button>
-        ))}
-      </div>
+      <main className="p-6 overflow-x-hidden">
+        <AdminTabHeader tab={activeTab} fetchedAt={fetchedAt} />
 
       {activeTab === 'ops_home' && (
         <OpsHomeTab
@@ -436,6 +397,8 @@ export function AdminClient({
           cronHealth={cronHealth}
           inboxCounts={inboxCounts}
           fetchedAt={fetchedAt}
+          mrr={rest.mrr}
+          activeSubscriptions={rest.activeSubscriptions}
           onSwitchTab={(tab) => setActiveTab(tab as Tab)}
         />
       )}
@@ -780,9 +743,21 @@ export function AdminClient({
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                      <input type={meta?.type ?? 'text'} value={configValues[config.key] ?? config.value}
-                        onChange={(e) => setConfigValues(prev => ({ ...prev, [config.key]: e.target.value }))}
-                        className="w-24 rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 text-center focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500" />
+                      <div>
+                        <input
+                          type={meta?.type ?? 'text'}
+                          min={config.key === 'trial_duration_minutes' ? 0 : undefined}
+                          max={config.key === 'trial_duration_minutes' ? 525960 : undefined}
+                          value={configValues[config.key] ?? config.value}
+                          onChange={(e) => setConfigValues(prev => ({ ...prev, [config.key]: e.target.value }))}
+                          className="w-24 rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 text-center focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500"
+                        />
+                        {config.key === 'trial_duration_minutes' && (
+                          <p className="text-xs text-neutral-400 mt-1 text-center">
+                            ≈ {Math.round(Number(configValues[config.key] ?? config.value) / 60 / 24)} days
+                          </p>
+                        )}
+                      </div>
                       {config.key === 'trial_duration_minutes' && <span className="text-xs text-neutral-400">minutes</span>}
                       <button onClick={() => handleSaveConfig(config.key)} disabled={savingKey === config.key}
                         className="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-medium text-white hover:bg-neutral-800 disabled:opacity-50 transition">
@@ -796,6 +771,7 @@ export function AdminClient({
           </div>
         </div>
       )}
+      </main>
     </div>
   )
 }

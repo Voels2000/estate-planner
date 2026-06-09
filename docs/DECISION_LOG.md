@@ -1,8 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-09 (Admin P1 pre-launch support surfaces)
+# Last updated: 2026-06-09 (Admin-Redesign sidebar + debug fixes)
 
 ---
+
+---
+
+## Admin-Redesign — Tax Rules RLS + debug state tax path (2026-06-09)
+
+**Tax Rules RLS confirmed:** `state_estate_tax_rules` and `federal_estate_tax_brackets` have authenticated **Admin** insert/update/delete policies (see `docs/audits/rls-policies-2026-05-27.csv`). Tax Rules tab handlers correctly use `createClient()` with the admin user's JWT — **no API wrapper or `createAdminClient()` migration required** for bracket CRUD.
+
+**Debug tab state tax:** `state_tax_rates` was dropped pre-go-live (`20260708120000`). The debug tab Engine 1 (Income & Tax) now queries the **top bracket rate** from `state_income_tax_brackets` for the household state and selected year. This is a **diagnostic approximation only** — not the canonical `stateIncomeTax.ts` progressive engine used in projections.
 
 ---
 

@@ -64,6 +64,14 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Admin-Redesign — sidebar nav, bug fixes, polish (2026-06-09) — shipped
+
+- [x] `app/admin/admin-shell.tsx` — sidebar nav (Operations / Analytics / Configuration / Developer)
+- [x] Debug tab: `federal_tax_config` + `state_income_tax_brackets` (not `state_tax_rates`)
+- [x] Funnel: slug/referral 30d-only aggregation; tier-aware MRR in `page.tsx`
+- [x] DECISION_LOG (Tax Rules RLS + debug state tax path) · MASTER_ARCHITECTURE · ROADMAP · NEXT_SESSION synced
+- [x] No migration — SCHEMA_CHANGELOG unchanged
+
 ## Admin P1 — federal tax config, user detail, waitlist (2026-06-09) — shipped
 
 - [x] Migration `20260709140000` — `email_captures.invited_at`, `invite_label` (applied via `supabase db push`)

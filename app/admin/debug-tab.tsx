@@ -42,7 +42,6 @@ const FS_MAP: Record<string, string> = {
   single: 'single',
 }
 
-const FEDERAL_EXEMPTION_2024 = 13_610_000
 const TAX_DEFERRED_TYPES = ['traditional_ira', 'traditional_401k']
 const ROTH_TYPES = ['roth_ira', 'roth_401k']
 
@@ -62,9 +61,15 @@ type BracketRow = {
   rate_pct: number
 }
 
-type StateRateRow = {
-  state_code: string | null
-  rate_pct: number | null
+type StateIncomeBracketRow = {
+  rate_pct: number
+  min_amount: number
+}
+
+type FederalConfigRow = {
+  estate_exemption_individual: number
+  estate_exemption_married: number
+  estate_top_rate_pct: number
 }
 
 type AssetRow = {
@@ -117,7 +122,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
         { data: income },
         { data: federalBrackets },
         { data: estateBrackets },
-        { data: stateRates },
+        { data: federalConfig },
         { data: rmdTable },
       ] = await Promise.all([
         supabase.from('households').select('*').eq('owner_id', selectedUserId).single(),
@@ -126,12 +131,25 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
         supabase.from('income').select('*').eq('owner_id', selectedUserId),
         supabase.from('federal_tax_brackets').select('*').order('bracket_order'),
         supabase.from('federal_estate_tax_brackets').select('*').order('min_amount'),
-        supabase.from('state_tax_rates').select('*'),
+        supabase
+          .from('federal_tax_config')
+          .select('estate_exemption_individual, estate_exemption_married, estate_top_rate_pct')
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle(),
         supabase.from('irs_rmd_tables').select('*').eq('table_type', 'uniform').order('age'),
       ])
 
       if (!household) throw new Error('No household found for this user.')
       const householdData = household as HouseholdRow
+
+      const { data: stateIncomeBrackets } = await supabase
+        .from('state_income_tax_brackets')
+        .select('rate_pct, min_amount')
+        .eq('state', householdData.state_primary ?? '')
+        .eq('tax_year', selectedYear)
+        .order('min_amount', { ascending: false })
+        .limit(1)
 
       const newTraces: DebugTrace[] = []
 
@@ -177,9 +195,7 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
           remaining -= inBracket
         }
 
-        const stateRate = ((stateRates ?? []) as StateRateRow[]).find(
-          (s) => s.state_code === householdData.state_primary,
-        )?.rate_pct ?? 0
+        const stateRate = (stateIncomeBrackets?.[0] as StateIncomeBracketRow | undefined)?.rate_pct ?? 0
         const stateTax = taxableIncome * (stateRate / 100)
 
         newTraces.push({
@@ -213,7 +229,11 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
             { label: 'Filing status (normalized)', value: fs },
             { label: 'Federal tax brackets matched', value: relevantBrackets.length },
             { label: 'Federal income tax', value: fmtDollars(federalTax) },
-            { label: 'State rate', value: fmtPct(stateRate), note: householdData.state_primary ?? undefined },
+            {
+              label: 'State rate (top bracket)',
+              value: fmtPct(stateRate),
+              note: `${householdData.state_primary ?? '—'} — top bracket from state_income_tax_brackets`,
+            },
             { label: 'State income tax', value: fmtDollars(stateTax) },
           ],
           outputs: {
@@ -298,7 +318,10 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
         const filingStatus = householdData.filing_status ?? 'single'
         const fs = FS_MAP[filingStatus] ?? filingStatus
         const isMfj = fs === 'married_filing_jointly'
-        const exemption = isMfj ? FEDERAL_EXEMPTION_2024 * 2 : FEDERAL_EXEMPTION_2024
+        const config = federalConfig as FederalConfigRow | null
+        const exemptionIndividual = config?.estate_exemption_individual ?? 13_990_000
+        const exemptionMarried = config?.estate_exemption_married ?? exemptionIndividual * 2
+        const exemption = isMfj ? exemptionMarried : exemptionIndividual
         const taxableEstate = Math.max(0, grossEstate - totalLiabilities)
         const brackets = ((estateBrackets ?? []) as BracketRow[]).sort(
           (a, b) => a.min_amount - b.min_amount,
@@ -333,7 +356,13 @@ export default function DebugTab({ profiles }: { profiles: { id: string; email: 
             { label: 'Total liabilities', value: fmtDollars(totalLiabilities) },
             { label: 'Taxable estate', value: fmtDollars(taxableEstate), note: 'gross - liabilities' },
             { label: 'Filing status', value: fs },
-            { label: 'Federal exemption', value: fmtDollars(exemption), note: isMfj ? 'MFJ = 2× exemption ($27.22M)' : 'Single exemption ($13.61M)' },
+            {
+              label: 'Federal exemption',
+              value: fmtDollars(exemption),
+              note: isMfj
+                ? `MFJ = married exemption from federal_tax_config (${fmtDollars(exemptionMarried)})`
+                : 'Single = individual exemption from federal_tax_config',
+            },
             { label: 'Estate exceeds exemption', value: taxableEstate > exemption ? 'YES — tax applies' : 'No — below exemption' },
             { label: 'Tax on taxable estate', value: fmtDollars(taxBeforeCredit) },
             { label: 'Applicable credit (tax on exemption)', value: fmtDollars(applicableCredit) },

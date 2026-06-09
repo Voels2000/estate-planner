@@ -33,6 +33,8 @@ type Props = {
   inboxCounts: OpsInboxCounts
   onSwitchTab: (tab: string) => void
   fetchedAt: string
+  mrr?: number
+  activeSubscriptions?: number
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -85,6 +87,8 @@ export function OpsHomeTab({
   inboxCounts,
   onSwitchTab,
   fetchedAt,
+  mrr = 0,
+  activeSubscriptions = 0,
 }: Props) {
   const [tasks, setTasks] = useState(initialTasks)
   const [completingId, setCompletingId] = useState<string | null>(null)
@@ -316,6 +320,24 @@ export function OpsHomeTab({
           {error}
         </p>
       )}
+
+      <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {[
+          { label: 'Est. MRR', value: `$${mrr.toLocaleString()}`, sub: `${activeSubscriptions} active subs`, accent: true },
+          { label: 'Overdue tasks', value: String(inboxCounts.overdueTasks), sub: 'calendar obligations' },
+          { label: 'Due today', value: String(inboxCounts.dueTodayTasks), sub: 'ops tasks' },
+          { label: 'Cron issues', value: String(inboxCounts.cronFailures + inboxCounts.staleCrons), sub: 'failures + stale' },
+          { label: 'Directory pending', value: String(inboxCounts.pendingDirectories), sub: 'advisor + attorney' },
+        ].map((tile) => (
+          <div key={tile.label} className="rounded-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">{tile.label}</p>
+            <p className={`text-xl font-bold mt-1 ${tile.accent ? 'text-emerald-600' : 'text-neutral-900'}`}>
+              {tile.value}
+            </p>
+            <p className="text-xs text-neutral-500 mt-0.5">{tile.sub}</p>
+          </div>
+        ))}
+      </section>
 
       <section className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">

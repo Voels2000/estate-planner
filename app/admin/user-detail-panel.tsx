@@ -15,6 +15,7 @@ type UserDetail = {
   stripe_customer_id: string | null
   created_at: string
   terms_accepted_at: string | null
+  terms_version: string | null
   last_sign_in_at: string | null
 }
 
@@ -232,6 +233,10 @@ export default function UserDetailPanel({ userId, onClose }: Props) {
                     <dt className="text-neutral-500">Terms accepted</dt>
                     <dd className="text-neutral-900">{formatDate(user.terms_accepted_at)}</dd>
                   </div>
+                  <div className="flex justify-between">
+                    <dt className="text-neutral-500">Terms version</dt>
+                    <dd className="text-neutral-900">{user.terms_version ?? '—'}</dd>
+                  </div>
                 </dl>
               </section>
 
@@ -248,6 +253,12 @@ export default function UserDetailPanel({ userId, onClose }: Props) {
                     <dt className="text-neutral-500">Tier</dt>
                     <dd className="text-neutral-900">{tierLabel}</dd>
                   </div>
+                  {(user.attorney_tier ?? 0) > 0 && (
+                    <div className="flex justify-between">
+                      <dt className="text-neutral-500">Attorney tier</dt>
+                      <dd className="text-neutral-900">Tier {user.attorney_tier}</dd>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <dt className="text-neutral-500">Period end</dt>
                     <dd className="text-neutral-900">
