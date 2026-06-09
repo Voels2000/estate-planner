@@ -882,10 +882,32 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - `app/sitemap.ts` — static public routes + all `EVENT_SLUGS` event and assess URLs; base URL from `NEXT_PUBLIC_APP_URL`.
 - `app/robots.ts` — **pre-launch:** `disallow: /` for all crawlers; sitemap line commented out. **At launch:** allow public routes, disallow app routes, uncomment sitemap URL.
 
+### Admin portal — Ops Home (Admin-A)
+
+**Default tab:** `/admin` → **Ops Home** (`app/admin/ops-home-tab.tsx`). Answers “what needs attention today?” without hunting across tabs.
+
+| Section | Source | Purpose |
+|---------|--------|---------|
+| Ops Inbox | Server-computed counts | Overdue/due tasks, deletions, privacy SLA, directory pending, cron failures/stale |
+| Ops Tasks | `ops_tasks` table | Calendar obligations; mark complete advances `next_due_at`; add one-time tasks |
+| Cron Health | `cron_health` table | Last-run status for 5 Vercel crons (`recordCronHealth.ts`) |
+| Quick Links | Tab switcher | Jump to Compliance, Users, Tax Rules, Funnel, Directories, Debug |
+
+**Tabs (order):** Ops Home · Overview · Users · Usage · Feedback · Funnel · Data & Compliance · Directories · Settings · Advisor Tiers · Categories · Tax Rules · T&C · Debug.
+
+**Directories:** `DirectoriesTab` — pending counts + links to `/admin/advisor-directory`, `/admin/attorney-directory`.
+
+**Data & Compliance:** `DeletionCompliance.tsx` — scheduled deletions, privacy requests (45-day SLA), audit log, execute deletion; **Add request** for email-only WCPA intake (`POST /api/admin/privacy-requests`).
+
+**APIs:** `GET/PATCH/POST /api/admin/ops-tasks` · `GET/POST /api/admin/cron-health` · existing `GET/PATCH /api/admin/deletions` · `POST /api/admin/deletions/execute`.
+
+**Auth:** `requireAdminApi()` + privileged MFA when `REQUIRE_PRIVILEGED_MFA=true`.
+
 **Admin funnel (Sprint 6 + Sprint 7):**
 
 - Tab on `/admin` — `app/admin/funnel-tab.tsx`; server fetch in `app/admin/page.tsx` via `createAdminClient()` (funnel_events not readable with user RLS).
 - **Sprint 7:** 30-day `funnelStepCounts` for bar chart; `tierConversion` (join `funnel_events.user_id` → `profiles.consumer_tier`); **By Tier** tab.
+- **Private beta (2026-06-08):** **Private Beta Signup Links** cohort table.
 - Slug/referral breakdowns use 30-day queries; embedded SQL cheat sheet for weekly review.
 
 **Consumer professional connection surfaces (current):**

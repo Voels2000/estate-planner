@@ -191,13 +191,28 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 - **Note:** never UPDATE or DELETE rows from this table
 - **Verification:** after real deletions, run `npm run verify:deletion -- --email user@example.com` — must PASS before responding to the user ([COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md))
 
-### `deletion_schedule` (Sprint C-6)
+### `deletion_schedule` (Sprint C-6; retry Admin-A)
 
 - **Purpose:** queue of future automated deletions (30 days post-cancellation by default).
-- **Key columns:** `user_id`, `email`, `reason`, `scheduled_for`, `stripe_customer_id`, `scheduled_by`, `status` (`pending` \| `executed` \| `cancelled`), `executed_at`, `cancelled_at`, `cancel_reason`
+- **Key columns:** `user_id`, `email`, `reason`, `scheduled_for`, `stripe_customer_id`, `scheduled_by`, `status` (`pending` \| `executed` \| `cancelled`), `executed_at`, `cancelled_at`, `cancel_reason`, `retry_count`, `next_retry_at`, `last_error` (Admin-A)
 - **RLS:** service role only
-- **Cron:** `GET /api/cron/process-deletions` selects `pending` where `scheduled_for <= now()`
+- **Cron:** `GET /api/cron/process-deletions` selects `pending` where `scheduled_for <= now()` and (`next_retry_at` is null or `<= now()`); backoff 1h / 4h / 24h / 72h on failure; email after 3 retries
 - **Webhook:** inserts on consumer churn; skips plan-change / role-upgrade cases
+
+### `ops_tasks` (Admin-A)
+
+- **Purpose:** calendar compliance obligations (weekly UX audit, monthly security audit, quarterly B&O, annual DPA review, Gate 3 one-time tasks).
+- **Key columns:** `slug` (unique), `title`, `description`, `cadence` (`daily` \| `weekly` \| `monthly` \| `quarterly` \| `annual` \| `once`), `next_due_at`, `last_completed_at`, `last_completed_by`, `completion_method`, `completion_notes`, `status`, `auto_complete`, `script_command`, `category`
+- **RLS:** service role only (admin UI via `createAdminClient()`)
+- **API:** `GET/PATCH/POST /api/admin/ops-tasks` — PATCH advances `next_due_at` by cadence on complete
+- **Cron:** `compliance-reminders` emails on due/overdue tasks
+
+### `cron_health` (Admin-A)
+
+- **Purpose:** last-run tracking for Vercel cron jobs (Ops Home status grid).
+- **Key columns:** `job_name` (PK), `last_run_at`, `last_status` (`ok` \| `warning` \| `error` \| `unknown`), `last_message`, `consecutive_failures`
+- **RLS:** service role only
+- **Writer:** `lib/cron/recordCronHealth.ts` at end of each cron handler
 
 ### `ingestion_jobs` (Sprint F-1)
 
@@ -477,6 +492,8 @@ After each schema-affecting session:
 - `20260703120000_attorney_digest_sent_at.sql` — `profiles.attorney_digest_sent_at` (weekly digest cooldown for cron §10)
 - `20260708120000_cleanup_legacy_tax_tables.sql` — purge tax years 2023–2025 from rollover tables; drop `state_income_tax_rates`; backfill `federal_estate_tax_brackets.tax_year`
 - `20260708130000_seed_state_inheritance_tax_rules_2026.sql` — 24 inheritance rows for 2026 (6 states × 4 beneficiary classes)
+- `20260610120000_admin_ops_tasks.sql` — `ops_tasks`, `cron_health` (Admin-A)
+- `20260610130000_deletion_retry_policy.sql` — `deletion_schedule` retry columns (Admin-A)
 
 **`app_config`:** Terms and other feature keys. Pre-launch A/B rows `ab_upgrade_copy` / `ab_assessment_gate` removed in `20260531000000_remove_ab_test_app_config.sql` (Sprint 12 — personalized upgrade copy and score-visible assess shipped in code).
 

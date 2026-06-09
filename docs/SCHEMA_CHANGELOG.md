@@ -10,6 +10,23 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Admin-A — Ops Home + ops_tasks engine (2026-06-09)
+
+**Migrations:** `20260610120000_admin_ops_tasks.sql`, `20260610130000_deletion_retry_policy.sql`
+
+| Change | Detail |
+|--------|--------|
+| **`ops_tasks`** | Calendar obligation tracker — 13 seeded tasks (weekly/monthly/quarterly/annual/once) from `COMPLIANCE_CALENDAR.md` + `LAUNCH_GATE.md` Gate 3; service_role only |
+| **`cron_health`** | Per-job last-run status for 5 Vercel crons; seeded with `unknown` until first run |
+| **`deletion_schedule`** | `retry_count`, `next_retry_at`, `last_error` — exponential backoff on cron failure |
+| **API** | `GET/PATCH/POST /api/admin/ops-tasks`; `GET/POST /api/admin/cron-health`; `POST /api/admin/privacy-requests` |
+| **Cron** | `lib/cron/recordCronHealth.ts` wired into all 5 crons; `compliance-reminders` alerts on ops tasks + cron failures |
+| **Admin UI** | `/admin` default tab **Ops Home** (`ops-home-tab.tsx`); **Directories** tab; privacy **Add request** in Data & Compliance |
+
+**Files:** `app/admin/ops-home-tab.tsx`, `lib/admin/opsTasks.ts`, `lib/email/deletionRetryAlertEmail.ts`, `lib/email/postDeployFailureEmail.ts`
+
+---
+
 ## Private beta signup links (2026-06-08)
 
 **No migration.** Waitlist bypass for friends via secret URL while `PUBLIC_SIGNUP_OPEN` stays off.

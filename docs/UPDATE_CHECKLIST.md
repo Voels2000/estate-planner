@@ -7,6 +7,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | Doc | Purpose |
 |-----|---------|
 | [LAUNCH_GATE.md](./LAUNCH_GATE.md) | Single go-live sign-off checklist (legal, Stripe, smoke gates) |
+| `ops_tasks` / `cron_health` | Admin-A calendar obligations + cron last-run — `/admin` Ops Home |
 | [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) | Segment, personas, pricing, UX principles |
 | [ROADMAP.md](./ROADMAP.md) | Sprint plan and item status |
 | [NEXT_SESSION.md](./NEXT_SESSION.md) | **Current session handoff** — paste block, go-live blockers, queued ops |
@@ -62,6 +63,15 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Launch / go-live work (robots, Search Console, domain cutover, production email, **Vercel Production env vars**, **waitlist disable**) → update `docs/LAUNCH_CHECKLIST.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
+
+## Admin-A Ops Home + ops_tasks engine (2026-06-09) — shipped
+
+- [x] Migrations `20260610120000`, `20260610130000` — `ops_tasks`, `cron_health`, deletion retry columns
+- [x] `app/admin/ops-home-tab.tsx` — default `/admin` tab (inbox, tasks, cron health)
+- [x] `lib/cron/recordCronHealth.ts` — wired into all 5 Vercel crons
+- [x] `compliance-reminders` — ops task + cron failure email sections
+- [x] `POST /api/admin/privacy-requests` — email-only WCPA intake
+- [x] MASTER_ARCHITECTURE · SCHEMA_CHANGELOG · DATABASE_SCHEMA_REFERENCE · ROADMAP · DECISION_LOG · COMPLIANCE_CALENDAR · NEXT_SESSION synced
 
 ## Post-deploy Voels verify script (2026-06-06) — shipped; cron self-heal (2026-06-07)
 

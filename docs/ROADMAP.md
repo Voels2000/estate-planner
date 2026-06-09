@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-07 (L1–L4 complete; release routine; next M5/L5)
+# Last updated: 2026-06-09 (Admin-A Ops Home; LAUNCH_GATE consolidation)
 
 ---
 
@@ -18,6 +18,33 @@
 ---
 
 ## Current sprint
+
+### Sprint — Admin-A Ops Home + task engine `[x]` **complete (2026-06-09)**
+
+| Item | Status |
+|------|--------|
+| `ops_tasks` + `cron_health` migrations (13 seeded tasks) | `[x]` |
+| Ops Home default tab — inbox, tasks, cron health, quick links | `[x]` |
+| `/api/admin/ops-tasks` GET/PATCH/POST | `[x]` |
+| Cron health recording on all 5 Vercel crons | `[x]` |
+| `compliance-reminders` — ops task + cron failure alerts | `[x]` |
+| Post-deploy verify failure email | `[x]` |
+| Deletion retry backoff (1h/4h/24h/72h) | `[x]` |
+| Directories tab + privacy admin **Add request** | `[x]` |
+
+**Entry point:** `/admin` → Ops Home · [MASTER_ARCHITECTURE.md § Admin portal](./MASTER_ARCHITECTURE.md#admin-portal-ops-home-admin-a)
+
+---
+
+### Sprint — LAUNCH_GATE doc consolidation `[x]` **complete (2026-06-09)**
+
+| Item | Status |
+|------|--------|
+| `docs/LAUNCH_GATE.md` — single go-live sign-off (3 gates) | `[x]` |
+| Retired `PRE_LAUNCH_CHECKLIST`, `LEGAL_TODO`, `BUSINESS_READINESS_PLAN` | `[x]` |
+| `NEXT_SESSION.md` + cross-refs updated | `[x]` |
+
+---
 
 ### Sprint — Codebase cleanup + perf/constants `[x]` **complete (2026-06-05)**
 
