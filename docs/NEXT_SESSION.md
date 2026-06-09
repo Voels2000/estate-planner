@@ -21,9 +21,7 @@ Engineering sprints through L4 (a11y, mobile E2E, RLS verify, consumer OpenAPI) 
 | B2B2C billing + seat pricing | ✅ Shipped | [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) |
 | Release routine (local → preview → prod) | ✅ Documented | [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) |
 | Environment / CI credential policy | ✅ Documented | [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) |
-| Legal + counsel sign-off | ☐ Blocker | [LEGAL_TODO.md](./LEGAL_TODO.md) · [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) |
-| Stripe Dashboard + billing walkthrough | ☐ Blocker | [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) |
-| Open signups (`PUBLIC_SIGNUP_OPEN=true`) | ☐ Go-live day | [LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) |
+| Go-live blockers (legal, Stripe, smoke) | ☐ Blocker | [LAUNCH_GATE.md](./LAUNCH_GATE.md) |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
 ---
@@ -49,14 +47,10 @@ Detail for each item: [ROADMAP.md](./ROADMAP.md) · [SCHEMA_CHANGELOG.md](./SCHE
 
 ## Go-live blockers (non-code)
 
-Do **not** set `PUBLIC_SIGNUP_OPEN=true` until:
+Do NOT set `PUBLIC_SIGNUP_OPEN=true` until all Gate 1 items in [LAUNCH_GATE.md](./LAUNCH_GATE.md) are checked.
 
-1. [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal placeholders, WA entity/EIN/B&O, email aliases, Supabase auth tighten.
-2. [LEGAL_TODO.md](./LEGAL_TODO.md) — counsel on ToS §10/§11/§13 (one consolidated redline).
-3. [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) — Stripe Dashboard config + signup → paid → cancel walkthrough on preview/production.
-4. [LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) — Phase 2 live catalog, then flip.
-
-**Post-deploy automated gate:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role` · `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md).
+**Post-deploy automated gate:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role`
+· `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md).
 
 ---
 
@@ -73,7 +67,7 @@ Do **not** set `PUBLIC_SIGNUP_OPEN=true` until:
 
 > My Wealth Maps — **go-live prep.** L1–L4 competitive backlog shipped (2026-06-07). B2B2C billing policy + connection billing migration live. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
 >
-> **Blockers before open signups:** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) · [LEGAL_TODO.md](./LEGAL_TODO.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md). Do **not** set `PUBLIC_SIGNUP_OPEN=true` until signed off.
+> **Blockers before open signups:** [LAUNCH_GATE.md](./LAUNCH_GATE.md) — Gate 1 must be fully checked.
 >
 > **Go-live day:** Stripe Phase 2 live catalog → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 >

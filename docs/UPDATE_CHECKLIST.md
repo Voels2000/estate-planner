@@ -6,12 +6,11 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 
 | Doc | Purpose |
 |-----|---------|
-| [BUSINESS_READINESS_PLAN.md](./BUSINESS_READINESS_PLAN.md) | Washington business formation, compliance sprint summary, go-live readiness (85%) |
+| [LAUNCH_GATE.md](./LAUNCH_GATE.md) | Single go-live sign-off checklist (legal, Stripe, smoke gates) |
 | [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) | Segment, personas, pricing, UX principles |
 | [ROADMAP.md](./ROADMAP.md) | Sprint plan and item status |
 | [NEXT_SESSION.md](./NEXT_SESSION.md) | **Current session handoff** — paste block, go-live blockers, queued ops |
 | [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Go-live checklist — SEO, domain, Resend (update at launch, not each sprint) |
-| [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) | Legal/business/ops blockers before `PUBLIC_SIGNUP_OPEN=true` |
 | [DECISION_LOG.md](./DECISION_LOG.md) | Settled product/UX decisions — add new entries, do not edit old |
 | [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | Engineering architecture |
 | [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) | **Canonical calculation registry** — read before any tax/projection/strategy math |
@@ -28,7 +27,6 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Human release smoke checklist |
 | [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) | Compliance language policy — education vs. advice framing |
 | [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) | Auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
-| [LEGAL_TODO.md](./LEGAL_TODO.md) | Pre-go-live legal checklist; [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
 | [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | WCPA deletion SOP, C-6/C-7 automated checks, privacy request SOP |
 
 ## New table migrations (mandatory — every PR with `supabase/migrations/*.sql`)
@@ -495,7 +493,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Sprint 15 cont. (2026-05-24) — Preview waitlist; sitemap/middleware infra bypass (`73648e5`); test cleanup (`3f732e3`); dev workflow local → preview → production
 - [x] **UX Language Audit** — Sprint C-2b complete (automated grep + all `DISCLAIMER_STRINGS` surfaces wired: PDF cover, estate-tax, my-estate-strategy, footer). Manual per-surface checklist QA remains open in [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md). Run `bash scripts/audit-ux-language.sh` before any PR that touches consumer-facing strings.
 
-| [LEGAL_TODO.md](./LEGAL_TODO.md) | Sprint C-5 — pre-go-live legal checklist; [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) (one redline, one commit) |
+| [LAUNCH_GATE.md](./LAUNCH_GATE.md) | Sprint C-5 — pre-go-live legal checklist; [Gate 1 Legal](./LAUNCH_GATE.md#gate-1--must-be-complete-before-public_signup_opentrue) (one redline, one commit) |
 
 ## Sprint P-1 focus — closed ✅ 2026-06-02
 
@@ -579,7 +577,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 
 | Item | Notes |
 |------|-------|
-| [ ] **LEGAL_TODO.md** | Counsel handoff: §10/§11/§13 flagged, one consolidated redline; placeholders + redlines in one commit — [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
+| [ ] **LAUNCH_GATE.md** | Counsel handoff: §10/§11/§13 flagged, one consolidated redline; placeholders + redlines in one commit — [Gate 1 Legal](./LAUNCH_GATE.md#gate-1--must-be-complete-before-public_signup_opentrue) |
 | [ ] **Stripe Dashboard config** | invoice.upcoming, portal cancel, receipts — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) |
 | [ ] **C-4 manual walkthrough** | Signup → paid → receipt → self-serve cancel on production |
 | [ ] **Stripe production billing** | Required before opening signups |
@@ -595,7 +593,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] **Privacy Policy** — `/privacy` (`2e1dff3`, `695a860`)
 - [x] **Terms of Service** — `/terms`; post-checkout accept at `/terms/accept`
 - [x] **Footer + SEO** — `LegalFooterLinks`; sitemap + robots
-- [ ] **LEGAL_TODO.md** — placeholders + counsel (manual)
+- [ ] **LAUNCH_GATE.md** — placeholders + counsel (manual)
 
 ## Sprint C-4 focus — closed ✅ 2026-06-02 (code)
 
@@ -923,7 +921,7 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 
 - [x] Documents slug conflict — `GET /api/documents/household/[household_id]` (was `/api/documents/[household_id]`)
 - [x] `lib/supabase/routeAuth.ts`, `GET /api/health`, advisor preset route runtime flags
-- [x] [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added; master docs synced
+- [x] [LAUNCH_GATE.md](./LAUNCH_GATE.md) added; master docs synced
 - [x] Commit `af12ff0`
 
 ## Sprint — 6-step onboarding wizard ✅ closed 2026-05-29

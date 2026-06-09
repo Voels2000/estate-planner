@@ -2,7 +2,7 @@
 
 Ongoing compliance routines for My Wealth Maps (Washington WCPA, Privacy Policy commitments, and security hygiene).
 
-**Related:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [LEGAL_TODO.md](./LEGAL_TODO.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · Sprint C-6/C-7 (`deleteUser`, compliance cron)
+**Related:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [LAUNCH_GATE.md](./LAUNCH_GATE.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · Sprint C-6/C-7 (`deleteUser`, compliance cron)
 
 **Status:** C-6 + C-7 fully live in production (2026-05-25). Migrations `20260625120000`, `20260625170000` applied.
 
@@ -107,7 +107,7 @@ Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` (`avoel
 ## Weekly
 
 - [ ] `bash scripts/audit-ux-language.sh` — 0 findings before consumer-facing copy changes ship
-- [ ] Review open items in [LEGAL_TODO.md](./LEGAL_TODO.md) if pre-launch
+- [ ] Review open items in [LAUNCH_GATE.md](./LAUNCH_GATE.md) if pre-launch
 
 ---
 

@@ -635,11 +635,11 @@
 | Fix documents API slug conflict (all `/api/*` hung on Vercel) | `[x]` |
 | `getRouteAuth()` + `/api/health` liveness probe | `[x]` |
 | Security smoke on prod (`npm run test:e2e:security-smoke`) | `[x]` 7/7 |
-| [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) — legal/ops go-live blockers | `[x]` doc added |
+| [LAUNCH_GATE.md](./LAUNCH_GATE.md) — legal/ops go-live blockers | `[x]` doc added |
 
 **Commit:** `af12ff0` — `fix(api): resolve documents slug conflict that hung all Vercel routes`
 
-**Next:** Work [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) 🔴 items before `PUBLIC_SIGNUP_OPEN=true`.
+**Next:** Work [LAUNCH_GATE.md](./LAUNCH_GATE.md) 🔴 items before `PUBLIC_SIGNUP_OPEN=true`.
 
 ---
 
@@ -772,7 +772,7 @@ See [SPRINT_FRICTION_REDUCTION.md](./archive/sprints/SPRINT_FRICTION_REDUCTION.m
 | Item | Status |
 |------|--------|
 | Manual RLS isolation smoke | `[ ]` |
-| LEGAL_TODO counsel handoff | `[ ]` |
+| LAUNCH_GATE counsel handoff | `[ ]` |
 | Stripe Phase 1 — test mode: 6 prices + preview env + webhook | `[ ]` |
 | Stripe Phase 2 — live mode: live catalog + prod env (go-live day) | `[ ]` |
 | C-4 billing disclosures walkthrough on preview | `[ ]` |
@@ -819,7 +819,7 @@ See [SPRINT_FRICTION_REDUCTION.md](./archive/sprints/SPRINT_FRICTION_REDUCTION.m
 | Complete + estate-tax loading/error | `[x]` | Sprint J — `e93f9a0` |
 | RouteErrorFallback adoption | `[x]` | Dashboard + trust-strategy |
 | Manual RLS isolation smoke | `[ ]` | → Sprint 19 |
-| LEGAL_TODO / Stripe / go-live smoke | `[ ]` | → Sprint 19 |
+| LAUNCH_GATE / Stripe / go-live smoke | `[ ]` | → Sprint 19 |
 
 ---
 
@@ -914,7 +914,7 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 |------|--------|-------|
 | **Security post-deploy smoke** | `[x]` | 7/7 on prod 2026-05-30 — [LAUNCH_CHECKLIST § Security](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) |
 | **Prod API routes** | `[x]` | Documents slug conflict fix `af12ff0`; `/api/health` live |
-| **LEGAL_TODO.md** | `[ ]` | **Blocker** — counsel handoff (§10/§11/§13, one redline); placeholders batched with redlines; email aliases — see [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) |
+| **LAUNCH_GATE.md** | `[ ]` | **Blocker** — counsel handoff (§10/§11/§13, one redline); placeholders batched with redlines; email aliases — see [LAUNCH_GATE.md](./LAUNCH_GATE.md) |
 | **Stripe Dashboard config** | `[ ]` | invoice.upcoming, portal cancel, receipts — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) |
 | **Stripe production billing** | `[ ]` | Production keys; checkout + webhook verified |
 | **Open signups** | `[ ]` | `PUBLIC_SIGNUP_OPEN=true` — go-live day ([LAUNCH_CHECKLIST.md § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
@@ -1015,7 +1015,7 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 | Nav consistency (homepage, billing, utility) | ✅ | `b51eedd` |
 
 **Success criteria**
-- [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off
+- [LAUNCH_GATE.md](./LAUNCH_GATE.md) complete + counsel sign-off
 - C-4 manual walkthrough signed off (signup → paid → receipt → self-serve cancel)
 - Go-live sequence executed per LAUNCH_CHECKLIST
 - `/signup` open after env flip; Core §1–3 smoke passes with fresh email
@@ -1164,7 +1164,7 @@ Search Console) is ops-only and runs after Section 1 is fully verified.
 **Goal:** Public legal pages, footer links, sitemap.
 
 - `[x]` `/privacy`, `/terms`, `LegalFooterLinks`, sitemap/robots (`2e1dff3`, `695a860`)
-- `[ ]` [LEGAL_TODO.md](./LEGAL_TODO.md) — placeholders, counsel, email aliases
+- `[ ]` [LAUNCH_GATE.md](./LAUNCH_GATE.md) — placeholders, counsel, email aliases
 
 **Commits:** `2e1dff3`, `695a860`
 

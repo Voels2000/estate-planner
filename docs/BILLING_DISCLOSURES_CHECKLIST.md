@@ -7,7 +7,7 @@
 
 ## Why this sprint exists
 
-Sprint C-2b (UX language audit) is complete (`788aa08`). Sprint C-5 (Privacy Policy + Terms) is code-complete (`2e1dff3`, `695a860`). The remaining **compliance gates** before opening public signups are **legal review** ([LEGAL_TODO.md](./LEGAL_TODO.md)) and **Stripe Dashboard configuration** plus a manual walkthrough of signup → paid checkout with this checklist open.
+Sprint C-2b (UX language audit) is complete (`788aa08`). Sprint C-5 (Privacy Policy + Terms) is code-complete (`2e1dff3`, `695a860`). The remaining **compliance gates** before opening public signups are **legal review** ([LAUNCH_GATE.md](./LAUNCH_GATE.md)) and **Stripe Dashboard configuration** plus a manual walkthrough of signup → paid checkout with this checklist open.
 
 **Do not flip `PUBLIC_SIGNUP_OPEN=true` until every checkbox below is verified on production (or production-mode Stripe test).**
 
@@ -22,7 +22,7 @@ Sprint C-2b (UX language audit) is complete (`788aa08`). Sprint C-5 (Privacy Pol
 | UX language audit (investment-advice framing) | C-2b | ✅ Complete (`788aa08`) |
 | RLS + auth/security | C-3 | ✅ Complete (`236890c`, `56a4407`) |
 | Billing disclosures (auto-renewal, cancel, receipts) | C-4 | ✅ Code complete (`462bda9`) — Stripe Dashboard + walkthrough remain |
-| Privacy Policy + Terms of Service | C-5 | ✅ Code complete (`2e1dff3`, `695a860`) — [LEGAL_TODO.md](./LEGAL_TODO.md) remains |
+| Privacy Policy + Terms of Service | C-5 | ✅ Code complete (`2e1dff3`, `695a860`) — [LAUNCH_GATE.md](./LAUNCH_GATE.md) remains |
 | Open public signups | Sprint 17 | ☐ Go-live day after legal + manual verify |
 
 ---
@@ -107,10 +107,10 @@ Full legal pages live at `/privacy` and `/terms` (`lib/legal/privacy-policy-sect
 | Cancellation procedure (self-serve) | ✅ In `/terms` + `/billing` cancel | Stripe portal wired |
 | Refund policy | ✅ In `/terms` | Counsel review |
 | Washington RCW 19.316 compliance statement | ✅ In `/terms` + pricing | Counsel review |
-| Privacy Policy (WCPA) | ✅ `/privacy` | Replace TODO placeholders per [LEGAL_TODO.md](./LEGAL_TODO.md) |
+| Privacy Policy (WCPA) | ✅ `/privacy` | Replace TODO placeholders per [LAUNCH_GATE.md](./LAUNCH_GATE.md) |
 | Counsel sign-off | ☐ Pending | ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration) |
 
-**Action:** Complete [LEGAL_TODO.md](./LEGAL_TODO.md) before go-live. Send ToS to counsel with §10/§11/§13 flagged; request **one consolidated redline**; apply redlines + TODO placeholders in **one final commit**. Sync `/terms/accept` dynamic sections in the same commit.
+**Action:** Complete [LAUNCH_GATE.md](./LAUNCH_GATE.md) before go-live. Send ToS to counsel with §10/§11/§13 flagged; request **one consolidated redline**; apply redlines + TODO placeholders in **one final commit**. Sync `/terms/accept` dynamic sections in the same commit.
 
 ---
 
@@ -122,7 +122,7 @@ Sprint C-4 **code** is done when manual verify passes:
 - [ ] All FTC negative-option checkboxes verified (self-serve cancel works)
 - [ ] Stripe receipt test passed with renewal amount shown
 - [ ] Manual walkthrough signed off
-- [ ] [LEGAL_TODO.md](./LEGAL_TODO.md) complete + counsel sign-off
+- [ ] [LAUNCH_GATE.md](./LAUNCH_GATE.md) complete + counsel sign-off
 - [ ] LAUNCH_CHECKLIST updated — go-live flip executed per sequence
 - [ ] Then and only then: Supabase Auth ON → `PUBLIC_SIGNUP_OPEN=true` ([LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip))
 
@@ -133,7 +133,7 @@ Sprint C-4 **code** is done when manual verify passes:
 | Doc | Relationship |
 |-----|-------------|
 | [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) | C-2b complete — separate from billing disclosures |
-| [LEGAL_TODO.md](./LEGAL_TODO.md) | C-5 legal gate — placeholders, counsel, email aliases |
+| [LAUNCH_GATE.md](./LAUNCH_GATE.md) | C-5 legal gate — placeholders, counsel, email aliases |
 | [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Go-live gate; legal + C-4 manual verify before open signups |
 | [NEXT_SESSION.md](./NEXT_SESSION.md) | Sprint 17 handoff |
 | [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | Consumer billing contract |
@@ -141,4 +141,4 @@ Sprint C-4 **code** is done when manual verify passes:
 
 ---
 
-*Sprint C-4 code complete 2026-06-02 (`462bda9`). Manual Stripe verify + [LEGAL_TODO.md](./LEGAL_TODO.md) required before `PUBLIC_SIGNUP_OPEN=true`.*
+*Sprint C-4 code complete 2026-06-02 (`462bda9`). Manual Stripe verify + [LAUNCH_GATE.md](./LAUNCH_GATE.md) required before `PUBLIC_SIGNUP_OPEN=true`.*

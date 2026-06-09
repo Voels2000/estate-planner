@@ -18,7 +18,7 @@ Two sections:
 
 Do not execute Section 2 until all Section 1 items are checked.
 
-**Related docs:** [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) (legal/business/ops blockers) · [BUSINESS_READINESS_PLAN.md](./BUSINESS_READINESS_PLAN.md) (WA business + compliance readiness) · [LEGAL_TODO.md](./LEGAL_TODO.md) · [NEXT_SESSION.md](./NEXT_SESSION.md) · [ROADMAP.md](./ROADMAP.md) · [DECISION_LOG.md](./DECISION_LOG.md)
+**Related docs:** [LAUNCH_GATE.md](./LAUNCH_GATE.md) (sign-off blockers) · [NEXT_SESSION.md](./NEXT_SESSION.md) · [ROADMAP.md](./ROADMAP.md) · [DECISION_LOG.md](./DECISION_LOG.md)
 
 ---
 
@@ -105,11 +105,11 @@ These must be complete before launch. Update status as sprints close them.
 - [x] **`deleteUser.ts` production hardening** — FK scan (`firms`, `firm_members`, `change_log` + full list), orphan Auth handling, hard/soft delete fallback, post-deletion verification (`aea4bf6`, `3cdd9b5`)
 - [x] **`verify:deletion` script** — `npm run verify:deletion -- --email user@example.com` — must PASS before WCPA response
 - [x] **Go-live purge script** — `npm run cleanup:purge` / `cleanup:purge:dry-run`; `GO_LIVE_PROTECTED` in [scripts/cleanup-test-accounts.ts](../scripts/cleanup-test-accounts.ts)
-- [ ] **Pre-flip database cleanup (Section 7)** — full checklist in [PRE_LAUNCH_CHECKLIST.md § Database & compliance cleanup](./PRE_LAUNCH_CHECKLIST.md#section-7--database--compliance-cleanup-): dry-run → purge → `seed:e2e` → admin compliance tabs → verify SQL
+- [ ] **Pre-flip database cleanup (Section 7)** — full checklist in [E2E_TEST_RESET.md § Go-live database cleanup](./E2E_TEST_RESET.md#go-live-database-cleanup): dry-run → purge → `seed:e2e` → admin compliance tabs → verify SQL
 - [ ] **Auth table clean** — only protected real accounts + `@mywealthmaps.test` after final purge (partial purge 2026-06-07; re-run before flip if new test signups)
 - [ ] **`verify:deletion` spot-check** — one deleted test email shows PASS
 - [ ] **No soft-deleted Auth rows** — `SELECT … FROM auth.users WHERE deleted_at IS NOT NULL` returns 0 rows
-- [ ] **Compliance tables** — no pending test `deletion_schedule` or open test `privacy_requests` ([PRE_LAUNCH § 7.4](./PRE_LAUNCH_CHECKLIST.md#74-compliance-tables-admin-cleanup))
+- [ ] **Compliance tables** — no pending test `deletion_schedule` or open test `privacy_requests` ([E2E_TEST_RESET.md § Go-live database cleanup](./E2E_TEST_RESET.md#go-live-database-cleanup))
 
 ### Compliance reminders (Sprint C-7) ✅ verified 2026-05-25
 
@@ -254,14 +254,14 @@ Run these on launch day after all Section 1 gates are checked. Do not run early.
 
 ### Opening signups — go-live flip
 
-The site is in waitlist mode by default on `VERCEL_ENV=production`. Do **not** flip `PUBLIC_SIGNUP_OPEN` until Section 1 product gates, **legal review** ([LEGAL_TODO.md](./LEGAL_TODO.md)), **C-4 manual Stripe walkthrough** ([BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)), and production drip smoke are signed off.
+The site is in waitlist mode by default on `VERCEL_ENV=production`. Do **not** flip `PUBLIC_SIGNUP_OPEN` until Section 1 product gates, **legal review** ([LAUNCH_GATE.md](./LAUNCH_GATE.md)), **C-4 manual Stripe walkthrough** ([BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)), and production drip smoke are signed off.
 
 #### Pre-go-live — legal and config (before go-live day)
 
 Complete before flipping Supabase Auth or `PUBLIC_SIGNUP_OPEN`:
 
 - [ ] **`handle_new_user` trigger in production** — Apply `20260526000001_handle_new_user_trigger.sql` and **`20260527130500_fix_signup_subscription_defaults.sql`** before flipping `PUBLIC_SIGNUP_OPEN`. Verify: fresh signup → `profiles.subscription_status = 'none'`, `consumer_tier = 1` (not signup-time `trialing`).
-- [ ] **Counsel sign-off** — ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration). **Handoff:** flag those three sections; ask for one consolidated redline — [LEGAL_TODO.md § Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos). Apply redlines + TODO placeholder find-and-replace in **one final commit** before go-live.
+- [ ] **Counsel sign-off** — ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration). **Handoff:** flag those three sections; ask for one consolidated redline — [LAUNCH_GATE.md Gate 1 Legal](./LAUNCH_GATE.md#gate-1--must-be-complete-before-public_signup_opentrue). Apply redlines + TODO placeholder find-and-replace in **one final commit** before go-live.
 - [ ] **Email aliases** — privacy@, security@, legal@ forwarding to monitored inbox
 - [ ] **Stripe Dashboard** — `invoice.upcoming` webhook enabled; Customer Portal cancellation enabled; receipt emails on
 - [ ] **C-4 manual walkthrough** — signup → paid → receipt → self-serve cancel ([BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md))
@@ -411,7 +411,7 @@ In **Authentication → Settings**:
 - [ ] **RLS isolation smoke (manual)** — Two consumers + connected advisor/client; confirm cross-household reads return `[]` — `docs/audits/README.md`. **Automated:** `npm run verify:rls` on staging in CI; **SQL:** local post-deploy only ([ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md))
 - [x] **Auth + security (Sprint C-3 Phase 1b + Phase 3)** — `/auth/callback`, confirm-email, MFA middleware, security headers, PII logging. Completed: 2026-06-02 (`56a4407`)
 - [x] **Billing disclosures (Sprint C-4 — code)** — RCW 19.316, FTC cancel, renewal reminders (`462bda9`). **Manual:** Stripe Dashboard + walkthrough — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)
-- [x] **Privacy + Terms (Sprint C-5 — code)** — `/privacy`, `/terms`, footer links, sitemap (`2e1dff3`, `695a860`). **Manual:** [LEGAL_TODO.md](./LEGAL_TODO.md) — placeholders + counsel sign-off
+- [x] **Privacy + Terms (Sprint C-5 — code)** — `/privacy`, `/terms`, footer links, sitemap (`2e1dff3`, `695a860`). **Manual:** [LAUNCH_GATE.md](./LAUNCH_GATE.md) — placeholders + counsel sign-off
 
 ### Vercel Production env vars (Sprint 15 go-live — verified 2026-05-24)
 
@@ -703,7 +703,7 @@ Run on **preview** with test mode keys and all six price IDs set:
 
 ### Phase 2 — Live mode (production) — go-live day only
 
-**Prerequisite:** Phase 1 fully checked. Legal + [LEGAL_TODO.md](./LEGAL_TODO.md) cleared.
+**Prerequisite:** Phase 1 fully checked. Legal + [LAUNCH_GATE.md](./LAUNCH_GATE.md) cleared.
 
 #### 1. Duplicate catalog in live mode
 
@@ -808,7 +808,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 | Waitlist mode | ✅ Active — public signup → `/waitlist` | — |
 | Compliance code (C-2b–C-5) | ✅ All on `main` — see commit log in [NEXT_SESSION.md](./NEXT_SESSION.md) | — |
 | Sprint C-3 RLS (Phase 1) | ✅ `236890c` — push migration to production if not applied | Yes (data isolation) |
-| LEGAL_TODO + counsel sign-off | ☐ Open — 3 TODO placeholders; ToS §10/§11/§13 | **Yes** |
+| LAUNCH_GATE + counsel sign-off | ☐ Open — 3 TODO placeholders; ToS §10/§11/§13 | **Yes** |
 | Sprint C-4 manual verify | ☐ Stripe Dashboard + production walkthrough | **Yes** |
 | Stripe production billing | ☐ Phase 1 test complete → Phase 2 live keys + 6 prices — [§ Stripe Setup](#stripe-setup-required-before-public_signup_opentrue) | **Yes** |
 | Open signups (`PUBLIC_SIGNUP_OPEN`) | **Pending** — go-live day after blockers cleared | Yes |
@@ -819,7 +819,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 
 | Item | Owner | Notes |
 |------|-------|-------|
-| **LEGAL_TODO.md** | You | Counsel handoff + one-commit legal update — [§ Counsel handoff](./LEGAL_TODO.md#counsel-handoff--how-to-send-the-tos) |
+| **LAUNCH_GATE.md** | You | Counsel handoff + one-commit legal update — [Gate 1 Legal](./LAUNCH_GATE.md#gate-1--must-be-complete-before-public_signup_opentrue) |
 | **Stripe Phase 1 (test mode)** | You | [§ Stripe Setup — Phase 1](./LAUNCH_CHECKLIST.md#phase-1--test-mode-sandbox--complete-before-live-keys) — 6 prices + preview env + webhook |
 | **C-4 manual walkthrough** | You | [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) on preview |
 | **GitHub E2E smoke (pre-go-live)** | You | [§ GitHub Actions E2E smoke](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live) — `E2E_SMOKE_IN_CI=true` + secrets before open signups |
@@ -839,7 +839,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 | 2026-05-30 | PDF exemption + alert dedupe | **Closed** — page 3 uses `currentFederalExemption()`; `dedupeActionItems()` for duplicate alerts |
 | 2026-05-30 | PDF export path wiring | **Closed** — shared `loadAdvisorExportWiring`; API `?type=report`; header Export estate report + Meeting brief split |
 | 2026-05-30 | PDF narrative engine | **Closed** — rule-based cover + action items; `fetchNarrativePdfFields` parallel fetch; Meeting Prep top alerts; manual smoke checklist added |
-| 2026-05-30 | Prod API route fix + security smoke | **Closed** — `af12ff0` documents slug conflict (`[household_id]` vs `[id]`); all `/api/*` routes respond; `npm run test:e2e:security-smoke` 7/7 on prod; [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) added |
+| 2026-05-30 | Prod API route fix + security smoke | **Closed** — `af12ff0` documents slug conflict (`[household_id]` vs `[id]`); all `/api/*` routes respond; `npm run test:e2e:security-smoke` 7/7 on prod; [LAUNCH_GATE.md](./LAUNCH_GATE.md) (go-live sign-off checklist) |
 | 2026-05-29 | RPC guards + attorney RLS + edge auth | **Deployed prod** — migrations + `estate-monte-carlo` on `fnzvlmrqwcqwiqueevux`; SQL verified; browser smoke passed 2026-05-30 |
 | 2026-05-29 | Security + CI + dead code | **Closed** — email route gates, household access, CI workflow, 37 unit tests, 4 E2E specs |
 | 2026-05-29 | Health Score + Advisor Playbook | **Closed** — `feat(health-score)` unified badge + context; `feat(advisor)` first-client playbook + needs-attention; migration timestamp renames |
@@ -876,7 +876,7 @@ STRIPE_CUSTOMER_PORTAL_URL=https://billing.stripe.com/p/login/…   # live porta
 | 2026-06-02 | Sprint P-1 | **Closed** — Performance quick wins (`5c24160`); indexes applied in prod. |
 | 2026-06-02 | Sprint C-3 | **Closed** — RLS (`236890c`); auth callback, MFA, security headers (`56a4407`); docs (`cda2ccc`, `d854c05`). |
 | 2026-06-02 | Sprint C-4 | **Code complete** — billing disclosures (`462bda9`); manual Stripe walkthrough remains. |
-| 2026-06-02 | Sprint C-5 | **Code complete** — Privacy Policy, Terms of Service, footer, sitemap (`2e1dff3`, `695a860`); [LEGAL_TODO.md](./LEGAL_TODO.md) remains. |
+| 2026-06-02 | Sprint C-5 | **Code complete** — Privacy Policy, Terms of Service, footer, sitemap (`2e1dff3`, `695a860`); [LAUNCH_GATE.md](./LAUNCH_GATE.md) remains. |
 | 2026-05-25 | Sprint UX-1 | **Closed** — Life events hub `/events` + in-app picker (`6fb73e6`) |
 | 2026-05-25 | Auth cleanup | Auth table clean (9 accounts); deleteUser FK hardening (`aea4bf6`, `3cdd9b5`); verify-deletion script |
 | 2026-05-25 | Design Phase 1–3 | **Closed** — tokens + sidebar + indigo sweep (`d173b00`, `249bf85`, `7a1a121`, `a10299b`, `37f3f0a`) |

@@ -12,7 +12,7 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (session handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [PRE_LAUNCH_CHECKLIST.md](./PRE_LAUNCH_CHECKLIST.md) (legal/ops go-live blockers) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (product + technical go-live) · [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) (professional + consumer handoff toggles) · [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) (local → preview → prod gates) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) (gap backlog) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (pre-flip automated gate) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) (compliance language policy) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (billing go-live verify) · [LEGAL_TODO.md](./LEGAL_TODO.md) (legal gate) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (session handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [LAUNCH_GATE.md](./LAUNCH_GATE.md) (legal/ops go-live blockers) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (product + technical go-live) · [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) (professional + consumer handoff toggles) · [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) (local → preview → prod gates) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) (gap backlog) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (pre-flip automated gate) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) (compliance language policy) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (billing go-live verify) · [LAUNCH_GATE.md](./LAUNCH_GATE.md) (legal gate) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
 
 ---
 
@@ -673,7 +673,7 @@ Authoritative checklist: [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
 
 **Not in Vercel Production:** `SUPABASE_URL` — only for local/staging seed scripts. Vercel Supabase integration supplies project URL/keys for deploys.
 
-**Opening signups (go-live flip):** Complete [LEGAL_TODO.md](./LEGAL_TODO.md) and C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)) first. Go-live day: Supabase Auth ON → verify `/auth/callback` → set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → Core §1–3 smoke with fresh email. See [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
+**Opening signups (go-live flip):** Complete [LAUNCH_GATE.md](./LAUNCH_GATE.md) and C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)) first. Go-live day: Supabase Auth ON → verify `/auth/callback` → set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production → redeploy → Core §1–3 smoke with fresh email. See [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip).
 
 ### Supabase Data API access (grants + RLS)
 
@@ -1315,7 +1315,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Sprint P-2 (closed 2026-06-02):** Pre-launch perf refactors — `estate_health_scores.recommendations` cache (recompute persists RPC output; dashboard reads cache); projections cache-first in `loadProjectionData`; layout auth dedup via `getDashboardLayoutContext` (`47a38f3`). Migration: `20260602130000_sprint_p2_recommendations_cache.sql`. See [PERF_SPRINT_P1.md § Sprint P-2](./archive/sprints/PERF_SPRINT_P1.md#sprint-p-2--pre-launch-refactors).
 
-**Sprint C-5 (code complete 2026-06-02):** Privacy Policy (`/privacy`), Terms of Service (`/terms`), `LegalFooterLinks`, sitemap/robots (`2e1dff3`, `695a860`). Post-checkout terms accept at `/terms/accept`. Legal placeholders + counsel sign-off — [LEGAL_TODO.md](./LEGAL_TODO.md).
+**Sprint C-5 (code complete 2026-06-02):** Privacy Policy (`/privacy`), Terms of Service (`/terms`), `LegalFooterLinks`, sitemap/robots (`2e1dff3`, `695a860`). Post-checkout terms accept at `/terms/accept`. Legal placeholders + counsel sign-off — [LAUNCH_GATE.md](./LAUNCH_GATE.md).
 
 **Sprint 11 (closed):** Planning-app coherence — `PlanningSurfaceNav`, charitable empty state, `/complete` + `/projections` profile-only empty CTAs (`PLANNING_MISSING_PROJECTION_ACTIONS_TIER2`). **Updated 2026-05-29:** `/projections` uses `checkProjectionReadiness()` + inline prompts; TIER2 adds `/scenarios` link.
 Sprints 9–10 closed: life-event-on-connect, Digital Assets tier 2, `getAppUrl()`, minimal business
@@ -1362,7 +1362,7 @@ Two concepts must stay separate until product designs unified intake:
 
 ### High priority — Sprint 17 (go-live prep)
 
-1. **LEGAL_TODO.md** — counsel handoff (flag ToS §10/§11/§13; one consolidated redline); placeholders + redlines in one commit — **blocks `PUBLIC_SIGNUP_OPEN`**
+1. **LAUNCH_GATE.md** — counsel handoff (flag ToS §10/§11/§13; one consolidated redline); placeholders + redlines in one commit — **blocks `PUBLIC_SIGNUP_OPEN`**
 2. **C-4 manual verify** — Stripe Dashboard + production walkthrough — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)
 3. **Stripe production billing** — production keys; checkout + webhook on production.
 4. **Go-live day ops** — Supabase Auth ON → `PUBLIC_SIGNUP_OPEN=true`; Core §1–3 smoke with fresh email. [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)

@@ -172,7 +172,7 @@ See [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) for mapping to manual
 - Stripe live-card checkout (Phase 2)
 - Fresh signup → Supabase attribution (`?ref=` / `?aref=`)
 - Email drip inbox delivery
-- Counsel sign-off on ToS ([LEGAL_TODO.md](./LEGAL_TODO.md))
+- Counsel sign-off on ToS ([LAUNCH_GATE.md](./LAUNCH_GATE.md))
 - **Prospect Mode + Mobile Review (2026-05-29)** — 19-step checklist: [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29)
 
 ---
