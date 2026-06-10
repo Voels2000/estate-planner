@@ -59,15 +59,11 @@ export default async function LearnIndexPage() {
 
       <div className="pt-6">
         <h2
-          className="mb-2 text-xl"
+          className="mb-6 text-xl"
           style={{ fontFamily: 'var(--font-display, Playfair Display, Georgia, serif)', color: '#0f1f3d' }}
         >
           State estate tax guides
         </h2>
-        <p className="mb-6 text-sm text-[#718096]">
-          Long-form explainers for all 13 states with an estate tax — updated from a single data
-          source, not copy-pasted articles.
-        </p>
 
         {featured && (() => {
           const slug = stateCodeToSlug(featured.state_code)
