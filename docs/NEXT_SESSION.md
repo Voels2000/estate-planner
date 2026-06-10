@@ -88,13 +88,32 @@ Do NOT set `PUBLIC_SIGNUP_OPEN=true` until all Gate 1 items in [LAUNCH_GATE.md](
 
 ---
 
+## Post-deploy spot-checks — State estate tax content (2026-06-10) ✅
+
+Run in sequence after deploy (each catches a different failure mode):
+
+| # | URL / surface | Pass criteria |
+|---|---------------|---------------|
+| 1 | `/learn/washington-estate-tax` | Dynamic `[state-tax-slug]` route; `$390,000` / `$0` scenario; static page gone |
+| 2 | `/learn/oregon-estate-tax` | `$272,000` without planning / `$0` with bypass trust |
+| 3 | `/learn/massachusetts-estate-tax` | `Cliff effect warning` callout (`has_cliff_effect = true`) |
+| 4 | `/admin` → State tax content | 13 rows; staleness pills; OR edit panel brackets = pretty-printed JSON (not `[object Object]`) |
+
+**Ops done (2026-06-10):** `last_reviewed = CURRENT_DATE` for all states except WA (keeps researched 2026-06-01 baseline) — prevents §11 Monday cron from firing on 12 seeded historical dates.
+
+---
+
 ## Queued next (post-ship ops)
 
-### 1. Dashboard `canShowPartial` nudge — low priority
+### 1. `/learn` index — per-state risk one-liner (low effort, high SEO)
+
+The index now shows all 13 state cards but no copy distinguishing why Illinois vs Oregon matters. Add a short “why this matters” line per card — exemption amount + key risk (cliff effect, frozen exemption, low threshold). Pull from `quirks[0]` or a dedicated `card_risk` field.
+
+### 2. Dashboard `canShowPartial` nudge — low priority
 
 Deferred. Show a subtle setup card on `/dashboard` when the user has financial data but is missing birth year or retirement age for projections. Revisit after ~2 weeks of traffic — `/projections` already has inline prompts.
 
-### 2. Attorney drip steps 2 & 3 — cron verification
+### 3. Attorney drip steps 2 & 3 — cron verification
 
 Worth a manual DB check once a **real** attorney has registered (not seed-only). See [LAUNCH_CHECKLIST § Attorney drip cron (ops)](./LAUNCH_CHECKLIST.md#attorney-drip-cron-ops).
 
