@@ -1,6 +1,14 @@
 # UX Language Audit — Sprint C-2b
-# Run: 2026-05-31 09:10
+# Run: 2026-06-08 10:28
 # Project root: /Users/al/Estate
+
+
+═══════════════════════════════════════════
+PHRASE: "your plan is"
+SEVERITY: HIGH — 'plan' vs 'household data'
+HITS: 1 (in lib/dashboard)
+───────────────────────────────────────────
+lib/dashboard/scoreDisplayHelpers.ts:50:      headline: `Your plan is in good shape, ${firstName}.`,
 
 
 ═══════════════════════════════════════════

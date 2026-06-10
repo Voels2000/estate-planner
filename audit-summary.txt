@@ -1,9 +1,10 @@
 # UX Language Audit — Summary
-# 2026-05-31 09:10
-# Total flagged instances: 12
+# 2026-06-08 10:28
+# Total flagged instances: 13
 
 | Phrase | Hits | Severity |
 |--------|------|----------|
+| "your plan is" | 1 | HIGH — 'plan' vs 'household data' |
 | "we recommend" | 1 | CRITICAL — platform must not recommend |
 | "for your estate" | 1 | HIGH — personalizes generic strategy education |
 | "you must" | 1 | HIGH — directive language |
