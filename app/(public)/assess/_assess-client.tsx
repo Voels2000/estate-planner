@@ -11,6 +11,9 @@ import {
   type PlanRecommendation,
 } from '@/lib/assessment/recommendPlanFromScores'
 import { StateEstateTaxCallout } from '@/components/learn/StateEstateTaxCallout'
+import { StatePickerDropdown } from '@/components/learn/StatePickerDropdown'
+import { useSelectedState } from '@/lib/learn/useSelectedState'
+import { getUsStateName } from '@/lib/learn/us-states'
 
 const QUESTIONS = [
   {
@@ -252,6 +255,40 @@ export default function AssessClient() {
   const [answers, setAnswers] = useState<Answers>({})
   const [showSaveCTA, setShowSaveCTA] = useState(false)
   const [showRestoredBanner, setShowRestoredBanner] = useState(false)
+  const [householdState, setHouseholdState] = useState<string | null | undefined>(undefined)
+  const [showStatePicker, setShowStatePicker] = useState(false)
+
+  useEffect(() => {
+    async function loadHouseholdState() {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setHouseholdState(null)
+          return
+        }
+        const { data: household } = await supabase
+          .from('households')
+          .select('state_primary')
+          .eq('owner_id', user.id)
+          .maybeSingle()
+        setHouseholdState(household?.state_primary ?? null)
+      } catch {
+        setHouseholdState(null)
+      }
+    }
+    loadHouseholdState()
+  }, [])
+
+  const { selectedState, setSelectedState, isEstateTaxState } = useSelectedState(householdState)
+
+  const hasProfileState = householdState != null && householdState !== ''
+  const showStaticProfileState = hasProfileState && !showStatePicker
+
+  function handleStatePick(code: string) {
+    setSelectedState(code)
+    setShowStatePicker(false)
+  }
 
   function computeScores() {
     const raw: Record<string, number> = {}
@@ -492,7 +529,60 @@ export default function AssessClient() {
 
         {/* Intro cards + start */}
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px 80px' }}>
-          <StateEstateTaxCallout stateCode="WA" />
+          <div style={{
+            background: 'white',
+            border: '1px solid #e2e8f0',
+            borderRadius: 12,
+            padding: '18px 20px',
+            marginBottom: 24,
+            boxShadow: '0 4px 20px rgba(15,31,61,0.06)',
+          }}>
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: '#4a7c6f',
+                marginBottom: 8,
+              }}
+            >
+              Your state
+            </div>
+            {showStaticProfileState ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 14, fontWeight: 500, color: '#0f1f3d' }}>
+                  {getUsStateName(selectedState ?? householdState!)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowStatePicker(true)}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#0f1f3d',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    fontFamily: 'var(--font-body, DM Sans, system-ui)',
+                  }}
+                >
+                  change
+                </button>
+              </div>
+            ) : (
+              <StatePickerDropdown
+                value={selectedState}
+                onChange={handleStatePick}
+              />
+            )}
+          </div>
+
+          {isEstateTaxState && selectedState && (
+            <StateEstateTaxCallout stateCode={selectedState} />
+          )}
 
           <div style={{
             display: 'grid',
