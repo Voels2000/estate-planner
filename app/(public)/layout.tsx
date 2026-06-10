@@ -13,8 +13,9 @@ export default async function PublicLayout({
   const hostname = headerList.get('host')
   const waitlistMode = isWaitlistMode({ hostname })
   const isEducationRoute = pathname.startsWith('/education')
+  const isLearnRoute = pathname.startsWith('/learn')
 
-  if (isEducationRoute) {
+  if (isEducationRoute || isLearnRoute) {
     return <>{children}</>
   }
 

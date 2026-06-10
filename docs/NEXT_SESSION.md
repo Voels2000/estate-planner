@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-09 (Admin-Redesign shipped)
+# Last updated: 2026-06-09 (WA estate tax SEO shipped)
 
 ---
 
@@ -14,7 +14,7 @@
 
 ## Current focus (2026-06-09)
 
-Engineering sprints through L4 and **Admin-A**, **Admin-P1**, and **Admin-Redesign** are **complete**. Remaining pre-launch work is **non-code**: [LAUNCH_GATE.md](./LAUNCH_GATE.md) Gate 1 only (legal review, Stripe production config, smoke tests).
+Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, and **WA estate tax SEO** are **complete**. Remaining pre-launch work is **non-code**: [LAUNCH_GATE.md](./LAUNCH_GATE.md) Gate 1 only (legal review, Stripe production config, smoke tests).
 
 | Area | Status | Canonical doc |
 |------|--------|---------------|
@@ -25,6 +25,7 @@ Engineering sprints through L4 and **Admin-A**, **Admin-P1**, and **Admin-Redesi
 | Admin Ops Home + task engine | ✅ Shipped | `/admin` → Ops Home · `ops_tasks` · `cron_health` |
 | Admin P1 (tax config, user detail, waitlist) | ✅ Shipped | `/admin` → Tax Rules · Users · Waitlist |
 | Admin-Redesign (sidebar, debug/funnel fixes) | ✅ Shipped | `/admin` sidebar nav · `admin-shell.tsx` |
+| WA estate tax SEO (`/learn`) | ✅ Shipped | `/learn/washington-estate-tax` · sitemap 0.8 · advisor PDF link |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
 ---
@@ -33,6 +34,7 @@ Engineering sprints through L4 and **Admin-A**, **Admin-P1**, and **Admin-Redesi
 
 | Item | Command / entry point |
 |------|------------------------|
+| WA estate tax SEO sprint | `/learn/washington-estate-tax` · `/learn` index · cross-page callouts · sitemap 0.8 |
 | Admin-Redesign — sidebar + bug fixes | `/admin` sidebar · Debug tab reads `federal_tax_config` · funnel 30d-only counts |
 | Admin P1 — federal tax config editor | `/admin` → Tax Rules → Federal Tax Configuration · `GET/PATCH /api/admin/tax-config` |
 | Admin P1 — user detail panel | `/admin` → Users (click row) · sync-stripe · tier override · password reset |
@@ -75,7 +77,7 @@ Do NOT set `PUBLIC_SIGNUP_OPEN=true` until all Gate 1 items in [LAUNCH_GATE.md](
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **go-live prep.** All three admin sprints are **shipped**: Admin-A (Ops Home), Admin-P1 (tax config, user detail, waitlist), Admin-Redesign (sidebar nav, debug/funnel fixes). L1–L4 + B2B2C billing complete. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
+> My Wealth Maps — **go-live prep.** Admin sprints + **WA estate tax SEO** are **shipped**: `/learn/washington-estate-tax` (JSON-LD, sitemap 0.8, cold-email PDF link), Admin-A (Ops Home), Admin-P1 (tax config, user detail, waitlist), Admin-Redesign (sidebar nav, debug/funnel fixes). L1–L4 + B2B2C billing complete. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
 >
 > **Remaining blockers before open signups:** [LAUNCH_GATE.md](./LAUNCH_GATE.md) **Gate 1 only** — legal review, Stripe production catalog/config, production smoke (drip, E2E, billing walkthrough). No further engineering sprints required for launch.
 >

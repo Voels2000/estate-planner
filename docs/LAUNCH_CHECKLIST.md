@@ -485,6 +485,7 @@ npx tsx scripts/seed-test-consumer-estate.ts
 - [x] **Verify ownership** — via Cloudflare domain provider (not meta tag / `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`) (2026-05-24)
 - [x] **Submit sitemap** — Sitemaps → `https://mywealthmaps.com/sitemap.xml` → Submit (2026-05-24)
 - [x] **Spot-check indexing requests** — manually request indexing for priority event URLs: `/event/selling-a-business`, `/event/death-of-spouse`, `/event/approaching-retirement`, `/event/estate-tax-law-change`, `/event/serious-diagnosis` (2026-05-24)
+- [ ] **Request indexing for WA estate tax guide** — `/learn/washington-estate-tax` (add at robots/sitemap re-enable; cold-email PDF link target)
 
 ### Supabase prod migrations (confirm applied)
 

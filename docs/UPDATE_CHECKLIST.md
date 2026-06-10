@@ -64,6 +64,16 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## WA estate tax SEO — `/learn` (2026-06-09) — shipped
+
+- [x] `/learn/washington-estate-tax` — explainer + JSON-LD/OG/canonical (`components/learn/WashingtonEstateTaxArticle.tsx`)
+- [x] `/learn` index — featured WA residents card
+- [x] Cross-page callouts — homepage hero, `/assess`, 4 event slugs (`WaEstateTaxCallout`)
+- [x] `app/sitemap.ts` — `/learn` (0.7) + explainer (0.8)
+- [x] `middleware.ts` `PUBLIC_PATHS` + `(public)/layout.tsx` skip for `/learn/*`
+- [x] DECISION_LOG · MASTER_ARCHITECTURE · ROADMAP · NEXT_SESSION · CONSUMER_NAV_MAP synced
+- [x] No migration — SCHEMA_CHANGELOG unchanged
+
 ## Admin-Redesign — sidebar nav, bug fixes, polish (2026-06-09) — shipped
 
 - [x] `app/admin/admin-shell.tsx` — sidebar nav (Operations / Analytics / Configuration / Developer)

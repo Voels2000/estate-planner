@@ -66,7 +66,9 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 | Home | `/` | `(public)/page.tsx` | Marketing landing; `PublicNav` + footer via `(public)/layout.tsx` |
 | Pricing | `/pricing` | `(public)/pricing` | Shared `(public)` nav |
 | Events Hub | `/events` | `(public)/events` | Public; SSG; all 24 life events by category; no auth required |
-| Planning Assessment | `/assess` | `(public)/assess/page.tsx` + `_assess-client.tsx` | Logged-out: scores visible, gap report gated; `localStorage` pending assessment |
+| Planning Assessment | `/assess` | `(public)/assess/page.tsx` + `_assess-client.tsx` | Logged-out: scores visible, gap report gated; `localStorage` pending assessment; WA estate tax callout above intro cards |
+| Learn (guides index) | `/learn` | `(public)/learn/page.tsx` | Public; featured WA residents card; own layout (no `PublicNav`) |
+| WA estate tax guide | `/learn/washington-estate-tax` | `(public)/learn/washington-estate-tax/page.tsx` | SEO evergreen explainer; JSON-LD/OG/canonical; cold-email PDF link target |
 | Find an Advisor | `/find-advisor` | `(public)/find-advisor` | Shared `(public)` nav |
 | Find an Attorney | `/find-attorney` | `(public)/find-attorney` | Shared `(public)` nav |
 | Privacy Policy | `/privacy` | `(public)/privacy` | `LegalFooterLinks` in public footer; WCPA structure (Sprint C-5) |
@@ -78,12 +80,12 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 
 | Route | Page title (hero) | Tier | Notes |
 |-------|-------------------|------|--------|
-| `/event/selling-a-business` | Business sale | — | Public; SSG |
-| `/event/death-of-spouse` | Death of a spouse | — | Public; SSG |
+| `/event/selling-a-business` | Business sale | — | Public; SSG; WA estate tax banner callout |
+| `/event/death-of-spouse` | Death of a spouse | — | Public; SSG; WA estate tax banner callout |
 | `/event/serious-diagnosis` | Serious health diagnosis | — | Public; SSG |
-| `/event/receiving-inheritance` | Receiving an inheritance | — | Public; SSG |
+| `/event/receiving-inheritance` | Receiving an inheritance | — | Public; SSG; WA estate tax banner callout |
 | `/event/divorce` | Divorce | — | Public; SSG |
-| `/event/approaching-retirement` | Approaching retirement | — | Public; SSG |
+| `/event/approaching-retirement` | Approaching retirement | — | Public; SSG; WA estate tax banner callout |
 | `/event/large-rsu-vest` | RSU / liquidity event | — | Public; SSG |
 | `/event/new-child-grandchild` | New child or grandchild | — | Public; SSG |
 | `/event/[slug]` | (24 total — see `/events`) | — | Remaining slugs in `lib/events/content-sprint5.ts` |

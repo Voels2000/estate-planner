@@ -5,6 +5,8 @@ import { getSignupHref } from '@/lib/waitlist-mode'
 import type { EventContent, EventAction } from '@/lib/events/types'
 import type { Metadata } from 'next'
 import { ReferralTracker } from './_referral-tracker'
+import { WaEstateTaxCallout } from '@/components/learn/WaEstateTaxCallout'
+import { shouldShowWaEstateTaxCallout } from '@/lib/learn/wa-estate-tax'
 
 // ── Static params for all 8 events ───────────────────────────────────────────
 
@@ -336,6 +338,8 @@ export default async function EventPage({
 
       {/* Body */}
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px 80px' }}>
+
+        {shouldShowWaEstateTaxCallout(slug) && <WaEstateTaxCallout variant="banner" />}
 
         {/* What changes */}
         <section style={{ marginBottom: 48 }}>

@@ -49,6 +49,7 @@ const PUBLIC_PATHS = [
   '/mfa-challenge',
   '/settings/security',
   '/education',
+  '/learn',
   '/intake',
 ]
 

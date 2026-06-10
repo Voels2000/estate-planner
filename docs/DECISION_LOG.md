@@ -2546,6 +2546,18 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — WA estate tax SEO: `/learn` path (not `/blog`)
+
+**Decision:** Washington estate tax explainer ships at `/learn/washington-estate-tax` with a `/learn` index — not under `/blog/*`. Cross-page internal links from homepage hero, `/assess`, and four estate-relevant event slugs (`death-of-spouse`, `receiving-inheritance`, `approaching-retirement`, `selling-a-business`). Sitemap priority 0.8 for the explainer; 0.7 for `/learn`. Cold-email leave-behind PDF links to `mywealthmaps.com/learn/washington-estate-tax`.
+
+**Reasoning:** Pre-launch domain is not indexed yet; the page must exist at launch (not post-launch) with meta title/description targeting “Washington state estate tax 2026”, “WA estate tax exemption”, and “bypass trust Washington”. `/learn` signals durable educational content vs ephemeral blog posts — aligned with platform identity and advisor outreach sequencing.
+
+**Alternatives considered:** `/blog/washington-estate-tax` (rejected — weaker evergreen authority signal). Post-launch page add (rejected — misses day-one indexing window).
+
+**Implication:** Future state-specific explainers belong under `/learn/*`. `app/(public)/layout.tsx` skips `PublicNav` on `/learn/*` (same pattern as `/education/*`). `middleware.ts` `PUBLIC_PATHS` includes `/learn`.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

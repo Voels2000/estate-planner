@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-09 (Admin-Redesign; Admin P1; Admin-A; LAUNCH_GATE)
+# Last updated: 2026-06-09 (WA estate tax SEO; Admin-Redesign; Admin P1; Admin-A; LAUNCH_GATE)
 
 ---
 
@@ -18,6 +18,20 @@
 ---
 
 ## Current sprint
+
+### Sprint — WA estate tax SEO (public `/learn`) `[x]` **shipped (2026-06-09)**
+
+| Item | Status | Entry point |
+|------|--------|-------------|
+| `/learn/washington-estate-tax` — full explainer + JSON-LD/OG/canonical | `[x]` | `app/(public)/learn/washington-estate-tax/page.tsx` |
+| `/learn` index — featured WA residents card | `[x]` | `app/(public)/learn/page.tsx` |
+| Cross-page WA callouts (homepage, assess, 4 event slugs) | `[x]` | `WaEstateTaxCallout` · `lib/learn/wa-estate-tax.ts` |
+| Sitemap `/learn` (0.7) + explainer (0.8) | `[x]` | `app/sitemap.ts` |
+| `PUBLIC_PATHS` + layout skip for `/learn/*` | `[x]` | `middleware.ts` · `(public)/layout.tsx` |
+
+**Detail:** [MASTER_ARCHITECTURE.md § Learn guides](./MASTER_ARCHITECTURE.md#learn-guides-architecture-wa-estate-tax-seo-2026-06-09) · cold-email PDF link target
+
+---
 
 ### Sprint — Admin-Redesign (sidebar nav, bug fixes, polish) `[x]` **shipped (2026-06-09)**
 

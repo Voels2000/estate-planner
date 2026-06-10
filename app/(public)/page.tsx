@@ -72,12 +72,22 @@ export default async function HomePage() {
           fontSize: 13,
           color: 'rgba(255,255,255,0.45)',
           maxWidth: 420,
-          margin: '0 auto 32px',
+          margin: '0 auto 16px',
           lineHeight: 1.6,
         }}>
           Not LegalZoom. Not a family office. The coordinated planning
           infrastructure this segment has never had — at $50–200/month
           vs $5K–50K in annual professional fees.
+        </p>
+        <p style={{
+          fontSize: 13,
+          color: 'rgba(232,201,122,0.85)',
+          maxWidth: 480,
+          margin: '0 auto 32px',
+          lineHeight: 1.6,
+        }}>
+          Washington households: state estate tax modeled separately from federal — including the
+          $3M WA estate tax exemption and bypass trust Washington strategies.
         </p>
         <div style={{
           display: 'flex', gap: 12,

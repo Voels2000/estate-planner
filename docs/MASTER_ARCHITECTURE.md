@@ -784,6 +784,21 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 ---
 
+## Learn guides architecture (WA estate tax SEO — 2026-06-09)
+
+**Current (as built):**
+
+- Learn route family under `app/(public)/learn/*` — evergreen reference guides (distinct from interactive `/education` modules).
+- **`/learn/washington-estate-tax`** — full WA estate tax explainer (`components/learn/WashingtonEstateTaxArticle.tsx`); SEO metadata in `lib/learn/wa-estate-tax.ts` targets “Washington state estate tax 2026”, “WA estate tax exemption”, “bypass trust Washington”; Article JSON-LD + Open Graph + canonical URL.
+- **`/learn`** — index with featured “Washington residents” card linking to the explainer.
+- **Layout chrome:** `app/(public)/learn/layout.tsx` (Learn sticky header + `EducationDisclaimer`); `app/(public)/layout.tsx` skips marketing `PublicNav`/footer on `/learn/*` (same `x-pathname` pattern as `/education/*`).
+- **Cross-page internal links:** `components/learn/WaEstateTaxCallout.tsx` — homepage hero WA line (`app/(public)/page.tsx`); assess intro (`_assess-client.tsx`); event banner on slugs in `WA_ESTATE_TAX_EVENT_SLUGS` (`death-of-spouse`, `receiving-inheritance`, `approaching-retirement`, `selling-a-business`).
+- **Sitemap:** `/learn` priority 0.7; `/learn/washington-estate-tax` priority 0.8 (`app/sitemap.ts`).
+- **Middleware:** `/learn` in `PUBLIC_PATHS` (`middleware.ts`) — unauthenticated crawl + advisor PDF leave-behind.
+- **Outreach alignment:** cold-email leave-behind PDF links to `https://mywealthmaps.com/learn/washington-estate-tax`.
+
+---
+
 ## Education Guide Architecture
 
 **Current (as built):**
@@ -879,7 +894,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 **SEO (Sprint 6):**
 
-- `app/sitemap.ts` — static public routes + all `EVENT_SLUGS` event and assess URLs; base URL from `NEXT_PUBLIC_APP_URL`.
+- `app/sitemap.ts` — static public routes (including `/learn`, `/learn/washington-estate-tax`) + all `EVENT_SLUGS` event and assess URLs; base URL from `NEXT_PUBLIC_APP_URL`.
 - `app/robots.ts` — **pre-launch:** `disallow: /` for all crawlers; sitemap line commented out. **At launch:** allow public routes, disallow app routes, uncomment sitemap URL.
 
 ### Admin portal — layout (Admin-Redesign, 2026-06-09)
@@ -1061,13 +1076,14 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 | Attorney portal | `(attorney)/layout.tsx` + nav | Clients · Requests · Billing · Firm settings | Collaboration v2: matter workflow, doc requests, firm notes; consumer data read-only |
 | Public marketing | `(public)/layout.tsx` | `PublicNav` + footer | `/pricing`, `/assess`, `/`, etc. |
 | Education | `(public)/education/layout.tsx` | Education sticky header | Overrides `PublicNav` on `/education/*` |
+| Learn guides | `(public)/learn/layout.tsx` | Learn sticky header | Overrides `PublicNav` on `/learn/*`; WA estate tax SEO |
 | Billing | `billing/layout.tsx` | `MinimalAuthNav` | Wordmark + back to dashboard |
 | Utility/token | `invite`, `beneficiary`, `share/estate-flow`, `auth/confirm-email`, `attorney-invite`, `claim-listing` layouts | `WordmarkOnly` | Brand mark only |
 | Auth flows | `(auth)/*` pages | None | Intentional — no nav on login/signup |
 | Admin | `admin/layout.tsx` | Admin header | Internal only |
 | Root | `app/layout.tsx` | None | Fonts + globals only |
 
-`(public)/layout.tsx` skips `PublicNav`/footer only when `x-pathname` starts with `/education` (set in `middleware.ts`). Homepage `/` uses the full public chrome.
+`(public)/layout.tsx` skips `PublicNav`/footer when `x-pathname` starts with `/education` or `/learn` (set in `middleware.ts`). Homepage `/` uses the full public chrome.
 
 ---
 
