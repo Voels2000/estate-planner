@@ -35,7 +35,8 @@ import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 import { InfoTooltip } from '@/components/ui/InfoTooltip'
 import { taxTermExplainer, type TaxTermContext } from '@/lib/estate/taxTermExplainers'
 import { annualGiftingCapacity } from '@/lib/gifting/perRecipientLimit'
-import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
+import { getStateDisplayName, isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
+import { STATE_SLUG_MAP, stateCodeToSlug } from '@/lib/learn/state-estate-tax-slugs'
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -1114,6 +1115,17 @@ export default function EstateTaxClient({
               )}
             </div>
           )}
+          {statePrimary &&
+            Object.values(STATE_SLUG_MAP).includes(statePrimary.toUpperCase()) && (
+              <p className="mt-4 text-sm">
+                <Link
+                  href={`/learn/${stateCodeToSlug(statePrimary)}`}
+                  className="font-medium text-[color:var(--mwm-navy)] hover:underline"
+                >
+                  Learn about {getStateDisplayName(statePrimary)} estate tax planning →
+                </Link>
+              </p>
+            )}
         </CollapsibleSection>
       )}
 

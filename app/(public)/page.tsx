@@ -79,16 +79,6 @@ export default async function HomePage() {
           infrastructure this segment has never had — at $50–200/month
           vs $5K–50K in annual professional fees.
         </p>
-        <p style={{
-          fontSize: 13,
-          color: 'rgba(232,201,122,0.85)',
-          maxWidth: 480,
-          margin: '0 auto 32px',
-          lineHeight: 1.6,
-        }}>
-          Washington households: state estate tax modeled separately from federal — including the
-          $3M WA estate tax exemption and bypass trust Washington strategies.
-        </p>
         <div style={{
           display: 'flex', gap: 12,
           justifyContent: 'center', flexWrap: 'wrap',
@@ -130,6 +120,47 @@ export default async function HomePage() {
       </div>
 
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 24px 80px' }}>
+
+        {/* STATE ESTATE TAX GUIDES */}
+        <Card className="mb-6 border p-6">
+          <div style={{
+            fontSize: 10, fontWeight: 600,
+            color: 'var(--mwm-text-muted)',
+            textTransform: 'uppercase', letterSpacing: '0.5px',
+            marginBottom: 10,
+          }}>
+            State estate tax
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 17, color: 'var(--mwm-navy)',
+            marginBottom: 10,
+          }}>
+            Does your state have an estate tax?
+          </div>
+          <p style={{
+            fontSize: 13,
+            color: 'var(--mwm-text-secondary)',
+            lineHeight: 1.65,
+            marginBottom: 14,
+            maxWidth: 640,
+          }}>
+            12 states plus DC impose their own estate tax — completely separate from federal.
+            Washington&apos;s kicks in at $3M. Oregon&apos;s at $1M. Our state-by-state guides
+            explain what&apos;s at stake and how planning changes the outcome.
+          </p>
+          <a
+            href="/learn"
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'var(--mwm-navy)',
+              textDecoration: 'none',
+            }}
+          >
+            See all state guides →
+          </a>
+        </Card>
 
         {/* ORIENTING QUESTION */}
         <div style={{

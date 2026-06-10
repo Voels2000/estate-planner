@@ -5,6 +5,7 @@ import { getSignupHref } from '@/lib/waitlist-mode'
 
 const NAV_LINKS = [
   { href: '/education', label: 'Education' },
+  { href: '/learn', label: 'State tax guides' },
   { href: '/events', label: 'Life Events' },
   { href: '/assess', label: 'Assessment' },
   { href: '/find-advisor', label: 'Find an Advisor' },
