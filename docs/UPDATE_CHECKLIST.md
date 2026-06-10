@@ -64,6 +64,24 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## `/assess` dynamic state picker (2026-06-10) — shipped
+
+- [x] `lib/learn/us-states.ts` — 50 states + DC
+- [x] `lib/learn/useSelectedState.ts` — household → `mwm_selected_state` → null; no profile writes
+- [x] `components/learn/StatePickerDropdown.tsx` — `(estate tax)` labels via `STATE_SLUG_MAP`
+- [x] `app/(public)/assess/_assess-client.tsx` — signed-in static state + change link
+- [x] ROADMAP · MASTER_ARCHITECTURE · DECISION_LOG · CONSUMER_NAV_MAP · NEXT_SESSION synced
+- [x] No migration — SCHEMA_CHANGELOG unchanged
+
+## `/learn` discovery & cross-linking (2026-06-10) — shipped
+
+- [x] `PublicNav` State tax guides → `/learn`
+- [x] Homepage state estate tax card (replaces static WA hero line)
+- [x] `StateEstateTaxCallout` extended to 13 states
+- [x] `/estate-tax` in-app guide link (`STATE_SLUG_MAP` gate)
+- [x] ROADMAP · MASTER_ARCHITECTURE · DECISION_LOG · CONSUMER_NAV_MAP · NEXT_SESSION synced
+- [x] No migration — SCHEMA_CHANGELOG unchanged
+
 ## State estate tax content system (2026-06-09) — shipped
 
 - [x] Migration `20260615000000` — `state_estate_tax_content` (13 states seeded)

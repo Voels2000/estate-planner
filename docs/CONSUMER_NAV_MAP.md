@@ -63,12 +63,12 @@ Locked accounts (`isLockedUser`): portal links render disabled with 🔒.
 
 | Label | Route | Layout | Notes |
 |-------|-------|--------|--------|
-| Home | `/` | `(public)/page.tsx` | Marketing landing; `PublicNav` + footer via `(public)/layout.tsx` |
+| Home | `/` | `(public)/page.tsx` | Marketing landing; `PublicNav` + footer; homepage state estate tax card → `/learn` |
+| State tax guides | `/learn` | `(public)/learn/page.tsx` | `PublicNav` **State tax guides** (distinct from **Education**); featured WA + 13-state grid; own layout (no `PublicNav` on `/learn/*`) |
 | Pricing | `/pricing` | `(public)/pricing` | Shared `(public)` nav |
 | Events Hub | `/events` | `(public)/events` | Public; SSG; all 24 life events by category; no auth required |
-| Planning Assessment | `/assess` | `(public)/assess/page.tsx` + `_assess-client.tsx` | Logged-out: scores visible, gap report gated; `localStorage` pending assessment; WA estate tax callout above intro cards |
-| Learn (guides index) | `/learn` | `(public)/learn/page.tsx` | Public; featured WA residents card; own layout (no `PublicNav`) |
-| WA estate tax guide | `/learn/washington-estate-tax` | `(public)/learn/washington-estate-tax/page.tsx` | SEO evergreen explainer; JSON-LD/OG/canonical; cold-email PDF link target |
+| Planning Assessment | `/assess` | `(public)/assess/page.tsx` + `_assess-client.tsx` | Logged-out: scores visible, gap report gated; `mwm_pending_assessment` + `mwm_selected_state` localStorage; state picker + dynamic `StateEstateTaxCallout` on intro (13 estate-tax states) |
+| State estate tax guides | `/learn/[state-tax-slug]` | `(public)/learn/[state-tax-slug]/page.tsx` | 13 dynamic SSG pages from `state_estate_tax_content`; e.g. `/learn/washington-estate-tax` |
 | Find an Advisor | `/find-advisor` | `(public)/find-advisor` | Shared `(public)` nav |
 | Find an Attorney | `/find-attorney` | `(public)/find-attorney` | Shared `(public)` nav |
 | Privacy Policy | `/privacy` | `(public)/privacy` | `LegalFooterLinks` in public footer; WCPA structure (Sprint C-5) |

@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-09 (State estate tax content system; WA estate tax SEO; Admin-Redesign)
+# Last updated: 2026-06-10 (/learn discovery; assess state picker)
 
 ---
 
@@ -18,6 +18,33 @@
 ---
 
 ## Current sprint
+
+### Sprint — `/assess` dynamic state picker `[x]` **shipped (2026-06-10)**
+
+| Item | Status | Entry point |
+|------|--------|-------------|
+| `lib/learn/us-states.ts` — 50 states + DC (name + code) | `[x]` | Alphabetical picker list |
+| `lib/learn/useSelectedState.ts` — household → localStorage → null | `[x]` | `mwm_selected_state`; no profile writes |
+| `StatePickerDropdown` — estate-tax states labeled `(estate tax)` | `[x]` | `components/learn/StatePickerDropdown.tsx` |
+| Assess intro: signed-in static state + change link | `[x]` | `app/(public)/assess/_assess-client.tsx` |
+| Dynamic `StateEstateTaxCallout` (13 states via `STATE_SLUG_MAP`) | `[x]` | Replaces hardcoded `stateCode="WA"` |
+
+**No migration.**
+
+---
+
+### Sprint — `/learn` discovery & cross-linking `[x]` **shipped (2026-06-10)**
+
+| Item | Status | Entry point |
+|------|--------|-------------|
+| `PublicNav` — "State tax guides" → `/learn` | `[x]` | `app/(public)/_components/public-nav.tsx` |
+| Homepage — "Does your state have an estate tax?" card | `[x]` | `app/(public)/page.tsx` (replaces static WA hero line) |
+| `StateEstateTaxCallout` — all 13 estate-tax states | `[x]` | `components/learn/StateEstateTaxCallout.tsx` |
+| `/estate-tax` in-app link to state guide | `[x]` | `_estate-tax-client.tsx` · `STATE_SLUG_MAP` gate |
+
+**No migration.**
+
+---
 
 ### Sprint — State estate tax content system `[x]` **shipped (2026-06-09)**
 

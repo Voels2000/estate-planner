@@ -2568,6 +2568,30 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — `/learn` discovery: separate nav link from `/education`
+
+**Decision:** Add **State tax guides** → `/learn` in `PublicNav` alongside existing **Education** → `/education`. Homepage gets a state-estate-tax featured card (not WA-only hero copy). `/estate-tax` adds a single in-app text link to `/learn/[slug]` when `household.state_primary` is in `STATE_SLUG_MAP`. Extend `StateEstateTaxCallout` to all 13 estate-tax states.
+
+**Reasoning:** `/education` (interactive modules) and `/learn` (state estate tax long-form guides) are different surfaces; users clicking Education never reached `/learn`. In-app link on `/estate-tax` is the natural advisor→client hand-off to plain-language guides.
+
+**Alternatives considered:** Merge `/learn` into `/education` index (rejected — different content model and layout chrome). Geolocation for state (rejected — unreliable).
+
+**Implication:** `STATE_SLUG_MAP` remains the only source of truth for which states have guides. No changes to Engine B or `state_estate_tax_content` schema.
+
+---
+
+### June 2026 — `/assess` state picker: dropdown + localStorage, not profile writes
+
+**Decision:** Assessment intro shows a state picker (`StatePickerDropdown`) that drives `StateEstateTaxCallout`. Priority: `household.state_primary` (signed in) → `localStorage` key `mwm_selected_state` → null. Signed-in users with a profile state see static text + **change** link (dropdown hidden by default). Selection writes **localStorage only** — does not update `households.state_primary`.
+
+**Reasoning:** Geolocation is unreliable. A dropdown early in the flow personalizes the callout without conflating assess exploration with profile updates. Static text + change link avoids confusing signed-in users who already set state in Profile.
+
+**Alternatives considered:** Auto-write assess selection to profile (rejected — separate flows). Geolocation (rejected). Always show dropdown for signed-in users (rejected — profile confusion).
+
+**Implication:** `useSelectedState` hook in `lib/learn/useSelectedState.ts`; full state list in `lib/learn/us-states.ts`. Future calculator surfaces can read the same `mwm_selected_state` key for anonymous users.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

@@ -795,7 +795,9 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - **Data layer:** `lib/learn/state-estate-tax-{types,data,slugs}.ts` — public content only; **not** Engine B `stateEstateTax.ts`.
 - **Admin:** tab `state_tax_content` · `GET/PATCH /api/admin/state-tax-content` · audit `state_tax_content_audit_log` · inline JSON editor for brackets/quirks.
 - **Layout chrome:** `app/(public)/learn/layout.tsx` (Learn sticky header + `EducationDisclaimer`); `app/(public)/layout.tsx` skips marketing `PublicNav`/footer on `/learn/*` (same `x-pathname` pattern as `/education/*`).
-- **Cross-page internal links:** `components/learn/StateEstateTaxCallout.tsx` (`stateCode` prop) — homepage hero WA line; assess intro; event banner on `WA_ESTATE_TAX_EVENT_SLUGS`.
+- **Cross-page internal links:** `components/learn/StateEstateTaxCallout.tsx` (`stateCode` prop, all 13 states) — homepage state guide card → `/learn`; assess intro (dynamic via `useSelectedState` + `StatePickerDropdown`); event banner on `WA_ESTATE_TAX_EVENT_SLUGS`; `/estate-tax` text link when `state_primary` ∈ `STATE_SLUG_MAP`.
+- **Discovery (2026-06-10):** `PublicNav` **State tax guides** → `/learn` (alongside **Education** → `/education`).
+- **Assess state picker (2026-06-10):** `lib/learn/useSelectedState.ts` (household → `mwm_selected_state` → null; localStorage only on change); `lib/learn/us-states.ts`; signed-in users with profile state see static label + change link.
 - **Sitemap:** `/learn` priority 0.7; `/learn/washington-estate-tax` priority 0.8 (`app/sitemap.ts`).
 - **Middleware:** `/learn` in `PUBLIC_PATHS` (`middleware.ts`) — unauthenticated crawl + advisor PDF leave-behind.
 - **Outreach alignment:** cold-email leave-behind PDF links to `https://mywealthmaps.com/learn/washington-estate-tax`.
