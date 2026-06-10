@@ -1,9 +1,28 @@
 import Link from 'next/link'
-import { WA_ESTATE_TAX_GUIDE_PATH } from '@/lib/learn/wa-estate-tax'
+import { stateGuidePath } from '@/lib/learn/state-estate-tax-slugs'
 
 type Variant = 'inline' | 'banner'
 
-export function WaEstateTaxCallout({ variant = 'inline' }: { variant?: Variant }) {
+const CALLOUT_COPY: Record<string, { title: string; body: string; link: string }> = {
+  WA: {
+    title: 'Washington state estate tax',
+    body: 'Live in Washington or own WA property? The state\'s $3M exemption is five times smaller than federal — and most $3M–$10M households have real exposure.',
+    link: 'WA estate tax exemption & bypass trust guide →',
+  },
+}
+
+export function StateEstateTaxCallout({
+  stateCode,
+  variant = 'inline',
+}: {
+  stateCode: string
+  variant?: Variant
+}) {
+  const code = stateCode.toUpperCase()
+  const guidePath = stateGuidePath(code)
+  const copy = CALLOUT_COPY[code]
+  if (!guidePath || !copy) return null
+
   if (variant === 'banner') {
     return (
       <div
@@ -36,7 +55,7 @@ export function WaEstateTaxCallout({ variant = 'inline' }: { variant?: Variant }
           figures in state tax.
         </p>
         <Link
-          href={WA_ESTATE_TAX_GUIDE_PATH}
+          href={guidePath}
           style={{
             fontSize: 13,
             fontWeight: 600,
@@ -74,14 +93,13 @@ export function WaEstateTaxCallout({ variant = 'inline' }: { variant?: Variant }
               marginBottom: 4,
             }}
           >
-            Washington state estate tax
+            {copy.title}
           </div>
           <p style={{ fontSize: 13, color: '#4a5568', lineHeight: 1.6, margin: '0 0 8px' }}>
-            Live in Washington or own WA property? The state&apos;s $3M exemption is five times
-            smaller than federal — and most $3M–$10M households have real exposure.
+            {copy.body}
           </p>
           <Link
-            href={WA_ESTATE_TAX_GUIDE_PATH}
+            href={guidePath}
             style={{
               fontSize: 13,
               fontWeight: 600,
@@ -89,7 +107,7 @@ export function WaEstateTaxCallout({ variant = 'inline' }: { variant?: Variant }
               textDecoration: 'none',
             }}
           >
-            WA estate tax exemption &amp; bypass trust guide →
+            {copy.link}
           </Link>
         </div>
       </div>

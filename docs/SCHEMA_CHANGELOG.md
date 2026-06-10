@@ -10,6 +10,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## State estate tax content system (2026-06-09)
+
+**Migration `20260615000000_state_estate_tax_content.sql`:**
+
+| Change | Detail |
+|--------|--------|
+| **`state_estate_tax_content`** | Public `/learn/[state]-estate-tax` page data — 13 estate-tax states seeded; anon/authenticated SELECT; service_role writes via admin API |
+| **Columns** | `exemption_amount`, `brackets`/`quirks` JSONB, scenario worked-example fields, `last_reviewed`, `law_effective_date` |
+| **Audit** | `app_config` key `state_tax_content_audit_log` (admin PATCH trail) |
+| **Cron** | `notifications` §11 — Monday staleness check → `COMPLIANCE_EMAIL` |
+
+**Not merged with Engine B:** `stateEstateTax.ts` calculation data remains separate.
+
+---
+
 ## Admin P1 — federal tax config editor, user detail, waitlist (2026-06-09)
 
 **Migration `20260709140000_email_captures_invite_tracking.sql`:** `invited_at timestamptz` + `invite_label text` added to `email_captures`.

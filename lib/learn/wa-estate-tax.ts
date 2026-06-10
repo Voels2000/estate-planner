@@ -12,7 +12,9 @@ export function shouldShowWaEstateTaxCallout(slug: string): slug is WaEstateTaxE
   return (WA_ESTATE_TAX_EVENT_SLUGS as readonly string[]).includes(slug)
 }
 
-export const WA_ESTATE_TAX_GUIDE_PATH = '/learn/washington-estate-tax'
+import { stateGuidePath } from './state-estate-tax-slugs'
+
+export const WA_ESTATE_TAX_GUIDE_PATH = stateGuidePath('WA') ?? '/learn/washington-estate-tax'
 
 export const WA_ESTATE_TAX_SEO = {
   title: 'Washington State Estate Tax 2026 | WA Exemption & Bypass Trust Guide',

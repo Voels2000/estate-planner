@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { sendNotificationEmail } from '@/lib/emails/send-notification-email'
 import { recordCronHealth } from '@/lib/cron/recordCronHealth'
+import { resend } from '@/lib/resend'
 import { NextResponse } from 'next/server'
 
 const BASE_URL = 'https://mywealthmaps.com'
@@ -529,6 +530,48 @@ export async function GET(request: Request) {
         else results.skipped++
       } else {
         results.errors++
+      }
+    }
+  }
+
+  // ── §11. State estate tax content staleness check — every Monday ──────────
+  const isMonday = now.getUTCDay() === 1
+  if (isMonday) {
+    const complianceEmail = process.env.COMPLIANCE_EMAIL
+    const { data: stateRows } = await supabase
+      .from('state_estate_tax_content')
+      .select('state_code, state_name, last_reviewed, law_effective_date')
+
+    const overdueStates = (stateRows ?? []).filter((row) => {
+      const days = Math.floor(
+        (Date.now() - new Date(row.last_reviewed).getTime()) / (1000 * 60 * 60 * 24),
+      )
+      return days >= 180
+    })
+
+    if (overdueStates.length > 0 && complianceEmail) {
+      const body = [
+        'The following state estate tax content pages are due for review:',
+        '',
+        ...overdueStates.map(
+          (s) => `  ${s.state_name} (${s.state_code}) — last reviewed: ${s.last_reviewed}`,
+        ),
+        '',
+        'Review and update at: https://www.mywealthmaps.com/admin?tab=state_tax_content',
+      ].join('\n')
+
+      const { error: emailErr } = await resend.emails.send({
+        from: 'My Wealth Maps <hello@mywealthmaps.com>',
+        to: complianceEmail,
+        subject: `[MWM] ${overdueStates.length} state estate tax page(s) need review`,
+        text: body,
+        html: `<pre style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5;white-space:pre-wrap">${body.replace(/</g, '&lt;')}</pre>`,
+      })
+      if (emailErr) {
+        console.error('[cron:notifications] state tax content alert failed', emailErr)
+        results.errors++
+      } else {
+        results.sent++
       }
     }
   }

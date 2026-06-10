@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { AdvisorTier } from '@/lib/types'
 import DebugTab from './debug-tab'
@@ -16,6 +17,7 @@ import {
 } from './ops-home-tab'
 import UserDetailPanel from './user-detail-panel'
 import WaitlistTab from './waitlist-tab'
+import StateTaxContentTab from './state-tax-content-tab'
 import { AdminSidebar, AdminTabHeader, type AdminTabKey } from './admin-shell'
 import type { OpsTaskRow } from '@/lib/admin/opsTasks'
 
@@ -157,7 +159,22 @@ export function AdminClient({
   fetchedAt,
   ...rest
 }: Props) {
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<Tab>('ops_home')
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (!tabParam) return
+    const normalized = tabParam === 'state-tax-content' ? 'state_tax_content' : tabParam
+    const validTabs: Tab[] = [
+      'ops_home', 'overview', 'users', 'usage', 'feedback', 'funnel', 'waitlist',
+      'compliance', 'directories', 'settings', 'tiers', 'categories', 'tax_rules',
+      'state_tax_content', 'terms', 'debug',
+    ]
+    if (validTabs.includes(normalized as Tab)) {
+      setActiveTab(normalized as Tab)
+    }
+  }, [searchParams])
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [feedbackFilter, setFeedbackFilter] = useState<string>('all')
   const [configValues, setConfigValues] = useState<Record<string, string>>(
@@ -715,6 +732,8 @@ export function AdminClient({
       {activeTab === 'compliance' && <DeletionCompliance />}
 
       {activeTab === 'tax_rules' && <TaxRulesTab />}
+
+      {activeTab === 'state_tax_content' && <StateTaxContentTab />}
 
       {activeTab === 'terms' && (
         <TermsTab

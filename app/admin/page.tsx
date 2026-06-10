@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCanonicalTerms } from '@/lib/terms/getCanonicalTerms'
@@ -325,6 +326,7 @@ export default async function AdminPage() {
   const fetchedAt = new Date().toISOString()
 
   return (
+    <Suspense fallback={<div className="p-6 text-sm text-neutral-500">Loading admin…</div>}>
     <AdminClient
       totalUsers={totalUsers}
       newToday={newToday}
@@ -370,5 +372,6 @@ export default async function AdminPage() {
       pendingAttorneyDirectory={pendingAttorneys?.length ?? 0}
       fetchedAt={fetchedAt}
     />
+    </Suspense>
   )
 }

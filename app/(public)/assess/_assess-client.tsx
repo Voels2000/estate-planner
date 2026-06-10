@@ -10,7 +10,7 @@ import {
   recommendPlanFromScores,
   type PlanRecommendation,
 } from '@/lib/assessment/recommendPlanFromScores'
-import { WaEstateTaxCallout } from '@/components/learn/WaEstateTaxCallout'
+import { StateEstateTaxCallout } from '@/components/learn/StateEstateTaxCallout'
 
 const QUESTIONS = [
   {
@@ -492,7 +492,7 @@ export default function AssessClient() {
 
         {/* Intro cards + start */}
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 24px 80px' }}>
-          <WaEstateTaxCallout />
+          <StateEstateTaxCallout stateCode="WA" />
 
           <div style={{
             display: 'grid',

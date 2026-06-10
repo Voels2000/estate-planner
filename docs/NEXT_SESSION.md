@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-09 (WA estate tax SEO shipped)
+# Last updated: 2026-06-09 (State estate tax content system shipped)
 
 ---
 
@@ -14,7 +14,7 @@
 
 ## Current focus (2026-06-09)
 
-Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, and **WA estate tax SEO** are **complete**. Remaining pre-launch work is **non-code**: [LAUNCH_GATE.md](./LAUNCH_GATE.md) Gate 1 only (legal review, Stripe production config, smoke tests).
+Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, **WA estate tax SEO**, and **State estate tax content system** are **complete**. Remaining pre-launch work is **non-code**: [LAUNCH_GATE.md](./LAUNCH_GATE.md) Gate 1 only (legal review, Stripe production config, smoke tests).
 
 | Area | Status | Canonical doc |
 |------|--------|---------------|
@@ -26,6 +26,7 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, a
 | Admin P1 (tax config, user detail, waitlist) | ✅ Shipped | `/admin` → Tax Rules · Users · Waitlist |
 | Admin-Redesign (sidebar, debug/funnel fixes) | ✅ Shipped | `/admin` sidebar nav · `admin-shell.tsx` |
 | WA estate tax SEO (`/learn`) | ✅ Shipped | `/learn/washington-estate-tax` · sitemap 0.8 · advisor PDF link |
+| State estate tax content (13 states) | ✅ Shipped | `/learn/[state-tax-slug]` · admin State tax content tab · cron §11 |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
 ---

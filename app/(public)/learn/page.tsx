@@ -2,7 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { WA_ESTATE_TAX_GUIDE_PATH } from '@/lib/learn/wa-estate-tax'
+import { getAllStateEstateTaxData } from '@/lib/learn/state-estate-tax-data'
+import { stateCodeToSlug } from '@/lib/learn/state-estate-tax-slugs'
+import { getStaleness } from '@/lib/learn/state-estate-tax-types'
+
+const FEATURED_STATE = 'WA'
 
 export const metadata: Metadata = {
   title: 'Learn | Estate Planning Guides | My Wealth Maps',
@@ -10,22 +14,22 @@ export const metadata: Metadata = {
     'Evergreen estate planning guides for households and professionals. State-specific tax explainers, planning concepts, and advisor-ready reference material.',
 }
 
-const GUIDES = [
-  {
-    slug: 'washington-estate-tax',
-    href: WA_ESTATE_TAX_GUIDE_PATH,
-    featured: true,
-    badge: 'Washington residents',
-    title: 'Washington State Estate Tax 2026',
-    description:
-      'WA estate tax exemption, graduated rates, bypass trust Washington strategies, and what $3M–$10M households need to know after ESB 6347.',
-    updated: 'June 2026',
-  },
-] as const
+const dollarFmt = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+})
 
-export default function LearnIndexPage() {
-  const featured = GUIDES.filter((g) => g.featured)
-  const other = GUIDES.filter((g) => !g.featured)
+function formatExemptionShort(amount: number): string {
+  const m = amount / 1_000_000
+  return m >= 1 ? `$${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M` : dollarFmt.format(amount)
+}
+
+export default async function LearnIndexPage() {
+  const states = await getAllStateEstateTaxData()
+  const featured = states.find((s) => s.state_code === FEATURED_STATE)
+  const others = states.filter((s) => s.state_code !== FEATURED_STATE)
 
   return (
     <div className="px-7 py-7">
@@ -58,80 +62,107 @@ export default function LearnIndexPage() {
           className="mb-2 text-xl"
           style={{ fontFamily: 'var(--font-display, Playfair Display, Georgia, serif)', color: '#0f1f3d' }}
         >
-          Guides
+          State estate tax guides
         </h2>
         <p className="mb-6 text-sm text-[#718096]">
-          Long-form explainers designed to stay current — not blog posts that age out.
+          Long-form explainers for all 13 states with an estate tax — updated from a single data
+          source, not copy-pasted articles.
         </p>
 
-        {featured.map((guide) => (
-          <Link
-            key={guide.slug}
-            href={guide.href}
-            className="learn-featured-card block no-underline"
-            style={{ textDecoration: 'none' }}
-          >
-            <div
-              style={{
-                display: 'inline-block',
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: '#0f1f3d',
-                background: 'rgba(15,31,61,0.08)',
-                padding: '4px 10px',
-                borderRadius: 20,
-                marginBottom: 10,
-              }}
+        {featured && (() => {
+          const slug = stateCodeToSlug(featured.state_code)
+          if (!slug) return null
+          return (
+            <Link
+              href={`/learn/${slug}`}
+              className="learn-featured-card block no-underline"
+              style={{ textDecoration: 'none' }}
             >
-              {guide.badge}
-            </div>
-            <div
-              style={{
-                fontFamily: 'var(--font-display, Playfair Display, Georgia, serif)',
-                fontSize: 20,
-                fontWeight: 500,
-                color: '#0f1f3d',
-                marginBottom: 8,
-              }}
-            >
-              {guide.title}
-            </div>
-            <p style={{ fontSize: 14, color: '#4a5568', lineHeight: 1.65, margin: '0 0 10px' }}>
-              {guide.description}
-            </p>
-            <div style={{ fontSize: 12, color: '#718096' }}>
-              Updated {guide.updated} · Read guide →
-            </div>
-          </Link>
-        ))}
+              <div
+                style={{
+                  display: 'inline-block',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: '#0f1f3d',
+                  background: 'rgba(15,31,61,0.08)',
+                  padding: '4px 10px',
+                  borderRadius: 20,
+                  marginBottom: 10,
+                }}
+              >
+                Washington residents
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--font-display, Playfair Display, Georgia, serif)',
+                  fontSize: 20,
+                  fontWeight: 500,
+                  color: '#0f1f3d',
+                  marginBottom: 8,
+                }}
+              >
+                {featured.state_name} Estate Tax Guide
+              </div>
+              <p style={{ fontSize: 14, color: '#4a5568', lineHeight: 1.65, margin: '0 0 10px' }}>
+                {formatExemptionShort(featured.exemption_amount)} exemption · Top rate{' '}
+                {featured.top_rate_pct}% · Bypass trust planning for married couples
+              </p>
+              <div style={{ fontSize: 12, color: '#718096' }}>
+                Last reviewed {featured.last_reviewed} · Read guide →
+              </div>
+            </Link>
+          )
+        })()}
 
-        {other.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {other.map((guide) => (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            gap: 12,
+            marginTop: 24,
+          }}
+        >
+          {others.map((state) => {
+            const slug = stateCodeToSlug(state.state_code)
+            if (!slug) return null
+            const staleness = getStaleness(state.last_reviewed)
+            return (
               <Link
-                key={guide.slug}
-                href={guide.href}
+                key={state.state_code}
+                href={`/learn/${slug}`}
                 style={{
                   display: 'block',
                   background: 'white',
                   border: '1px solid #e2e8f0',
                   borderRadius: 10,
-                  padding: '18px 20px',
+                  padding: '16px 18px',
                   textDecoration: 'none',
                 }}
               >
                 <div style={{ fontSize: 15, fontWeight: 600, color: '#0f1f3d', marginBottom: 4 }}>
-                  {guide.title}
+                  {state.state_name}
                 </div>
-                <p style={{ fontSize: 13, color: '#718096', margin: 0, lineHeight: 1.5 }}>
-                  {guide.description}
+                <p style={{ fontSize: 12, color: '#718096', margin: '0 0 8px', lineHeight: 1.5 }}>
+                  {formatExemptionShort(state.exemption_amount)} per person · Top rate{' '}
+                  {state.top_rate_pct}%
                 </p>
+                {staleness !== 'current' && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: staleness === 'overdue' ? '#c53030' : '#c87000',
+                    }}
+                  >
+                    {staleness === 'overdue' ? 'Review overdue' : 'Review due'}
+                  </span>
+                )}
               </Link>
-            ))}
-          </div>
-        )}
+            )
+          })}
+        </div>
       </div>
     </div>
   )

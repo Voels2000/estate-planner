@@ -2546,6 +2546,16 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — State estate tax content: two data stores
+
+**Decision:** Public `/learn/[state]-estate-tax` pages read from `state_estate_tax_content` (admin-editable, seeded for 13 states). Engine B household calculations continue using `stateEstateTax.ts` / `state_estate_tax_rules` — these are not merged.
+
+**Reasoning:** Marketing/educational bracket copy and worked examples serve SEO and advisor leave-behinds; calculation engine needs tax-year precision and RPC integration. A single table would couple content edits to engine regressions.
+
+**Implication:** Admin “State tax content” tab edits public pages only. Tax Rules tab + Engine B remain the calculation source of truth.
+
+---
+
 ### June 2026 — WA estate tax SEO: `/learn` path (not `/blog`)
 
 **Decision:** Washington estate tax explainer ships at `/learn/washington-estate-tax` with a `/learn` index — not under `/blog/*`. Cross-page internal links from homepage hero, `/assess`, and four estate-relevant event slugs (`death-of-spouse`, `receiving-inheritance`, `approaching-retirement`, `selling-a-business`). Sitemap priority 0.8 for the explainer; 0.7 for `/learn`. Cold-email leave-behind PDF links to `mywealthmaps.com/learn/washington-estate-tax`.

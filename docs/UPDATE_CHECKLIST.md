@@ -64,6 +64,16 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## State estate tax content system (2026-06-09) — shipped
+
+- [x] Migration `20260615000000` — `state_estate_tax_content` (13 states seeded)
+- [x] Dynamic `/learn/[state-tax-slug]` + `StateEstateTaxArticle.tsx`; deleted static WA page
+- [x] Admin tab `state_tax_content` + `GET/PATCH /api/admin/state-tax-content` + audit log
+- [x] Cron §11 Monday staleness → `COMPLIANCE_EMAIL`
+- [x] Sitemap: 13 state slugs @ 0.8 · `StateEstateTaxCallout` refactor
+- [x] SCHEMA_CHANGELOG · MASTER_ARCHITECTURE · ROADMAP synced
+- [x] Public content table separate from Engine B `stateEstateTax.ts`
+
 ## WA estate tax SEO — `/learn` (2026-06-09) — shipped
 
 - [x] `/learn/washington-estate-tax` — explainer + JSON-LD/OG/canonical (`components/learn/WashingtonEstateTaxArticle.tsx`)

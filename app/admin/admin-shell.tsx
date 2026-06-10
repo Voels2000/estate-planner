@@ -17,6 +17,7 @@ export type AdminTabKey =
   | 'tiers'
   | 'categories'
   | 'tax_rules'
+  | 'state_tax_content'
   | 'terms'
   | 'debug'
 
@@ -34,6 +35,7 @@ const TAB_TITLES: Record<AdminTabKey, string> = {
   tiers: 'Advisor tiers',
   categories: 'Categories',
   tax_rules: 'Tax rules',
+  state_tax_content: 'State tax content',
   terms: 'Terms & Conditions',
   debug: 'Debug',
 }
@@ -69,6 +71,7 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: 'Configuration',
     items: [
       { key: 'tax_rules', label: 'Tax rules', icon: '🏛️' },
+      { key: 'state_tax_content', label: 'State tax content', icon: '📑' },
       { key: 'terms', label: 'T&C', icon: '📄' },
       { key: 'categories', label: 'Categories', icon: '🗂️' },
       { key: 'tiers', label: 'Advisor tiers', icon: '🏷️' },

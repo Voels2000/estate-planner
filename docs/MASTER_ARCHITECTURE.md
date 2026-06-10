@@ -789,10 +789,13 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 **Current (as built):**
 
 - Learn route family under `app/(public)/learn/*` — evergreen reference guides (distinct from interactive `/education` modules).
-- **`/learn/washington-estate-tax`** — full WA estate tax explainer (`components/learn/WashingtonEstateTaxArticle.tsx`); SEO metadata in `lib/learn/wa-estate-tax.ts` targets “Washington state estate tax 2026”, “WA estate tax exemption”, “bypass trust Washington”; Article JSON-LD + Open Graph + canonical URL.
-- **`/learn`** — index with featured “Washington residents” card linking to the explainer.
+- **Dynamic route** `app/(public)/learn/[state-tax-slug]/page.tsx` — 13 state estate tax pages from `state_estate_tax_content` (SSG via `STATE_SLUGS`); `components/learn/StateEstateTaxArticle.tsx` data-driven template; static `washington-estate-tax/page.tsx` removed.
+- **`/learn/washington-estate-tax`** — same URL, now resolves through dynamic route; WA SEO metadata generated from DB row.
+- **`/learn`** — index with featured WA card + grid of all 13 state guides (`getAllStateEstateTaxData`).
+- **Data layer:** `lib/learn/state-estate-tax-{types,data,slugs}.ts` — public content only; **not** Engine B `stateEstateTax.ts`.
+- **Admin:** tab `state_tax_content` · `GET/PATCH /api/admin/state-tax-content` · audit `state_tax_content_audit_log` · inline JSON editor for brackets/quirks.
 - **Layout chrome:** `app/(public)/learn/layout.tsx` (Learn sticky header + `EducationDisclaimer`); `app/(public)/layout.tsx` skips marketing `PublicNav`/footer on `/learn/*` (same `x-pathname` pattern as `/education/*`).
-- **Cross-page internal links:** `components/learn/WaEstateTaxCallout.tsx` — homepage hero WA line (`app/(public)/page.tsx`); assess intro (`_assess-client.tsx`); event banner on slugs in `WA_ESTATE_TAX_EVENT_SLUGS` (`death-of-spouse`, `receiving-inheritance`, `approaching-retirement`, `selling-a-business`).
+- **Cross-page internal links:** `components/learn/StateEstateTaxCallout.tsx` (`stateCode` prop) — homepage hero WA line; assess intro; event banner on `WA_ESTATE_TAX_EVENT_SLUGS`.
 - **Sitemap:** `/learn` priority 0.7; `/learn/washington-estate-tax` priority 0.8 (`app/sitemap.ts`).
 - **Middleware:** `/learn` in `PUBLIC_PATHS` (`middleware.ts`) — unauthenticated crawl + advisor PDF leave-behind.
 - **Outreach alignment:** cold-email leave-behind PDF links to `https://mywealthmaps.com/learn/washington-estate-tax`.

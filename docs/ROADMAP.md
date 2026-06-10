@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-09 (WA estate tax SEO; Admin-Redesign; Admin P1; Admin-A; LAUNCH_GATE)
+# Last updated: 2026-06-09 (State estate tax content system; WA estate tax SEO; Admin-Redesign)
 
 ---
 
@@ -18,6 +18,20 @@
 ---
 
 ## Current sprint
+
+### Sprint — State estate tax content system `[x]` **shipped (2026-06-09)**
+
+| Item | Status | Entry point |
+|------|--------|-------------|
+| `state_estate_tax_content` migration + 13-state seed | `[x]` | `20260615000000_state_estate_tax_content.sql` |
+| Dynamic `/learn/[state-tax-slug]` (replaces static WA page) | `[x]` | `StateEstateTaxArticle.tsx` |
+| Admin State Tax Content tab | `[x]` | `/admin` → State tax content · `GET/PATCH /api/admin/state-tax-content` |
+| Cron §11 Monday staleness alert | `[x]` | `app/api/cron/notifications/route.ts` |
+| Sitemap 13 state slugs @ 0.8 | `[x]` | `STATE_SLUGS` in `state-estate-tax-slugs.ts` |
+
+**Note:** Public content table is separate from Engine B `stateEstateTax.ts` calculation data.
+
+---
 
 ### Sprint — WA estate tax SEO (public `/learn`) `[x]` **shipped (2026-06-09)**
 
