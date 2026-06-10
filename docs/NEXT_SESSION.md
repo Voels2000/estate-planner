@@ -105,9 +105,9 @@ Run in sequence after deploy (each catches a different failure mode):
 
 ## Queued next (post-ship ops)
 
-### 1. `/learn` index — per-state risk one-liner (low effort, high SEO)
+### 1. ~~`/learn` index — per-state risk one-liner~~ ✅ shipped (2026-06-10)
 
-The index now shows all 13 state cards but no copy distinguishing why Illinois vs Oregon matters. Add a short “why this matters” line per card — exemption amount + key risk (cliff effect, frozen exemption, low threshold). Pull from `quirks[0]` or a dedicated `card_risk` field.
+`RISK_SUMMARY` in `lib/learn/state-estate-tax-slugs.ts` — rendered on featured WA card + grid cards.
 
 ### 2. Dashboard `canShowPartial` nudge — low priority
 

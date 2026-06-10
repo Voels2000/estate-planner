@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { getAllStateEstateTaxData } from '@/lib/learn/state-estate-tax-data'
-import { stateCodeToSlug } from '@/lib/learn/state-estate-tax-slugs'
+import { getRiskSummary, stateCodeToSlug } from '@/lib/learn/state-estate-tax-slugs'
 import { getStaleness } from '@/lib/learn/state-estate-tax-types'
 
 const FEATURED_STATE = 'WA'
@@ -105,10 +105,15 @@ export default async function LearnIndexPage() {
               >
                 {featured.state_name} Estate Tax Guide
               </div>
-              <p style={{ fontSize: 14, color: '#4a5568', lineHeight: 1.65, margin: '0 0 10px' }}>
-                {formatExemptionShort(featured.exemption_amount)} exemption · Top rate{' '}
-                {featured.top_rate_pct}% · Bypass trust planning for married couples
+              <p style={{ fontSize: 13, color: '#718096', margin: '0 0 6px', lineHeight: 1.5 }}>
+                {formatExemptionShort(featured.exemption_amount)} per person · Top rate{' '}
+                {featured.top_rate_pct}%
               </p>
+              {getRiskSummary(featured.state_code) && (
+                <p style={{ fontSize: 14, color: '#4a5568', lineHeight: 1.65, margin: '0 0 10px' }}>
+                  {getRiskSummary(featured.state_code)}
+                </p>
+              )}
               <div style={{ fontSize: 12, color: '#718096' }}>
                 Last reviewed {featured.last_reviewed} · Read guide →
               </div>
@@ -144,10 +149,15 @@ export default async function LearnIndexPage() {
                 <div style={{ fontSize: 15, fontWeight: 600, color: '#0f1f3d', marginBottom: 4 }}>
                   {state.state_name}
                 </div>
-                <p style={{ fontSize: 12, color: '#718096', margin: '0 0 8px', lineHeight: 1.5 }}>
+                <p style={{ fontSize: 12, color: '#718096', margin: '0 0 6px', lineHeight: 1.5 }}>
                   {formatExemptionShort(state.exemption_amount)} per person · Top rate{' '}
                   {state.top_rate_pct}%
                 </p>
+                {getRiskSummary(state.state_code) && (
+                  <p style={{ fontSize: 12, color: '#4a5568', margin: '0 0 8px', lineHeight: 1.5 }}>
+                    {getRiskSummary(state.state_code)}
+                  </p>
+                )}
                 {staleness !== 'current' && (
                   <span
                     style={{
