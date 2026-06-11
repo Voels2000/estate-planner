@@ -1,8 +1,9 @@
 import type { LegalSection } from '@/components/legal/LegalDocumentLayout'
-
-const COMPANY = 'TODO: [COMPANY LEGAL NAME]'
-const ADDRESS = 'TODO: [COMPANY ADDRESS]'
-const AGENT = 'TODO: [REGISTERED AGENT NAME AND ADDRESS]'
+import {
+  COMPANY_ADDRESS,
+  COMPANY_LEGAL_NAME,
+  REGISTERED_AGENT,
+} from '@/lib/legal/company'
 
 export const PRIVACY_POLICY_LAST_UPDATED = 'June 2, 2026'
 
@@ -13,10 +14,10 @@ export const privacyPolicySections: LegalSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: `My Wealth Maps is operated by ${COMPANY}, a Washington State company ("My Wealth Maps," "we," "us," or "our"). We provide financial planning preparation tools at mywealthmaps.com.`,
+        text: `My Wealth Maps is operated by ${COMPANY_LEGAL_NAME}, a Washington State company ("My Wealth Maps," "we," "us," or "our"). We provide financial planning preparation tools at mywealthmaps.com.`,
       },
       { kind: 'p', text: 'Contact: privacy@mywealthmaps.com' },
-      { kind: 'p', text: `Mailing address: ${ADDRESS}` },
+      { kind: 'p', text: `Mailing address: ${COMPANY_ADDRESS}` },
     ],
   },
   {
@@ -250,8 +251,8 @@ export const privacyPolicySections: LegalSection[] = [
     blocks: [
       { kind: 'p', text: 'Privacy questions: privacy@mywealthmaps.com' },
       { kind: 'p', text: 'Security concerns: security@mywealthmaps.com' },
-      { kind: 'p', text: `Mailing address: ${ADDRESS}` },
-      { kind: 'p', text: `Washington State registered agent: ${AGENT}` },
+      { kind: 'p', text: `Mailing address: ${COMPANY_ADDRESS}` },
+      { kind: 'p', text: `Washington State registered agent: ${REGISTERED_AGENT}` },
     ],
   },
 ]

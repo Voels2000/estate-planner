@@ -326,7 +326,7 @@ export function StateEstateTaxArticle({ data }: { data: StateEstateTaxData }) {
 
       <div className="learn-footer">
         <p>
-          © {new Date().getFullYear()} My Wealth Maps &nbsp;·&nbsp;{' '}
+          © {new Date().getFullYear()} My Wealth Maps LLC &nbsp;·&nbsp;{' '}
           <Link href="/" style={{ color: '#888' }}>
             mywealthmaps.com
           </Link>{' '}

@@ -2580,6 +2580,16 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Legal entity: `lib/legal/company.ts` single source of truth
+
+**Decision:** Centralize **My Wealth Maps LLC**, mailing address (22033 Echo Lake Rd, Snohomish, WA 98296), and registered agent (Alan Voels, same address) in `lib/legal/company.ts`. Terms, Privacy, and formal copyright lines import from this module. Consumer-facing brand copy remains **My Wealth Maps** (d/b/a in legal docs).
+
+**Reasoning:** Replaces scattered `TODO: [COMPANY LEGAL NAME]` placeholders before go-live; one file to update if counsel revises address or agent.
+
+**Implication:** Counsel sign-off on ToS §10/§11/§13 remains open in [LAUNCH_GATE.md](./LAUNCH_GATE.md). Do not edit historical migration `20260527120000` — live terms read from code.
+
+---
+
 ### June 2026 — `/assess` state picker: dropdown + localStorage, not profile writes
 
 **Decision:** Assessment intro shows a state picker (`StatePickerDropdown`) that drives `StateEstateTaxCallout`. Priority: `household.state_primary` (signed in) → `localStorage` key `mwm_selected_state` → null. Signed-in users with a profile state see static text + **change** link (dropdown hidden by default). Selection writes **localStorage only** — does not update `households.state_primary`.

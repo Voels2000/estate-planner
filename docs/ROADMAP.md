@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-10 (/learn discovery; assess state picker)
+# Last updated: 2026-06-10 (legal entity placeholders; learn; assess)
 
 ---
 
@@ -18,6 +18,18 @@
 ---
 
 ## Current sprint
+
+### Sprint — Legal entity placeholders `[x]` **shipped (2026-06-10)**
+
+| Item | Status | Entry point |
+|------|--------|-------------|
+| `lib/legal/company.ts` — LLC name, address, registered agent | `[x]` | My Wealth Maps LLC · Snohomish · Alan Voels |
+| Terms + Privacy import shared constants | `[x]` | `terms-of-service-sections.ts` · `privacy-policy-sections.ts` |
+| Copyright footers (public layout, learn, prospect PDF) | `[x]` | My Wealth Maps LLC |
+
+**No migration.** Counsel sign-off on ToS §10/§11/§13 still open — [LAUNCH_GATE.md](./LAUNCH_GATE.md).
+
+---
 
 ### Sprint — `/assess` dynamic state picker `[x]` **shipped (2026-06-10)**
 

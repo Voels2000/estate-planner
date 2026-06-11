@@ -64,6 +64,14 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Legal entity placeholders (2026-06-10) — shipped
+
+- [x] `lib/legal/company.ts` — `COMPANY_LEGAL_NAME`, `COMPANY_ADDRESS`, `REGISTERED_AGENT`
+- [x] `/terms` and `/privacy` wired from shared constants (no more `TODO: [COMPANY …]` in live pages)
+- [x] Footer / learn article / prospect PDF copyright → My Wealth Maps LLC
+- [x] LAUNCH_GATE · NEXT_SESSION synced
+- [x] No migration — terms served from code via `getCanonicalTerms()`
+
 ## `/assess` dynamic state picker (2026-06-10) — shipped
 
 - [x] `lib/learn/us-states.ts` — 50 states + DC

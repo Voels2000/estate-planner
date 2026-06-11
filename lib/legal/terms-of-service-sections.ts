@@ -1,7 +1,5 @@
 import type { LegalSection } from '@/components/legal/LegalDocumentLayout'
-
-const COMPANY = 'TODO: [COMPANY LEGAL NAME]'
-const ADDRESS = 'TODO: [COMPANY ADDRESS]'
+import { COMPANY_ADDRESS, COMPANY_LEGAL_NAME } from '@/lib/legal/company'
 
 /** ISO date — stored on profiles.terms_version and app_config.terms_version */
 export const TERMS_OF_SERVICE_VERSION = '2026-06-02'
@@ -19,7 +17,7 @@ export const termsOfServiceSections: LegalSection[] = [
       },
       {
         kind: 'p',
-        text: `These Terms form a binding agreement between you and ${COMPANY}, a Washington State company ("My Wealth Maps," "we," "us," or "our").`,
+        text: `These Terms form a binding agreement between you and ${COMPANY_LEGAL_NAME}, a Washington State company ("My Wealth Maps," "we," "us," or "our").`,
       },
     ],
   },
@@ -141,7 +139,7 @@ export const termsOfServiceSections: LegalSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'The Service, including its software, design, and content, is owned by My Wealth Maps and protected by copyright and other intellectual property laws. You may not copy, modify, or distribute any part of the Service without our written permission.',
+        text: `The Service, including its software, design, and content, is owned by ${COMPANY_LEGAL_NAME} and protected by copyright and other intellectual property laws. You may not copy, modify, or distribute any part of the Service without our written permission.`,
       },
       {
         kind: 'p',
@@ -155,7 +153,7 @@ export const termsOfServiceSections: LegalSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. TO THE FULLEST EXTENT PERMITTED BY LAW, MY WEALTH MAPS DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.',
+        text: `THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. TO THE FULLEST EXTENT PERMITTED BY LAW, ${COMPANY_LEGAL_NAME.toUpperCase()} DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.`,
       },
       {
         kind: 'p',
@@ -169,7 +167,7 @@ export const termsOfServiceSections: LegalSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'TO THE FULLEST EXTENT PERMITTED BY LAW, MY WEALTH MAPS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE SERVICE, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.',
+        text: `TO THE FULLEST EXTENT PERMITTED BY LAW, ${COMPANY_LEGAL_NAME.toUpperCase()} SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE SERVICE, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.`,
       },
       {
         kind: 'p',
@@ -183,7 +181,7 @@ export const termsOfServiceSections: LegalSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'You agree to indemnify and hold harmless My Wealth Maps and its officers, directors, employees, and agents from any claims, damages, or expenses (including reasonable attorneys\' fees) arising from your use of the Service or violation of these Terms.',
+        text: `You agree to indemnify and hold harmless ${COMPANY_LEGAL_NAME} and its officers, directors, employees, and agents from any claims, damages, or expenses (including reasonable attorneys' fees) arising from your use of the Service or violation of these Terms.`,
       },
     ],
   },
@@ -201,7 +199,7 @@ export const termsOfServiceSections: LegalSection[] = [
       },
       {
         kind: 'p',
-        text: '13.3 Class Action Waiver\nYOU WAIVE ANY RIGHT TO PARTICIPATE IN A CLASS ACTION LAWSUIT OR CLASS-WIDE ARBITRATION AGAINST MY WEALTH MAPS.',
+        text: `13.3 Class Action Waiver\nYOU WAIVE ANY RIGHT TO PARTICIPATE IN A CLASS ACTION LAWSUIT OR CLASS-WIDE ARBITRATION AGAINST ${COMPANY_LEGAL_NAME.toUpperCase()}.`,
       },
       {
         kind: 'p',
@@ -239,7 +237,7 @@ export const termsOfServiceSections: LegalSection[] = [
     blocks: [
       { kind: 'p', text: 'Legal: legal@mywealthmaps.com' },
       { kind: 'p', text: 'Support: support@mywealthmaps.com' },
-      { kind: 'p', text: `Mailing: ${ADDRESS}` },
+      { kind: 'p', text: `Mailing: ${COMPANY_ADDRESS}` },
     ],
   },
 ]

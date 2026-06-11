@@ -1,6 +1,6 @@
 # LAUNCH_GATE.md
 # The single go-live sign-off checklist for My Wealth Maps
-# Last updated: 2026-06-09
+# Last updated: 2026-06-10
 #
 # This file absorbs: PRE_LAUNCH_CHECKLIST.md, LEGAL_TODO.md,
 # BILLING_DISCLOSURES_CHECKLIST.md, and the non-code sections of LAUNCH_CHECKLIST.md.
@@ -16,11 +16,12 @@
 ### Legal
 
 [ ] WA LLC entity confirmed: UBI number on file, EIN confirmed, registered agent named
+    (registered agent name/address in product: Alan Voels, 22033 Echo Lake Rd, Snohomish, WA 98296)
 [ ] ToS §10 (Disclaimer of Warranties) — counsel sign-off
 [ ] ToS §11 (Limitation of Liability) — counsel sign-off
 [ ] ToS §13 (Governing Law / Dispute Resolution) — counsel sign-off
-[ ] Legal placeholder fills committed: [COMPANY LEGAL NAME], [COMPANY ADDRESS],
-    [REGISTERED AGENT NAME AND ADDRESS] replaced in /terms and /privacy
+[x] Legal placeholders committed in `lib/legal/company.ts` → `/terms` and `/privacy`:
+    **My Wealth Maps LLC** · 22033 Echo Lake Rd, Snohomish, WA 98296 · registered agent Alan Voels
 [ ] WA SaaS sales tax position confirmed (DOR ruling or attorney opinion)
     — see June 2026 LLC session; this is the murkiest open compliance item
 

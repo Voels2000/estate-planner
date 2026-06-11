@@ -210,7 +210,7 @@ export async function GET(req: NextRequest) {
     Actual estate tax liability depends on asset values, titling, applicable
     law, and other factors specific to your situation. Consult qualified
     professionals before making planning decisions.
-    © My Wealth Maps ${new Date().getFullYear()}
+    © My Wealth Maps LLC ${new Date().getFullYear()}
   </div>
 
   <script>setTimeout(() => window.print(), 500)</script>
