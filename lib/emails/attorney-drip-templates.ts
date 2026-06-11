@@ -1,4 +1,5 @@
 import { getAppUrl } from '@/lib/app-url'
+import { ATTORNEY_PLAN_LIMITS } from '@/lib/tiers'
 
 export type AttorneyDripEmail = {
   subject: string
@@ -57,7 +58,7 @@ export function getAttorneyDripSequence(): AttorneyDripSequence {
   <li><strong>Multi-client document dashboard</strong> — see which clients are missing DPOAs, Wills, or other documents at a glance</li>
   <li><strong>Document status tracking</strong> — Draft, Pending Execution, Executed, Recorded</li>
 </ul>
-<p>Attorney Starter is $99/month. No contracts — cancel anytime.</p>`,
+<p>Attorney Starter is $${ATTORNEY_PLAN_LIMITS.starter.priceMonthly}/month. No contracts — cancel anytime.</p>`,
       cta: 'View attorney plans',
       ctaUrl: `${baseUrl}/attorney/billing`,
     },

@@ -8,7 +8,15 @@ import {
   getConsumerPlansForPeriod,
   type ConsumerPlanForCheckout,
 } from '@/lib/billing/consumerPlanCatalog'
-import type { BillingPeriod } from '@/lib/billing/stripePrices'
+import { getPriceConfig, hasPriceConfig, type BillingPeriod } from '@/lib/billing/stripePrices'
+
+function estateAnnualSavingsLine(): string | null {
+  if (!hasPriceConfig(3, 'annual')) return null
+  const annual = getPriceConfig(3, 'annual')
+  const monthly = getPriceConfig(3, 'monthly')
+  const savings = monthly.monthlyEquivalent * 12 - annual.annualTotal
+  return `Or $${annual.annualTotal.toLocaleString()}/year (save $${savings.toLocaleString()} vs monthly)`
+}
 
 type Props = {
   isLoggedIn: boolean
@@ -167,11 +175,12 @@ export function PricingConsumerPlans({
                     Billed ${plan.annualTotal.toLocaleString()} annually · 2 months free
                   </p>
                 )}
-                {isEstate && period === 'annual' && (
-                  <p style={{ fontSize: 12, color: '#4a7c6f', fontWeight: 500 }}>
-                    Or $1,490/year (save $298 vs monthly)
-                  </p>
-                )}
+                {isEstate && period === 'annual' && (() => {
+                  const line = estateAnnualSavingsLine()
+                  return line ? (
+                    <p style={{ fontSize: 12, color: '#4a7c6f', fontWeight: 500 }}>{line}</p>
+                  ) : null
+                })()}
                 <p style={{ fontSize: 13, color: '#718096', lineHeight: 1.5 }}>{plan.description}</p>
               </div>
 

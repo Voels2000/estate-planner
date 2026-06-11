@@ -1,15 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { getSignupHref } from '@/lib/waitlist-mode'
-import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
 import { PricingConsumerPlans } from './_pricing-consumer-plans'
 import { PricingAdvisorCheckout } from './_pricing-advisor-checkout'
+import { PricingAttorneyCheckout } from './_pricing-attorney-checkout'
 import {
   ADVISOR_FIRM_SEAT_RATES,
   ADVISOR_FIRM_SEAT_RANGES,
   ADVISOR_FIRM_PRICE_IDS,
   ATTORNEY_PLAN_LIMITS,
-  ATTORNEY_PLAN_PRICE_IDS,
+  TIER_PRICES,
 } from '@/lib/tiers'
 
 const ADVISOR_PLANS = [
@@ -78,9 +78,9 @@ const ATTORNEY_PLANS = [
   },
   {
     name: 'Starter',
+    planKey: 'starter' as const,
     price: ATTORNEY_PLAN_LIMITS.starter.priceMonthly,
     clientCap: ATTORNEY_PLAN_LIMITS.starter.clientCap,
-    priceId: ATTORNEY_PLAN_PRICE_IDS.starter,
     popular: true,
     features: [
       '15 client households',
@@ -93,9 +93,9 @@ const ATTORNEY_PLANS = [
   },
   {
     name: 'Growth',
+    planKey: 'growth' as const,
     price: ATTORNEY_PLAN_LIMITS.growth.priceMonthly,
     clientCap: ATTORNEY_PLAN_LIMITS.growth.clientCap,
-    priceId: ATTORNEY_PLAN_PRICE_IDS.growth,
     features: [
       '50 client households',
       'Everything in Starter',
@@ -176,7 +176,7 @@ export default async function PricingPage() {
               lineHeight: 1.6,
             }}
           >
-            Starting at $29/month · Estate plan includes a 14-day free trial
+            {`Starting at $${TIER_PRICES[1]}/month · Estate plan includes a 14-day free trial`}
             {annualBillingAvailable ? ' · Annual billing saves 2 months' : ''}
           </p>
           <p
@@ -397,18 +397,12 @@ export default async function PricingPage() {
                   <a href={signupHref} style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
                     Get started free
                   </a>
-                ) : user ? (
-                  <>
-                    <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.6, marginBottom: 12 }}>
-                      {BILLING_DISCLOSURES.preCheckout(plan.name, `$${plan.price}`, 'month')}
-                    </p>
-                    <form action="/api/stripe/checkout" method="POST">
-                      <input type="hidden" name="priceId" value={plan.priceId ?? ''} />
-                      <button type="submit" style={{ width: '100%', padding: '10px', borderRadius: 8, border: 'none', background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-                        Get started
-                      </button>
-                    </form>
-                  </>
+                ) : user && 'planKey' in plan && plan.planKey ? (
+                  <PricingAttorneyCheckout
+                    planName={plan.name}
+                    planKey={plan.planKey}
+                    priceMonthly={plan.price}
+                  />
                 ) : (
                   <a href={signupHref} style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
                     Get started

@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ADVISOR_FIRM_SEAT_RATES } from '@/lib/tiers'
+import { ADVISOR_FIRM_SEAT_RATES, ADVISOR_FIRM_SEAT_RANGES } from '@/lib/tiers'
 import type { FirmMemberRow } from './page'
 
 type Props = {
@@ -20,9 +20,9 @@ type Props = {
 }
 
 const TIER_LABELS: Record<string, string> = {
-  starter: 'Starter (1–10 advisors)',
-  growth: 'Growth (11–50 advisors)',
-  enterprise: 'Enterprise (51–250 advisors)',
+  starter: `Starter (${ADVISOR_FIRM_SEAT_RANGES.starter.label})`,
+  growth: `Growth (${ADVISOR_FIRM_SEAT_RANGES.growth.label})`,
+  enterprise: `Enterprise (${ADVISOR_FIRM_SEAT_RANGES.enterprise.label})`,
 }
 
 function tierLabel(tier: string | null) {
