@@ -10,6 +10,23 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Pricing surfaces alignment + firm seat billing (2026-06-10)
+
+**No schema migration.** Application-layer billing alignment:
+
+| Change | Detail |
+|--------|--------|
+| **`/pricing`** | Advisor per-seat + attorney tiers from `lib/tiers.ts`; `_pricing-advisor-checkout.tsx` |
+| **`/api/stripe/checkout`** | Consumer-only; legacy advisor price IDs removed |
+| **`/api/stripe/firm-checkout`** | `{ priceId, seatCount }`; tier-band validation |
+| **Webhook** | Firm checkout → `firms.seat_count` = Stripe subscription quantity |
+| **`/billing`** | Firm owner seat picker pre-subscribe |
+| **`lib/tiers.ts`** | `ADVISOR_FIRM_SEAT_RANGES`; enterprise $89/seat |
+
+**Env template:** `.env.live-stripe` (gitignored) for live `STRIPE_PRICE_*` + webhook secret.
+
+---
+
 ## State estate tax content system (2026-06-09)
 
 **Migration `20260615000000_state_estate_tax_content.sql`:**

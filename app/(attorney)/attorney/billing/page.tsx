@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { ATTORNEY_PLAN_LIMITS } from '@/lib/tiers'
 import { AttorneyBillingClient } from './_attorney-billing-client'
 
 export default async function AttorneyBillingPage({
@@ -38,7 +39,7 @@ export default async function AttorneyBillingPage({
       id: 1,
       planKey: 'starter' as const,
       name: 'Attorney Starter',
-      price: '$99/mo',
+      price: `$${ATTORNEY_PLAN_LIMITS.starter.priceMonthly}/mo`,
       features: [
         'Up to 15 client households',
         'Document vault + gap alerts',
@@ -51,7 +52,7 @@ export default async function AttorneyBillingPage({
       id: 2,
       planKey: 'growth' as const,
       name: 'Attorney Growth',
-      price: '$249/mo',
+      price: `$${ATTORNEY_PLAN_LIMITS.growth.priceMonthly}/mo`,
       features: [
         'Up to 50 client households',
         'PDF branding on intake exports',

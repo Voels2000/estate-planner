@@ -553,11 +553,11 @@ npx tsx scripts/seed-test-consumer-estate.ts
 |---------|-----------------|----------------|------------------|
 | Advisor Firm — Starter | **$149/seat/mo** ($1,499/yr optional) | `ADVISOR_FIRM_PRICE_IDS.starter` | RightCapital ~$150; eMoney $250+/seat |
 | Advisor Firm — Growth | **$99/seat/mo** | `ADVISOR_FIRM_PRICE_IDS.growth` | Volume 11–50 seats |
-| Advisor Firm — Enterprise | **$79/seat/mo** (placeholder $75 in code) | `ADVISOR_FIRM_PRICE_IDS.enterprise` | Enterprise floor |
+| Advisor Firm — Enterprise | **$89/seat/mo** | `ADVISOR_FIRM_PRICE_IDS.enterprise` | 51+ seats; contact for annual contract |
 
 - [ ] Create **3 advisor firm products** in Stripe test mode (then live on go-live day)
 - [ ] Record test `price_…` IDs → update env or replace test IDs in `lib/tiers.ts` before production
-- [ ] Verify `POST /api/stripe/firm-checkout` with test advisor account
+- [ ] Verify `POST /api/stripe/firm-checkout` with test advisor account (seat picker on `/pricing` and `/billing`; confirm webhook sets `firms.seat_count`)
 - [ ] **Manual at launch:** invoice first advisors until firm checkout is verified end-to-end
 - [ ] **Not required at launch:** separate Stripe product for “advisor-managed consumer” (handled in app DB)
 

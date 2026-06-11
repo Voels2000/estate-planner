@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-07 (B2B2C billing + competitive seat pricing)
+# Last updated: 2026-06-10 (pricing surfaces alignment + firm seat billing)
 
 ---
 
@@ -754,7 +754,10 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 - Consumer pricing (Sprint 4, 2026-05-28): **Financial $29/mo** · **Retirement $79/mo** · **Estate $149/mo**; annual billing at **$290 / $790 / $1,490** (2 months free). **14-day free trial on Estate tier only.**
 - Single source of truth for Stripe price IDs: `lib/billing/stripePrices.ts` (`getPriceConfig(tier, period)`, `getTierFromPriceId(priceId)`). Env vars: `STRIPE_PRICE_FINANCIAL_MONTHLY`, `_ANNUAL`, etc.
-- Plan display shared by billing and public pricing: `lib/billing/consumerPlanCatalog.ts`.
+- Plan display shared by billing and public pricing: `lib/billing/consumerPlanCatalog.ts` (names/descriptions from `TIER_NAMES` / `TIER_DESCRIPTIONS` in `lib/tiers.ts`).
+- **Public `/pricing` (2026-06-10):** Consumer plans via `_pricing-consumer-plans.tsx`; advisor **per-seat** Starter/Growth/Enterprise from `ADVISOR_FIRM_SEAT_RATES` + `ADVISOR_FIRM_SEAT_RANGES`; attorney Free/Starter/Growth from `ATTORNEY_PLAN_LIMITS`. Advisor checkout: `_pricing-advisor-checkout.tsx` → `POST /api/stripe/firm-checkout`.
+- **Advisor firm billing (2026-06-10):** `POST /api/stripe/firm-checkout` — `{ priceId, seatCount }`; tier-band validation (Starter ≤10, Growth ≤50, Enterprise ≤250). Webhook `checkout.session.completed` writes `firms.seat_count` from Stripe subscription quantity. Roster invite/remove updates `firms.seat_count` and calls `syncFirmStripeQuantity`. Firm owner pre-subscribe seat picker on `/billing` (`_firm-billing-client.tsx`).
+- **Consumer checkout (2026-06-10):** `POST /api/stripe/checkout` is **consumer-only** — rejects price IDs not in `STRIPE_PRICES` / legacy consumer map. Advisor/attorney use firm-checkout and attorney-checkout respectively.
 - Billing page (`/billing`) and public pricing (`/pricing`) include **monthly/annual toggle** (`components/billing/BillingPeriodToggle.tsx`) when `isAnnualBillingConfigured()` is true (all three `STRIPE_PRICE_*_ANNUAL` env vars set server-side). Toggle hidden otherwise; monthly plans only.
 - **Go-live:** [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) — Phase 1 test mode, then Phase 2 live keys; never mix test price IDs with live secret key.
 - Checkout (`POST /api/stripe/checkout`) accepts `priceId` + `period` or `plan` query param; Estate subscriptions get `subscription_data.trial_period_days: 14`.

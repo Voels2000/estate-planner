@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-10 (legal entity placeholders — My Wealth Maps LLC)
+# Last updated: 2026-06-10 (pricing surfaces alignment + firm seat billing)
 
 ---
 
@@ -29,6 +29,7 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 | State estate tax content (13 states) | ✅ Shipped | `/learn/[state-tax-slug]` · admin State tax content tab · cron §11 |
 | `/learn` discovery & cross-linking | ✅ Shipped | `PublicNav` State tax guides · homepage callout · `/estate-tax` guide link |
 | `/assess` dynamic state picker | ✅ Shipped | `useSelectedState` · `StatePickerDropdown` · 13-state callout on intro |
+| Pricing surfaces + firm seat billing | ✅ Shipped | `/pricing` advisor/attorney · firm-checkout seat sync · `/billing` seat picker |
 | Legal entity placeholders (`/terms`, `/privacy`) | ✅ Shipped | `lib/legal/company.ts` — My Wealth Maps LLC · Snohomish address · RA Alan Voels |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
@@ -38,6 +39,7 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 
 | Item | Command / entry point |
 |------|------------------------|
+| Pricing surfaces + firm seat billing | `/pricing` · `firm-checkout` · webhook `seat_count` · `_firm-billing-client.tsx` |
 | Legal entity constants | `lib/legal/company.ts` → `/terms` · `/privacy` · public footer copyright |
 | `/assess` dynamic state picker | `lib/learn/useSelectedState.ts` · `StatePickerDropdown` · `mwm_selected_state` localStorage |
 | `/learn` discovery & cross-linking | `PublicNav` → `/learn` · homepage state guide card · `/estate-tax` in-app link |
@@ -84,7 +86,7 @@ Do NOT set `PUBLIC_SIGNUP_OPEN=true` until all Gate 1 items in [LAUNCH_GATE.md](
 
 ## Paste this as your FIRST MESSAGE in Cursor
 
-> My Wealth Maps — **go-live prep.** Admin sprints + **WA estate tax SEO** + **13-state `/learn`** + **`/learn` discovery** + **`/assess` state picker** are **shipped**. Admin-A (Ops Home), Admin-P1 (tax config, user detail, waitlist), Admin-Redesign (sidebar nav). L1–L4 + B2B2C billing complete. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
+> My Wealth Maps — **go-live prep.** Admin sprints + **WA estate tax SEO** + **13-state `/learn`** + **`/learn` discovery** + **`/assess` state picker** + **pricing/billing alignment** are **shipped**. Per-seat advisor checkout on `/pricing` and `/billing`; attorney flat tiers on `/pricing`; consumer checkout is consumer-only. Admin-A (Ops Home), Admin-P1 (tax config, user detail, waitlist), Admin-Redesign (sidebar nav). L1–L4 + B2B2C billing complete. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
 >
 > **Remaining blockers before open signups:** [LAUNCH_GATE.md](./LAUNCH_GATE.md) **Gate 1 only** — legal review, Stripe production catalog/config, production smoke (drip, E2E, billing walkthrough). No further engineering sprints required for launch.
 >

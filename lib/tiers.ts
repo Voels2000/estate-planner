@@ -148,7 +148,13 @@ export const FIRM_PRICE_ID_TO_TIER: Record<string, string> = {
 export const ADVISOR_FIRM_SEAT_RATES: Record<string, number> = {
   starter:    149, // go-live target — see docs/BILLING_B2B2C_POLICY.md (vs RightCapital ~$150, eMoney $250+)
   growth:     99,  // volume band 11–50 seats
-  enterprise: 75,  // consider $79 at go-live; enterprise floor vs eMoney enterprise
+  enterprise: 89,  // go-live floor — above Holistiplan, below eMoney enterprise
+}
+
+export const ADVISOR_FIRM_SEAT_RANGES: Record<string, { min: number; max: number | null; label: string }> = {
+  starter:    { min: 1,  max: 10,  label: '1–10 seats' },
+  growth:     { min: 11, max: 50,  label: '11–50 seats' },
+  enterprise: { min: 51, max: null, label: '51+ seats' },
 }
 
 // Attorney plan price IDs — set in Vercel before go-live:

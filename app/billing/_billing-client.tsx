@@ -11,6 +11,7 @@ import {
   type ConsumerPlanForCheckout,
 } from '@/lib/billing/consumerPlanCatalog'
 import type { BillingPeriod } from '@/lib/billing/stripePrices'
+import { TIER_PRICES } from '@/lib/tiers'
 
 type Props = {
   currentPlan: string | null
@@ -166,7 +167,7 @@ export function BillingClient({
           Professional planning infrastructure at a fraction of attorney fees.
         </p>
         <p className="mt-1 text-sm text-[color:var(--mwm-text-muted)]">
-          Starting at $29/month · Estate plan includes a 14-day free trial
+          {`Starting at $${TIER_PRICES[1]}/month · Estate plan includes a 14-day free trial`}
         </p>
         {isActive && activePlan && (
           <p className="mt-2 text-sm font-medium text-green-600">

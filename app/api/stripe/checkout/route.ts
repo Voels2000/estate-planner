@@ -8,13 +8,6 @@ import {
   type PlanTier,
 } from '@/lib/billing/stripePrices'
 
-const ADVISOR_PRICE_IDS: Record<string, string> = {
-  advisor: 'price_1TAlRkCaljka9gJtL7jcTwWY',
-  advisor_pro: 'price_1TBIjWCaljka9gJt5tAXddM7',
-  advisor_unlimited: 'price_1TBIkSCaljka9gJtUqwl9reU',
-  consumer: 'price_1TAlJjCaljka9gJthGTMogQb',
-}
-
 const PLAN_NAME_TO_TIER: Record<string, PlanTier> = {
   financial: 1,
   retirement: 2,
@@ -52,8 +45,6 @@ export async function POST(req: Request) {
         const config = getPriceConfig(tier, period)
         priceId = config.priceId
         trialDays = config.trialDays
-      } else {
-        priceId = ADVISOR_PRICE_IDS[planParam]
       }
     } else {
       const body = await req.json().catch(() => ({}))
@@ -88,14 +79,20 @@ export async function POST(req: Request) {
           const config = getPriceConfig(tier, period)
           priceId = config.priceId
           trialDays = config.trialDays
-        } else {
-          priceId = ADVISOR_PRICE_IDS[String(body.plan)]
         }
       }
     }
 
     if (!priceId) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
+    }
+
+    // Consumer-only route — advisor uses /api/stripe/firm-checkout, attorney uses /api/stripe/attorney-checkout
+    if (getTierFromPriceId(priceId) == null) {
+      return NextResponse.json(
+        { error: 'Invalid plan. Use firm or attorney checkout for professional subscriptions.' },
+        { status: 400 },
+      )
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'

@@ -2580,6 +2580,25 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Pricing surfaces aligned to `lib/tiers.ts` + firm seat billing reconciliation
+
+**Decision:** All public and in-app pricing surfaces read advisor/attorney/consumer prices from `lib/tiers.ts` and `lib/billing/stripePrices.ts`. Advisor firms bill **per seat** via `POST /api/stripe/firm-checkout` (not legacy client-count checkout). Enterprise advisor floor locked at **$89/seat/mo**. Attorney billing remains flat tier + client cap (no seat quantity).
+
+**Reasoning:** `/pricing` still showed legacy $159/$299/$499 client-count advisor plans while checkout used firm per-seat IDs — a go-live blocker. Seat count must match Stripe quantity and `firms.seat_count` for ongoing invite/remove sync via `syncFirmStripeQuantity`.
+
+**Checkout routing:**
+- Consumer → `POST /api/stripe/checkout` (validates price ID against `STRIPE_PRICES` only)
+- Advisor firm → `POST /api/stripe/firm-checkout` with `{ priceId, seatCount }`; tier-band max 10 / 50 / 250
+- Attorney → `POST /api/stripe/attorney-checkout` with `{ planKey }` (quantity 1)
+
+**Seat reconciliation:** On firm `checkout.session.completed`, webhook sets `firms.seat_count` from Stripe subscription line-item quantity. Ongoing roster changes update `firms.seat_count` on invite/remove and push to Stripe via `syncFirmStripeQuantity`.
+
+**UI:** Seat pickers on `/pricing` (Starter/Growth) and `/billing` (firm owner pre-subscribe). Enterprise → mailto contact.
+
+**Implication:** Wire `STRIPE_PRICE_ADVISOR_*` env vars and live price IDs before production. Legacy `lib/advisor/advisorClientLimits.ts` client-count caps may still apply to individual advisor invites — separate from firm seat billing; revisit post-launch.
+
+---
+
 ### June 2026 — Legal entity: `lib/legal/company.ts` single source of truth
 
 **Decision:** Centralize **My Wealth Maps LLC**, mailing address (22033 Echo Lake Rd, Snohomish, WA 98296), and registered agent (Alan Voels, same address) in `lib/legal/company.ts`. Terms, Privacy, and formal copyright lines import from this module. Consumer-facing brand copy remains **My Wealth Maps** (d/b/a in legal docs).

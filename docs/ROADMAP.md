@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-10 (legal entity placeholders; learn; assess)
+# Last updated: 2026-06-10 (pricing surfaces alignment + firm seat billing)
 
 ---
 
@@ -18,6 +18,23 @@
 ---
 
 ## Current sprint
+
+### Sprint — Pricing surfaces alignment + firm seat billing `[x]` **shipped (2026-06-10)**
+
+| Item | Status | Entry point |
+|------|--------|-------------|
+| `/pricing` — per-seat advisor plans + attorney plans from `lib/tiers.ts` | `[x]` | `app/(public)/pricing/page.tsx` |
+| Advisor seat picker on `/pricing` (Starter/Growth) | `[x]` | `_pricing-advisor-checkout.tsx` → `POST /api/stripe/firm-checkout` |
+| Consumer checkout consumer-only (legacy advisor price IDs removed) | `[x]` | `app/api/stripe/checkout/route.ts` |
+| Firm checkout tier-band validation (10 / 50 / 250) | `[x]` | `app/api/stripe/firm-checkout/route.ts` |
+| Webhook sync `firms.seat_count` from Stripe quantity on firm checkout | `[x]` | `app/api/stripe/webhook/route.ts` |
+| Firm owner seat picker on `/billing` pre-subscribe | `[x]` | `app/billing/_firm-billing-client.tsx` |
+| `ADVISOR_FIRM_SEAT_RANGES` + enterprise **$89/seat** in `lib/tiers.ts` | `[x]` | Source of truth for UI + policy |
+| Attorney billing prices from `ATTORNEY_PLAN_LIMITS` | `[x]` | `attorney/billing/page.tsx` + client |
+
+**No migration.** Live Stripe price IDs still manual — [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue). Template env file: `.env.live-stripe` (gitignored).
+
+---
 
 ### Sprint — Legal entity placeholders `[x]` **shipped (2026-06-10)**
 

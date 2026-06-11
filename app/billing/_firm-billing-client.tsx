@@ -4,11 +4,18 @@ import { useState } from 'react'
 import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { ADVISOR_FIRM_SEAT_RANGES } from '@/lib/tiers'
 
 const TIER_LABEL: Record<string, string> = {
-  starter: 'Starter (1–10 advisors)',
-  growth: 'Growth (11–50 advisors)',
-  enterprise: 'Enterprise (51–250 advisors)',
+  starter: `Starter (${ADVISOR_FIRM_SEAT_RANGES.starter.label})`,
+  growth: `Growth (${ADVISOR_FIRM_SEAT_RANGES.growth.label})`,
+  enterprise: `Enterprise (${ADVISOR_FIRM_SEAT_RANGES.enterprise.label})`,
+}
+
+const TIER_MAX_SEATS: Record<string, number> = {
+  starter: 10,
+  growth: 50,
+  enterprise: 250,
 }
 
 type Props = {
@@ -25,16 +32,23 @@ export function FirmBillingClient({
   firmName,
   firmTierKey,
   perSeatRate,
-  seatCount,
-  totalMonthly,
+  seatCount: initialSeatCount,
+  totalMonthly: initialTotalMonthly,
   subscriptionStatus,
   firmCheckoutPriceId,
 }: Props) {
+  const maxSeats = TIER_MAX_SEATS[firmTierKey] ?? 10
+  const [seatCountInput, setSeatCountInput] = useState(
+    Math.min(Math.max(1, initialSeatCount || 1), maxSeats),
+  )
   const [loadingSubscribe, setLoadingSubscribe] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const isActive =
     subscriptionStatus === 'active' || subscriptionStatus === 'trialing'
+  const effectiveSeats = Math.min(Math.max(1, seatCountInput || 1), maxSeats)
+  const displaySeats = isActive ? initialSeatCount : effectiveSeats
+  const totalMonthly = perSeatRate * displaySeats
 
   async function handleFirmCheckout() {
     setError(null)
@@ -43,7 +57,10 @@ export function FirmBillingClient({
       const res = await fetch('/api/stripe/firm-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: firmCheckoutPriceId }),
+        body: JSON.stringify({
+          priceId: firmCheckoutPriceId,
+          seatCount: effectiveSeats,
+        }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -117,7 +134,7 @@ export function FirmBillingClient({
           </div>
           <div>
             <h3 className="text-sm font-medium text-neutral-500">Active seats</h3>
-            <p className="mt-1 text-neutral-900">{seatCount}</p>
+            <p className="mt-1 text-neutral-900">{displaySeats}</p>
           </div>
           <div>
             <h3 className="text-sm font-medium text-neutral-500">
@@ -127,7 +144,7 @@ export function FirmBillingClient({
               ${totalMonthly.toLocaleString('en-US')}/mo
             </p>
             <p className="mt-1 text-xs text-neutral-500">
-              {perSeatRate} × {seatCount} seats
+              {perSeatRate} × {displaySeats} seats
             </p>
           </div>
         </div>
@@ -140,6 +157,29 @@ export function FirmBillingClient({
           )}
           {!isActive && (
             <>
+              <div className="w-full">
+                <label
+                  htmlFor="firm-billing-seats"
+                  className="block text-sm font-medium text-neutral-700 mb-1.5"
+                >
+                  Number of advisor seats
+                </label>
+                <input
+                  id="firm-billing-seats"
+                  type="number"
+                  min={1}
+                  max={maxSeats}
+                  value={seatCountInput}
+                  onChange={(e) => {
+                    const parsed = parseInt(e.target.value, 10)
+                    setSeatCountInput(Number.isNaN(parsed) ? 1 : parsed)
+                  }}
+                  className="w-full max-w-xs rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                />
+                <p className="mt-2 text-sm font-semibold text-neutral-900">
+                  Total: ${totalMonthly.toLocaleString('en-US')}/month
+                </p>
+              </div>
               <p className="w-full text-sm text-neutral-700 leading-relaxed">
                 {BILLING_DISCLOSURES.preCheckout(
                   resolvedTierLabel,

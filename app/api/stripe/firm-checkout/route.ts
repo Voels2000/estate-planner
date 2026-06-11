@@ -10,6 +10,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 const VALID_FIRM_PRICE_IDS = new Set(Object.values(ADVISOR_FIRM_PRICE_IDS))
 
+const tierBandMax: Record<string, number> = {
+  [ADVISOR_FIRM_PRICE_IDS.starter]: 10,
+  [ADVISOR_FIRM_PRICE_IDS.growth]: 50,
+  [ADVISOR_FIRM_PRICE_IDS.enterprise]: 250,
+}
+
 export async function POST(req: Request) {
   try {
     const ctx = await getAccessContext()
@@ -82,7 +88,19 @@ export async function POST(req: Request) {
       }
     }
 
-    const seatCount = Math.max(1, ctx.seat_count ?? 1)
+    const seatCount =
+      typeof body.seatCount === 'number'
+        ? Math.min(Math.max(1, body.seatCount), 250)
+        : Math.max(1, ctx.seat_count ?? 1)
+
+    const maxSeats = tierBandMax[priceId] ?? 250
+    if (seatCount > maxSeats) {
+      return NextResponse.json(
+        { error: `Seat count exceeds maximum for this plan (${maxSeats})` },
+        { status: 400 },
+      )
+    }
+
     const siteUrl = getAppUrl()
 
     console.log('[firm-checkout] stripe.checkout.sessions.create', {

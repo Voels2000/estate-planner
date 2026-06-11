@@ -72,6 +72,19 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] LAUNCH_GATE · NEXT_SESSION synced
 - [x] No migration — terms served from code via `getCanonicalTerms()`
 
+## Pricing surfaces alignment + firm seat billing (2026-06-10) — shipped
+
+- [x] `/pricing` — advisor per-seat (Starter/Growth/Enterprise) + attorney tiers from `lib/tiers.ts`
+- [x] `_pricing-advisor-checkout.tsx` — seat picker → `POST /api/stripe/firm-checkout` with `{ priceId, seatCount }`
+- [x] `POST /api/stripe/checkout` — consumer-only; rejects legacy advisor price IDs
+- [x] `POST /api/stripe/firm-checkout` — tier-band max seats (10 / 50 / 250)
+- [x] Webhook `checkout.session.completed` — sync `firms.seat_count` from Stripe subscription quantity
+- [x] `/billing` firm owner pre-subscribe seat picker (`_firm-billing-client.tsx`)
+- [x] `ADVISOR_FIRM_SEAT_RANGES` · enterprise **$89/seat** in `lib/tiers.ts`
+- [x] Attorney billing display from `ATTORNEY_PLAN_LIMITS`
+- [x] ROADMAP · MASTER_ARCHITECTURE · DECISION_LOG · BILLING_B2B2C_POLICY · LAUNCH_CHECKLIST · NEXT_SESSION synced
+- [x] No migration — `.env.live-stripe` template for live Stripe env vars (gitignored)
+
 ## `/assess` dynamic state picker (2026-06-10) — shipped
 
 - [x] `lib/learn/us-states.ts` — 50 states + DC

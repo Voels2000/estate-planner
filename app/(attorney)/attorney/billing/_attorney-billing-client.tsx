@@ -2,8 +2,14 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { ATTORNEY_PLAN_NAMES, type AttorneyPlanKey } from '@/lib/tiers'
+import { ATTORNEY_PLAN_LIMITS, ATTORNEY_PLAN_NAMES, type AttorneyPlanKey } from '@/lib/tiers'
 import { ATTORNEY_TIER_LIMITS } from '@/lib/attorney/attorneyTierLimits'
+
+function planPriceLabel(plan: Plan): string {
+  if (plan.id === 0) return '$0'
+  if (plan.planKey) return `$${ATTORNEY_PLAN_LIMITS[plan.planKey].priceMonthly}/mo`
+  return plan.price
+}
 
 type Plan = {
   id: number
@@ -97,7 +103,7 @@ export function AttorneyBillingClient({
             }`}
           >
             <h2 className="font-semibold text-neutral-900">{plan.name}</h2>
-            <p className="mt-1 text-lg font-bold text-neutral-800">{plan.price}</p>
+            <p className="mt-1 text-lg font-bold text-neutral-800">{planPriceLabel(plan)}</p>
             <ul className="mt-4 space-y-2 text-xs text-neutral-600">
               {plan.features.map((f) => (
                 <li key={f}>• {f}</li>

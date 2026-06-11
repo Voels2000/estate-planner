@@ -106,16 +106,19 @@ export async function POST(req: NextRequest) {
           if (subscriptionId) {
             const sub = await stripe.subscriptions.retrieve(subscriptionId)
             const priceId = sub.items.data[0]?.price.id
+            const stripeQuantity = sub.items.data[0]?.quantity ?? 1
             const firmTier = priceId
               ? FIRM_PRICE_ID_TO_TIER[priceId]
               : undefined
             const update: {
               stripe_subscription_id: string
               subscription_status: 'active'
+              seat_count: number
               tier?: string
             } = {
               stripe_subscription_id: subscriptionId,
               subscription_status: 'active',
+              seat_count: stripeQuantity,
             }
             if (firmTier) {
               update.tier = firmTier

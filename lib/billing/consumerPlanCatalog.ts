@@ -1,4 +1,4 @@
-import { TIER_FEATURES } from '@/lib/tiers'
+import { TIER_DESCRIPTIONS, TIER_FEATURES, TIER_NAMES } from '@/lib/tiers'
 import { getPriceConfig, type BillingPeriod, type PlanTier } from '@/lib/billing/stripePrices'
 
 export type ConsumerPlanCatalogEntry = {
@@ -17,8 +17,8 @@ export const CONSUMER_PLAN_CATALOG: ConsumerPlanCatalogEntry[] = [
   {
     tier: 1,
     id: 'financial',
-    name: 'Financial',
-    description: 'Get organized and see your full financial picture.',
+    name: TIER_NAMES[1],
+    description: `${TIER_DESCRIPTIONS[1]}.`,
     features: TIER_FEATURES[1],
     highlighted: false,
     badge: null,
@@ -28,8 +28,8 @@ export const CONSUMER_PLAN_CATALOG: ConsumerPlanCatalogEntry[] = [
   {
     tier: 2,
     id: 'retirement',
-    name: 'Retirement',
-    description: 'Explore retirement projections with advanced planning tools.',
+    name: TIER_NAMES[2],
+    description: `${TIER_DESCRIPTIONS[2]}.`,
     features: TIER_FEATURES[2],
     highlighted: false,
     badge: null,
@@ -39,8 +39,8 @@ export const CONSUMER_PLAN_CATALOG: ConsumerPlanCatalogEntry[] = [
   {
     tier: 3,
     id: 'estate',
-    name: 'Estate',
-    description: 'Complete estate and advanced tax planning.',
+    name: TIER_NAMES[3],
+    description: `${TIER_DESCRIPTIONS[3]}.`,
     features: [
       ...TIER_FEATURES[3],
       'Estate execution checklist',

@@ -152,7 +152,7 @@ Mirror Clio seat bands; collaboration-only tier below Clio, premium tier with in
 |---------|-------------------------|------------------|
 | Advisor Starter seat | **$149/mo** (or $1,499/yr) | `ADVISOR_FIRM_SEAT_RATES.starter = 149` |
 | Advisor Growth seat | **$99/mo** | `ADVISOR_FIRM_SEAT_RATES.growth = 99` |
-| Advisor Enterprise seat | **$79/mo** | `ADVISOR_FIRM_SEAT_RATES.enterprise = 75` → consider **$79** at go-live |
+| Advisor Enterprise seat | **$89/mo** | `ADVISOR_FIRM_SEAT_RATES.enterprise = 89` |
 | Attorney Starter (solo) | **$99/mo** | `ATTORNEY_PLAN_LIMITS.starter` |
 | Attorney Growth (solo) | **$249/mo** | `ATTORNEY_PLAN_LIMITS.growth` |
 
@@ -164,9 +164,9 @@ Document final numbers in Stripe live mode + update `lib/tiers.ts` price IDs bef
 |-----------|------------------|-------------------------|------------------|----------------|
 | Starter | 1–10 advisors | **$149** | RightCapital ~$150; eMoney $250+ | `ADVISOR_FIRM_PRICE_IDS.starter` |
 | Growth | 11–50 | **$99** | Volume discount | `ADVISOR_FIRM_PRICE_IDS.growth` |
-| Enterprise | 51–250 | **$79** (code placeholder $75) | Enterprise floor | `ADVISOR_FIRM_PRICE_IDS.enterprise` |
+| Enterprise | 51+ seats | **$89** | Enterprise floor (Holistiplan / eMoney band) | `ADVISOR_FIRM_PRICE_IDS.enterprise` |
 
-**Checkout:** `POST /api/stripe/firm-checkout` — quantity = seat count.
+**Checkout:** `POST /api/stripe/firm-checkout` — `{ priceId, seatCount }`; quantity = seats. Tier-band max enforced server-side (10 / 50 / 250). Webhook sets `firms.seat_count` from Stripe quantity on first checkout; invite/remove syncs via `syncFirmStripeQuantity`.
 
 **Consumer handoff:** No extra Stripe product — app sets `advisor_managed` when toggle ON.
 
