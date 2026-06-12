@@ -64,6 +64,11 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Homepage CI lint fix (2026-06-12) — shipped
+
+- [x] `app/(public)/page.tsx` — replace internal `<a href>` with `next/link` (`/learn`, `/login`, `/events`, `/assess`, signup) — fixes `@next/next/no-html-link-for-pages` CI build failure
+- [x] NEXT_SESSION synced
+
 ## Production E2E smoke tags (2026-06-12) — shipped
 
 - [x] `@production` tag on 42 tests in 12 files (auth, billing, webhook, security, routes, terms)

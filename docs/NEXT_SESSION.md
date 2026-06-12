@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-12 (Production E2E smoke tags + pre-launch checklist)
+# Last updated: 2026-06-12 (Homepage Link lint CI fix)
 
 ---
 
@@ -35,6 +35,7 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 | Go-live performance audit | ✅ Done | Consumers / advisors / attorneys — see §5 below |
 | Pre-launch DB perf (bundle + MC staleness) | ✅ Shipped | `loadDashboardBundle` · `projection_inputs_hash` · `touchHousehold` on all writes |
 | Production E2E smoke (`@production`) | ✅ Shipped | 42 tests · `test:e2e:prod:smoke` · `test:e2e:prod:billing` |
+| Homepage CI lint (`no-html-link-for-pages`) | ✅ Shipped | `app/(public)/page.tsx` — `/learn` + other internal routes use `<Link>` |
 | Legal entity placeholders (`/terms`, `/privacy`) | ✅ Shipped | `lib/legal/company.ts` — My Wealth Maps LLC · Snohomish address · RA Alan Voels |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 

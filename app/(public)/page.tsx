@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
@@ -102,7 +103,7 @@ export default async function HomePage() {
             </div>
           ))}
         </div>
-        <a href="/login" style={{
+        <Link href="/login" style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           background: 'rgba(255,255,255,0.08)',
           border: '1px solid rgba(255,255,255,0.15)',
@@ -116,7 +117,7 @@ export default async function HomePage() {
             borderRadius: '50%',
           }} />
           Returning user? Sign in to resume where you left off →
-        </a>
+        </Link>
       </div>
 
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 24px 80px' }}>
@@ -149,7 +150,7 @@ export default async function HomePage() {
             Washington&apos;s kicks in at $3M. Oregon&apos;s at $1M. Our state-by-state guides
             explain what&apos;s at stake and how planning changes the outcome.
           </p>
-          <a
+          <Link
             href="/learn"
             style={{
               fontSize: 13,
@@ -159,7 +160,7 @@ export default async function HomePage() {
             }}
           >
             See all state guides →
-          </a>
+          </Link>
         </Card>
 
         {/* ORIENTING QUESTION */}
@@ -212,7 +213,7 @@ export default async function HomePage() {
                 href: getSignupHref(signupOpts),
               },
             ].map((opt) => (
-              <a
+              <Link
                 key={opt.label}
                 href={opt.href}
                 style={{
@@ -239,11 +240,11 @@ export default async function HomePage() {
                 }}>
                   {opt.sub}
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
           <div style={{ marginTop: 14, textAlign: 'center' }}>
-            <a
+            <Link
               href="/events"
               style={{
                 fontSize: 13,
@@ -253,7 +254,7 @@ export default async function HomePage() {
               }}
             >
               See all life events →
-            </a>
+            </Link>
           </div>
         </div>
 
