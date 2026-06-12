@@ -137,16 +137,17 @@ export function featureUpgradeTier(feature: string): 2 | 3 {
 export const PRICE_ID_TO_TIER: Record<string, 1 | 2 | 3> = buildPriceIdToTierMap()
 
 export const ADVISOR_FIRM_PRICE_IDS = {
-  starter: process.env.STRIPE_PRICE_ADVISOR_FIRM_STARTER?.trim() || 'price_1TIW5xCaljka9gJtTw9uF5E5',
-  growth: process.env.STRIPE_PRICE_ADVISOR_FIRM_GROWTH?.trim() || 'price_1TIW78Caljka9gJt8vlD9GnF',
-  enterprise: process.env.STRIPE_PRICE_ADVISOR_FIRM_ENTERPRISE?.trim() || 'price_1TIW8gCaljka9gJtTfmEgO2C',
-}
+  starter: process.env.STRIPE_PRICE_ADVISOR_STARTER_MONTHLY?.trim() ?? '',
+  growth: process.env.STRIPE_PRICE_ADVISOR_GROWTH_MONTHLY?.trim() ?? '',
+  enterprise: process.env.STRIPE_PRICE_ADVISOR_ENTERPRISE_MONTHLY?.trim() ?? '',
+} as const
 
-export const FIRM_PRICE_ID_TO_TIER: Record<string, string> = {
-  'price_1TIW5xCaljka9gJtTw9uF5E5': 'starter',
-  'price_1TIW78Caljka9gJt8vlD9GnF': 'growth',
-  'price_1TIW8gCaljka9gJtTfmEgO2C': 'enterprise',
-}
+export const FIRM_PRICE_ID_TO_TIER: Record<string, string> = (
+  Object.entries(ADVISOR_FIRM_PRICE_IDS) as [keyof typeof ADVISOR_FIRM_PRICE_IDS, string][]
+).reduce<Record<string, string>>((acc, [tier, priceId]) => {
+  if (priceId) acc[priceId] = tier
+  return acc
+}, {})
 
 export const ADVISOR_FIRM_SEAT_RATES: Record<string, number> = {
   starter:    149, // go-live target — see docs/BILLING_B2B2C_POLICY.md (vs RightCapital ~$150, eMoney $250+)

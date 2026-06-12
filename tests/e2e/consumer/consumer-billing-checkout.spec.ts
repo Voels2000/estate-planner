@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { firmStarterPriceIdForE2e } from '../helpers/billing-e2e'
 
 /**
  * Consumer billing checkout API — auth via consumer-setup storage state.
@@ -25,8 +26,10 @@ test.describe('Consumer billing checkout API', () => {
   })
 
   test('POST /api/stripe/checkout rejects advisor firm price ids', async ({ request }) => {
+    const priceId = firmStarterPriceIdForE2e()
+    test.skip(!priceId, 'Set PLAYWRIGHT_ADVISOR_FIRM_STARTER_PRICE_ID in .env.test')
     const res = await request.post('/api/stripe/checkout', {
-      data: { priceId: 'price_1TIW5xCaljka9gJtTw9uF5E5' },
+      data: { priceId },
     })
     expect(res.status()).toBe(400)
     const body = await res.json()
@@ -43,8 +46,10 @@ test.describe('Consumer billing checkout API', () => {
   })
 
   test('POST /api/stripe/firm-checkout forbidden for consumer session', async ({ request }) => {
+    const priceId = firmStarterPriceIdForE2e()
+    test.skip(!priceId, 'Set PLAYWRIGHT_ADVISOR_FIRM_STARTER_PRICE_ID in .env.test')
     const res = await request.post('/api/stripe/firm-checkout', {
-      data: { priceId: 'price_1TIW5xCaljka9gJtTw9uF5E5', seatCount: 1 },
+      data: { priceId, seatCount: 1 },
     })
     expect(res.status()).toBe(403)
   })

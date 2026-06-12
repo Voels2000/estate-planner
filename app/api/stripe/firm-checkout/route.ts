@@ -8,7 +8,9 @@ import { getAppUrl } from '@/lib/app-url'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
-const VALID_FIRM_PRICE_IDS = new Set(Object.values(ADVISOR_FIRM_PRICE_IDS))
+const VALID_FIRM_PRICE_IDS = new Set(
+  Object.values(ADVISOR_FIRM_PRICE_IDS).filter((id): id is string => Boolean(id)),
+)
 
 const tierBandMax: Record<string, number> = {
   [ADVISOR_FIRM_PRICE_IDS.starter]: 10,

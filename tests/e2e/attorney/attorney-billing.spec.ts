@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { firmStarterPriceIdForE2e } from '../helpers/billing-e2e'
 
 /**
  * Attorney billing — auth via attorney-setup storage state.
@@ -59,8 +60,10 @@ test.describe('Attorney billing checkout API', () => {
   })
 
   test('POST /api/stripe/firm-checkout forbidden for attorney session', async ({ request }) => {
+    const priceId = firmStarterPriceIdForE2e()
+    test.skip(!priceId, 'Set PLAYWRIGHT_ADVISOR_FIRM_STARTER_PRICE_ID in .env.test')
     const res = await request.post('/api/stripe/firm-checkout', {
-      data: { priceId: 'price_1TIW5xCaljka9gJtTw9uF5E5', seatCount: 1 },
+      data: { priceId, seatCount: 1 },
     })
     expect(res.status()).toBe(403)
   })
