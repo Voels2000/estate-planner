@@ -1,6 +1,7 @@
 import { after, NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import type { createClient } from '@/lib/supabase/server'
+import { invalidateDashboardBundle } from '@/lib/dashboard/loadDashboardBundle'
 import { triggerEstateHealthRecompute } from '@/lib/estate/triggerEstateHealthRecompute'
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>
@@ -10,6 +11,7 @@ export function getConsumerAppUrl(): string {
 }
 
 export async function touchHousehold(supabase: ServerSupabase, householdId: string) {
+  invalidateDashboardBundle(householdId)
   await supabase
     .from('households')
     .update({

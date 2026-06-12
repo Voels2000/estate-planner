@@ -19,6 +19,7 @@ import {
 } from '@/lib/dashboard/retirementSnapshot'
 import { buildRmdStatus } from '@/lib/dashboard/rmdStatus'
 import { buildIncomeSnapshot } from '@/lib/dashboard/incomeSnapshot'
+import { loadDashboardBundle, setupProgressFromBundle } from '@/lib/dashboard/loadDashboardBundle'
 import {
   loadBaseCaseScenario,
   loadDashboardCoreInputs,
@@ -39,11 +40,8 @@ import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { computeHeadroomBeforeFederalTax } from '@/lib/estate/exemptionLabels'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssumptionScenarios'
-import { fetchSetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
-import { loadAssessmentHistory } from '@/lib/dashboard/loadAssessmentHistory'
 import { DashboardClient } from '../_dashboard-client'
 import type { LifeEvent, LoggedLifeEvent } from '@/app/(dashboard)/_components/LifeEventBanner'
-import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { buildPersonaDashboardAlerts } from '@/lib/dashboard/personaAlerts'
 import { isWizardComplete } from '@/lib/estate/profileGate'
 import { buildEstateExecutionChecklist } from '@/lib/dashboard/buildEstateExecutionChecklist'
@@ -89,6 +87,12 @@ export async function DashboardBody({
   const admin = createAdminClient()
   const access = await getUserAccess()
 
+  const bundle = await loadDashboardBundle(supabase, admin, {
+    userId: user!.id,
+    householdId: household.id,
+    statePrimary: household.state_primary,
+  })
+
   // Background staleness check for base-case projection:
   // regenerate asynchronously when user inputs or tax brackets are newer than the last run.
   const projectionCalculatedAt = await loadProjectionCalculatedAt(admin, household.base_case_scenario_id)
@@ -96,6 +100,7 @@ export async function DashboardBody({
     supabase,
     user!.id,
     household.updated_at ?? null,
+    bundle,
   )
 
   const isStale = isProjectionStale({
@@ -113,57 +118,21 @@ export async function DashboardBody({
 
   const baseCaseScenario = await loadBaseCaseScenario(admin, household?.base_case_scenario_id)
 
-  // ── Parallel data fetch ──────────────────────────────────────────────────
-  // Income query now includes ALL sources (including social_security) so the
-  // current-year net income calculation is complete.
-  const [
-    {
-      profile,
-      assets,
-      liabilities,
-      income,
-      expenses,
-      realEstate,
-      businesses,
-      businessInterests,
-      insurance,
-    },
-    { data: lifeEventsData },
-    { data: loggedLifeEventsData },
-    { data: advisorConnection },
-  ] = await Promise.all([
-    loadDashboardCoreInputs(supabase, user!.id),
-    supabase
-      .from('life_events')
-      .select('id, event_type, source, acknowledged, created_at')
-      .eq('user_id', user!.id)
-      .eq('acknowledged', false)
-      .order('created_at', { ascending: false })
-      .limit(5),
-    supabase
-      .from('life_events')
-      .select('id, event_type, created_at')
-      .eq('user_id', user!.id)
-      .eq('source', 'user')
-      .order('created_at', { ascending: false })
-      .limit(10),
-    supabase
-      .from('advisor_clients')
-      .select(`
-        id,
-        accepted_at,
-        profiles!advisor_clients_advisor_id_fkey (
-          full_name,
-          email
-        )
-      `)
-      .eq('client_id', user!.id)
-      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
-      .maybeSingle(),
-  ])
+  const {
+    profile,
+    assets,
+    liabilities,
+    income,
+    expenses,
+    realEstate,
+    businesses,
+    businessInterests,
+    insurance,
+  } = await loadDashboardCoreInputs(supabase, user!.id, bundle)
 
-  const pendingLifeEvents = (lifeEventsData ?? []) as LifeEvent[]
-  const loggedLifeEvents = (loggedLifeEventsData ?? []) as LoggedLifeEvent[]
+  const pendingLifeEvents = bundle.lifeEventsPending as LifeEvent[]
+  const loggedLifeEvents = bundle.lifeEventsLogged as LoggedLifeEvent[]
+  const advisorConnection = bundle.advisorConnection
   const hasAdvisorConnection = !!advisorConnection
   const advisorProfile = advisorConnection?.profiles
     ? Array.isArray(advisorConnection.profiles)
@@ -173,10 +142,13 @@ export async function DashboardBody({
   const advisorConnectionSummary =
     advisorConnection && advisorConnection.accepted_at
       ? {
-          id: advisorConnection.id,
+          id: String(advisorConnection.id),
           advisorName:
-            advisorProfile?.full_name?.trim() || advisorProfile?.email || 'Your advisor',
-          connectedAt: advisorConnection.accepted_at,
+            (advisorProfile as { full_name?: string | null; email?: string | null } | null)
+              ?.full_name?.trim() ||
+            (advisorProfile as { email?: string | null } | null)?.email ||
+            'Your advisor',
+          connectedAt: String(advisorConnection.accepted_at),
         }
       : null
   const hasBusinessInterests =
@@ -310,71 +282,19 @@ export async function DashboardBody({
   })
   void insuranceValue
 
-  const [
-    { data: advisorStrategyItems },
-    mcScenarioRes,
-    { data: healthScoreRow },
-    { data: openAlertsData },
-    { data: conflictRows },
-    { taxDeferredAssets, currentYearWithdrawals },
-    { data: stateExemptionRow },
-  ] = await Promise.all([
-    household?.id
-      ? supabase
-          .from('strategy_line_items')
-          .select('id, strategy_source, amount, sign, scenario_name, consumer_accepted, consumer_rejected')
-          .eq('household_id', household.id)
-          .eq('source_role', 'advisor')
-          .eq('is_active', true)
-      : Promise.resolve({ data: null }),
-    household?.id
-      ? supabase
-          .from('advisor_projection_assumptions')
-          .select(
-            'id, scenario_name, shared_at, accepted_by_client, accepted_at, return_mean_pct, volatility_pct, withdrawal_rate_pct, success_threshold, simulation_count, planning_horizon_yr, inflation_rate_pct',
-          )
-          .eq('client_household_id', household.id)
-          .or('accepted_by_client.eq.true,shared_at.not.is.null')
-          .order('accepted_at', { ascending: false, nullsFirst: false })
-      : Promise.resolve({ data: null }),
-    household?.id
-      ? admin
-          .from('estate_health_scores')
-          .select('score, component_scores, computed_at, recommendations')
-          .eq('household_id', household.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    household?.id
-      ? admin
-          .from('household_alerts')
-          .select('id, title, description, severity, created_at, action_href')
-          .eq('household_id', household.id)
-          .is('resolved_at', null)
-          .is('dismissed_at', null)
-          .order('created_at', { ascending: false })
-          .limit(10)
-      : Promise.resolve({ data: null }),
-    household?.id
-      ? admin
-          .from('beneficiary_conflicts')
-          .select('conflict_type, severity, asset_id, real_estate_id, description, recommended_action')
-          .eq('household_id', household.id)
-      : Promise.resolve({ data: null }),
-    loadDashboardRmdInputs(supabase, user!.id),
-    household?.state_primary
-      ? supabase
-          .from('state_estate_tax_rules')
-          .select('exemption_amount, no_portability')
-          .eq('state', String(household.state_primary).toUpperCase())
-          .eq('tax_year', new Date().getFullYear())
-          .order('min_amount', { ascending: true })
-          .limit(1)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-  ])
+  const advisorStrategyItems = bundle.advisorStrategyItems
+  const healthScoreRow = bundle.healthScoreRow
+  const openAlertsData = bundle.openAlertsData
+  const conflictRows = bundle.conflictRows
+  const stateExemptionRow = bundle.stateExemptionRow
+  const { taxDeferredAssets, currentYearWithdrawals } = await loadDashboardRmdInputs(
+    supabase,
+    user!.id,
+    bundle,
+  )
 
   const { acceptedMCScenario, latestSharedMCScenario } = buildConsumerMCScenariosFromRows(
-    mcScenarioRes.data ?? [],
+    bundle.mcScenarioRows as Parameters<typeof buildConsumerMCScenariosFromRows>[0],
   )
 
   // Recommendations are populated by recompute (triggerEstateHealthRecompute).
@@ -394,16 +314,18 @@ export async function DashboardBody({
   // ── Estate health score — read from cache, recomputed async on staleness ─
   // computeEstateHealthScore writes to DB — never call it in render path.
   // Dashboard reads the last persisted score; background recompute updates it.
-  const estateHealthScore = mapEstateHealthScore(healthScoreRow)
+  const estateHealthScore = mapEstateHealthScore(
+    healthScoreRow as Parameters<typeof mapEstateHealthScore>[0],
+  )
 
   const openAlerts = sortOpenAlerts(
-    (openAlertsData ?? []).map((a) => ({
-      id: a.id,
-      title: a.title,
-      message: a.description,
-      severity: a.severity,
-      created_at: a.created_at,
-      action_href: a.action_href,
+    openAlertsData.map((a) => ({
+      id: String(a.id),
+      title: (a.title as string | null) ?? null,
+      message: (a.description as string | null) ?? null,
+      severity: String(a.severity ?? ''),
+      created_at: String(a.created_at ?? ''),
+      action_href: (a.action_href as string | null | undefined) ?? null,
     })),
   )
 
@@ -412,7 +334,9 @@ export async function DashboardBody({
 
   // ── Conflict detector — read from cache, recomputed async on staleness ───
   // detectConflicts writes to DB — never call it in render path.
-  const conflictReport = mapConflictReport(conflictRows)
+  const conflictReport = mapConflictReport(
+    conflictRows as unknown as Parameters<typeof mapConflictReport>[0],
+  )
 
   // ── RMD Status for current year ──────────────────────────────────────
 
@@ -471,10 +395,8 @@ export async function DashboardBody({
   })
 
   const wizardComplete = isWizardComplete(profile)
-  const [setupProgress, initialAssessmentResults] = await Promise.all([
-    fetchSetupProgressCounts(supabase, user!.id),
-    loadAssessmentHistory(supabase, user!.id),
-  ])
+  const setupProgress = setupProgressFromBundle(bundle)
+  const initialAssessmentResults = bundle.assessmentResults
 
   const consumerTier = access.tier
   const conflictCount = conflictReport?.conflicts.length ?? 0
@@ -535,11 +457,7 @@ export async function DashboardBody({
     hasEstatePlanData,
   })
 
-  const { data: assetTypes } = await supabase
-    .from('asset_types')
-    .select('value, label')
-    .eq('is_active', true)
-    .order('sort_order')
+  const assetTypes = bundle.assetTypes
 
   const { data: authUserData } = await admin.auth.admin.getUserById(userId)
   const accountCreatedAt = authUserData?.user?.created_at
@@ -615,14 +533,14 @@ export async function DashboardBody({
       mortgageBalance={totalMortgageBalance}
       otherLiabilities={otherLiabilities}
       initialRecommendations={initialRecommendations}
-      advisorStrategyItems={(advisorStrategyItems ?? []).map((item) => ({
-        id: item.id,
-        strategy_source: item.strategy_source,
+      advisorStrategyItems={(advisorStrategyItems ?? []).map((item: Record<string, unknown>) => ({
+        id: String(item.id),
+        strategy_source: String(item.strategy_source ?? ''),
         amount: Number(item.amount ?? 0),
         sign: typeof item.sign === 'number' ? item.sign : -1,
-        scenario_name: item.scenario_name ?? null,
-        consumer_accepted: item.consumer_accepted ?? false,
-        consumer_rejected: item.consumer_rejected ?? false,
+        scenario_name: (item.scenario_name as string | null) ?? null,
+        consumer_accepted: item.consumer_accepted === true,
+        consumer_rejected: item.consumer_rejected === true,
       }))}
       acceptedMCScenario={acceptedMCScenario}
       latestSharedMCScenario={latestSharedMCScenario}
@@ -640,9 +558,15 @@ export async function DashboardBody({
       personaAlerts={personaAlerts}
       initialAssessmentResults={initialAssessmentResults}
       statePrimary={household?.state_primary ?? null}
-      stateExemption={stateExemptionRow?.exemption_amount ?? null}
-      noPortability={stateExemptionRow?.no_portability ?? false}
-      assetTypes={assetTypes ?? []}
+      stateExemption={
+        stateExemptionRow?.exemption_amount != null
+          ? Number(stateExemptionRow.exemption_amount)
+          : null
+      }
+      noPortability={stateExemptionRow?.no_portability === true}
+      assetTypes={
+        assetTypes as Array<{ value: string; label: string }>
+      }
       person1Name={household?.person1_name ?? 'Person 1'}
       person2Name={household?.person2_name ?? 'Person 2'}
       hasSpouse={household?.has_spouse === true}

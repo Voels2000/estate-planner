@@ -1,5 +1,11 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import {
+  coreInputsFromBundle,
+  latestInputChangeMsFromBundle,
+  rmdInputsFromBundle,
+  type DashboardBundle,
+} from '@/lib/dashboard/loadDashboardBundle'
 import { getLatestTimestampMs } from '@/lib/projections/staleness'
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>
@@ -60,7 +66,12 @@ export async function loadLatestInputChangeMs(
   supabase: ServerSupabase,
   userId: string,
   householdUpdatedAt: string | null | undefined,
+  bundle?: DashboardBundle,
 ): Promise<number> {
+  if (bundle) {
+    return latestInputChangeMsFromBundle(bundle, householdUpdatedAt)
+  }
+
   const [
     assetsChangedAt,
     liabilitiesChangedAt,
@@ -116,7 +127,15 @@ export async function loadLatestInputChangeMs(
   ])
 }
 
-export async function loadDashboardCoreInputs(supabase: ServerSupabase, userId: string) {
+export async function loadDashboardCoreInputs(
+  supabase: ServerSupabase,
+  userId: string,
+  bundle?: DashboardBundle,
+) {
+  if (bundle) {
+    return coreInputsFromBundle(bundle)
+  }
+
   const [
     { data: profile },
     { data: assets },
@@ -158,7 +177,15 @@ export async function loadDashboardCoreInputs(supabase: ServerSupabase, userId: 
   }
 }
 
-export async function loadDashboardRmdInputs(supabase: ServerSupabase, userId: string) {
+export async function loadDashboardRmdInputs(
+  supabase: ServerSupabase,
+  userId: string,
+  bundle?: DashboardBundle,
+) {
+  if (bundle) {
+    return rmdInputsFromBundle(bundle)
+  }
+
   const [{ data: taxDeferredAssets }, { data: currentYearWithdrawals }] = await Promise.all([
     supabase
       .from('assets')
