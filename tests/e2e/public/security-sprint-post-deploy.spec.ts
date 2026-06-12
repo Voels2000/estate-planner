@@ -5,7 +5,7 @@
  * Uses production for API requests: preview deployments (vercel.app) often serve pages
  * but POST /api/* routes do not respond within test timeouts.
  *
- * Run: npm run test:e2e:security-smoke
+ * Run: npm run test:e2e:security-smoke:prod (hits production API — not local security-smoke)
  */
 import { test, expect, type APIRequestContext } from '@playwright/test'
 

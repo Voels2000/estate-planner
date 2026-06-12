@@ -69,6 +69,26 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `app/(public)/page.tsx` — replace internal `<a href>` with `next/link` (`/learn`, `/login`, `/events`, `/assess`, signup) — fixes `@next/next/no-html-link-for-pages` CI build failure
 - [x] NEXT_SESSION synced
 
+## Code audit Sprint A — consistency + E2E ops (2026-06-12) — shipped
+
+- [x] `POST /api/import/commit` — `afterHouseholdWriteForOwner` after bulk insert (bundle + recompute)
+- [x] Advisor meeting-prep routes — `estate_composition_cache` query scoped with `source_role: consumer`
+- [x] `test:e2e:cross-role` — `johnson-setup` → `advisor-client-setup`
+- [x] `test:e2e:security-smoke` local vs `test:e2e:security-smoke:prod` (prod public API split)
+- [x] `E2E_SKIP_RECOMPUTE` — skip background recompute during local E2E (`triggerEstateHealthRecompute`)
+- [x] E2E fixes: spouse grid selectors, attorney aref `waitForFunction`, health-check dashboard assertion
+- [x] PLAYWRIGHT_E2E · DECISION_LOG · MASTER_ARCHITECTURE · NEXT_SESSION synced
+
+## Code audit Sprint B — E2E test cleanup (2026-06-12) — shipped
+
+- [x] Removed `advisor/regression.spec.ts`, `advisor-first-client-playbook.spec.ts` (merged into `overview.spec.ts`)
+- [x] Removed `consumer-my-advisor.spec.ts`, `consumer-billing-route.spec.ts` (covered by route-regression + sidebar)
+- [x] `consumer-digital-assets` — API test only (page load in route-regression)
+- [x] Advisor strategy selectors — `Situation` / `Metric Explanations` (removed stale `Advisory Metrics Dashboard`)
+- [x] `consumer-life-events` — admin cleanup after POST
+- [x] Removed `test:e2e:prod`, `test:e2e:regression`, `test:e2e:billing:prod`; deprecated Johnson helper aliases
+- [x] PLAYWRIGHT_E2E · CONSUMER_FLOWS · E2E_RELEASE_TEST_PLAN synced
+
 ## Production E2E smoke tags (2026-06-12) — shipped
 
 - [x] `@production` tag on 42 tests in 12 files (auth, billing, webhook, security, routes, terms)

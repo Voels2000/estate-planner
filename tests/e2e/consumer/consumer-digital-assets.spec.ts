@@ -1,13 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('Digital assets', () => {
-  test('/digital-assets loads', async ({ page }) => {
-    await page.goto('/digital-assets')
-    await expect(page.getByRole('heading', { name: /digital/i }).first()).toBeVisible({
-      timeout: 20_000,
-    })
-  })
-
+test.describe('Digital assets API', () => {
   test('POST /api/consumer/digital-assets creates row', async ({ request }) => {
     const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
     test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')

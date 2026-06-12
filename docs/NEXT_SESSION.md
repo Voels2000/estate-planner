@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-09 (E2E attorney aref timing note)
+# Last updated: 2026-06-12 (audit Sprint A + E2E_SKIP_RECOMPUTE)
 
 ---
 
@@ -35,6 +35,9 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 | Go-live performance audit | ✅ Done | Consumers / advisors / attorneys — see §5 below |
 | Pre-launch DB perf (bundle + MC staleness) | ✅ Shipped | `loadDashboardBundle` · `projection_inputs_hash` · `touchHousehold` on all writes |
 | Production E2E smoke (`@production`) | ✅ Shipped | 42 tests · `test:e2e:prod:smoke` · `test:e2e:prod:billing` |
+| E2E local DB load (`E2E_SKIP_RECOMPUTE`) | ✅ Shipped | `.env.test` · `triggerEstateHealthRecompute` guard |
+| Code audit Sprint A (import + meeting-prep + security split) | ✅ Shipped | See UPDATE_CHECKLIST § Code audit Sprint A |
+| Code audit Sprint B (test cleanup) | ✅ Shipped | Merged/removed duplicate specs · advisor selectors · life-events cleanup |
 | Homepage CI lint (`no-html-link-for-pages`) | ✅ Shipped | `app/(public)/page.tsx` — `/learn` + other internal routes use `<Link>` |
 | Legal entity placeholders (`/terms`, `/privacy`) | ✅ Shipped | `lib/legal/company.ts` — My Wealth Maps LLC · Snohomish address · RA Alan Voels |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |

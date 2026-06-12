@@ -588,16 +588,14 @@ Full channel reference: [MASTER_ARCHITECTURE.md → Consumer and advisor interac
 | `tests/e2e/consumer/consumer-titling.spec.ts` | Titling API validation (sentinel UUIDs) |
 | `tests/e2e/consumer/consumer-titling-real-asset.spec.ts` | Titling POST on real asset (smoke §6) |
 | `tests/e2e/consumer/consumer-routes-estate-tier.spec.ts` | Estate-tier routes, no upgrade banner, `/trust-will` redirect |
-| `tests/e2e/consumer/consumer-sidebar-navigation.spec.ts` | Sidebar footer, overview nav, no portal links (smoke §1.4) |
-| `tests/e2e/consumer/consumer-route-regression.spec.ts` | Full CONSUMER_NAV_MAP route loads |
+| `tests/e2e/consumer/consumer-sidebar-navigation.spec.ts` | Sidebar footer, overview nav, billing nav, no portal links (smoke §1.4) |
+| `tests/e2e/consumer/consumer-route-regression.spec.ts` | Full CONSUMER_NAV_MAP route loads (`/my-advisor`, `/billing`, `/digital-assets`, …) |
 | `tests/e2e/consumer/consumer-profile-save.spec.ts` | Profile PATCH + UI save + **3 partial PATCH shapes** (smoke §3) |
 | `tests/e2e/consumer/consumer-ui-asset-save.spec.ts` | UI add asset on `/assets` (smoke §2 UI) |
 | `tests/e2e/consumer/consumer-health-check-ui.spec.ts` | Health check wizard → dashboard (smoke §4) |
 | `tests/e2e/consumer/consumer-family-crud.spec.ts` | My Family API CRUD (smoke §5) |
-| `tests/e2e/consumer/consumer-my-advisor.spec.ts` | `/my-advisor` connection UI |
-| `tests/e2e/consumer/consumer-billing-route.spec.ts` | `/billing` + sidebar link |
-| `tests/e2e/consumer/consumer-digital-assets.spec.ts` | Digital assets route + API |
-| `tests/e2e/consumer/consumer-life-events.spec.ts` | Life events API |
+| `tests/e2e/consumer/consumer-digital-assets.spec.ts` | Digital assets POST API |
+| `tests/e2e/consumer/consumer-life-events.spec.ts` | Life events API (with admin cleanup) |
 | `tests/e2e/consumer/consumer-import-access.spec.ts` | Import page for tier 1+ fixture |
 | `tests/e2e/consumer/consumer-strategy-recommendation-ui.spec.ts` | Dashboard advisor recommendation panel (smoke §9) |
 | `tests/e2e/consumer/terms-accept-flow.spec.ts` | `/terms/accept` + `POST /api/terms/accept` |

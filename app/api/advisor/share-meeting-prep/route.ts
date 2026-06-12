@@ -66,6 +66,7 @@ export async function POST(request: Request) {
         .from('estate_composition_cache')
         .select('composition')
         .eq('household_id', household.id)
+        .eq('source_role', 'consumer')
         .maybeSingle()
     : { data: null }
 

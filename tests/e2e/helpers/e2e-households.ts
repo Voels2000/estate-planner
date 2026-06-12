@@ -20,9 +20,6 @@ export async function fetchAdvisorClientHouseholdId(): Promise<string | null> {
   return fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.advisorClient.email)
 }
 
-/** @deprecated Use fetchAdvisorClientHouseholdId */
-export const fetchJohnsonHouseholdId = fetchAdvisorClientHouseholdId
-
 export async function fetchAttorneyListingId(): Promise<string | null> {
   initSupabaseEnv()
   const profileId = await findUserIdByEmail(E2E_IDENTITIES.attorneyPortal.email)

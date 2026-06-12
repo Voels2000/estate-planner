@@ -2725,6 +2725,40 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — E2E_SKIP_RECOMPUTE for local Playwright runs
+
+**Decision:** Add `E2E_SKIP_RECOMPUTE=true` in `.env.test` to skip the debounced `/api/recompute-estate-health` HTTP call from `triggerEstateHealthRecompute`. Production and Vercel leave the flag unset. Playwright local `webServer` loads `.env.test` via dotenv so the Next server honors the flag.
+
+**Reasoning:** Full local E2E (300+ tests) against staging Supabase was triggering recompute storms on every asset/strategy write, degrading Auth and Disk IO. Removing `RECOMPUTE_SECRET` entirely breaks recompute-specific tests; a dedicated skip preserves opt-in recompute verification.
+
+**Alternatives considered:** Unset `RECOMPUTE_SECRET` in `.env.test` (too blunt). Split suite only (insufficient — write tests still hammer DB).
+
+**Implication:** Day-to-day local runs use `E2E_SKIP_RECOMPUTE=true`. Recompute smoke specs run with flag `false` when explicitly needed.
+
+---
+
+### June 2026 — Import commit triggers household write hook
+
+**Decision:** `POST /api/import/commit` calls `afterHouseholdWriteForOwner` after successful bulk insert, matching other financial write APIs.
+
+**Reasoning:** Import was the only bulk financial write path that skipped `touchHousehold`, dashboard bundle invalidation, and background recompute — post-import dashboard showed stale composition.
+
+**Alternatives considered:** Recompute-only without `touchHousehold` (rejected — bundle and `projection_inputs_hash` would stay stale).
+
+**Implication:** Large spreadsheet imports now behave like manual asset saves for cache staleness.
+
+---
+
+### June 2026 — Security smoke: local vs prod API split
+
+**Decision:** `npm run test:e2e:security-smoke` runs consumer RPC + advisor Monte Carlo against local/staging only. `npm run test:e2e:security-smoke:prod` adds `security-sprint-post-deploy.spec.ts` (production API + referral rate limit).
+
+**Reasoning:** Local complete runs were hitting production API for referral rate-limit tests (65 POSTs) while also hammering staging DB — misleading failures and unnecessary prod load.
+
+**Implication:** `release:preflight` and local gates use `security-smoke`; post-deploy checklist uses `security-smoke:prod`.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

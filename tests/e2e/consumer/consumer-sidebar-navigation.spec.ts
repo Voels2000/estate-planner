@@ -14,6 +14,11 @@ test.describe('Consumer sidebar layout (smoke §1.4)', () => {
     await expect(page.getByRole('link', { name: /Education Guide/i }).first()).toBeVisible()
   })
 
+  test('sidebar Manage Subscription navigates to billing', async ({ page }) => {
+    await page.getByRole('link', { name: /Manage Subscription/i }).first().click()
+    await expect(page).toHaveURL(/\/billing/)
+  })
+
   test('overview nav has Profile and Estate Summary only', async ({ page }) => {
     const nav = page.locator('nav').first()
     await expect(nav.getByRole('link', { name: 'Profile' })).toBeVisible()

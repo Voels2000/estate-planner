@@ -150,6 +150,7 @@ async function renderMeetingBriefHtml(
       .from('estate_composition_cache')
       .select('composition')
       .eq('household_id', householdId)
+      .eq('source_role', 'consumer')
       .maybeSingle(),
     admin.auth.admin.getUserById(clientId),
   ])

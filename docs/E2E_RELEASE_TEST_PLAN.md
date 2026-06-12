@@ -145,7 +145,7 @@ Do **not** duplicate API coverage with slow UI tests. Prefer `request` fixture t
 |------|------|
 | Login / session | `helpers/advisor.setup.ts` |
 | Dashboard + client list | `advisor/overview.spec.ts` |
-| Client tabs (Strategy, Tax, Estate, Documents) | `overview.spec.ts`, `strategy-tax-estate.spec.ts`, `regression.spec.ts` |
+| Client tabs (Strategy, Tax, Estate, Documents) | `overview.spec.ts`, `strategy-tax-estate.spec.ts` |
 | Presets API/UI | `advisor-presets.spec.ts` |
 | Strategy recommendation | `advisor-strategy-recommendation.spec.ts` |
 | Analytics / domicile | `analytics-alerts-domicile.spec.ts` |

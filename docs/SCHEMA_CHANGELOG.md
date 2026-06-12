@@ -10,6 +10,16 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Code audit Sprint A — import hook + E2E ops (2026-06-12, code only)
+
+| Change | Detail |
+|--------|--------|
+| **Import commit** | `POST /api/import/commit` → `afterHouseholdWriteForOwner` after successful bulk insert |
+| **Meeting prep** | `share-meeting-prep` + `meeting-prep-pdf` — `estate_composition_cache` filtered by `source_role: consumer` |
+| **E2E** | `E2E_SKIP_RECOMPUTE` in `triggerEstateHealthRecompute`; `security-smoke` local vs `security-smoke:prod`; `cross-role` uses `advisor-client-setup` |
+
+---
+
 ## Pre-launch DB perf — dashboard bundle + MC staleness (2026-06-12)
 
 **Migration:** `20260712120000_household_projection_inputs_hash.sql`

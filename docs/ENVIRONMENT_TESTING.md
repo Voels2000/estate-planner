@@ -141,7 +141,8 @@ Not required for solo go-live if branch protection + local post-deploy checks ar
 | `npm run lint` / `build` | ✓ | ✓ `ci.yml` | Vercel build | Vercel build |
 | `verify:consumer-openapi` | ✓ | ✓ | — | — |
 | `test:e2e:go-live-profile` | ✓ staging URL | ✓ localhost + staging | Optional | Optional prod smoke |
-| `test:e2e:security-smoke` | ✓ | ✓ e2e-smoke | Manual | After deploy |
+| `test:e2e:security-smoke` | ✓ (local RPC + MC) | — | — | `release:preflight` |
+| `test:e2e:security-smoke:prod` | — | — | Manual | Post-deploy prod API (7 tests) |
 | `verify:rls` (JWT only) | ✓ | ✓ rls-verify | — | — |
 | `verify:rls --require-sql` | ✓ **you** | **Never** | — | **After prod deploy** |
 | `verify:post-deploy-voels` | ✓ | — | — | **After prod deploy** |

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { afterHouseholdWriteForOwner } from '@/lib/consumer/afterHouseholdWrite'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   normalizeAssetType,
@@ -259,6 +260,8 @@ export async function POST(req: NextRequest) {
       .eq('owner_id', user.id)
 
     if (jobUpdateError) throw jobUpdateError
+
+    await afterHouseholdWriteForOwner(supabase, user.id)
 
     const skipped = rows.length - transformed.length + (transformed.length - rowsToInsert.length)
 

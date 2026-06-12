@@ -7,13 +7,9 @@ test.beforeEach(async ({ page }) => {
 
 test('strategy tab shows eight metric cards when estate data is loaded', async ({ page }) => {
   await page.getByRole('button', { name: /Strategy/ }).click()
-  const dashboard = page.getByText('Advisory Metrics Dashboard')
-  const loading = page.locator('.animate-pulse')
-  await expect(dashboard.or(loading).first()).toBeVisible({ timeout: 30_000 })
-  if (await dashboard.isVisible()) {
-    const metricGrid = page.locator('[data-household-id] .grid.gap-3').first()
-    await expect(metricGrid.locator(':scope > div')).toHaveCount(8)
-  }
+  await expect(page.getByText('Situation').first()).toBeVisible({ timeout: 30_000 })
+  const metricGrid = page.locator('[data-household-id] .grid.gap-3').first()
+  await expect(metricGrid.locator(':scope > div')).toHaveCount(8)
 })
 
 test('tax tab: current law shows federal estate tax row', async ({ page }) => {
@@ -47,11 +43,8 @@ test('meeting prep tab shows export actions', async ({ page }) => {
 
 test('strategy tab includes metric explanations accordion', async ({ page }) => {
   await page.getByRole('button', { name: /Strategy/ }).click()
-  const dashboard = page.getByText('Advisory Metrics Dashboard')
-  await expect(dashboard.or(page.locator('.animate-pulse')).first()).toBeVisible({ timeout: 30_000 })
-  if (await dashboard.isVisible()) {
-    await expect(page.getByText('Metric Explanations')).toBeVisible()
-  }
+  await expect(page.getByText('Situation').first()).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByText('Metric Explanations')).toBeVisible()
 })
 
 test('overview balance sheet shows assets and liabilities', async ({ page }) => {

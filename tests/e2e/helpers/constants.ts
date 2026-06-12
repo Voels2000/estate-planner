@@ -23,5 +23,3 @@ export async function clickAdvisorClientTab(page: Page, tabLabel: RegExp) {
   await expect(tab).toHaveClass(/text-\[color:var\(--mwm-navy\)\]/, { timeout: 30_000 })
 }
 
-/** @deprecated Use gotoAdvisorLinkedClient */
-export const gotoMichaelJohnsonClient = gotoAdvisorLinkedClient
