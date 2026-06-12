@@ -10,7 +10,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
-import { requireHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { requireVaultHouseholdAccess } from '@/lib/api/requireVaultAccess'
 import { parseHouseholdIdBody } from '@/lib/api/schemas/householdAccess'
 
 export async function POST(request: Request) {
@@ -34,7 +34,18 @@ export async function POST(request: Request) {
       )
     }
 
-    const access = await requireHouseholdAccess(supabase, user.id, householdId)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const access = await requireVaultHouseholdAccess(
+      supabase,
+      user.id,
+      householdId,
+      profile?.role,
+    )
     if (!access.ok) return access.response
 
     const normalizedSourceRole: 'consumer' | 'advisor' =

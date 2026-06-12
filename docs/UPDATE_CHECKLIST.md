@@ -109,7 +109,8 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **Recompute dedupe** — `20260709170000`–`20260709180100` + recompute route + recommendations cache on strategy surfaces
 - [x] **Go-live perf audit** — NEXT_SESSION §5 (consumer / advisor / attorney P0–P2)
 - [x] SCHEMA_CHANGELOG · DECISION_LOG · NEXT_SESSION · MASTER_ARCHITECTURE · DATABASE_SCHEMA_REFERENCE · CONSUMER_FLOWS synced
-- [ ] **Ops:** redeploy Vercel Production for recompute + conflict-detector + loadEstatePlanningDashboard changes
+- [x] **Go-live P0 perf** — attorney composition + export access; advisor lazy export + tab gating; composition gift invalidation; projections stale cache
+- [ ] **Ops:** redeploy Vercel Production for all TS changes since `e6f8ac9`
 
 ## Billing E2E production resilience (2026-06-09) — shipped
 

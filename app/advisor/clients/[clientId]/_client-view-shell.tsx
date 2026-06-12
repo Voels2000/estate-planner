@@ -369,6 +369,8 @@ export interface ClientViewShellProps {
   exportPdfData?: PDFReportData
   exportExcelData?: ExcelExportData
   exportPanelProps?: AdvisorExportPanelProps
+  /** Meeting Prep loads export payloads on demand via /api/advisor/client-export-payload */
+  lazyLoadExportPayload?: boolean
   planReadinessScore?: number | null
   planReadinessComputedAt?: string | null
   projectionRowsDomicile?: Array<{ year: number; gross_estate: number; estate_incl_home?: number }>
@@ -405,7 +407,7 @@ export interface ClientViewShellProps {
     critical: number
     warnings: number
   } | null
-  estateComposition: EstateComposition
+  estateComposition: EstateComposition | null
   advisorEstateComposition?: {
     grossEstate: number
     outsideStrategyTotal: number

@@ -2651,6 +2651,16 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Go-live P0 performance fixes (consumer / advisor / attorney)
+
+**Decision:** Ship six P0 items from go-live perf audit: attorney server-prefetch composition + vault API access; export-estate-plan client `owner_id`; advisor lazy export payload API + tab-gated composition/MC/gifting; composition cache gift-usage invalidation; projections serve stale cache with background regen.
+
+**Reasoning:** Attorney tax view and PDF export had accuracy bugs (403 / wrong owner queries). Advisor Strategy/Meeting Prep blocked TTFB on full export stack. Consumer pages paid full projection recompute and could serve stale composition after gifting changes.
+
+**Implication:** Redeploy Vercel. Meeting Prep shows brief immediately; export panel loads client-side.
+
+---
+
 ### June 2026 — Recompute dedupe: composition pass-through + alert batch upsert
 
 **Decision:** (1) Reorder `/api/recompute-estate-health` to gifting → composition ×2 → `generate_estate_recommendations(p_composition)`; RPC reads `estimated_tax_federal` / `estimated_tax_state` from composition and drops nested `calculate_state_estate_tax`. (2) Add `upsert_household_alerts_batch`; inline `UPDATE` in `resolve_household_alerts_batch`. (3) Strategy/attorney planning loaders read `estate_health_scores.recommendations` cache (live RPC only on cold cache).

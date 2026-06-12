@@ -5,7 +5,8 @@
  * for advisor-client session preparation.
  */
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { AdvisorClientExportPayload } from '@/lib/advisor/loadClientExportPayload'
 import { useRouter } from 'next/navigation'
 import MeetingPrep from '@/components/advisor/MeetingPrep'
 import ExportPanel from '@/components/advisor/ExportPanel'
@@ -24,8 +25,10 @@ function getClientName(household: ClientViewShellProps['household']) {
 export default function MeetingPrepTab({
   clientId,
   household,
-  exportPanelProps,
-  exportPdfData,
+  exportPanelProps: serverExportPanelProps,
+  exportPdfData: serverExportPdfData,
+  lazyLoadExportPayload,
+  planReadinessScore,
   notes,
   scenario,
   estateComposition,
@@ -35,6 +38,44 @@ export default function MeetingPrepTab({
   const [isRecalculating, setIsRecalculating] = useState(false)
   const [recalcSuccess, setRecalcSuccess] = useState<string | null>(null)
   const [recalcError, setRecalcError] = useState<string | null>(null)
+  const [exportPayload, setExportPayload] = useState<AdvisorClientExportPayload | null>(null)
+  const [exportLoading, setExportLoading] = useState(Boolean(lazyLoadExportPayload))
+  const [exportError, setExportError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!lazyLoadExportPayload) return
+    let cancelled = false
+    async function loadExportPayload() {
+      setExportLoading(true)
+      setExportError(null)
+      try {
+        const res = await fetch(
+          `/api/advisor/client-export-payload?clientId=${encodeURIComponent(clientId)}`,
+        )
+        if (!res.ok) {
+          const body = await res.json().catch(() => null)
+          throw new Error(body?.error ?? 'Failed to load export data')
+        }
+        const data = (await res.json()) as AdvisorClientExportPayload
+        if (!cancelled) setExportPayload(data)
+      } catch (error) {
+        if (!cancelled) {
+          setExportError(error instanceof Error ? error.message : 'Failed to load export data')
+        }
+      } finally {
+        if (!cancelled) setExportLoading(false)
+      }
+    }
+    void loadExportPayload()
+    return () => {
+      cancelled = true
+    }
+  }, [clientId, lazyLoadExportPayload])
+
+  const exportPanelProps = lazyLoadExportPayload
+    ? exportPayload?.exportPanelProps
+    : serverExportPanelProps
+  const exportPdfData = lazyLoadExportPayload ? exportPayload?.exportPdfData : serverExportPdfData
 
   const handleRecalculateBaseCase = async () => {
     setIsRecalculating(true)
@@ -145,7 +186,7 @@ export default function MeetingPrepTab({
           householdId={household.id}
           clientName={clientName}
           advisorHorizons={advisorHorizons}
-          initialHealthScore={exportPanelProps?.healthScore ?? null}
+          initialHealthScore={exportPanelProps?.healthScore ?? planReadinessScore ?? null}
           initialBriefSeed={initialBriefSeed}
           estateComposition={estateComposition}
           briefHydratedFromServer
@@ -170,7 +211,13 @@ export default function MeetingPrepTab({
         />
       </section>
 
-      {latestOnlyExportPanelProps ? (
+      {exportLoading ? (
+        <section className="text-sm text-neutral-500 py-4">Loading export data…</section>
+      ) : exportError ? (
+        <section className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {exportError}
+        </section>
+      ) : latestOnlyExportPanelProps ? (
         <section>
           {topAlerts.length > 0 && (
             <div className="mb-6">
@@ -219,11 +266,11 @@ export default function MeetingPrepTab({
           <h2 className="text-base font-semibold text-[color:var(--mwm-navy)] border-l-4 border-[color:var(--mwm-gold)] pl-3 mb-4">Export & Reports</h2>
           <ExportPanel {...latestOnlyExportPanelProps} exportPdfData={exportPdfData} />
         </section>
-      ) : (
+      ) : !lazyLoadExportPayload ? (
         <section className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Export data is unavailable for this tab. Refresh the page or recalculate the base case.
         </section>
-      )}
+      ) : null}
 
       <section>
         <div className="mb-4">

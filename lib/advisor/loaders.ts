@@ -217,7 +217,7 @@ export function advisorDatasetIncludeForTab(tab: string): AdvisorDatasetInclude 
         stateIncome: false,
         strategyLineItems: false,
         healthScore: false,
-        exportWiring: true,
+        exportWiring: false,
         beneficiaryGrants: false,
         conflictReport: false,
       }
@@ -255,7 +255,7 @@ export function advisorDatasetIncludeForTab(tab: string): AdvisorDatasetInclude 
         stateIncome: false,
         strategyLineItems: true,
         healthScore: true,
-        exportWiring: true,
+        exportWiring: false,
         beneficiaryGrants: false,
         conflictReport: false,
       }

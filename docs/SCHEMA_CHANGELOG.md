@@ -10,6 +10,12 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Go-live P0 performance (2026-06-11) — application layer
+
+**No new migrations.** Attorney composition prefetch + vault access; `export-estate-plan` owner_id fix; advisor `/api/advisor/client-export-payload` lazy export; tab-gated advisor loads; composition `lifetime_gifts_used` cache invalidation; projections stale-cache path.
+
+---
+
 ## Recompute path dedupe + alert batch upsert (2026-06-11)
 
 **Migrations:** `20260709170000_optimize_generate_estate_recommendations.sql`, `20260709180000_batch_upsert_household_alerts.sql`, `20260709180100_drop_generate_estate_recommendations_overload.sql`

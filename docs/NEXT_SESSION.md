@@ -151,16 +151,16 @@ Deferred. Show a subtle setup card on `/dashboard` when the user has financial d
 
 Full scan across consumer, advisor, and attorney surfaces. **Shipped today** addresses recompute path + recommendations cache on strategy surfaces. **Remaining items** are prioritized for post-push sprints — no accuracy regressions unless noted.
 
-#### P0 — fix before public launch
+#### P0 — shipped (2026-06-11)
 
-| Area | Issue | Files | Fix |
-|------|-------|-------|-----|
-| **Attorney** | `EstateTaxClient` without `composition` → client POST `/api/estate-composition`; `requireHouseholdAccess` excludes attorney → likely 403 / $0 tax | `app/(attorney)/attorney/clients/[household_id]/page.tsx`, `app/api/estate-composition/route.ts` | Server-prefetch `getCachedComposition`; extend access for attorney |
-| **Attorney** | PDF export uses owner queries with attorney `user.id` | `app/api/export-estate-plan/route.ts` | `verifyAttorneyHouseholdAccess` + client `owner_id` |
-| **Advisor** | Export wiring on Strategy + Meeting Prep **page load** (full export stack + narrative + MC ×3) | `app/advisor/clients/[clientId]/page.tsx`, `lib/advisor/exportMappers.ts` | Lazy-load on Export click only |
-| **Advisor** | `loadScenarioMonteCarlo` + `getCachedComposition` + gifting RPC on **every tab** | `app/advisor/clients/[clientId]/page.tsx` | Tab-gate to overview/estate/strategy/tax/domicile/meeting-prep |
-| **Consumer** | `getCachedComposition` cache miss → live RPC on dashboard, estate-tax, strategy pages | `lib/estate/getCachedComposition.ts` | Warm cache on first save; invalidate when `lifetime_gifts_used` mismatches |
-| **Consumer** | Stale projection path runs full inline compute on `/projections` | `lib/projections/loadProjectionData.ts` | Serve last `outputs_s1_first`; background `generateBaseCase` |
+| Area | Fix |
+|------|-----|
+| **Attorney** | Server-prefetch `getCachedComposition` on client page; `requireVaultHouseholdAccess` on `/api/estate-composition` |
+| **Attorney** | `export-estate-plan` uses vault access + client `owner_id` for assets/beneficiaries |
+| **Advisor** | Meeting Prep export via lazy `/api/advisor/client-export-payload`; `exportWiring: false` on strategy/meeting-prep |
+| **Advisor** | Tab-gate composition/gifting/MC/staleness; `logAdvisorClientAccess` fire-and-forget |
+| **Consumer** | `getCachedComposition` invalidates when `lifetime_gifts_used` mismatches |
+| **Consumer** | `loadProjectionData` serves stale `outputs_s1_first`; `/projections` triggers background regen |
 
 #### P1 — launch week
 

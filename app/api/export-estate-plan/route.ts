@@ -4,7 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { hasPaidDownloadAccess } from '@/lib/access/requirePaidDownloadAccess'
-import { requireHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
+import { requireVaultHouseholdAccess } from '@/lib/api/requireVaultAccess'
 import { parseHouseholdIdParam } from '@/lib/api/schemas/householdAccess'
 import { loadEstatePlanPdfTaxPayload } from '@/lib/export/loadEstatePlanPdfTaxPayload'
 
@@ -67,8 +67,34 @@ export async function GET(request: NextRequest) {
     const variant = searchParams.get('variant') ?? null
     const isAttorneyVariant = variant === 'attorney'
 
-    const access = await requireHouseholdAccess(supabase, user.id, householdId)
+    const access = await requireVaultHouseholdAccess(
+      supabase,
+      user.id,
+      householdId,
+      profile.role,
+    )
     if (!access.ok) return access.response
+
+    const householdResult = await supabase
+      .from('households')
+      .select(`
+          id, owner_id, name, filing_status, state_primary, has_spouse,
+          estate_complexity_score, estate_complexity_flag,
+          last_recommendation_at,
+          person1_first_name, person1_last_name,
+          person2_first_name, person2_last_name
+        `)
+      .eq('id', householdId)
+      .single()
+
+    if (householdResult.error || !householdResult.data) {
+      return NextResponse.json(
+        { error: householdResult.error?.message ?? 'Household not found' },
+        { status: 404 },
+      )
+    }
+
+    const clientOwnerId = householdResult.data.owner_id as string
 
     // Client Summary + attorney intake PDFs need household profile figures (tax + assets).
     const includeFinancialProfile =
@@ -76,7 +102,6 @@ export async function GET(request: NextRequest) {
 
     // Run all data fetches in parallel
     const [
-      householdResult,
       completenessResult,
       estateReadinessResult,
       recommendationsResult,
@@ -87,19 +112,6 @@ export async function GET(request: NextRequest) {
       conflictsResult,
       assetsSummaryResult,
     ] = await Promise.all([
-      // 1. Household + profile data
-      supabase
-        .from('households')
-        .select(`
-          id, name, filing_status, state_primary, has_spouse,
-          estate_complexity_score, estate_complexity_flag,
-          last_recommendation_at,
-          person1_first_name, person1_last_name,
-          person2_first_name, person2_last_name
-        `)
-        .eq('id', householdId)
-        .single(),
-
       // 2. Completeness score (advisor / attorney intake)
       supabase.rpc('calculate_estate_completeness', { p_household_id: householdId }),
 
@@ -138,7 +150,7 @@ export async function GET(request: NextRequest) {
       supabase
         .from('asset_beneficiaries')
         .select('beneficiary_name, relationship, allocation_pct, special_needs, distribution_age, is_minor')
-        .eq('owner_id', user.id),
+        .eq('owner_id', clientOwnerId),
 
       // 10. Beneficiary conflicts (for attorney variant)
       supabase
@@ -150,12 +162,11 @@ export async function GET(request: NextRequest) {
       supabase
         .from('assets')
         .select('type, value')
-        .eq('owner_id', user.id),
+        .eq('owner_id', clientOwnerId),
     ])
 
     // Collect any errors
     const errors: string[] = []
-    if (householdResult.error) errors.push(`household: ${householdResult.error.message}`)
     if (completenessResult.error) errors.push(`completeness: ${completenessResult.error.message}`)
     if (recommendationsResult.error && recommendationsResult.error.code !== 'PGRST116') {
       // PGRST116 = no rows found, which is fine

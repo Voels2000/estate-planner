@@ -8,6 +8,7 @@ import { AttorneyNotesPanel } from '@/components/attorney/AttorneyNotesPanel'
 import { AttorneyDocumentRequestsPanel } from '@/components/attorney/AttorneyDocumentRequestsPanel'
 import type { AttorneyClientStatus, AttorneyMatterStage } from '@/lib/attorney/matterWorkflow'
 import { loadEstatePlanningDashboard } from '@/lib/estate/loadEstatePlanningDashboard'
+import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { getMissingDocumentAlerts } from '@/lib/attorney/getMissingDocumentAlerts'
 import { attorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
 
@@ -50,6 +51,8 @@ export default async function AttorneyClientPage({
   if (!household) redirect('/attorney')
 
   const ownerId = household.owner_id
+  const currentYear = new Date().getFullYear()
+  const stateCode = String(household.state_primary ?? '').trim().toUpperCase()
 
   const [
     { data: realEstateRows },
@@ -59,15 +62,87 @@ export default async function AttorneyClientPage({
     { data: federalEstateTaxBracketsRows },
     { data: stateEstateTaxRows },
     { data: stateInheritanceTaxRows },
+    giftingSummaryRes,
+    estatePlanningDashboard,
+    { data: documents },
+    { data: gapDismissals },
+    { data: attorneyProfile },
+    { data: clientProfile },
+    { data: notes },
+    { data: docRequests },
   ] = await Promise.all([
     supabase.from('real_estate').select('*').eq('owner_id', ownerId).order('created_at', { ascending: false }),
     supabase.from('assets').select('*').eq('owner_id', ownerId).order('created_at', { ascending: false }),
     supabase.from('liabilities').select('*').eq('owner_id', ownerId).order('created_at', { ascending: false }),
     supabase.from('trusts').select('*').eq('owner_id', ownerId).order('created_at', { ascending: false }),
-    supabase.from('federal_estate_tax_brackets').select('*').order('tax_year', { ascending: false }).order('min_amount', { ascending: true }),
-    supabase.from('state_estate_tax_rules').select('*').order('tax_year', { ascending: false }).order('state', { ascending: true }).order('min_amount', { ascending: true }),
-    supabase.from('state_inheritance_tax_rules').select('*').order('tax_year', { ascending: false }).order('state', { ascending: true }),
+    supabase
+      .from('federal_estate_tax_brackets')
+      .select('*')
+      .eq('tax_year', currentYear)
+      .order('min_amount', { ascending: true }),
+    stateCode
+      ? supabase
+          .from('state_estate_tax_rules')
+          .select('*')
+          .eq('state', stateCode)
+          .eq('tax_year', currentYear)
+          .order('min_amount', { ascending: true })
+      : Promise.resolve({ data: [] as Record<string, unknown>[] }),
+    stateCode
+      ? supabase
+          .from('state_inheritance_tax_rules')
+          .select('*')
+          .eq('state', stateCode)
+          .eq('tax_year', currentYear)
+          .order('beneficiary_class', { ascending: true })
+      : Promise.resolve({ data: [] as Record<string, unknown>[] }),
+    supabase.rpc('calculate_gifting_summary', { p_household_id: household_id }),
+    loadEstatePlanningDashboard(supabase, household_id),
+    supabase
+      .from('legal_documents')
+      .select(
+        'id, document_type, file_name, version, is_current, uploader_role, created_at, doc_status, executed_date, status_notes',
+      )
+      .eq('household_id', household_id)
+      .eq('is_current', true)
+      .eq('is_deleted', false)
+      .order('document_type', { ascending: true }),
+    supabase
+      .from('document_gap_dismissals')
+      .select('gap_key')
+      .eq('household_id', household_id)
+      .eq('attorney_id', user.id),
+    supabase.from('profiles').select('attorney_tier').eq('id', user.id).single(),
+    supabase.from('profiles').select('full_name, email').eq('id', ownerId).single(),
+    supabase
+      .from('attorney_notes')
+      .select('id, content, note_type, created_at')
+      .eq('attorney_listing_id', attorneyListing.id)
+      .eq('household_id', household_id)
+      .order('created_at', { ascending: false })
+      .limit(20),
+    supabase
+      .from('attorney_document_requests')
+      .select('id, document_type, message, status, requested_at')
+      .eq('attorney_listing_id', attorneyListing.id)
+      .eq('household_id', household_id)
+      .order('requested_at', { ascending: false })
+      .limit(20),
   ])
+
+  const lifetimeGiftsUsed = Math.max(
+    0,
+    Number(
+      (giftingSummaryRes.data as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ??
+        0,
+    ) || 0,
+  )
+  const composition = await getCachedComposition(
+    supabase,
+    household_id,
+    'consumer',
+    lifetimeGiftsUsed,
+  )
 
   const primaryResidenceValue = (() => {
     const rows = (realEstateRows ?? []).filter(
@@ -81,54 +156,8 @@ export default async function AttorneyClientPage({
     return sum > 0 ? sum : null
   })()
 
-  const { data: documents } = await supabase
-    .from('legal_documents')
-    .select(
-      'id, document_type, file_name, version, is_current, uploader_role, created_at, doc_status, executed_date, status_notes',
-    )
-    .eq('household_id', household_id)
-    .eq('is_current', true)
-    .eq('is_deleted', false)
-    .order('document_type', { ascending: true })
-
-  const { data: gapDismissals } = await supabase
-    .from('document_gap_dismissals')
-    .select('gap_key')
-    .eq('household_id', household_id)
-    .eq('attorney_id', user.id)
-
-  const { data: attorneyProfile } = await supabase
-    .from('profiles')
-    .select('attorney_tier')
-    .eq('id', user.id)
-    .single()
-
   const tierFeatures = attorneyTierFeatures(attorneyProfile?.attorney_tier ?? 0)
   const documentGaps = getMissingDocumentAlerts(documents ?? [], gapDismissals ?? [])
-
-  const { data: clientProfile } = await supabase
-    .from('profiles')
-    .select('full_name, email')
-    .eq('id', ownerId)
-    .single()
-
-  const estatePlanningDashboard = await loadEstatePlanningDashboard(supabase, household_id)
-
-  const { data: notes } = await supabase
-    .from('attorney_notes')
-    .select('id, content, note_type, created_at')
-    .eq('attorney_listing_id', attorneyListing.id)
-    .eq('household_id', household_id)
-    .order('created_at', { ascending: false })
-    .limit(20)
-
-  const { data: docRequests } = await supabase
-    .from('attorney_document_requests')
-    .select('id, document_type, message, status, requested_at')
-    .eq('attorney_listing_id', attorneyListing.id)
-    .eq('household_id', household_id)
-    .order('requested_at', { ascending: false })
-    .limit(20)
 
   const matterStage = (connection.matter_stage ?? 'intake') as AttorneyMatterStage
   const clientStatus = (connection.client_status ?? 'active') as AttorneyClientStatus
@@ -188,6 +217,7 @@ export default async function AttorneyClientPage({
           brackets={federalEstateTaxBracketsRows ?? []}
           stateEstateTaxRules={stateEstateTaxRows ?? []}
           stateInheritanceTaxRules={stateInheritanceTaxRows ?? []}
+          composition={composition}
         />
       </div>
 

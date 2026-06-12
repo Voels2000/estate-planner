@@ -44,13 +44,13 @@ export default function OverviewTab({
   const currentYear = new Date().getFullYear()
 
   // ── Net worth calc (matches My Estate Strategy estate composition source) ──
-  const { totalAssets, totalLiabilities, netWorth } = buildNetWorthSummaryFromComposition({
-    composition: estateComposition,
-  })
+  const { totalAssets, totalLiabilities, netWorth } = estateComposition
+    ? buildNetWorthSummaryFromComposition({ composition: estateComposition })
+    : { totalAssets: 0, totalLiabilities: 0, netWorth: 0 }
   const assetPct = totalAssets > 0 ? Math.round((totalAssets / (totalAssets + totalLiabilities)) * 100) : 100
 
   // ── Asset breakdown ──────────────────────────────────────────────────────
-  const assetGroups = groupAssetsFromComposition(estateComposition)
+  const assetGroups = estateComposition ? groupAssetsFromComposition(estateComposition) : []
 
   // ── Gap analysis ─────────────────────────────────────────────────────────
   const gaps = computeGaps({ household, assets, realEstate, beneficiaries, estateDocuments })

@@ -58,6 +58,9 @@ export type LoadProjectionDataResult = {
   household: Record<string, unknown> | null
   rows: YearRow[]
   isFromCache?: boolean
+  /** Cached rows are served while background regen runs. */
+  isStale?: boolean
+  householdId?: string
 }
 
 const HOUSEHOLD_SELECT = `
@@ -89,27 +92,26 @@ export async function loadProjectionData(
 
     if (cacheHousehold.base_case_scenario_id) {
       const admin = createAdminClient()
-      const [projectionCalculatedAt, latestInputChangeMs] = await Promise.all([
+      const [projectionCalculatedAt, latestInputChangeMs, baseCase] = await Promise.all([
         loadProjectionCalculatedAt(admin, cacheHousehold.base_case_scenario_id),
         loadLatestInputChangeMs(supabase, userId, cacheHousehold.updated_at),
+        loadBaseCaseScenario(admin, cacheHousehold.base_case_scenario_id),
       ])
       const stale = isProjectionStale({
         baseCaseScenarioId: cacheHousehold.base_case_scenario_id,
         projectionCalculatedAt,
         latestInputChangeMs,
       })
-
-      if (!stale) {
-        const baseCase = await loadBaseCaseScenario(admin, cacheHousehold.base_case_scenario_id)
-        const cachedOutputs = baseCase?.outputs_s1_first
-        if (Array.isArray(cachedOutputs) && cachedOutputs.length > 0) {
-          const { base_case_scenario_id: _scenarioId, updated_at: _updatedAt, ...household } =
-            cacheHousehold
-          return {
-            household,
-            rows: cachedOutputs as YearRow[],
-            isFromCache: true,
-          }
+      const cachedOutputs = baseCase?.outputs_s1_first
+      if (Array.isArray(cachedOutputs) && cachedOutputs.length > 0) {
+        const { base_case_scenario_id: _scenarioId, updated_at: _updatedAt, ...household } =
+          cacheHousehold
+        return {
+          household,
+          rows: cachedOutputs as YearRow[],
+          isFromCache: true,
+          isStale: stale,
+          householdId: cacheHousehold.id as string,
         }
       }
     }

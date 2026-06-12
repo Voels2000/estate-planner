@@ -17,7 +17,11 @@ export async function getCachedComposition(
     .maybeSingle()
 
   if (cached?.composition && typeof cached.composition === 'object') {
-    return cached.composition as EstateComposition
+    const cachedGifts = Math.max(0, Number(cached.lifetime_gifts_used ?? 0) || 0)
+    const requestedGifts = Math.max(0, lifetimeGiftsUsed)
+    if (cachedGifts === requestedGifts) {
+      return cached.composition as EstateComposition
+    }
   }
 
   return classifyEstateAssets(

@@ -23,9 +23,6 @@ import {
   loadAdvisorContextOrRedirect,
 } from '@/lib/advisor/clientPageLoaders'
 import { mapAdvisorClientDatasets } from '@/lib/advisor/mappers'
-import { buildAdvisorExportPayloads } from '@/lib/advisor/exportMappers'
-import type { AssetBeneficiaryRow } from '@/lib/advisor/beneficiaryHelpers'
-import { fetchNarrativePdfFields } from '@/lib/export/fetchNarrativePdfFields'
 import { buildAdvisorStrategyViewModels } from '@/lib/advisor/strategyMappers'
 import {
   advisorDatasetIncludeForTab,
@@ -80,16 +77,24 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
 
   const datasetInclude = advisorDatasetIncludeForTab(tab)
   const needsStrategyVm = ['strategy', 'tax', 'domicile', 'meeting-prep', 'estate'].includes(tab)
+  const needsComposition = ['overview', 'estate', 'strategy', 'tax', 'domicile', 'meeting-prep'].includes(tab)
+  const needsGifting = needsComposition
+  const needsStalenessCheck = ['overview', 'estate', 'strategy', 'tax', 'domicile', 'meeting-prep', 'retirement'].includes(tab)
+  const needsMonteCarlo = tab === 'strategy'
 
-  const stalenessPromise = loadAdvisorProjectionStaleness(supabase, {
-    ownerId,
-    baseCaseScenarioId: household.base_case_scenario_id,
-    householdUpdatedAt: household.updated_at ?? null,
-    skipGlobalTaxTableStaleness: true,
-  })
-  const giftingSummaryPromise = supabase.rpc('calculate_gifting_summary', {
-    p_household_id: household.id,
-  })
+  const stalenessPromise = needsStalenessCheck
+    ? loadAdvisorProjectionStaleness(supabase, {
+        ownerId,
+        baseCaseScenarioId: household.base_case_scenario_id,
+        householdUpdatedAt: household.updated_at ?? null,
+        skipGlobalTaxTableStaleness: true,
+      })
+    : Promise.resolve({ isStale: false })
+  const giftingSummaryPromise = needsGifting
+    ? supabase.rpc('calculate_gifting_summary', {
+        p_household_id: household.id,
+      })
+    : Promise.resolve({ data: null, error: null })
   const datasetsPromise = loadAdvisorClientDatasets(supabase, {
     clientId,
     userId,
@@ -112,18 +117,18 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     gapStatusesPromise,
   ])
 
-  const lifetimeGiftsUsed = Math.max(
-    0,
-    Number(
-      (giftingSummaryRes.data as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0,
-    ) || 0,
-  )
-  const estateComposition = await getCachedComposition(
-    supabase,
-    household.id,
-    'consumer',
-    lifetimeGiftsUsed,
-  )
+  const lifetimeGiftsUsed = needsGifting
+    ? Math.max(
+        0,
+        Number(
+          (giftingSummaryRes.data as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ??
+            0,
+        ) || 0,
+      )
+    : 0
+  const estateComposition = needsComposition
+    ? await getCachedComposition(supabase, household.id, 'consumer', lifetimeGiftsUsed)
+    : null
 
   const needsFederalBrackets = needsStrategyVm || datasetInclude.exportWiring
   const federalBrackets = needsFederalBrackets
@@ -449,61 +454,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     )
   }
 
-  let exportPanelProps = undefined
-  let exportPdfData = undefined
-  let exportExcelData = undefined
-  if (datasetInclude.exportWiring) {
-    const grossForExport = Number(latestOutput?.estate_incl_home ?? 0)
-    const narrativeFields = await fetchNarrativePdfFields({
-        householdId: household.id,
-        clientId,
-        grossEstate: advisorHorizons?.today?.grossEstate ?? grossForExport,
-        filingStatus: household.filing_status,
-        statePrimary: household.state_primary,
-    })
-    const exportPayloads = await buildAdvisorExportPayloads({
-      household,
-      scenarioId,
-      supabase,
-      advisorDisplayName,
-      advisorProfile,
-      healthScore,
-      healthScoreComponents,
-      liquidAssets,
-      activeStrategies,
-      actionItems,
-      monteCarloResults,
-      scenarioHistoryForExport,
-      scenarioOutputs,
-      latestOutput,
-      todayGrossEstate: advisorHorizons?.today?.grossEstate ?? null,
-      assumptionSnapshot,
-      scenarioForStrategy,
-      narrativeFields,
-      stateBrackets,
-      federalBrackets,
-      lifetimeGiftsUsed,
-      assets,
-      realEstate,
-      beneficiaries: (beneficiariesResult.data ?? []) as AssetBeneficiaryRow[],
-      businesses,
-      businessInterests,
-      insurancePolicies,
-      compositionFallback: estateComposition
-        ? {
-            inside_financial: estateComposition.inside_financial,
-            inside_real_estate: estateComposition.inside_real_estate,
-            inside_business_gross: estateComposition.inside_business_gross,
-            inside_insurance: estateComposition.inside_insurance,
-          }
-        : null,
-    })
-    exportPanelProps = exportPayloads.exportPanelProps
-    exportPdfData = exportPayloads.exportPdfData
-    exportExcelData = exportPayloads.exportExcelData
-  }
-
-  await logAdvisorClientAccess(supabase, { advisorId: userId, clientId })
+  void logAdvisorClientAccess(supabase, { advisorId: userId, clientId })
 
   const { data: strategyQuestionRows } = await supabase
     .from('notifications')
@@ -629,9 +580,10 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     scenario && typeof (scenario as { id?: string }).id === 'string'
       ? String((scenario as { id: string }).id)
       : null
-  const mcSummary = mcScenarioId
-    ? await loadScenarioMonteCarlo(mcScenarioId, supabase)
-    : null
+  const mcSummary =
+    needsMonteCarlo && mcScenarioId
+      ? await loadScenarioMonteCarlo(mcScenarioId, supabase)
+      : null
 
   // 4) Route shell composition
   return (
@@ -653,9 +605,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       notes={notes ?? []}
       scenario={scenarioForStrategy}
       scenarioHistory={scenarioHistoryForExport}
-      exportPdfData={exportPdfData}
-      exportExcelData={exportExcelData}
-      exportPanelProps={exportPanelProps}
+      lazyLoadExportPayload={tab === 'meeting-prep'}
       projectionRowsDomicile={projectionRowsDomicile}
       beneficiaryGrants={beneficiaryGrants}
       domicileAnalysis={domicileAnalysis ?? null}
