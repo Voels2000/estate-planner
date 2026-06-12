@@ -4,7 +4,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
 import { parseHouseholdIdParam } from '@/lib/api/schemas/householdAccess'
-import { triggerHouseholdRecompute } from '@/lib/consumer/afterHouseholdWrite'
+import {
+  touchHousehold,
+  triggerHouseholdRecompute,
+} from '@/lib/consumer/afterHouseholdWrite'
 import { NextResponse } from 'next/server'
 
 const ALLOWED_FIELDS = new Set(['admin_expense_pct'])
@@ -50,6 +53,7 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    await touchHousehold(supabase, parsed.householdId)
     triggerHouseholdRecompute(parsed.householdId)
 
     return NextResponse.json({ success: true, data })
