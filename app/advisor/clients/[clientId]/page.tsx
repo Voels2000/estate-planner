@@ -32,7 +32,7 @@ import {
   loadAdvisorProjectionStaleness,
   logAdvisorClientAccess,
 } from '@/lib/advisor/loaders'
-import { loadScenarioMonteCarlo } from '@/lib/advisor/loadScenarioMonteCarlo'
+import { loadScenarioMonteCarloWithStaleness } from '@/lib/monte-carlo/loadScenarioMonteCarloWithStaleness'
 import { getCachedAdvisoryMetrics } from '@/lib/advisor/cachedAdvisoryMetrics'
 import type { AdvisoryMetric, AdvisoryMetricsInput } from '@/lib/advisoryMetrics'
 import type { StrategyQuestionNotification } from '@/components/advisor/ClientStrategyQuestionsCard'
@@ -574,10 +574,14 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     scenario && typeof (scenario as { id?: string }).id === 'string'
       ? String((scenario as { id: string }).id)
       : null
-  const mcSummary =
-    needsMonteCarlo && mcScenarioId
-      ? await loadScenarioMonteCarlo(mcScenarioId, supabase)
-      : null
+  const mcLoad =
+    needsMonteCarlo && mcScenarioId && household?.id
+      ? await loadScenarioMonteCarloWithStaleness(supabase, {
+          householdId: household.id,
+          scenarioId: mcScenarioId,
+        })
+      : { summary: null, isStale: false, isUpdating: false }
+  const mcSummary = mcLoad.summary
 
   // 4) Route shell composition
   return (
@@ -633,6 +637,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
       advisorSsData={advisorSsData}
       advisorRothData={advisorRothData}
       mcSummary={mcSummary}
+      mcUpdating={mcLoad.isUpdating}
     />
   )
 }

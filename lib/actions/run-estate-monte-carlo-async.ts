@@ -10,6 +10,10 @@ import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes
 import { householdFederalExemption } from '@/lib/tax/estate-tax-constants'
 import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
 import { longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
+import {
+  buildProjectionInputsHashPayload,
+  computeProjectionInputsHash,
+} from '@/lib/monte-carlo/computeProjectionInputsHash'
 
 async function fetchStateBrackets(
   supabase: SupabaseClient,
@@ -36,13 +40,6 @@ async function fetchStateBrackets(
   return (result.data ?? []) as StateBracket[]
 }
 
-async function sha256Hex(input: string): Promise<string> {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input))
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
-}
-
 export async function runEstateMonteCarloAsync(
   householdId: string,
   scenarioId: string,
@@ -54,7 +51,7 @@ export async function runEstateMonteCarloAsync(
     supabase
       .from('households')
       .select(
-        'state_primary, filing_status, has_spouse, person1_birth_year, person1_longevity_age, person2_birth_year, person2_longevity_age, growth_rate_accumulation',
+        'state_primary, filing_status, has_spouse, person1_birth_year, person1_longevity_age, person2_birth_year, person2_longevity_age, person1_retirement_age, growth_rate_accumulation, base_case_scenario_id',
       )
       .eq('id', householdId)
       .single(),
@@ -122,15 +119,22 @@ export async function runEstateMonteCarloAsync(
   const yearsUntilDeath = Math.max(5, survivorDeathYear - currentYear)
 
   const lawScenario = 'current_law' as const
-  const hashInput = JSON.stringify({
-    grossEstate,
-    stateCode,
-    filingStatus: household.filing_status,
-    hasBypassTrust,
-    yearsUntilDeath,
-    lawScenario,
-  })
-  const assumption_hash = await sha256Hex(hashInput)
+  const assumption_hash = await computeProjectionInputsHash(
+    buildProjectionInputsHashPayload({
+      grossEstate,
+      state_primary: household.state_primary,
+      filing_status: household.filing_status,
+      has_spouse: household.has_spouse,
+      person1_birth_year: household.person1_birth_year,
+      person2_birth_year: household.person2_birth_year,
+      person1_longevity_age: household.person1_longevity_age,
+      person2_longevity_age: household.person2_longevity_age,
+      person1_retirement_age: household.person1_retirement_age,
+      growth_rate_accumulation: household.growth_rate_accumulation,
+      hasBypassTrust,
+      base_case_scenario_id: household.base_case_scenario_id ?? scenarioId,
+    }),
+  )
 
   const baseGrowthRate = Number(household.growth_rate_accumulation ?? 7) / 100
 
@@ -238,5 +242,14 @@ export async function runEstateMonteCarloAsync(
   if (upsertError) {
     console.error('[MC async] upsert failed:', upsertError)
     throw upsertError
+  }
+
+  const { error: hashUpdateError } = await supabase
+    .from('households')
+    .update({ projection_inputs_hash: assumption_hash })
+    .eq('id', householdId)
+
+  if (hashUpdateError) {
+    console.error('[MC async] projection_inputs_hash update failed:', hashUpdateError)
   }
 }

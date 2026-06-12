@@ -448,4 +448,5 @@ export interface ClientViewShellProps {
   advisorSsData?: SocialSecurityData | null
   advisorRothData?: RothAnalysisResult | null
   mcSummary?: PrecomputedMonteCarloSummary | null
+  mcUpdating?: boolean
 }

@@ -8,7 +8,7 @@ import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { requireMinimumViableProfile } from '@/lib/estate/requireMinimumProfile'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { strategyLabel } from '@/lib/strategy/strategyLabels'
-import { loadScenarioMonteCarlo } from '@/lib/advisor/loadScenarioMonteCarlo'
+import { loadScenarioMonteCarloWithStaleness } from '@/lib/monte-carlo/loadScenarioMonteCarloWithStaleness'
 import { perRecipientLimitFromSplit } from '@/lib/gifting/perRecipientLimit'
 import { loadScopedEstateTaxReferenceData } from '@/lib/tax/loadScopedEstateTaxReferenceData'
 
@@ -216,15 +216,18 @@ export default async function EstateTaxPage() {
         .toUpperCase() === statePrimaryUpper && row.no_portability === true,
   )
 
-  const householdMcRes = await supabase
-    .from('households')
-    .select('base_case_scenario_id')
-    .eq('owner_id', user.id)
-    .single()
-
-  const mcData = householdMcRes.data?.base_case_scenario_id
-    ? await loadScenarioMonteCarlo(householdMcRes.data.base_case_scenario_id, supabase)
-    : null
+  const baseCaseScenarioId =
+    householdRow != null
+      ? (householdRow as { base_case_scenario_id?: string | null }).base_case_scenario_id
+      : null
+  const mcLoad =
+    householdRow?.id && baseCaseScenarioId
+      ? await loadScenarioMonteCarloWithStaleness(supabase, {
+          householdId: householdRow.id,
+          scenarioId: String(baseCaseScenarioId),
+        })
+      : { summary: null, isStale: false, isUpdating: false }
+  const mcData = mcLoad.summary
 
   return (
     <>
@@ -247,6 +250,7 @@ export default async function EstateTaxPage() {
         strategyLineItems={strategyLineItems}
         noPortability={noPortability}
         waThresholdToday={mcData?.wa_threshold_prob_by_year?.[0] ?? null}
+        mcUpdating={mcLoad.isUpdating}
       />
     </>
   )

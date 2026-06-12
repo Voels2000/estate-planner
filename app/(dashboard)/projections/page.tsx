@@ -9,7 +9,7 @@ import { loadProjectionData } from '@/lib/projections/loadProjectionData'
 import { mapProjectionRows } from '@/lib/projections/mappers/mapProjectionRows'
 import type { HouseholdProjectionProfile } from '@/lib/projections/types'
 import { checkProjectionReadiness } from '@/lib/planning/projectionReadiness'
-import { loadScenarioMonteCarlo } from '@/lib/advisor/loadScenarioMonteCarlo'
+import { loadScenarioMonteCarloWithStaleness } from '@/lib/monte-carlo/loadScenarioMonteCarloWithStaleness'
 import { buildProjectionPlanningFields } from '@/lib/profile/profileFieldPromptDefs'
 import { ProjectionsClient } from './_projections-client'
 
@@ -45,13 +45,18 @@ export default async function ProjectionsPage() {
 
   const householdMcRes = await supabase
     .from('households')
-    .select('base_case_scenario_id')
+    .select('id, base_case_scenario_id')
     .eq('owner_id', user.id)
     .single()
 
-  const mcData = householdMcRes.data?.base_case_scenario_id
-    ? await loadScenarioMonteCarlo(householdMcRes.data.base_case_scenario_id, supabase)
-    : null
+  const mcLoad =
+    householdMcRes.data?.base_case_scenario_id && householdMcRes.data?.id
+      ? await loadScenarioMonteCarloWithStaleness(supabase, {
+          householdId: householdMcRes.data.id,
+          scenarioId: householdMcRes.data.base_case_scenario_id,
+        })
+      : { summary: null, isStale: false, isUpdating: false }
+  const mcData = mcLoad.summary
 
   const householdProfile = household as HouseholdProjectionProfile | null
   const statePrimary = householdProfile?.state_primary?.trim().toUpperCase() ?? ''
@@ -106,6 +111,7 @@ export default async function ProjectionsPage() {
       hasRealEstate={(reCount ?? 0) > 0}
       hasBusiness={(bizCount ?? 0) > 0}
       mcBands={mcData?.percentiles_by_year ?? null}
+      mcUpdating={mcLoad.isUpdating}
       stateExemption={stateExemption}
     />
   )

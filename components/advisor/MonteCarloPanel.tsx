@@ -61,6 +61,7 @@ interface MonteCarloProps {
   supabaseUrl: string
   assumptions?: MonteCarloAssumptions
   mcCalculatedAt?: string | null
+  mcUpdating?: boolean
   longevityDepletionPct?: number | null
   depletionFloorAmount?: number | null
 }
@@ -84,6 +85,7 @@ export default function MonteCarloPanel({
   supabaseUrl,
   assumptions,
   mcCalculatedAt = null,
+  mcUpdating = false,
   longevityDepletionPct = null,
   depletionFloorAmount = null,
 }: MonteCarloProps) {
@@ -238,6 +240,11 @@ export default function MonteCarloPanel({
           {!result && mcCalculatedAt ? (
             <p className="text-xs text-[--mwm-text-muted]">
               Last precomputed: {new Date(mcCalculatedAt).toLocaleDateString()}
+            </p>
+          ) : null}
+          {mcUpdating ? (
+            <p className="text-xs font-medium text-amber-700">
+              Updating Monte Carlo analysis — showing last saved results.
             </p>
           ) : null}
         </div>

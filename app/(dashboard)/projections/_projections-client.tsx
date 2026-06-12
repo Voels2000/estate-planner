@@ -39,6 +39,7 @@ type ProjectionsClientProps = {
   hasRealEstate?: boolean
   hasBusiness?: boolean
   mcBands?: PercentileByYear[] | null
+  mcUpdating?: boolean
   stateExemption?: number | null
 }
 
@@ -51,6 +52,7 @@ export function ProjectionsClient({
   hasRealEstate = true,
   hasBusiness = true,
   mcBands = null,
+  mcUpdating = false,
   stateExemption = null,
 }: ProjectionsClientProps) {
   const [household, setHousehold] = useState<HouseholdProjectionProfile | null>(initialHousehold)
@@ -160,6 +162,11 @@ export function ProjectionsClient({
 
       {mcBands && mcBands.length > 0 ? (
         <section className="mt-8">
+          {mcUpdating ? (
+            <p className="mb-2 text-xs font-medium text-amber-700">
+              Updating Monte Carlo analysis — showing last saved results.
+            </p>
+          ) : null}
           <h2 className="mb-1 text-sm font-semibold text-[--mwm-text-primary]">
             Estate Outlook — Range of Outcomes
           </h2>

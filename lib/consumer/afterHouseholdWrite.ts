@@ -12,7 +12,10 @@ export function getConsumerAppUrl(): string {
 export async function touchHousehold(supabase: ServerSupabase, householdId: string) {
   await supabase
     .from('households')
-    .update({ updated_at: new Date().toISOString() })
+    .update({
+      updated_at: new Date().toISOString(),
+      projection_inputs_hash: null,
+    })
     .eq('id', householdId)
 }
 

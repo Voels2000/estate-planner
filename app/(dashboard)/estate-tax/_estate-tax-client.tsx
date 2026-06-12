@@ -191,6 +191,7 @@ export default function EstateTaxClient({
   strategyLineItems,
   noPortability = false,
   waThresholdToday = null,
+  mcUpdating = false,
 }: {
   liabilities: Record<string, unknown>[]
   trusts: EstateTaxTrustRow[]
@@ -214,6 +215,7 @@ export default function EstateTaxClient({
     age_p1: number
     pct_above_threshold: number
   } | null
+  mcUpdating?: boolean
 }) {
   // Composition state — use prop if available, else fetch client-side
   const [composition, setComposition] = useState<EstateComposition | null>(compositionProp ?? null)
@@ -769,6 +771,11 @@ export default function EstateTaxClient({
                       {formatDollars(estimatedTaxState)}
                     </p>
                   </div>
+                  {mcUpdating && (
+                    <p className="mt-2 text-xs font-medium text-amber-700">
+                      Updating Monte Carlo analysis — showing last saved results.
+                    </p>
+                  )}
                   {waThresholdToday && waThresholdToday.pct_above_threshold > 0 && (
                     <div className="mt-2 text-xs text-[--mwm-text-muted]">
                       {waThresholdToday.pct_above_threshold === 100

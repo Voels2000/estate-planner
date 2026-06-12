@@ -49,6 +49,7 @@ export default function StrategyTab({
   stateBrackets = [],
   federalBrackets = [],
   mcSummary = null,
+  mcUpdating = false,
 }: ClientViewShellProps) {
   const householdId = household?.id ?? null
   const hasHorizonTodayInputs =
@@ -689,6 +690,7 @@ export default function StrategyTab({
             supabaseUrl={process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''}
             assumptions={activeAssumptions ?? undefined}
             mcCalculatedAt={mcSummary?.mc_calculated_at ?? null}
+            mcUpdating={mcUpdating}
             longevityDepletionPct={mcSummary?.longevity_depletion_pct ?? null}
             depletionFloorAmount={mcSummary?.depletion_floor_amount ?? null}
           />
