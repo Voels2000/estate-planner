@@ -10,6 +10,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { strategyLabel } from '@/lib/strategy/strategyLabels'
 import { loadScenarioMonteCarlo } from '@/lib/advisor/loadScenarioMonteCarlo'
 import { perRecipientLimitFromSplit } from '@/lib/gifting/perRecipientLimit'
+import { loadScopedEstateTaxReferenceData } from '@/lib/tax/loadScopedEstateTaxReferenceData'
 
 export default async function EstateTaxPage() {
   const access = await getUserAccess()
@@ -82,9 +83,7 @@ export default async function EstateTaxPage() {
   const [
     { data: liabilitiesRows },
     { data: trustsRows },
-    { data: federalEstateTaxBracketsRows },
-    { data: stateEstateTaxRows },
-    { data: stateInheritanceTaxRows },
+    taxReferenceData,
   ] = await Promise.all([
     supabase
       .from('liabilities')
@@ -96,26 +95,13 @@ export default async function EstateTaxPage() {
       .select('*')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
-    // Fetch all years — client filters to most recent
-    supabase
-      .from('federal_estate_tax_brackets')
-      .select('*')
-      .order('tax_year', { ascending: false })
-      .order('min_amount', { ascending: true }),
-    // Fetch all years — client filters to most recent
-    supabase
-      .from('state_estate_tax_rules')
-      .select('*')
-      .order('tax_year', { ascending: false })
-      .order('state', { ascending: true })
-      .order('min_amount', { ascending: true }),
-    // Fetch all years — client filters to most recent
-    supabase
-      .from('state_inheritance_tax_rules')
-      .select('*')
-      .order('tax_year', { ascending: false })
-      .order('state', { ascending: true }),
+    loadScopedEstateTaxReferenceData(supabase, householdRow?.state_primary),
   ])
+  const {
+    federalEstateTaxBracketsRows,
+    stateEstateTaxRows,
+    stateInheritanceTaxRows,
+  } = taxReferenceData
 
   requireMinimumViableProfile(householdRow, '/estate-tax')
 

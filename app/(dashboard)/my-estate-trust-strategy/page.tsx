@@ -23,6 +23,10 @@ import type { StrategyLineItemRow } from '@/lib/consumer/strategyLineItemViews'
 import { buildStrategyHorizons, longevityAndSurvivor } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
 import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
+import {
+  partitionStrategyLineItems,
+  type StrategyLineItemDbRow,
+} from '@/lib/strategy/partitionStrategyLineItems'
 import { displayPersonFirstName } from '@/lib/display-person-name'
 import { getRmdStartAge } from '@/lib/calculations/rmdStartAge'
 import { perRecipientLimitFromSplit } from '@/lib/gifting/perRecipientLimit'
@@ -91,7 +95,7 @@ export default async function MyEstateTrustStrategyPage({
   const { data: householdRow } = await supabase
     .from('households')
     .select(
-      'id, filing_status, person1_birth_year, person2_birth_year, person1_name, has_spouse, base_case_scenario_id, state_primary',
+      'id, filing_status, person1_birth_year, person2_birth_year, person1_name, person2_name, person1_longevity_age, person2_longevity_age, has_spouse, base_case_scenario_id, state_primary',
     )
     .eq('owner_id', user.id)
     .maybeSingle()
@@ -109,13 +113,10 @@ export default async function MyEstateTrustStrategyPage({
     { data: federalBracketRows },
     { data: giftingSummaryData, error: giftingSummaryError },
     { data: giftHistoryRows },
-    { data: advisorLineItemRows },
-    { data: consumerLineItemRows },
-    { data: withdrawnLineItemRows },
+    { data: strategyLineItemRows },
     { data: retirementAssetRows },
     { data: scenarioData },
     { data: stateBracketRows },
-    { data: householdFull },
     { data: charitableSummaryData },
   ] = await Promise.all([
     supabase.from('liabilities').select('balance').eq('owner_id', user.id),
@@ -132,27 +133,11 @@ export default async function MyEstateTrustStrategyPage({
       .eq('tax_year', new Date().getFullYear()),
     supabase
       .from('strategy_line_items')
-      .select('id, strategy_source, amount, sign, confidence_level, effective_year, metadata, scenario_name, consumer_accepted, consumer_rejected')
-      .eq('household_id', householdRow.id)
-      .eq('source_role', 'advisor')
-      .eq('is_active', true),
-    supabase
-      .from('strategy_line_items')
       .select(
-        'id, strategy_source, amount, sign, confidence_level, effective_year, metadata, scenario_name, consumer_withdrawn, consumer_status, consumer_accepted, consumer_rejected',
+        'id, strategy_source, amount, sign, confidence_level, effective_year, metadata, scenario_name, consumer_accepted, consumer_rejected, source_role, consumer_withdrawn, consumer_status, reversed_from, reversal_reason, withdrawn_at, is_active',
       )
       .eq('household_id', householdRow.id)
-      .eq('source_role', 'consumer')
-      .eq('is_active', true),
-    supabase
-      .from('strategy_line_items')
-      .select(
-        'id, strategy_source, amount, scenario_name, reversed_from, reversal_reason, withdrawn_at',
-      )
-      .eq('household_id', householdRow.id)
-      .eq('consumer_withdrawn', true)
-      .eq('is_active', false)
-      .order('withdrawn_at', { ascending: false }),
+      .or('is_active.eq.true,consumer_withdrawn.eq.true'),
     supabase
       .from('assets')
       .select('type, value, owner')
@@ -169,13 +154,16 @@ export default async function MyEstateTrustStrategyPage({
       .eq('state', householdRow.state_primary ?? '')
       .eq('tax_year', new Date().getFullYear())
       .order('min_amount', { ascending: true }),
-    supabase
-      .from('households')
-      .select('person1_name, person2_name, person1_birth_year, person2_birth_year, person1_longevity_age, person2_longevity_age, has_spouse, filing_status, state_primary, base_case_scenario_id')
-      .eq('owner_id', user.id)
-      .single(),
     supabase.rpc('calculate_charitable_summary', { p_household_id: householdRow.id }),
   ])
+
+  const { advisorLineItemRows, consumerLineItemRows, withdrawnLineItemRows: withdrawnRaw } =
+    partitionStrategyLineItems(strategyLineItemRows ?? [])
+  const withdrawnLineItemRows = [...withdrawnRaw].sort(
+    (a, b) =>
+      new Date(b.withdrawn_at ?? 0).getTime() - new Date(a.withdrawn_at ?? 0).getTime(),
+  )
+  const householdFull = householdRow
 
   const lifetimeGiftsUsedForComposition = giftingSummaryError
     ? 0
@@ -477,22 +465,13 @@ export default async function MyEstateTrustStrategyPage({
   }
 
   const mapActiveStrategyRow = (
-    row: {
-      id: string
-      strategy_source: string
-      confidence_level: string
-      amount: unknown
-      scenario_name?: string | null
-      consumer_accepted?: boolean | null
-      consumer_rejected?: boolean | null
-      effective_year?: number | null
-    },
+    row: StrategyLineItemDbRow,
     sourceRole: 'advisor' | 'consumer',
   ): StrategyLineItemRow => ({
     id: row.id,
-    strategy_source: row.strategy_source,
+    strategy_source: String(row.strategy_source ?? 'other'),
     source_role: sourceRole,
-    confidence_level: row.confidence_level,
+    confidence_level: String(row.confidence_level ?? 'certain'),
     amount: row.amount != null ? Number(row.amount) : null,
     scenario_name: row.scenario_name ?? null,
     consumer_accepted: Boolean(row.consumer_accepted),
@@ -552,8 +531,16 @@ export default async function MyEstateTrustStrategyPage({
         consumerTier={access.tier}
         initialTab={tab ?? 'gifting'}
         advisorRecommendations={advisorRecommendations ?? []}
-        advisorLineItems={advisorLineItemRows ?? []}
-        consumerLineItems={consumerLineItemRows ?? []}
+        advisorLineItems={
+          (advisorLineItemRows ?? []) as React.ComponentProps<
+            typeof MyEstateTrustStrategyClient
+          >['advisorLineItems']
+        }
+        consumerLineItems={
+          (consumerLineItemRows ?? []) as React.ComponentProps<
+            typeof MyEstateTrustStrategyClient
+          >['consumerLineItems']
+        }
         advisorHorizons={advisorHorizons}
         federalBrackets={federalBrackets}
         stateBrackets={stateBrackets}

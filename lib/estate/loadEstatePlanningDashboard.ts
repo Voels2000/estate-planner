@@ -55,22 +55,34 @@ function isCachedRecommendations(
   )
 }
 
+export type LoadEstatePlanningDashboardOptions = {
+  /** Skip live generate_estate_recommendations; caller may trigger background recompute. */
+  recommendationsCacheOnly?: boolean
+  /** Skip calculate_estate_completeness when completeness UI is not shown. */
+  skipCompleteness?: boolean
+}
+
 export async function loadEstatePlanningDashboard(
   supabase: SupabaseClient,
   householdId: string,
+  options: LoadEstatePlanningDashboardOptions = {},
 ): Promise<{
   recommendations: EstatePlanningRecommendations | null
   completeness: EstatePlanningCompleteness | null
   error: string | null
+  recommendationsPendingRecompute: boolean
 }> {
-  const [{ data: healthRow }, { data: compData, error: compError }] = await Promise.all([
+  const [{ data: healthRow }, compResult] = await Promise.all([
     supabase
       .from('estate_health_scores')
       .select('recommendations')
       .eq('household_id', householdId)
       .maybeSingle(),
-    supabase.rpc('calculate_estate_completeness', { p_household_id: householdId }),
+    options.skipCompleteness
+      ? Promise.resolve({ data: null, error: null })
+      : supabase.rpc('calculate_estate_completeness', { p_household_id: householdId }),
   ])
+  const { data: compData, error: compError } = compResult
 
   let recommendations: EstatePlanningRecommendations | null = isCachedRecommendations(
     healthRow?.recommendations,
@@ -78,7 +90,9 @@ export async function loadEstatePlanningDashboard(
     ? healthRow.recommendations
     : null
 
-  if (!recommendations) {
+  let recommendationsPendingRecompute = false
+
+  if (!recommendations && !options.recommendationsCacheOnly) {
     const { data: recData, error: recError } = await supabase.rpc('generate_estate_recommendations', {
       p_household_id: householdId,
     })
@@ -87,9 +101,12 @@ export async function loadEstatePlanningDashboard(
         recommendations: null,
         completeness: null,
         error: recError.message ?? 'Failed to load estate planning data',
+        recommendationsPendingRecompute: false,
       }
     }
     recommendations = recData as EstatePlanningRecommendations
+  } else if (!recommendations && options.recommendationsCacheOnly) {
+    recommendationsPendingRecompute = true
   }
 
   if (compError) {
@@ -97,12 +114,14 @@ export async function loadEstatePlanningDashboard(
       recommendations: null,
       completeness: null,
       error: compError.message ?? 'Failed to load estate planning data',
+      recommendationsPendingRecompute,
     }
   }
 
   return {
     recommendations,
-    completeness: compData as EstatePlanningCompleteness,
+    completeness: compData as EstatePlanningCompleteness | null,
     error: null,
+    recommendationsPendingRecompute,
   }
 }

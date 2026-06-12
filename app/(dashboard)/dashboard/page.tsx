@@ -30,15 +30,20 @@ export default async function DashboardPage() {
 
   const supabase = await createClient()
 
-  const [household, { data: healthScore }, hasAnyHouseholdData] = await Promise.all([
+  const needsOnrampScore = profile?.role === 'consumer'
+
+  const [household, healthScoreResult, hasAnyHouseholdData] = await Promise.all([
     getFullHouseholdForOwner(sessionUser.id),
-    supabase
-      .from('estate_health_scores')
-      .select('score')
-      .eq('household_id', householdRow.id)
-      .maybeSingle(),
+    needsOnrampScore
+      ? supabase
+          .from('estate_health_scores')
+          .select('score')
+          .eq('household_id', householdRow.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
     checkHouseholdHasData(supabase, sessionUser.id),
   ])
+  const healthScore = healthScoreResult.data
 
   if (!household) return <DashboardEmptyState />
 

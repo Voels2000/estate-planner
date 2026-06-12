@@ -23,14 +23,10 @@ export default async function ProjectionsPage() {
   const projectionLoad = await loadProjectionData(supabase, user.id)
 
   if (projectionLoad.isStale && projectionLoad.householdId) {
-    void (async () => {
-      try {
-        const { generateBaseCase } = await import('@/lib/actions/generate-base-case')
-        await generateBaseCase(projectionLoad.householdId!)
-      } catch (e) {
-        console.error('[projections] background base case regeneration failed', e)
-      }
-    })()
+    const { triggerBackgroundBaseCaseAndRecompute } = await import(
+      '@/lib/projections/triggerBackgroundBaseCase'
+    )
+    triggerBackgroundBaseCaseAndRecompute(projectionLoad.householdId)
   }
 
   const { household, rows } = projectionLoad

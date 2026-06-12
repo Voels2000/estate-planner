@@ -10,6 +10,12 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Go-live P1 performance (2026-06-11) — application layer
+
+**No new migrations.** `loadScopedEstateTaxReferenceData`, `partitionStrategyLineItems`, `triggerBackgroundBaseCaseAndRecompute`, attorney recommendations cache-only path, dashboard query dedups.
+
+---
+
 ## Go-live P0 performance (2026-06-11) — application layer
 
 **No new migrations.** Attorney composition prefetch + vault access; `export-estate-plan` owner_id fix; advisor `/api/advisor/client-export-payload` lazy export; tab-gated advisor loads; composition `lifetime_gifts_used` cache invalidation; projections stale-cache path.

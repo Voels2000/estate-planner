@@ -79,7 +79,7 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
   const needsStrategyVm = ['strategy', 'tax', 'domicile', 'meeting-prep', 'estate'].includes(tab)
   const needsComposition = ['overview', 'estate', 'strategy', 'tax', 'domicile', 'meeting-prep'].includes(tab)
   const needsGifting = needsComposition
-  const needsStalenessCheck = ['overview', 'estate', 'strategy', 'tax', 'domicile', 'meeting-prep', 'retirement'].includes(tab)
+  const needsStalenessCheck = ['estate', 'strategy', 'tax', 'domicile', 'meeting-prep', 'retirement'].includes(tab)
   const needsMonteCarlo = tab === 'strategy'
 
   const stalenessPromise = needsStalenessCheck
@@ -208,16 +208,10 @@ export default async function AdvisorClientPage({ params, searchParams }: PagePr
     const hasAssets = (assetRows ?? []).length > 0
 
     if (p1Complete && p2Complete && hasIncome && hasAssets) {
-      void (async () => {
-        try {
-          const { generateBaseCase } = await import('@/lib/actions/generate-base-case')
-          await generateBaseCase(household.id)
-          const { triggerHouseholdRecompute } = await import('@/lib/consumer/afterHouseholdWrite')
-          triggerHouseholdRecompute(household.id)
-        } catch (e) {
-          console.error('[advisor-client] background base case regeneration failed, using cached data', e)
-        }
-      })()
+      const { triggerBackgroundBaseCaseAndRecompute } = await import(
+        '@/lib/projections/triggerBackgroundBaseCase'
+      )
+      triggerBackgroundBaseCaseAndRecompute(household.id)
     }
   }
 

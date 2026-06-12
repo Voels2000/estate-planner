@@ -199,16 +199,10 @@ export default async function MyEstateStrategyPage() {
     const hasAssets = (assetRows ?? []).length > 0
 
     if (p1Complete && p2Complete && hasIncome && hasAssets) {
-      void (async () => {
-        try {
-          const { generateBaseCase } = await import('@/lib/actions/generate-base-case')
-          await generateBaseCase(household.id)
-          const { triggerHouseholdRecompute } = await import('@/lib/consumer/afterHouseholdWrite')
-          triggerHouseholdRecompute(household.id)
-        } catch (e) {
-          console.error('[my-estate-strategy] background base case regeneration failed', e)
-        }
-      })()
+      const { triggerBackgroundBaseCaseAndRecompute } = await import(
+        '@/lib/projections/triggerBackgroundBaseCase'
+      )
+      triggerBackgroundBaseCaseAndRecompute(household.id)
     }
   }
 

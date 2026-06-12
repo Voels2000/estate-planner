@@ -9,6 +9,8 @@ import { AttorneyDocumentRequestsPanel } from '@/components/attorney/AttorneyDoc
 import type { AttorneyClientStatus, AttorneyMatterStage } from '@/lib/attorney/matterWorkflow'
 import { loadEstatePlanningDashboard } from '@/lib/estate/loadEstatePlanningDashboard'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
+import { triggerEstateHealthRecompute } from '@/lib/estate/triggerEstateHealthRecompute'
+import { getConsumerAppUrl } from '@/lib/consumer/afterHouseholdWrite'
 import { getMissingDocumentAlerts } from '@/lib/attorney/getMissingDocumentAlerts'
 import { attorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
 
@@ -97,7 +99,7 @@ export default async function AttorneyClientPage({
           .order('beneficiary_class', { ascending: true })
       : Promise.resolve({ data: [] as Record<string, unknown>[] }),
     supabase.rpc('calculate_gifting_summary', { p_household_id: household_id }),
-    loadEstatePlanningDashboard(supabase, household_id),
+    loadEstatePlanningDashboard(supabase, household_id, { recommendationsCacheOnly: true }),
     supabase
       .from('legal_documents')
       .select(
@@ -143,6 +145,10 @@ export default async function AttorneyClientPage({
     'consumer',
     lifetimeGiftsUsed,
   )
+
+  if (estatePlanningDashboard.recommendationsPendingRecompute) {
+    void triggerEstateHealthRecompute(household_id, getConsumerAppUrl())
+  }
 
   const primaryResidenceValue = (() => {
     const rows = (realEstateRows ?? []).filter(
@@ -197,13 +203,21 @@ export default async function AttorneyClientPage({
       />
 
       {household?.id && (
-        <EstatePlanningDashboard
-          householdId={household.id}
-          userRole="advisor"
-          consumerTier={3}
-          initialRecommendations={estatePlanningDashboard.recommendations}
-          initialCompleteness={estatePlanningDashboard.completeness}
-        />
+        <>
+          {estatePlanningDashboard.recommendationsPendingRecompute && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+              Planning recommendations are updating in the background. Refresh in a moment for the
+              latest analysis.
+            </p>
+          )}
+          <EstatePlanningDashboard
+            householdId={household.id}
+            userRole="advisor"
+            consumerTier={3}
+            initialRecommendations={estatePlanningDashboard.recommendations}
+            initialCompleteness={estatePlanningDashboard.completeness}
+          />
+        </>
       )}
 
       <div className="pointer-events-none opacity-95 select-none">

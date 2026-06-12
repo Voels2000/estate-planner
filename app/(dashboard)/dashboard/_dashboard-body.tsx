@@ -105,16 +105,10 @@ export async function DashboardBody({
   })
 
   if (isStale) {
-    void (async () => {
-      try {
-        const { generateBaseCase } = await import('@/lib/actions/generate-base-case')
-        await generateBaseCase(household.id)
-        const { triggerHouseholdRecompute } = await import('@/lib/consumer/afterHouseholdWrite')
-        triggerHouseholdRecompute(household.id)
-      } catch (e) {
-        console.error('[dashboard] background base case regeneration failed', e)
-      }
-    })()
+    const { triggerBackgroundBaseCaseAndRecompute } = await import(
+      '@/lib/projections/triggerBackgroundBaseCase'
+    )
+    triggerBackgroundBaseCaseAndRecompute(household.id)
   }
 
   const baseCaseScenario = await loadBaseCaseScenario(admin, household?.base_case_scenario_id)
@@ -320,7 +314,6 @@ export async function DashboardBody({
     { data: advisorStrategyItems },
     mcScenarioRes,
     { data: healthScoreRow },
-    { data: priorHealthScoreRow },
     { data: openAlertsData },
     { data: conflictRows },
     { taxDeferredAssets, currentYearWithdrawals },
@@ -349,15 +342,6 @@ export async function DashboardBody({
           .from('estate_health_scores')
           .select('score, component_scores, computed_at, recommendations')
           .eq('household_id', household.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    household?.id
-      ? admin
-          .from('estate_health_scores')
-          .select('score, computed_at')
-          .eq('household_id', household.id)
-          .order('computed_at', { ascending: false })
-          .range(1, 1)
           .maybeSingle()
       : Promise.resolve({ data: null }),
     household?.id
@@ -411,8 +395,6 @@ export async function DashboardBody({
   // computeEstateHealthScore writes to DB — never call it in render path.
   // Dashboard reads the last persisted score; background recompute updates it.
   const estateHealthScore = mapEstateHealthScore(healthScoreRow)
-
-  const priorScore = priorHealthScoreRow?.score ?? null
 
   const openAlerts = sortOpenAlerts(
     (openAlertsData ?? []).map((a) => ({
@@ -619,7 +601,6 @@ export async function DashboardBody({
       retirementSnapshot={retirementSnapshot}
       retirementAccountsTotal={retirementAccountsTotal}
       estateHealthScore={estateHealthScore}
-      priorScore={priorScore}
       openAlerts={openAlerts}
       conflictReport={conflictReport}
       userId={user!.id}

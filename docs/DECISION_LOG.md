@@ -2651,6 +2651,16 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Go-live P1 performance (accuracy-safe)
+
+**Decision:** Ship remaining launch-week perf items with explicit accuracy guards: scoped tax reference loader with prior-year fallback; shared `partitionStrategyLineItems` (same split as three legacy queries); debounced `triggerBackgroundBaseCaseAndRecompute` with in-flight lock; attorney recommendations cache-only with background recompute + banner (no silent empty state).
+
+**Alternatives considered:** Full dashboard bundle loader (deferred — high regression surface). Materialized `projection_inputs_version` (deferred — schema change).
+
+**Implication:** Redeploy Vercel. Stale projection/composition may show briefly until background job completes — same contract as P0 projections path.
+
+---
+
 ### June 2026 — Go-live P0 performance fixes (consumer / advisor / attorney)
 
 **Decision:** Ship six P0 items from go-live perf audit: attorney server-prefetch composition + vault API access; export-estate-plan client `owner_id`; advisor lazy export payload API + tab-gated composition/MC/gifting; composition cache gift-usage invalidation; projections serve stale cache with background regen.

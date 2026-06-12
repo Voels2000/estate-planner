@@ -162,18 +162,18 @@ Full scan across consumer, advisor, and attorney surfaces. **Shipped today** add
 | **Consumer** | `getCachedComposition` invalidates when `lifetime_gifts_used` mismatches |
 | **Consumer** | `loadProjectionData` serves stale `outputs_s1_first`; `/projections` triggers background regen |
 
-#### P1 — launch week
+#### P1 — shipped (2026-06-11)
 
-| Area | Issue | Fix |
-|------|-------|-----|
-| **Consumer** | Dashboard ~40+ queries across sequential phases | Consolidate into cached bundle loader |
-| **Consumer** | `/estate-tax` unbounded `select('*')` on all tax rule years/states | Filter to `tax_year` + `state_primary` |
-| **Consumer** | `/my-estate-trust-strategy` triple `strategy_line_items` queries | Single query, partition in memory |
-| **Consumer** | `generateBaseCase` + recompute fired from multiple stale page views | Per-household debounce / in-flight lock |
-| **Advisor** | Staleness check 9+ queries every client load | Materialized `projection_inputs_version` or skip on non-projection tabs |
-| **Advisor** | `logAdvisorClientAccess` awaited on critical path | `void` fire-and-forget |
-| **Attorney** | `calculate_estate_completeness` always on load; cold-cache live recommendations fallback | Cache-only + skeleton on miss |
-| **All** | Composition cache ignores `lifetime_gifts_used` staleness | Treat mismatch as cache miss |
+| Area | Fix |
+|------|-----|
+| **Consumer** | `loadScopedEstateTaxReferenceData` on `/estate-tax` (year + state, prior-year fallback) |
+| **Consumer** | Trust-strategy: single `strategy_line_items` query + `partitionStrategyLineItems` |
+| **Consumer** | `triggerBackgroundBaseCaseAndRecompute` — debounced base case + recompute (dashboard, projections, strategy, advisor) |
+| **Consumer** | Dashboard: drop no-op `priorHealthScoreRow`; onramp-only health score fetch |
+| **Advisor** | Staleness check skipped on overview tab |
+| **Attorney** | Recommendations cache-only + background recompute + user-visible pending banner |
+
+**Deferred (post-launch):** full dashboard bundle loader; `projection_inputs_version` column; materialized staleness versioning.
 
 #### P2 — polish / scale
 
