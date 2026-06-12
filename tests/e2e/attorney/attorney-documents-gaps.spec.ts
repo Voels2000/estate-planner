@@ -97,7 +97,9 @@ test('PATCH /api/documents/{id}/status on missing doc returns 404', async ({ req
 test('attorney dashboard lists linked consumer household', async ({ page }) => {
   await page.goto('/attorney')
   await expect(page).not.toHaveURL(/\/login/)
-  await expect(page.getByRole('heading', { name: 'Attorney Portal' })).toBeVisible({
+  await expect(
+    page.locator('main').getByRole('heading', { name: 'Attorney Portal' }),
+  ).toBeVisible({
     timeout: 30_000,
   })
   await expect(

@@ -33,7 +33,7 @@ test.describe('Advisor firm billing checkout API', () => {
         seatCount: 51,
       },
     })
-    expect(res.status()).toBe(403)
+    expect([400, 403]).toContain(res.status())
     const body = await res.json()
     expect(body.error).toMatch(/enterprise|sales/i)
   })

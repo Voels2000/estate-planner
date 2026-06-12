@@ -20,7 +20,7 @@ test.describe('Consumer profile spouse layout', () => {
   })
 
   test('person column header updates live from Your Name', async ({ page }) => {
-    const nameInput = page.getByRole('textbox', { name: 'Jane', exact: true })
+    const nameInput = page.getByLabel('Your Name')
     await expect(nameInput).toBeVisible()
     const prior = await nameInput.inputValue()
     const liveName = `Playwright Live ${Date.now()}`.slice(0, 40)
@@ -38,7 +38,7 @@ test.describe('Consumer profile spouse layout', () => {
     const spouseCheckbox = page.getByRole('checkbox', { name: /include spouse/i })
     const wasChecked = await spouseCheckbox.isChecked()
 
-    const spouseNameInput = page.getByRole('textbox', { name: 'John', exact: true })
+    const spouseNameInput = page.getByLabel('Spouse Name')
     const priorSpouseName = wasChecked ? await spouseNameInput.inputValue() : ''
 
     try {

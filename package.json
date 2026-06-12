@@ -49,6 +49,7 @@
     "cleanup:rolobe": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --rolobe",
     "cleanup:purge": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --purge-unprotected",
     "cleanup:purge:dry-run": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --purge-unprotected --dry-run",
+    "repair:e2e:attorney": "dotenv -e .env.local -- npx tsx scripts/repair-e2e-attorney-stripe.ts",
     "repair:orphaned-user": "dotenv -e .env.local -- npx tsx scripts/repair-orphaned-auth-user.ts",
     "repair:attorney-fks": "dotenv -e .env.local -- npx tsx scripts/repair-attorney-client-fks.ts",
     "repair:attorney-fks:dry-run": "dotenv -e .env.local -- npx tsx scripts/repair-attorney-client-fks.ts --dry-run",

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { fetchAdvisorClientHouseholdId } from '../helpers/e2e-households'
 
 /**
  * Advisor strategy recommendation end-to-end verification.
@@ -8,8 +9,15 @@ import { test, expect } from '@playwright/test'
  * to PLAYWRIGHT_ADVISOR_EMAIL (canonical: e2e-advisor@mywealthmaps.test). Cleans up after each test.
  */
 
-const CLIENT_HOUSEHOLD_ID =
-  process.env.PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID ?? '90cc8759-5465-4671-8894-e17eca783a42'
+let CLIENT_HOUSEHOLD_ID: string
+
+test.beforeAll(async () => {
+  CLIENT_HOUSEHOLD_ID =
+    process.env.PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID ??
+    (await fetchAdvisorClientHouseholdId()) ??
+    '90cc8759-5465-4671-8894-e17eca783a42'
+  test.skip(!CLIENT_HOUSEHOLD_ID, 'Set PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID or run npm run seed:e2e')
+})
 
 const SOURCES = [
   { strategySource: 'slat',      amount: 500000, category: 'trust_exclusion', label: 'SLAT' },

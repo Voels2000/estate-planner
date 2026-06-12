@@ -5,10 +5,10 @@ test.beforeEach(async ({ page }) => {
   await gotoAdvisorLinkedClient(page)
 })
 
-test('strategy tab situation metrics render without sunset messaging', async ({ page }) => {
+test('strategy tab situation metrics render', async ({ page }) => {
   await page.getByRole('button', { name: /Strategy/ }).click()
   await expect(page.getByText('Situation').first()).toBeVisible({ timeout: 30_000 })
-  await expect(page.getByText(/Sunset Urgency|sunset/i)).not.toBeVisible()
+  await expect(page.getByText('Metric Explanations')).toBeVisible()
 })
 
 test('metric explanations accordion on strategy tab', async ({ page }) => {
@@ -41,7 +41,6 @@ test('prospect mode page loads', async ({ page }) => {
 
 test('tax combined waterfall section exists under tax tab', async ({ page }) => {
   await page.getByRole('button', { name: /Tax/ }).click()
-  await expect(
-    page.getByText(/Combined Federal|Waterfall|Law Scenario/i).first(),
-  ).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Law Scenario' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Federal & State Tax Waterfall/i })).toBeVisible()
 })

@@ -7,9 +7,9 @@ test.describe('Health score narrative', () => {
       page.getByText(/Good (morning|afternoon|evening)|Estate/i).first(),
     ).toBeVisible({ timeout: 30_000 })
 
-    const scoreBadge = page.getByText(/\/100/).first()
-    const healthSection = page.getByText(/Estate Readiness Score|Estate Summary/i).first()
-    await expect(scoreBadge.or(healthSection)).toBeVisible({ timeout: 15_000 })
+    await expect(
+      page.getByText(/Estate readiness \d+\/100/i).first(),
+    ).toBeVisible({ timeout: 15_000 })
   })
 
   test('my-estate-strategy page loads with horizons or upgrade banner', async ({ page }) => {

@@ -14,6 +14,7 @@ export function StatePickerDropdown({ value, onChange, className, id = 'assess-s
   return (
     <select
       id={id}
+      aria-label="Select your state"
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value)}
       className={className}

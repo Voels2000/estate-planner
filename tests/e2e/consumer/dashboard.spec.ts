@@ -81,7 +81,9 @@ test.describe('Consumer navigation', () => {
   test('projections page loads', async ({ page }) => {
     await page.goto('/projections')
     await expect(page).not.toHaveURL(/404/)
-    await expect(page.getByRole('heading').first()).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Projections' })).toBeVisible({
+      timeout: 30_000,
+    })
   })
 
   test('my estate strategy page loads', async ({ page }) => {

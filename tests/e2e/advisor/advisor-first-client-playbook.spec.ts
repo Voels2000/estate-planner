@@ -12,10 +12,11 @@ test.describe('Advisor portal activation', () => {
     page,
   }) => {
     await page.goto('/advisor')
-    const hasClients = await page.getByText('Health Score').isVisible().catch(() => false)
-    const emptyState = page.getByText('Connect your first client')
-    await expect(hasClients ? page.getByText('Health Score') : emptyState).toBeVisible({
-      timeout: 30_000,
-    })
+    await expect(page.getByRole('button', { name: /My Clients/ })).toBeVisible({ timeout: 30_000 })
+    const rosterMarker = page
+      .getByRole('columnheader', { name: 'Health Score' })
+      .or(page.getByText(/Getting started with/i))
+      .or(page.getByText('Connect your first client'))
+    await expect(rosterMarker.first()).toBeVisible({ timeout: 30_000 })
   })
 })
