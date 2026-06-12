@@ -323,10 +323,10 @@ export async function detectConflicts(
     'conflict_large_estate_no_trust',
   ]
 
-  for (const ruleId of conflictRuleIds) {
-    await admin.rpc('resolve_household_alert', {
+  if (conflictRuleIds.length > 0) {
+    await admin.rpc('resolve_household_alerts_batch', {
       p_household_id: householdId,
-      p_rule_id: ruleId,
+      p_rule_ids: conflictRuleIds,
     })
   }
 
