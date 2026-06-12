@@ -13,7 +13,9 @@ The tracker is your **working surface**; `LAUNCH.md` is the **repo scoreboard** 
    ```bash
    npm run launch:tracker
    ```
-   Then open **http://localhost:3456/launch-tracker.html**
+   Then open **http://127.0.0.1:3456/launch-tracker.html** (copy from terminal output).
+
+   **Troubleshooting:** If you see **Sign In**, you opened the Next.js app (`localhost:3000` or production) by mistake. The tracker has **no login** — it is only on port **3456** after `npm run launch:tracker`.
 
 2. **Work through items** — check boxes, add `initials / date` on attest lines (B4 manual smokes, B5 Stripe, B6 legal, etc.).
 
