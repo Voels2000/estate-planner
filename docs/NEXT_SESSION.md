@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-12 (Homepage Link lint CI fix)
+# Last updated: 2026-06-09 (E2E attorney aref timing note)
 
 ---
 
@@ -206,6 +206,28 @@ Worth a manual DB check once a **real** attorney has registered (not seed-only).
 | 3 | ~7+ days after step 1 sent | `attorney_drip_step_3_sent_at` |
 
 Cron: `app/api/cron/notifications/route.ts` § attorney activation drip.
+
+---
+
+## Post-launch quick wins
+
+### E2E — attorney aref timing fix (10 min)
+
+`tests/e2e/public/auth-signup-attribution.spec.ts`
+
+Attorney test reads sessionStorage before `useEffect` hydrates.
+
+Fix: add `waitForFunction` matching advisor pattern (line ~35):
+
+```ts
+await page.waitForFunction(
+  (code) => sessionStorage.getItem('mwm_attorney_referral_code') === code,
+  aref,
+  { timeout: 15_000 },
+)
+```
+
+Product path is intact (`_referral-tracker.tsx` still writes `mwm_attorney_referral_code` on `?aref=` since Sprint 8) — test-only flake.
 
 ---
 

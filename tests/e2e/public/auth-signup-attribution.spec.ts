@@ -20,10 +20,11 @@ test.describe('Signup attribution session contract (acquisition §C–D)', () =>
   test('attorney aref stored in sessionStorage on event visit', async ({ page }) => {
     const aref = process.env.PLAYWRIGHT_ATTORNEY_REFERRAL_CODE ?? 'e2eatt01'
     await page.goto(`/event/selling-a-business?aref=${aref}`)
-    const stored = await page.evaluate(() =>
-      sessionStorage.getItem('mwm_attorney_referral_code'),
+    await page.waitForFunction(
+      (code) => sessionStorage.getItem('mwm_attorney_referral_code') === code,
+      aref,
+      { timeout: 15_000 },
     )
-    expect(stored).toBe(aref)
   })
 
   test('signup page reachable when open signups enabled', async ({ page }) => {

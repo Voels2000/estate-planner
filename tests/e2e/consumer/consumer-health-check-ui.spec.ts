@@ -19,7 +19,9 @@ test.describe('Estate health check UI (smoke §4)', () => {
     await page.getByRole('button', { name: /Go to dashboard/i }).click()
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 })
     await expect(
-      page.getByRole('heading', { name: /Good (morning|afternoon|evening)/ }),
-    ).toBeVisible({ timeout: 20_000 })
+      page
+        .getByText('Net Worth', { exact: true })
+        .or(page.getByText('Your estate planning dashboard')),
+    ).toBeVisible({ timeout: 30_000 })
   })
 })

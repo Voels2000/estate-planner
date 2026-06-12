@@ -68,10 +68,10 @@ test.describe('Consumer profile spouse layout', () => {
 
     try {
       if (!wasChecked) await spouseCheckbox.check()
-      const personNameInput = page.getByRole('textbox', { name: 'Jane', exact: true })
+      const personNameInput = page.getByLabel('Your Name')
       const peopleGrid = page.locator('div.grid').filter({ has: personNameInput }).first()
       await expect(peopleGrid).toHaveClass(/sm:grid-cols-2/)
-      await expect(page.getByRole('textbox', { name: 'John', exact: true })).toBeVisible()
+      await expect(page.getByLabel('Spouse Name')).toBeVisible()
     } finally {
       if (!wasChecked) await spouseCheckbox.uncheck()
     }
