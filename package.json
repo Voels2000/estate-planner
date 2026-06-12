@@ -62,7 +62,9 @@
     "verify:estate:e2e": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/verify-estate-suite.ts --preset e2e --lifecycle --check-goldens --http",
     "release:local": "bash scripts/release-local-gate.sh",
     "release:preflight": "bash scripts/release-local-gate.sh --preflight",
-    "release:post-deploy": "bash scripts/release-post-deploy.sh"
+    "release:post-deploy": "bash scripts/release-post-deploy.sh",
+    "launch:tracker": "npx --yes serve tools --listen 3456",
+    "sync:launch-tracker": "npx tsx scripts/sync-launch-tracker.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

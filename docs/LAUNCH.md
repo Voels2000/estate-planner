@@ -19,6 +19,8 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 **Related (not absorbed):** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md)
 
+**Working tracker (manual attestations):** [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) — browser UI at `tools/launch-tracker.html` (`npm run launch:tracker`); sync to this file via `npm run sync:launch-tracker`.
+
 **Migrations before flip:** run `npx supabase db push` / dashboard compare before flip — count not pinned in doc.
 
 **Canonical seed:** `npm run seed:e2e` only (legacy `seed-test-*.ts` scripts removed).
