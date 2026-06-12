@@ -111,7 +111,10 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] SCHEMA_CHANGELOG · DECISION_LOG · NEXT_SESSION · MASTER_ARCHITECTURE · DATABASE_SCHEMA_REFERENCE · CONSUMER_FLOWS synced
 - [x] **Go-live P0 perf** — attorney composition + export access; advisor lazy export + tab gating; composition gift invalidation; projections stale cache
 - [x] **Go-live P1 perf** — scoped estate-tax rules; trust-strategy line-item dedupe; background base-case debounce; attorney cache-only recommendations
-- [ ] **Ops:** redeploy Vercel Production for all TS changes since `e6f8ac9`
+- [x] **Pre-launch DB perf — MC staleness** — `20260712120000` `projection_inputs_hash`; `loadScenarioMonteCarloWithStaleness`; null-on-write + updating UI
+- [x] **Pre-launch DB perf — dashboard bundle** — `loadDashboardBundle` (60s TTL); `invalidateDashboardBundle` in `touchHousehold`; child loaders accept bundle slices
+- [x] **Pre-launch DB perf — households PATCH** — `PATCH /api/households/[id]` calls `touchHousehold` for `admin_expense_pct`
+- [ ] **Ops:** redeploy Vercel Production + `npx supabase db push` for `20260712120000` if not applied on target env
 
 ## Billing E2E production resilience (2026-06-09) — shipped
 

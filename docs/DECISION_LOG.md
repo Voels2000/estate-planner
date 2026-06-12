@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-09 (Admin-Redesign sidebar + debug fixes)
+# Last updated: 2026-06-12 (Pre-launch DB perf: dashboard bundle + MC staleness)
 
 ---
 
@@ -2651,11 +2651,31 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Pre-launch DB perf: dashboard bundle loader (Phase 1)
+
+**Decision:** Consolidate consumer dashboard server fetches into `loadDashboardBundle` (~22 parallel queries vs ~40+ scattered round trips). 60s per-household TTL cache; invalidate via single hook in `touchHousehold`. Household row passed from `page.tsx` — no module-level household singleton. Child loaders (`loadDashboardCoreInputs`, `loadDashboardRmdInputs`, `loadLatestInputChangeMs`) accept optional bundle slices for backward compatibility.
+
+**Alternatives considered:** Postgres RPC single round-trip (deferred Phase 2). Module-level household state (rejected — prop pass + React `cache()` only).
+
+**Implication:** Commits `523f28f`, `8776084`. Redeploy Vercel. Repeat dashboard loads within 60s on same instance skip refetch.
+
+---
+
+### June 2026 — Pre-launch DB perf: Monte Carlo `projection_inputs_hash`
+
+**Decision:** Add `households.projection_inputs_hash` (nullable). On every `touchHousehold`, set hash to `NULL`. On successful `runEstateMonteCarloAsync`, write hash matching `computeProjectionInputsHash` (includes `person1_retirement_age`, `growth_rate_accumulation`, gross estate from projection, bypass trust, scenario id). Read path compares stored vs current hash; on mismatch serve stale `monte_carlo_results` + amber “updating” banner + background `triggerBackgroundBaseCaseAndRecompute`.
+
+**Alternatives considered:** Compare only `assumption_hash` on `monte_carlo_results` row without household column (rejected — no hash before first precompute). Recompute hash on every write (rejected — null-on-write is cheaper and equally safe).
+
+**Implication:** Migration `20260712120000`. Commit `5ad5622`. Existing rows: null hash → stale on first load → background regen (safe default).
+
+---
+
 ### June 2026 — Go-live P1 performance (accuracy-safe)
 
 **Decision:** Ship remaining launch-week perf items with explicit accuracy guards: scoped tax reference loader with prior-year fallback; shared `partitionStrategyLineItems` (same split as three legacy queries); debounced `triggerBackgroundBaseCaseAndRecompute` with in-flight lock; attorney recommendations cache-only with background recompute + banner (no silent empty state).
 
-**Alternatives considered:** Full dashboard bundle loader (deferred — high regression surface). Materialized `projection_inputs_version` (deferred — schema change).
+**Alternatives considered:** Materialized advisor staleness versioning (deferred post-launch).
 
 **Implication:** Redeploy Vercel. Stale projection/composition may show briefly until background job completes — same contract as P0 projections path.
 

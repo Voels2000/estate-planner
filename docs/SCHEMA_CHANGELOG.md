@@ -10,6 +10,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Pre-launch DB perf — dashboard bundle + MC staleness (2026-06-12)
+
+**Migration:** `20260712120000_household_projection_inputs_hash.sql`
+
+| Change | Detail |
+|--------|--------|
+| **`households.projection_inputs_hash`** | SHA-256 of MC input fields; `NULL` after `touchHousehold` until precompute completes |
+| **App — bundle** | `lib/dashboard/loadDashboardBundle.ts` — consolidated dashboard fetch + 60s TTL; `invalidateDashboardBundle` on write |
+| **App — MC** | `computeProjectionInputsHash` · `loadScenarioMonteCarloWithStaleness` · `runEstateMonteCarloAsync` writes hash on success |
+| **App — gap fix** | `PATCH /api/households/[id]` → `touchHousehold` before recompute |
+
+**Verify:** `npm run verify:estate -- --preset voels --check-goldens` · `npx tsc --noEmit`
+
+---
+
 ## Go-live P1 performance (2026-06-11) — application layer
 
 **No new migrations.** `loadScopedEstateTaxReferenceData`, `partitionStrategyLineItems`, `triggerBackgroundBaseCaseAndRecompute`, attorney recommendations cache-only path, dashboard query dedups.

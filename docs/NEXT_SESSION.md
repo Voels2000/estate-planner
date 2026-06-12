@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-11 (Recompute dedupe + go-live performance audit)
+# Last updated: 2026-06-12 (Pre-launch DB perf: dashboard bundle + MC staleness)
 
 ---
 
@@ -33,6 +33,7 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 | Billing hardening + billing E2E | ✅ Shipped | P0–P2 + polish · `test:e2e:billing` (21 pass / 2 skip prod) · `billing-e2e.ts` |
 | Supabase Disk IO + recompute dedupe | ✅ Shipped | `20260709150000`–`20260709180100` · recompute route · **redeploy Vercel** |
 | Go-live performance audit | ✅ Done | Consumers / advisors / attorneys — see §5 below |
+| Pre-launch DB perf (bundle + MC staleness) | ✅ Shipped | `loadDashboardBundle` · `projection_inputs_hash` · `touchHousehold` on all writes |
 | Legal entity placeholders (`/terms`, `/privacy`) | ✅ Shipped | `lib/legal/company.ts` — My Wealth Maps LLC · Snohomish address · RA Alan Voels |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
@@ -139,8 +140,8 @@ Deferred. Show a subtle setup card on `/dashboard` when the user has financial d
 
 **Ops now:**
 
-1. Confirm `git push origin main` (commits `88c7427`, `7d22330`)
-2. **Redeploy Vercel Production** — picks up `lib/conflict-detector.ts` batch RPC
+1. **`git push origin main`** — includes `5ad5622` (MC staleness), `523f28f` (dashboard bundle), `8776084` (households PATCH)
+2. **Redeploy Vercel Production** — all TS since `e6f8ac9` (P0 + P1 + pre-launch DB perf)
 3. Supabase Dashboard → **Infrastructure → Disk IO** — recheck in **24 hours**
 
 **Future optimizations (only if IO still elevated after monitoring):**
@@ -173,14 +174,21 @@ Full scan across consumer, advisor, and attorney surfaces. **Shipped today** add
 | **Advisor** | Staleness check skipped on overview tab |
 | **Attorney** | Recommendations cache-only + background recompute + user-visible pending banner |
 
-**Deferred (post-launch):** full dashboard bundle loader; `projection_inputs_version` column; materialized staleness versioning.
+#### Pre-launch DB perf — shipped (2026-06-12)
+
+| Fix | Detail |
+|-----|--------|
+| **Dashboard bundle** | `lib/dashboard/loadDashboardBundle.ts` — ~22 parallel queries, 60s TTL cache per `household_id`; `invalidateDashboardBundle` in `touchHousehold`; `DashboardBody` passes bundle to child loaders |
+| **MC staleness** | `households.projection_inputs_hash` (`20260712120000`); null on write → background regen; amber “updating” UI on projections/estate-tax/advisor Strategy |
+| **Household PATCH gap** | `PATCH /api/households/[id]` (`admin_expense_pct`) now calls `touchHousehold` — aligns with Fix 3 + bundle invalidation |
+
+**Deferred (post-launch):** Postgres RPC `load_dashboard_bundle` (Phase 2); materialized advisor staleness versioning.
 
 #### P2 — polish / scale
 
 - Advisor roster: parallelize household + referral fetches after client IDs known
 - Attorney roster estate value omits liabilities (understated vs advisor roster)
 - Unbounded `select('*')` on low-row tables (profile, household helpers)
-- Dashboard `priorHealthScoreRow` query likely no-op (single row per household)
 
 **Diagnostics:** [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run Query A/B/C in Supabase SQL Editor post-launch.
 

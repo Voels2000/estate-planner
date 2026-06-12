@@ -214,7 +214,7 @@ Consumers build the household balance sheet and cash flows before estate surface
 |--|--|
 | **User goal** | Net worth, retirement snapshot, estate readiness, advisor recommendations, setup progress |
 | **Tier / gate** | Tier 1; **no** profile gate; shows `DashboardEmptyState` if no household; **`DashboardOnramp`** when wizard incomplete, health score &lt; 60, or no assets/income (`lib/dashboard/onrampGate.ts`) |
-| **Server** | `app/(dashboard)/dashboard/page.tsx` — onramp early return or `DashboardBody` via Suspense; loaders in `lib/dashboard/loaders.ts` |
+| **Server** | `app/(dashboard)/dashboard/page.tsx` — onramp early return or `DashboardBody` via Suspense; **`loadDashboardBundle`** (`lib/dashboard/loadDashboardBundle.ts`, 60s TTL) + slice helpers in `lib/dashboard/loaders.ts` |
 | **Client** | `components/dashboard/DashboardOnramp.tsx` (onramp) · `app/(dashboard)/_dashboard-client.tsx`, `dashboard/_components/*` (full dashboard) |
 | **Write APIs** | `PATCH /api/consumer/estate-checklist` (checklist toggles only) |
 | **Read APIs / RPCs** | Cached `estate_health_scores` (score + `recommendations` — Sprint P-2), `beneficiary_conflicts`, `classifyEstateAssets`, `strategy_line_items` (advisor pending), `advisor_projection_assumptions` (MC share), **`state_estate_tax_rules`** (current year + `state_primary` for tax snapshot — `deb0080`/`0686f52`). **Not on load:** `generate_estate_recommendations` (persisted at recompute; manual refresh in `PlanningGapsSection` only) |
