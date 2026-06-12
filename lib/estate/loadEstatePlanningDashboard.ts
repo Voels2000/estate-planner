@@ -44,6 +44,17 @@ export type EstatePlanningCompleteness = {
   }
 }
 
+function isCachedRecommendations(
+  value: unknown,
+): value is EstatePlanningRecommendations {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as EstatePlanningRecommendations).success === true &&
+    Array.isArray((value as EstatePlanningRecommendations).recommendations)
+  )
+}
+
 export async function loadEstatePlanningDashboard(
   supabase: SupabaseClient,
   householdId: string,
@@ -52,22 +63,45 @@ export async function loadEstatePlanningDashboard(
   completeness: EstatePlanningCompleteness | null
   error: string | null
 }> {
-  const [{ data: recData, error: recError }, { data: compData, error: compError }] =
-    await Promise.all([
-      supabase.rpc('generate_estate_recommendations', { p_household_id: householdId }),
-      supabase.rpc('calculate_estate_completeness', { p_household_id: householdId }),
-    ])
+  const [{ data: healthRow }, { data: compData, error: compError }] = await Promise.all([
+    supabase
+      .from('estate_health_scores')
+      .select('recommendations')
+      .eq('household_id', householdId)
+      .maybeSingle(),
+    supabase.rpc('calculate_estate_completeness', { p_household_id: householdId }),
+  ])
 
-  if (recError || compError) {
+  let recommendations: EstatePlanningRecommendations | null = isCachedRecommendations(
+    healthRow?.recommendations,
+  )
+    ? healthRow.recommendations
+    : null
+
+  if (!recommendations) {
+    const { data: recData, error: recError } = await supabase.rpc('generate_estate_recommendations', {
+      p_household_id: householdId,
+    })
+    if (recError) {
+      return {
+        recommendations: null,
+        completeness: null,
+        error: recError.message ?? 'Failed to load estate planning data',
+      }
+    }
+    recommendations = recData as EstatePlanningRecommendations
+  }
+
+  if (compError) {
     return {
       recommendations: null,
       completeness: null,
-      error: recError?.message ?? compError?.message ?? 'Failed to load estate planning data',
+      error: compError.message ?? 'Failed to load estate planning data',
     }
   }
 
   return {
-    recommendations: recData as EstatePlanningRecommendations,
+    recommendations,
     completeness: compData as EstatePlanningCompleteness,
     error: null,
   }

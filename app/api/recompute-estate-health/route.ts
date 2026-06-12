@@ -33,18 +33,6 @@ export async function POST(request: Request) {
       detectConflicts(householdId, household.owner_id),
     ])
 
-    // Persist recommendations so dashboard reads cache instead of calling RPC
-    const { data: recsData } = await supabase.rpc('generate_estate_recommendations', {
-      p_household_id: householdId,
-    })
-
-    if (recsData) {
-      await supabase
-        .from('estate_health_scores')
-        .update({ recommendations: recsData })
-        .eq('household_id', householdId)
-    }
-
     const { data: giftingSummary } = await supabase.rpc('calculate_gifting_summary', {
       p_household_id: householdId,
     })
@@ -61,7 +49,18 @@ export async function POST(request: Request) {
       classifyEstateAssets(supabase, householdId, 'advisor', lifetimeGiftsUsed),
     ])
 
+    const { data: recsData } = await supabase.rpc('generate_estate_recommendations', {
+      p_household_id: householdId,
+      p_composition: consumerComposition,
+    })
+
     await Promise.all([
+      recsData
+        ? supabase
+            .from('estate_health_scores')
+            .update({ recommendations: recsData })
+            .eq('household_id', householdId)
+        : Promise.resolve(),
       upsertCompositionCache(supabase, householdId, 'consumer', consumerComposition, lifetimeGiftsUsed),
       upsertCompositionCache(supabase, householdId, 'advisor', advisorComposition, lifetimeGiftsUsed),
     ])

@@ -330,18 +330,19 @@ export async function detectConflicts(
     })
   }
 
-  for (const c of allConflicts) {
-    const ruleId = `conflict_${c.conflict_type}`
-    await admin.rpc('upsert_household_alert', {
+  if (allConflicts.length > 0) {
+    await admin.rpc('upsert_household_alerts_batch', {
       p_household_id: householdId,
-      p_rule_id: ruleId,
-      p_alert_type: 'beneficiary_conflict',
-      p_severity: c.severity === 'critical' ? 'high' : c.severity === 'warning' ? 'medium' : 'low',
-      p_title: conflictTitle(c.conflict_type),
-      p_description: c.description,
-      p_action_href: '/titling',
-      p_action_label: 'Open Titling & Beneficiaries',
-      p_context_data: { conflict_type: c.conflict_type, asset_id: c.asset_id },
+      p_alerts: allConflicts.map((c) => ({
+        rule_id: `conflict_${c.conflict_type}`,
+        alert_type: 'beneficiary_conflict',
+        severity: c.severity === 'critical' ? 'high' : c.severity === 'warning' ? 'medium' : 'low',
+        title: conflictTitle(c.conflict_type),
+        description: c.description,
+        action_href: '/titling',
+        action_label: 'Open Titling & Beneficiaries',
+        context_data: { conflict_type: c.conflict_type, asset_id: c.asset_id },
+      })),
     })
   }
 

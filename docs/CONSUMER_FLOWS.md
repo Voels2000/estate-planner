@@ -399,7 +399,7 @@ On `/dashboard` load, `buildPersonaDashboardAlerts()` derives from existing `loa
 | **Server** | `app/(dashboard)/my-estate-strategy/page.tsx` — staleness-based base-case regen; `buildStrategyHorizons`, `classifyEstateAssets` |
 | **Client** | `app/(dashboard)/my-estate-strategy/_my-estate-strategy-client.tsx`; **`ConsumerEstateFlowView`** in “What happens when I die?” |
 | **Write APIs** | Strategy changes usually on trust-strategy page; base case via `POST /api/consumer/generate-base-case` when needed |
-| **Read APIs / RPCs** | `strategy_line_items`, `projection_scenarios.outputs_s1_first`, `state_estate_tax_rules`, `generate_estate_recommendations` (bypass savings) |
+| **Read APIs / RPCs** | `strategy_line_items`, `projection_scenarios.outputs_s1_first`, `state_estate_tax_rules`, cached `estate_health_scores.recommendations` (bypass savings; live `generate_estate_recommendations` only on cold cache) |
 | **Key lib** | `lib/my-estate-strategy/horizonSnapshots.ts`, `lib/estate/parseBypassTrustSavings.ts` |
 | **UX** | Page title **Tax Horizons & Strategy** + readiness pill; collapsible horizons (Actual vs What-if when advisor strategies exist); **bypass-trust impact bar**; hero tax cards + table with **Estate size / Tax exposure** group headers; **`ConsumerEstateFlowView`** — timeframe tabs drive totals via **`horizonOverride`** from **`buildStrategyHorizons`** (same source as table); prominent estate total above asset tiles; asset tiles = today's holdings + context note on projected horizons; stale-fetch guard on rapid tab clicks |
 | **Compliance** | Inline `DISCLAIMER_STRINGS.estateStrategy` below horizon table; page footer via `DisclaimerBanner` |

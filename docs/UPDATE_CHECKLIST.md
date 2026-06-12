@@ -102,9 +102,14 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **Index shipped:** `idx_state_estate_tax_rules_state_tax_year`
 - [x] **Ops:** `npx supabase db push` applied both migrations; **redeploy Vercel** for `conflict-detector.ts`
 - [x] **Monitor:** Supabase Dashboard → Infrastructure → Disk IO (check in 24h)
-- [ ] **Future (if IO still high):** inline `UPDATE household_alerts … WHERE rule_id = ANY(p_rule_ids)` inside batch RPC (1 statement vs 6 internal function calls) — see [NEXT_SESSION.md § Disk IO](./NEXT_SESSION.md#4-disk-io--post-deploy-monitoring-2026-06-11)
+- [x] **Inline alert resolve** — `20260709180000`: `resolve_household_alerts_batch` uses single `UPDATE … rule_id = ANY(p_rule_ids)`
+- [x] **Recompute dedupe** — `20260709170000` + recompute route: pass consumer composition to `generate_estate_recommendations`; strategy/attorney pages read recommendations cache
+- [x] **`upsert_household_alerts_batch`** — `20260709180000` + `lib/conflict-detector.ts`
 - [ ] **Future (if IO still high):** optional **9-index batch** on hot lookup columns — run Query B in [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql); `assets` still ~35K seq scans in audit
-- [x] SCHEMA_CHANGELOG · DECISION_LOG · NEXT_SESSION · MASTER_ARCHITECTURE · DATABASE_SCHEMA_REFERENCE synced
+- [x] **Recompute dedupe** — `20260709170000`–`20260709180100` + recompute route + recommendations cache on strategy surfaces
+- [x] **Go-live perf audit** — NEXT_SESSION §5 (consumer / advisor / attorney P0–P2)
+- [x] SCHEMA_CHANGELOG · DECISION_LOG · NEXT_SESSION · MASTER_ARCHITECTURE · DATABASE_SCHEMA_REFERENCE · CONSUMER_FLOWS synced
+- [ ] **Ops:** redeploy Vercel Production for recompute + conflict-detector + loadEstatePlanningDashboard changes
 
 ## Billing E2E production resilience (2026-06-09) — shipped
 

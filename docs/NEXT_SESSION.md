@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-11 (Supabase Disk IO — state tax RPC + batched alert resolve)
+# Last updated: 2026-06-11 (Recompute dedupe + go-live performance audit)
 
 ---
 
@@ -31,7 +31,8 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 | `/assess` dynamic state picker | ✅ Shipped | `useSelectedState` · `StatePickerDropdown` · 13-state callout on intro |
 | Pricing surfaces + firm seat billing | ✅ Shipped | `/pricing` advisor/attorney · firm-checkout seat sync · `/billing` seat picker |
 | Billing hardening + billing E2E | ✅ Shipped | P0–P2 + polish · `test:e2e:billing` (21 pass / 2 skip prod) · `billing-e2e.ts` |
-| Supabase Disk IO optimization | ✅ Shipped | `calculate_state_estate_tax` · `resolve_household_alerts_batch` · redeploy Vercel |
+| Supabase Disk IO + recompute dedupe | ✅ Shipped | `20260709150000`–`20260709180100` · recompute route · **redeploy Vercel** |
+| Go-live performance audit | ✅ Done | Consumers / advisors / attorneys — see §5 below |
 | Legal entity placeholders (`/terms`, `/privacy`) | ✅ Shipped | `lib/legal/company.ts` — My Wealth Maps LLC · Snohomish address · RA Alan Voels |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
@@ -44,7 +45,7 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 | Pricing surfaces + firm seat billing | `/pricing` · `firm-checkout` · webhook `seat_count` · `_firm-billing-client.tsx` |
 | Billing hardening + E2E | `npm run test:e2e:billing` · `lib/firm/firmRoster.ts` · consumer duplicate-sub guard |
 | Billing E2E prod fixes | `billing-e2e.ts` · tier/period checkout body · attorney UI redirect race · firm starter skip on Stripe 500 |
-| Disk IO optimization | `20260709150000` · `20260709160000` · `conflict-detector.ts` batch resolve |
+| Disk IO + recompute dedupe | `20260709150000`–`20260709180100` · recompute route · `loadEstatePlanningDashboard` cache |
 | Legal entity constants | `lib/legal/company.ts` → `/terms` · `/privacy` · public footer copyright |
 | `/assess` dynamic state picker | `lib/learn/useSelectedState.ts` · `StatePickerDropdown` · `mwm_selected_state` localStorage |
 | `/learn` discovery & cross-linking | `PublicNav` → `/learn` · homepage state guide card · `/estate-tax` in-app link |
@@ -144,17 +145,44 @@ Deferred. Show a subtle setup card on `/dashboard` when the user has financial d
 
 **Future optimizations (only if IO still elevated after monitoring):**
 
-1. **Inline alert resolve** — replace `resolve_household_alerts_batch` internals (6× `PERFORM resolve_household_alert`) with one indexed `UPDATE`:
+1. **Optional 9-index batch** — run Query B in [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) on production; add missing indexes on `household_id` / `owner_id` / `user_id` for high-traffic tables. Audit flagged **`assets` ~35K seq scans** — investigate `idx_assets_owner_id` usage and additional composite indexes if needed.
 
-```sql
-UPDATE household_alerts
-SET resolved_at = now()
-WHERE household_id = p_household_id
-  AND rule_id = ANY(p_rule_ids)
-  AND resolved_at IS NULL;
-```
+### 5. Go-live performance audit (2026-06-11)
 
-2. **Optional 9-index batch** — run Query B in [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) on production; add missing indexes on `household_id` / `owner_id` / `user_id` for high-traffic tables. Audit flagged **`assets` ~35K seq scans** — investigate `idx_assets_owner_id` usage and additional composite indexes if needed.
+Full scan across consumer, advisor, and attorney surfaces. **Shipped today** addresses recompute path + recommendations cache on strategy surfaces. **Remaining items** are prioritized for post-push sprints — no accuracy regressions unless noted.
+
+#### P0 — fix before public launch
+
+| Area | Issue | Files | Fix |
+|------|-------|-------|-----|
+| **Attorney** | `EstateTaxClient` without `composition` → client POST `/api/estate-composition`; `requireHouseholdAccess` excludes attorney → likely 403 / $0 tax | `app/(attorney)/attorney/clients/[household_id]/page.tsx`, `app/api/estate-composition/route.ts` | Server-prefetch `getCachedComposition`; extend access for attorney |
+| **Attorney** | PDF export uses owner queries with attorney `user.id` | `app/api/export-estate-plan/route.ts` | `verifyAttorneyHouseholdAccess` + client `owner_id` |
+| **Advisor** | Export wiring on Strategy + Meeting Prep **page load** (full export stack + narrative + MC ×3) | `app/advisor/clients/[clientId]/page.tsx`, `lib/advisor/exportMappers.ts` | Lazy-load on Export click only |
+| **Advisor** | `loadScenarioMonteCarlo` + `getCachedComposition` + gifting RPC on **every tab** | `app/advisor/clients/[clientId]/page.tsx` | Tab-gate to overview/estate/strategy/tax/domicile/meeting-prep |
+| **Consumer** | `getCachedComposition` cache miss → live RPC on dashboard, estate-tax, strategy pages | `lib/estate/getCachedComposition.ts` | Warm cache on first save; invalidate when `lifetime_gifts_used` mismatches |
+| **Consumer** | Stale projection path runs full inline compute on `/projections` | `lib/projections/loadProjectionData.ts` | Serve last `outputs_s1_first`; background `generateBaseCase` |
+
+#### P1 — launch week
+
+| Area | Issue | Fix |
+|------|-------|-----|
+| **Consumer** | Dashboard ~40+ queries across sequential phases | Consolidate into cached bundle loader |
+| **Consumer** | `/estate-tax` unbounded `select('*')` on all tax rule years/states | Filter to `tax_year` + `state_primary` |
+| **Consumer** | `/my-estate-trust-strategy` triple `strategy_line_items` queries | Single query, partition in memory |
+| **Consumer** | `generateBaseCase` + recompute fired from multiple stale page views | Per-household debounce / in-flight lock |
+| **Advisor** | Staleness check 9+ queries every client load | Materialized `projection_inputs_version` or skip on non-projection tabs |
+| **Advisor** | `logAdvisorClientAccess` awaited on critical path | `void` fire-and-forget |
+| **Attorney** | `calculate_estate_completeness` always on load; cold-cache live recommendations fallback | Cache-only + skeleton on miss |
+| **All** | Composition cache ignores `lifetime_gifts_used` staleness | Treat mismatch as cache miss |
+
+#### P2 — polish / scale
+
+- Advisor roster: parallelize household + referral fetches after client IDs known
+- Attorney roster estate value omits liabilities (understated vs advisor roster)
+- Unbounded `select('*')` on low-row tables (profile, household helpers)
+- Dashboard `priorHealthScoreRow` query likely no-op (single row per household)
+
+**Diagnostics:** [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run Query A/B/C in Supabase SQL Editor post-launch.
 
 ### 3. Attorney drip steps 2 & 3 — cron verification
 

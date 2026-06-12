@@ -2651,15 +2651,27 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Recompute dedupe: composition pass-through + alert batch upsert
+
+**Decision:** (1) Reorder `/api/recompute-estate-health` to gifting → composition ×2 → `generate_estate_recommendations(p_composition)`; RPC reads `estimated_tax_federal` / `estimated_tax_state` from composition and drops nested `calculate_state_estate_tax`. (2) Add `upsert_household_alerts_batch`; inline `UPDATE` in `resolve_household_alerts_batch`. (3) Strategy/attorney planning loaders read `estate_health_scores.recommendations` cache (live RPC only on cold cache).
+
+**Reasoning:** Recompute was calling `calculate_estate_composition` three times per household write (recommendations + consumer + advisor). Strategy and attorney client pages still hit live `generate_estate_recommendations` on every load. Conflict upserts were N HTTP RPCs per recompute.
+
+**Alternatives considered:** Remove live RPC fallback entirely (deferred — cold-start empty state acceptable but needs UX copy). Vercel recompute coalescing (deferred — infra-heavy).
+
+**Implication:** Migrations `20260709170000`, `20260709180000`, `20260709180100` applied via `db push`. Drop single-arg overload required for PostgREST. **Redeploy Vercel** for recompute route + `conflict-detector.ts` + `loadEstatePlanningDashboard.ts`.
+
+---
+
 ### June 2026 — Supabase Disk IO: state tax RPC + batched alert resolve
 
 **Decision:** Two migrations to cut Disk IO on hot paths: (1) optimize `calculate_state_estate_tax` with `idx_state_estate_tax_rules_state_tax_year` and indexed state+year filters instead of unfiltered year scans; (2) add `resolve_household_alerts_batch` and call it once from `detectConflicts` instead of six sequential `resolve_household_alert` HTTP RPCs.
 
 **Reasoning:** Perf audit showed ~883 `calculate_state_estate_tax` calls with ~5 `state_estate_tax_rules` hits each, and ~24K `resolve_household_alert` client round trips from recompute. Batch RPC cuts network hops; state tax rewrite cuts redundant table access. Voels household verified post-migration (WA MFJ ~$261K state tax).
 
-**Alternatives considered:** Inline `UPDATE household_alerts` in batch RPC now (deferred — batch still runs 6 internal function calls but one client round trip). Full 9-index migration batch now (deferred — monitor Disk IO 24h first; `assets` seq scans may need separate investigation).
+**Alternatives considered:** Full 9-index migration batch now (deferred — monitor Disk IO 24h first; `assets` seq scans may need separate investigation).
 
-**Implication:** Migrations `20260709150000`, `20260709160000` applied via `db push`. **Redeploy Vercel** for `conflict-detector.ts`. Future: single-statement alert resolve + optional index batch per [NEXT_SESSION.md § Disk IO](./NEXT_SESSION.md#4-disk-io--post-deploy-monitoring-2026-06-11).
+**Implication:** Migrations `20260709150000`, `20260709160000` applied via `db push`. Inline alert resolve shipped in `20260709180000`.
 
 ---
 

@@ -439,12 +439,13 @@ Projection snapshots should be invalidated when newer data exists in:
 |-----|---------|
 | `calculate_estate_composition` | Estate asset/tax composition; args `(uuid, text DEFAULT 'consumer', numeric DEFAULT 0)` — third arg `p_lifetime_gifts_used` reduces federal exemption (Session 120) |
 | `calculate_domicile_risk` | Domicile risk scoring |
-| `generate_estate_recommendations` | Gap/recommendation generation |
+| `generate_estate_recommendations` | Gap/recommendation generation; args `(uuid, jsonb DEFAULT NULL)` — pass consumer composition from recompute to skip redundant RPC |
 | `calculate_gifting_summary` | Gifting summary outputs (`lifetime_exemption_used`, annual caps, `gifts` array); horizon callers pass `lifetime_exemption_used` as `lifetimeGiftsUsed` |
 | `get_state_exemptions` | State exemption batch lookup |
 | `upsert_household_alert` | Safe alert writes |
+| `upsert_household_alerts_batch` | Batch alert upsert (one client RPC; used by `detectConflicts`) |
 | `resolve_household_alert` | Mark one rule's alert resolved for a household |
-| `resolve_household_alerts_batch` | Batch resolve (one client RPC; used by `detectConflicts`) |
+| `resolve_household_alerts_batch` | Batch resolve via inline `UPDATE` (one client RPC; used by `detectConflicts`) |
 | `calculate_state_estate_tax` | State estate tax estimate JSONB; indexed via `idx_state_estate_tax_rules_state_tax_year` (2026-06-11) |
 
 ---
@@ -462,7 +463,7 @@ After each schema-affecting session:
 
 ## Migration Reference (Recent)
 
-**Total in repo:** **79** timestamped SQL files — `supabase/migrations/[0-9]*.sql` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Count with: `ls -1 supabase/migrations/[0-9]*.sql | wc -l`
+**Total in repo:** **120** timestamped SQL files — `supabase/migrations/[0-9]*.sql` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Count with: `ls -1 supabase/migrations/[0-9]*.sql | wc -l`
 
 - `20260427190300_create_state_income_tax_brackets_2026.sql`
 - `20260428000001_create_advisor_projection_assumptions.sql`
@@ -501,6 +502,9 @@ After each schema-affecting session:
 - `20260709140000_email_captures_invite_tracking.sql` — `email_captures.invited_at`, `invite_label` (Admin P1)
 - `20260709150000_optimize_calculate_state_estate_tax.sql` — `idx_state_estate_tax_rules_state_tax_year`; optimized `calculate_state_estate_tax` RPC
 - `20260709160000_batch_resolve_household_alerts.sql` — `resolve_household_alerts_batch` RPC
+- `20260709170000_optimize_generate_estate_recommendations.sql` — `p_composition` arg; drops nested state-tax RPC
+- `20260709180000_batch_upsert_household_alerts.sql` — `upsert_household_alerts_batch`; inline resolve `UPDATE`
+- `20260709180100_drop_generate_estate_recommendations_overload.sql` — PostgREST overload fix
 
 **`app_config`:** Terms and other feature keys. Pre-launch A/B rows `ab_upgrade_copy` / `ab_assessment_gate` removed in `20260531000000_remove_ab_test_app_config.sql` (Sprint 12 — personalized upgrade copy and score-visible assess shipped in code).
 

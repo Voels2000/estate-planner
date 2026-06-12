@@ -10,6 +10,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Recompute path dedupe + alert batch upsert (2026-06-11)
+
+**Migrations:** `20260709170000_optimize_generate_estate_recommendations.sql`, `20260709180000_batch_upsert_household_alerts.sql`, `20260709180100_drop_generate_estate_recommendations_overload.sql`
+
+| Change | Detail |
+|--------|--------|
+| **`generate_estate_recommendations(uuid, jsonb DEFAULT NULL)`** | Optional `p_composition`; drops nested `calculate_state_estate_tax`; uses `estimated_tax_federal` / `estimated_tax_state` from composition |
+| **Recompute route** | Gifting → composition ×2 → recommendations with consumer composition → cache (3× composition → 2×) |
+| **`upsert_household_alerts_batch`** | One RPC per `detectConflicts` upsert loop |
+| **`resolve_household_alerts_batch`** | Inline `UPDATE … rule_id = ANY(p_rule_ids)` (replaces 6× internal `resolve_household_alert`) |
+| **App** | `loadEstatePlanningDashboard` + `PlanningGapsSection` read `estate_health_scores.recommendations` cache |
+
+---
+
 ## Supabase Disk IO optimization (2026-06-11)
 
 **Migrations:** `20260709150000_optimize_calculate_state_estate_tax.sql`, `20260709160000_batch_resolve_household_alerts.sql`
@@ -20,7 +34,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 | **`calculate_state_estate_tax`** | Replaced unfiltered year scan + redundant EXISTS/MIN/loop pattern with indexed queries |
 | **`resolve_household_alerts_batch`** | New RPC; `lib/conflict-detector.ts` calls once per `detectConflicts` |
 | **Verify** | Voels (`avoels@outlook.com`) post-migration: WA ~$261K `estimated_state_tax` |
-| **Future** | Inline `UPDATE household_alerts … ANY(p_rule_ids)`; optional 9-index batch if IO still high — [NEXT_SESSION.md](./NEXT_SESSION.md) |
+| **Future** | Optional 9-index batch if IO still high — [NEXT_SESSION.md](./NEXT_SESSION.md) |
 
 ---
 

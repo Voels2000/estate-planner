@@ -21,10 +21,13 @@ export function PlanningGapsSection({
     async function load() {
       setLoading(true)
       const supabase = createClient()
-      const { data } = await supabase.rpc('generate_estate_recommendations', {
-        p_household_id: householdId,
-      })
-      if (data?.recommendations) setRecs(data.recommendations)
+      const { data: row } = await supabase
+        .from('estate_health_scores')
+        .select('recommendations')
+        .eq('household_id', householdId)
+        .maybeSingle()
+      const cached = row?.recommendations as { recommendations?: PlanningTopicRow[] } | null
+      if (cached?.recommendations) setRecs(cached.recommendations)
       setLoading(false)
     }
     load()
