@@ -6,6 +6,7 @@ import { attorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
 import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { countDocumentsOnFile, summarizeMissingDocs } from '@/lib/attorney/clientDocHealth'
+import { loadRosterNetWorthByOwner } from '@/lib/roster/rosterNetWorth'
 
 export default async function AttorneyDashboardPage() {
   const supabase = await createClient()
@@ -84,22 +85,17 @@ export default async function AttorneyDashboardPage() {
         .in('id', ownerIds)
     : { data: [] }
 
-  // 7. Fetch document counts per household
-  const { data: docCounts } = householdIds.length > 0
-    ? await supabase
-        .from('legal_documents')
-        .select('household_id, document_type, is_current, is_deleted')
-        .in('household_id', householdIds)
-        .eq('is_current', true)
-        .eq('is_deleted', false)
-    : { data: [] }
-
-  const { data: assetTotals } = ownerIds.length > 0
-    ? await supabase.from('assets').select('owner_id, value').in('owner_id', ownerIds)
-    : { data: [] }
-  const { data: reTotals } = ownerIds.length > 0
-    ? await supabase.from('real_estate').select('owner_id, current_value').in('owner_id', ownerIds)
-    : { data: [] }
+  const [{ data: docCounts }, netWorthMap] = await Promise.all([
+    householdIds.length > 0
+      ? supabase
+          .from('legal_documents')
+          .select('household_id, document_type, is_current, is_deleted')
+          .in('household_id', householdIds)
+          .eq('is_current', true)
+          .eq('is_deleted', false)
+      : Promise.resolve({ data: [] as { household_id: string; document_type: string }[] }),
+    loadRosterNetWorthByOwner(supabase, ownerIds),
+  ])
 
   const clientCards = visibleClients.map((client) => {
     const household = (households ?? []).find((h) => h.id === client.client_id)
@@ -107,13 +103,7 @@ export default async function AttorneyDashboardPage() {
     const clientDocs = (docCounts ?? []).filter((d) => d.household_id === client.client_id)
     const docHealth = countDocumentsOnFile(clientDocs)
     const ownerId = household?.owner_id
-    const estateValue =
-      (assetTotals ?? [])
-        .filter((a) => a.owner_id === ownerId)
-        .reduce((s, a) => s + Number(a.value ?? 0), 0) +
-      (reTotals ?? [])
-        .filter((r) => r.owner_id === ownerId)
-        .reduce((s, r) => s + Number(r.current_value ?? 0), 0)
+    const rosterNetWorth = ownerId ? (netWorthMap[ownerId] ?? 0) : 0
 
     return {
       connection_id: client.id,
@@ -129,7 +119,7 @@ export default async function AttorneyDashboardPage() {
       docs_on_file: docHealth.onFile,
       docs_total: docHealth.total,
       missing_docs: summarizeMissingDocs(clientDocs),
-      estate_value: estateValue,
+      roster_net_worth: rosterNetWorth,
       last_updated: client.granted_at,
       matter_stage: client.matter_stage ?? 'intake',
       client_status: client.client_status ?? 'active',

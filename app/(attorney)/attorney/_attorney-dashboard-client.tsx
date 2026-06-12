@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AttorneyUpgradePrompt } from '@/components/attorney/AttorneyUpgradePrompt'
 import { SendIntakeRequestModal } from '@/components/attorney/SendIntakeRequestModal'
+import { RosterNetWorthColumnHeader } from '@/components/shared/RosterNetWorthColumnHeader'
+import { formatRosterNetWorth } from '@/lib/roster/rosterNetWorth'
 
 type ClientCard = {
   connection_id: string
@@ -20,7 +22,7 @@ type ClientCard = {
   docs_on_file?: number
   docs_total?: number
   missing_docs?: string
-  estate_value?: number
+  roster_net_worth?: number
   last_updated?: string | null
   matter_stage?: string
   client_status?: string
@@ -181,8 +183,8 @@ export function AttorneyDashboardClient({
             <tr key={client.connection_id} className="hover:bg-neutral-50">
               <td className="px-4 py-3 font-medium text-neutral-900">{client.full_name}</td>
               <td className="px-4 py-3 text-neutral-600">
-                {client.estate_value != null && client.estate_value > 0
-                  ? `$${(client.estate_value / 1_000_000).toFixed(1)}M`
+                {client.roster_net_worth != null && client.roster_net_worth > 0
+                  ? formatRosterNetWorth(client.roster_net_worth)
                   : '—'}
               </td>
               <td className="px-4 py-3 text-neutral-600">

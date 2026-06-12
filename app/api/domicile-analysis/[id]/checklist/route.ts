@@ -1,49 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
+import { assertDomicileSubjectAccess } from '@/lib/domicile/assertDomicileSubjectAccess'
 import { NextResponse } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
 
 type Params = { params: Promise<{ id: string }> }
-
-async function assertAccessToUser(
-  supabase: SupabaseClient,
-  sessionUserId: string,
-  targetUserId: string
-): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
-  if (targetUserId === sessionUserId) {
-    return { ok: true }
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', sessionUserId)
-    .single()
-
-  if (profile?.role !== 'advisor') {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    }
-  }
-
-  const { data: link } = await supabase
-    .from('advisor_clients')
-    .select('id')
-    .eq('advisor_id', sessionUserId)
-    .eq('client_id', targetUserId)
-    .maybeSingle()
-
-  if (!link) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    }
-  }
-
-  return { ok: true }
-}
 
 async function requireAnalysisAccess(
   supabase: SupabaseClient,
@@ -76,7 +38,7 @@ async function requireAnalysisAccess(
     }
   }
 
-  const access = await assertAccessToUser(supabase, sessionUserId, analysis.user_id)
+  const access = await assertDomicileSubjectAccess(supabase, sessionUserId, analysis.user_id)
   if (!access.ok) return access
 
   return { ok: true }

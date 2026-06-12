@@ -1,12 +1,25 @@
 /**
- * Lightweight roster net-worth estimates for the advisor home page.
+ * Lightweight roster net-worth estimates for advisor and attorney home pages.
  *
- * Uses batched table reads (4 queries for all clients) instead of one
+ * Batched table reads (5 parallel queries for all clients) instead of one
  * `calculate_estate_composition` RPC per client. Figures are approximate vs
  * the client workspace Overview tab (which uses full composition).
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+
+/** Shared roster column label — advisor + attorney portals. */
+export const ROSTER_NET_WORTH_LABEL = 'Est. Net Worth'
+
+/** Explains what the roster figure includes (same formula on both portals). */
+export const ROSTER_NET_WORTH_TOOLTIP =
+  'Financial assets plus real estate equity, business interests, and non-ILIT insurance (greater of death benefit or cash value), minus liabilities. Roster summary only — open a client workspace for full estate composition.'
+
+export function formatRosterNetWorth(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
+  return `$${Math.round(n).toLocaleString()}`
+}
 
 function addToMap(map: Record<string, number>, ownerId: string, delta: number) {
   if (!ownerId || !Number.isFinite(delta)) return

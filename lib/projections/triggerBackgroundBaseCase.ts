@@ -27,21 +27,22 @@ async function runBaseCaseAndRecompute(householdId: string): Promise<void> {
 export function triggerBackgroundBaseCaseAndRecompute(householdId: string): void {
   if (!householdId) return
 
+  const schedule = () => {
+    const existing = debounceTimers.get(householdId)
+    if (existing) clearTimeout(existing)
+    debounceTimers.set(
+      householdId,
+      setTimeout(() => {
+        debounceTimers.delete(householdId)
+        void runBaseCaseAndRecompute(householdId)
+      }, DEBOUNCE_MS),
+    )
+  }
+
   if (process.env.VERCEL) {
-    after(() => {
-      void runBaseCaseAndRecompute(householdId)
-    })
+    after(schedule)
     return
   }
 
-  const existing = debounceTimers.get(householdId)
-  if (existing) clearTimeout(existing)
-
-  debounceTimers.set(
-    householdId,
-    setTimeout(() => {
-      debounceTimers.delete(householdId)
-      void runBaseCaseAndRecompute(householdId)
-    }, DEBOUNCE_MS),
-  )
+  schedule()
 }

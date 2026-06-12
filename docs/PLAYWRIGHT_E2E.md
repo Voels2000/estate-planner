@@ -125,13 +125,9 @@ npm run test:e2e:prod:billing -- --workers=1
 | `PLAYWRIGHT_ADVISOR_REFERRAL_CODE` | Default `e2eadv01` |
 | `PLAYWRIGHT_ATTORNEY_REFERRAL_CODE` | Default `e2eatt01` |
 
-## Legacy seeds (deprecated for new work)
+## Legacy seeds
 
-Prefer `npm run seed:e2e`. Old scripts remain for reference:
-
-- `scripts/seed-test-consumer-estate.ts` — tier bump only for existing email
-- `scripts/seed-test-attorney.ts` — superseded by `seed-e2e-fixtures`
-- `scripts/seed-michael-johnson-advisor-demo.ts` — called by master seed
+Use **`npm run seed:e2e`** only. One-off `seed-test-*` / `seed-michael-johnson-*` / `seed-advisor2-*` scripts were removed 2026-06-12 (audit Sprint D).
 
 ## Estate verification (numeric reconciliation)
 
@@ -166,7 +162,7 @@ Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) unde
 
 **Golden path:** `npm run seed:golden-path` · `npm run test:e2e:golden-path` — verify onramp gate: `npx tsx scripts/check-golden-path-onramp-gate.ts` (score ≥ 60, wizard complete, has data).
 
-**Recompute on Vercel:** `afterHouseholdWrite` uses Next.js `after()` + immediate trigger (no post-response `setTimeout`) so asset POSTs fire `/api/recompute-estate-health` reliably after deploy.
+**Recompute on Vercel:** `afterHouseholdWrite` → `triggerEstateHealthRecompute` uses Next.js `after()` + **3s debounced** `setTimeout` per household (same coalescing as local) so rapid saves do not storm `/api/recompute-estate-health`.
 
 ## `@production` tag (42 tests)
 

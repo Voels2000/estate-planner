@@ -15,6 +15,8 @@ import { AdvisorEmptyStateCta } from '@/components/advisor/AdvisorEmptyStateCta'
 import { AdvisorFirstClientPlaybook } from '@/components/advisor/AdvisorFirstClientPlaybook'
 import { ClientAttentionRow } from '@/components/advisor/ClientAttentionRow'
 import { HealthScoreBadge } from '@/components/shared/HealthScoreBadge'
+import { RosterNetWorthColumnHeader } from '@/components/shared/RosterNetWorthColumnHeader'
+import { formatRosterNetWorth } from '@/lib/roster/rosterNetWorth'
 import { AdvisorValuePropBanner } from '@/components/advisor/AdvisorValuePropBanner'
 import { ReferralImpactPanel } from '@/components/advisor/ReferralImpactPanel'
 
@@ -108,12 +110,6 @@ const STATUS_COLORS: Record<string, string> = {
   needs_review: 'bg-amber-100 text-amber-700',
   at_risk: 'bg-red-100 text-red-700',
   inactive: 'bg-neutral-100 text-neutral-500',
-}
-
-function formatDollars(n: number) {
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`
-  return `$${Math.round(n).toLocaleString()}`
 }
 
 function formatDate(d: string) {
@@ -690,7 +686,7 @@ Ref: ${referralCode}`
                           )}
                         </td>
                         <td className="px-6 py-4 font-medium text-neutral-900">
-                          {isPending ? '—' : formatDollars(netWorthMap[c.client_id ?? ''] ?? 0)}
+                          {isPending ? '—' : formatRosterNetWorth(netWorthMap[c.client_id ?? ''] ?? 0)}
                         </td>
                         <td className="px-6 py-4">
                           {isPending ? (

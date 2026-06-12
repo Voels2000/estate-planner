@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { assertDomicileSubjectAccess } from '@/lib/domicile/assertDomicileSubjectAccess'
 import { NextResponse } from 'next/server'
-import type { SupabaseClient } from '@supabase/supabase-js'
 
 export const runtime = 'nodejs'
 
@@ -12,45 +12,6 @@ type ChecklistInsert = {
   label: string
   description: string
   priority: 'high' | 'standard'
-}
-
-async function assertAccessToUser(
-  supabase: SupabaseClient,
-  sessionUserId: string,
-  targetUserId: string
-): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
-  if (targetUserId === sessionUserId) {
-    return { ok: true }
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', sessionUserId)
-    .single()
-
-  if (profile?.role !== 'advisor') {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    }
-  }
-
-  const { data: link } = await supabase
-    .from('advisor_clients')
-    .select('id')
-    .eq('advisor_id', sessionUserId)
-    .eq('client_id', targetUserId)
-    .maybeSingle()
-
-  if (!link) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    }
-  }
-
-  return { ok: true }
 }
 
 export async function POST(request: Request) {
@@ -82,7 +43,7 @@ export async function POST(request: Request) {
 
   const effectiveUserId = (user_id as string | undefined) ?? user.id
 
-  const access = await assertAccessToUser(supabase, user.id, effectiveUserId)
+  const access = await assertDomicileSubjectAccess(supabase, user.id, effectiveUserId)
   if (!access.ok) return access.response
   let resolvedHouseholdId = (household_id as string | null | undefined) ?? null
   if (!resolvedHouseholdId) {
@@ -166,7 +127,7 @@ export async function GET(request: Request) {
 
   const targetUserId = clientId ?? user.id
 
-  const access = await assertAccessToUser(supabase, user.id, targetUserId)
+  const access = await assertDomicileSubjectAccess(supabase, user.id, targetUserId)
   if (!access.ok) return access.response
 
   const { data, error } = await supabase

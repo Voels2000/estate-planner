@@ -72,12 +72,34 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 ## Code audit Sprint A — consistency + E2E ops (2026-06-12) — shipped
 
 - [x] `POST /api/import/commit` — `afterHouseholdWriteForOwner` after bulk insert (bundle + recompute)
+- [x] `POST`/`DELETE` `/api/strategy-configs` — `afterHouseholdWrite` after upsert / soft-deactivate
 - [x] Advisor meeting-prep routes — `estate_composition_cache` query scoped with `source_role: consumer`
 - [x] `test:e2e:cross-role` — `johnson-setup` → `advisor-client-setup`
 - [x] `test:e2e:security-smoke` local vs `test:e2e:security-smoke:prod` (prod public API split)
 - [x] `E2E_SKIP_RECOMPUTE` — skip background recompute during local E2E (`triggerEstateHealthRecompute`)
 - [x] E2E fixes: spouse grid selectors, attorney aref `waitForFunction`, health-check dashboard assertion
 - [x] PLAYWRIGHT_E2E · DECISION_LOG · MASTER_ARCHITECTURE · NEXT_SESSION synced
+
+## Code audit Sprint C — safe performance (2026-06-12) — shipped
+
+- [x] `triggerEstateHealthRecompute` — Vercel uses `after()` + 3s debounce (same coalescing as local; no UX/data change)
+- [x] `triggerBackgroundBaseCaseAndRecompute` — Vercel path aligned to debounced `after(schedule)`
+- [x] `app/advisor/page.tsx` — `Promise.all` for households/referral + health/net-worth/alerts (query order only)
+- [x] Domicile API — `assertDomicileSubjectAccess` requires `CONNECTED_ADVISOR_CLIENT_STATUSES`
+- [x] Attorney roster — `loadRosterNetWorthByOwner` (`lib/roster/rosterNetWorth.ts`); `RosterNetWorthColumnHeader` + tooltip on both portals
+- [x] MASTER_ARCHITECTURE · SCHEMA_CHANGELOG · DECISION_LOG · NEXT_SESSION synced (roster + domicile)
+- [ ] **Deferred:** gifting summary cache; dashboard bundle dedupe refactor
+
+## Code audit Sprint D — dead code removal (2026-06-12) — shipped
+
+- [x] Removed unused components: `GiftingDashboardClient`, `EstateHealthScoreBlock`, `MyEstateStrategyHealthScore`
+- [x] Removed unused libs: `lib/brand/classes.ts`, `lib/ui/form.ts` (canonical: `components/ui/form.ts`)
+- [x] Removed deprecated `EstateCalloutCard()` wrapper; `EstateCalloutCardProps` + `EstateSummaryHeroAndMetrics` unchanged
+- [x] Removed `PLANNING_MISSING_PROJECTION_ACTIONS` alias (callers use `_TIER2` / `_TIER3`)
+- [x] Removed superseded scripts (`seed-test-*`, `seed-michael-johnson-*`, `seed-advisor2-*`, `check_income`, `mwm-indigo-sweep.py`) — canonical: `npm run seed:e2e`
+- [x] Removed `app/advisor/prospect/page.tsx` — `/advisor/prospect` still redirects via `next.config.ts`
+- [x] Sprint A leftover: `POST`/`DELETE` `/api/strategy-configs` → `afterHouseholdWrite`
+- [x] MASTER_ARCHITECTURE · PLAYWRIGHT_E2E · SCHEMA_CHANGELOG · DECISION_LOG · NEXT_SESSION synced
 
 ## Code audit Sprint B — E2E test cleanup (2026-06-12) — shipped
 

@@ -312,8 +312,3 @@ export function EstateTaxSnapshotPanel({
     </div>
   )
 }
-
-/** @deprecated Use EstateSummaryHeroAndMetrics — kept for import compatibility. */
-export function EstateCalloutCard(props: EstateCalloutCardProps) {
-  return <EstateSummaryHeroAndMetrics {...props} />
-}

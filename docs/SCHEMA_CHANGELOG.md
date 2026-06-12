@@ -10,6 +10,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Code audit Sprint C + D + roster/domicile alignment (2026-06-12, code only)
+
+| Change | Detail |
+|--------|--------|
+| **Recompute debounce (Vercel)** | `triggerEstateHealthRecompute` + `triggerBackgroundBaseCaseAndRecompute` — `after()` + 3s per-household coalescing on Vercel (matches local; same eventual scores) |
+| **Advisor roster** | `app/advisor/page.tsx` — parallel fetches after `clientIds` known |
+| **Strategy configs** | `POST`/`DELETE` `/api/strategy-configs` → `afterHouseholdWrite` (bundle invalidation + recompute; same as other consumer writes) |
+| **Domicile API** | `lib/domicile/assertDomicileSubjectAccess` — advisor link must be `active` or `accepted` (`CONNECTED_ADVISOR_CLIENT_STATUSES`) |
+| **Shared roster net worth** | `lib/roster/rosterNetWorth.ts` — advisor + attorney home use `loadRosterNetWorthByOwner`; `RosterNetWorthColumnHeader` + tooltip (“Est. Net Worth”) |
+| **Dead code** | Removed unused components/libs, deprecated exports, superseded seed scripts; `/advisor/prospect` page removed (redirect unchanged) |
+
+**Deferred:** gifting cache; dashboard query dedupe.
+
+---
+
 ## Code audit Sprint A — import hook + E2E ops (2026-06-12, code only)
 
 | Change | Detail |

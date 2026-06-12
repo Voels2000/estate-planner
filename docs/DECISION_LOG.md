@@ -1,8 +1,44 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-12 (Production E2E smoke tags)
+# Last updated: 2026-06-12 (Audit Sprint C/D + domicile gate + roster alignment)
 
 ---
+
+---
+
+## Domicile API gate + shared roster net worth (2026-06-12)
+
+**Decision:** Align domicile advisor access with `assertHouseholdAccess` (`CONNECTED_ADVISOR_CLIENT_STATUSES` only). Share one roster net-worth loader and column definition across advisor and attorney home pages.
+
+**Domicile:** `lib/domicile/assertDomicileSubjectAccess.ts` — advisor must have `active` or `accepted` link (not `pending` / `consumer_requested`). Matches `/domicile-analysis` client picker; closes API hole.
+
+**Roster net worth:** `lib/roster/rosterNetWorth.ts` — `loadRosterNetWorthByOwner` (assets + RE equity + business FMV + non-ILIT insurance − liabilities). Attorney `/attorney` roster now uses same formula as `/advisor`. **`RosterNetWorthColumnHeader`** + **`ROSTER_NET_WORTH_TOOLTIP`** on both portals (“Est. Net Worth”). Client workspace composition unchanged.
+
+**Reasoning:** Attorney roster previously summed assets + full RE value (mislabeled “Estate Value”). Product approved aligning formulas and labeling honestly; attorney roster numbers may shift vs old column.
+
+**Files:** `assertDomicileSubjectAccess.ts`, `lib/roster/rosterNetWorth.ts`, `RosterNetWorthColumnHeader.tsx`, domicile API routes, `app/(attorney)/attorney/page.tsx`, `app/advisor/_advisor-client.tsx`.
+
+---
+
+## Code audit Sprint C + D — safe perf + dead code (2026-06-12)
+
+**Decision:** Close audit sprints C and D. Defer gifting summary cache and dashboard bundle dedupe (stale-read / refactor risk).
+
+**Sprint C (shipped):**
+
+| Change | Why safe |
+|--------|----------|
+| Vercel recompute + base-case use `after()` + 3s debounce | Same eventual recompute as local; reduces IO storms on rapid saves |
+| Advisor roster `Promise.all` | Query scheduling only; same loaders and props |
+| Domicile + attorney roster (see above) | Access tightening + shared roster definition |
+
+**Sprint D (shipped):** Delete zero-import components (`GiftingDashboardClient`, legacy health score blocks), unused `lib/brand/classes` + `lib/ui/form`, deprecated `EstateCalloutCard()` wrapper and `PLANNING_MISSING_PROJECTION_ACTIONS` alias, superseded one-off seed scripts (canonical `seed:e2e`), redundant `app/advisor/prospect/page.tsx` (`next.config.ts` redirect preserved).
+
+**Sprint A leftover:** `afterHouseholdWrite` on strategy-config upsert/delete — aligns with other consumer write routes; no new client behavior.
+
+**Still deferred:** Gifting summary cache; dashboard bundle dedupe refactor.
+
+**Files:** `triggerEstateHealthRecompute.ts`, `triggerBackgroundBaseCase.ts`, `app/advisor/page.tsx`, `app/api/strategy-configs/route.ts`, deleted dead-code paths above.
 
 ---
 

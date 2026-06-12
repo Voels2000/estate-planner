@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-12 (audit Sprint A + E2E_SKIP_RECOMPUTE)
+# Last updated: 2026-06-12 (audit Sprint C/D + domicile gate + roster alignment)
 
 ---
 
@@ -38,6 +38,10 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 | E2E local DB load (`E2E_SKIP_RECOMPUTE`) | ✅ Shipped | `.env.test` · `triggerEstateHealthRecompute` guard |
 | Code audit Sprint A (import + meeting-prep + security split) | ✅ Shipped | See UPDATE_CHECKLIST § Code audit Sprint A |
 | Code audit Sprint B (test cleanup) | ✅ Shipped | Merged/removed duplicate specs · advisor selectors · life-events cleanup |
+| Code audit Sprint C (safe perf) | ✅ Shipped | Vercel recompute debounce · advisor roster `Promise.all` |
+| Code audit Sprint D (dead code) | ✅ Shipped | Unused components/libs/scripts removed · `/advisor/prospect` redirect only |
+| Domicile API advisor gate | ✅ Shipped | `assertDomicileSubjectAccess` · `CONNECTED_ADVISOR_CLIENT_STATUSES` |
+| Shared roster net worth | ✅ Shipped | `lib/roster/rosterNetWorth.ts` · advisor + attorney · Est. Net Worth tooltip |
 | Homepage CI lint (`no-html-link-for-pages`) | ✅ Shipped | `app/(public)/page.tsx` — `/learn` + other internal routes use `<Link>` |
 | Legal entity placeholders (`/terms`, `/privacy`) | ✅ Shipped | `lib/legal/company.ts` — My Wealth Maps LLC · Snohomish address · RA Alan Voels |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
@@ -192,8 +196,8 @@ Full scan across consumer, advisor, and attorney surfaces. **Shipped today** add
 
 #### P2 — polish / scale
 
-- Advisor roster: parallelize household + referral fetches after client IDs known
-- Attorney roster estate value omits liabilities (understated vs advisor roster)
+- [x] Advisor roster: parallelize household + referral fetches after client IDs known (2026-06-12 audit Sprint C)
+- [x] Attorney roster: shared `loadRosterNetWorthByOwner` + Est. Net Worth column tooltip (2026-06-12)
 - Unbounded `select('*')` on low-row tables (profile, household helpers)
 
 **Diagnostics:** [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) — run Query A/B/C in Supabase SQL Editor post-launch.

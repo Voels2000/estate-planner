@@ -470,7 +470,7 @@ Canonical projection path is `computeCompleteProjection` only; legacy `lib/calcu
 - Gifting scenario calculator on `my-estate-trust-strategy/_client.tsx` exposes **Save to my plan →** (persists consumer line item via `POST /api/strategy-line-items`).
 - As of Session 99, the gifting tab adds **Compare a second scenario** (side-by-side totals + **Save comparison to plan →**). As of Session 100, each named plan is a distinct row (upsert key includes `scenario_name`); **Your Saved Strategies** Remove passes `scenarioName` so only the targeted row is deactivated.
 - As of Session 96, after consumer strategy save or remove on trust-strategy surfaces, the client calls `router.refresh()` so server-rendered horizons update immediately.
-- As of Session 101, `POST`/`DELETE` on `/api/strategy-line-items` and `PATCH`/`DELETE` on `/api/consumer/strategy-recommendation` call `lib/consumer/afterHouseholdWrite` (touch `households.updated_at` + `triggerEstateHealthRecompute`). Clients no longer call `/api/recompute-estate-health` directly (that route requires `x-recompute-secret`).
+- As of Session 101, `POST`/`DELETE` on `/api/strategy-line-items` and `PATCH`/`DELETE` on `/api/consumer/strategy-recommendation` call `lib/consumer/afterHouseholdWrite` (touch `households.updated_at` + `triggerEstateHealthRecompute`). **2026-06-12:** `POST`/`DELETE` on `/api/strategy-configs` aligned to the same hook. Clients no longer call `/api/recompute-estate-health` directly (that route requires `x-recompute-secret`).
 - As of **2026-05-27**, successful `POST`/`PATCH`/`DELETE` on `/api/strategy-line-items` also call `revalidatePath` for `/my-estate-trust-strategy`, `/my-estate-strategy`, `/dashboard`, `/estate-tax` (mirrors gift-history). `PATCH` on `/api/consumer/growth-assumptions` revalidates `/scenarios`, `/projections`; `/api/consumer/allocation-targets` revalidates `/allocation`, `/projections`.
 - **Your Saved Strategies** table supports **Remove** per row (`DELETE /api/strategy-line-items` soft-deactivates via `is_active=false`; optional `scenarioName` scopes delete to one named consumer strategy).
 - `CharitableGivingDashboard` exposes **Save to my plan →** for logged charitable totals (`strategy_source='daf'`, `source_role='consumer'`) via `/api/strategy-line-items`, with `router.refresh()` only on the client.
@@ -701,9 +701,7 @@ Two layers — do not conflate them:
 | **`scripts/seed-e2e-fixtures.ts`** | **Canonical go-live reset** — all `@mywealthmaps.test` users, households, directory listings, `.env.test` output ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)) |
 | `scripts/e2e-test-identities.ts` | Single source of truth for E2E emails, passwords, referral codes |
 | `scripts/prune-e2e-household-artifacts.ts` | Removes Playwright-named rows without deleting users |
-| `scripts/seed-michael-johnson-advisor-demo.ts` | Called by master seed for advisor client workspace |
-| `scripts/seed-test-consumer-estate.ts` | Legacy: tier bump only for an existing email |
-| `scripts/seed-test-attorney.ts` | Legacy: use `seed:e2e` instead |
+| *(removed 2026-06-12)* | Legacy one-off seeds (`seed-test-*`, `seed-michael-johnson-*`, `seed-advisor2-*`) — use **`seed:e2e` only** |
 
 ```bash
 npm run seed:e2e
@@ -731,12 +729,12 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 | `npm run test:e2e:complete` | consumer + advisor + attorney + public |
 | `npm run test:e2e:consumer` | consumer-setup + consumer (137) |
 | `npm run test:e2e:advisor` | advisor-setup + advisor (45) |
-| `npm run test:e2e:attorney` | attorney-setup + attorney (2) — requires `seed-test-attorney.ts` on target env |
+| `npm run test:e2e:attorney` | attorney-setup + attorney (2) — requires `npm run seed:e2e` on target env |
 | `npm run test:e2e:public` | public (59) |
 | `npm run test:import:unit` | import parse unit (7) |
 | `npm run test:import:api` | import commit API (consumer project subset) |
 
-**Staging verification (2026-05-25, `PLAYWRIGHT_BASE_URL` staging, `--workers=1`):** consumer **127 passed / 5 skipped** (strategy tests need `PLAYWRIGHT_HOUSEHOLD_ID`; import API can flake under load); advisor **45 passed**; public **57 passed / 2 skipped**; attorney setup **requires** portal user from `scripts/seed-test-attorney.ts` (default creds fail if not seeded). Re-run failures with `--workers=1` before treating as regressions.
+**Staging verification (2026-05-25, `PLAYWRIGHT_BASE_URL` staging, `--workers=1`):** consumer **127 passed / 5 skipped** (strategy tests need `PLAYWRIGHT_HOUSEHOLD_ID`; import API can flake under load); advisor **45 passed**; public **57 passed / 2 skipped**; attorney setup **requires** `npm run seed:e2e` on target env. Re-run failures with `--workers=1` before treating as regressions.
 
 **Consumer coverage highlights:** route regression (full CONSUMER_NAV_MAP), sidebar/footer contract, estate-tier gates, profile save, UI asset save, health-check wizard, family CRUD, titling on real assets, billing, digital assets, life events, terms accept, import access, strategy recommendation panel (when advisor linked). **`consumer-core-recompute.spec.ts`** automates CONSUMER_RELEASE_SMOKE_TEST §2.4.
 
@@ -988,7 +986,7 @@ Badges: Ops home (overdue + due-today tasks + stale crons); Directories (pending
 
 - **Canonical tokens:** `app/globals.css` — `--mwm-*` brand variables + short aliases (`--navy`, `--gold`, …).
 - **Docs & Cursor prompts:** `DESIGN_SYSTEM.md` (My Wealth Maps), `CURSOR_PROMPT_TEMPLATE.md` (§22 pointer + Phase 3 sweep).
-- **Shared primitives:** `components/ui/Button`, `Card` (extends `ComponentPropsWithoutRef<'div'>` — spreads `aria-pressed` and other div attrs onto root), `SectionHeader`, **`InfoTooltip`** (click-to-toggle inline explainer; `aria-describedby`; viewport-aware above/below placement); `components/ui/form.ts` / `lib/ui/form.ts`; `lib/utils.ts` (`cn`).
+- **Shared primitives:** `components/ui/Button`, `Card` (extends `ComponentPropsWithoutRef<'div'>` — spreads `aria-pressed` and other div attrs onto root), `SectionHeader`, **`InfoTooltip`** (click-to-toggle inline explainer; `aria-describedby`; viewport-aware above/below placement); `components/ui/form.ts` (`formControlClass`, `formLabelClass`, `formErrorClass`); `lib/utils.ts` (`cn`).
 - **Tax term explainers (Domain 3):** `lib/estate/taxTermExplainers.ts` — `taxTermExplainer(key, ctx?)` for educational tooltips (not compliance footers). Wired: **`EstateReadinessCard`**; dashboard tax hero (`statePrimary` only); **`/estate-tax`**; advisor **`StateTaxPanel`**; **`/projections`** chart Base case legend + **`DISCLAIMER_STRINGS.projectionsChart`**; **`GiftingDashboard`** `annual_exclusion` / `superfunding`. Deferred: hero full `taxTermCtx`.
 - **Authenticated chrome:** `app/(dashboard)/_components/sidebar-nav.tsx` (navy active fill, gold left accent, gold “M” logo), `dashboard-shell.tsx` (off-white page shell), `LifeEventBanner.tsx` (gold action links).
 - **Tailwind v4 rule:** arbitrary colors in class names need the `color:` prefix (e.g. `text-[color:var(--mwm-gold)]`) or styles fail silently. Required for Phase 3 indigo sweep across planning pages.
@@ -1183,7 +1181,8 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 - Advisor client staleness fetch orchestration is now extracted into `lib/advisor/loaders.ts` (`loadAdvisorProjectionStaleness`) so `app/advisor/clients/[clientId]/page.tsx` focuses on page composition rather than timestamp query plumbing.
 - Advisor client page bootstrap access/ownership reads are now extracted into `lib/advisor/clientPageLoaders.ts` (`loadAdvisorContextOrRedirect`, `loadAdvisorClientLinkOrRedirect`, `loadAdvisorClientHouseholdOrRedirect`) to keep route guards consistent and reduce page-level query noise.
 - Advisor client bulk tab data fetch orchestration is now extracted into `lib/advisor/loaders.ts` (`loadAdvisorClientDatasets`) so the route can consume a single loader result instead of maintaining a large inline `Promise.all` query block. Client route runs staleness, composition RPC, and datasets **in parallel**; state tax/income rules are scoped to advisor states + projection years (not full national tables).
-- Advisor roster net worth uses `lib/advisor/rosterNetWorth.ts` (`loadRosterNetWorthByOwner`) — batched reads on `/advisor`, not per-client `calculate_estate_composition`.
+- **Roster net worth (advisor + attorney home):** `lib/roster/rosterNetWorth.ts` — `loadRosterNetWorthByOwner` (batched reads: assets, liabilities, RE equity, business FMV, non-ILIT insurance). Column **Est. Net Worth** with shared tooltip via `components/shared/RosterNetWorthColumnHeader.tsx`. Approximate vs client workspace `getCachedComposition`.
+- **Domicile API access (2026-06-12):** `lib/domicile/assertDomicileSubjectAccess` — advisor acting on client `user_id` requires `advisor_clients.status` in `CONNECTED_ADVISOR_CLIENT_STATUSES` (same as `assertHouseholdAccess` and `/domicile-analysis` client picker).
 - Advisor client post-fetch normalization/mapping is now extracted into `lib/advisor/mappers.ts` (`mapAdvisorClientDatasets`) for beneficiary normalization, scenario output selection, and dataset shaping before route composition.
 - Advisor export payload assembly is now extracted into `lib/advisor/exportMappers.ts` (`buildAdvisorExportPayloads`) so the advisor client route no longer owns PDF/Excel/export-panel payload construction logic.
 - **Export federal tax (2026-06-06):** **`lib/tax/federalExportTax.ts`** — **`computeFederalExportTax()`** wraps **`computeFederalEstateTax()`** with latest **`federal_estate_tax_brackets`**, OBBBA exemption minus **`lifetimeGiftsUsed`**, and **`no_exemption`** (zero credit). Wired in **`exportMappers.ts`**, **`loadAdvisorExportWiring.ts`**, advisor **`page.tsx`**. PDF page 3 reads precomputed **`PDFReportData.federalTax`** (no inline flat 40%). Verify: **`scripts/verify-export-federal-brackets.ts`**.

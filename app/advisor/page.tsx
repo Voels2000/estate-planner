@@ -9,7 +9,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { buildAllEventReferralUrls } from '@/lib/events/referral'
-import { loadRosterNetWorthByOwner } from '@/lib/advisor/rosterNetWorth'
+import { loadRosterNetWorthByOwner } from '@/lib/roster/rosterNetWorth'
 import { loadRosterAlertCounts } from '@/lib/advisor/rosterAlertCounts'
 import AdvisorClient from './_advisor-client-wrapper'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -58,12 +58,16 @@ export default async function AdvisorPage() {
     .map(ac => ac.client_id)
     .filter(Boolean)
 
-  const { data: households } = clientIds.length > 0
-    ? await supabase
-        .from('households')
-        .select('id, owner_id')
-        .in('owner_id', clientIds)
-    : { data: [] }
+  const [{ data: households }, { data: advisorListing }] = await Promise.all([
+    clientIds.length > 0
+      ? supabase.from('households').select('id, owner_id').in('owner_id', clientIds)
+      : Promise.resolve({ data: [] as { id: string; owner_id: string }[] }),
+    supabase
+      .from('advisor_directory')
+      .select('referral_code')
+      .eq('profile_id', user.id)
+      .maybeSingle(),
+  ])
 
   // Build household_id lookup: owner_id -> household_id
   const ownerToHousehold: Record<string, string> = {}
@@ -71,31 +75,24 @@ export default async function AdvisorPage() {
     ownerToHousehold[h.owner_id] = h.id
   }
 
-  // Fetch health scores
   const householdIds = Object.values(ownerToHousehold)
-  const { data: healthScores } = householdIds.length > 0
-    ? await supabase
-        .from('estate_health_scores')
-        .select('household_id, score')
-        .in('household_id', householdIds)
-    : { data: [] }
+
+  const [{ data: healthScores }, netWorthMap, alertCountsMap] = await Promise.all([
+    householdIds.length > 0
+      ? supabase
+          .from('estate_health_scores')
+          .select('household_id, score')
+          .in('household_id', householdIds)
+      : Promise.resolve({ data: [] as { household_id: string; score: number }[] }),
+    loadRosterNetWorthByOwner(supabase, clientIds),
+    loadRosterAlertCounts(supabase, householdIds),
+  ])
 
   const healthScoreMap: Record<string, number> = {}
   for (const hs of healthScores ?? []) {
     const ownerId = Object.entries(ownerToHousehold).find(([, hid]) => hid === hs.household_id)?.[0]
     if (ownerId) healthScoreMap[ownerId] = hs.score
   }
-
-  // Roster net worth: batched reads (not N× composition RPC). Client workspace uses full RPC.
-  const netWorthMap = await loadRosterNetWorthByOwner(supabase, clientIds)
-
-  const alertCountsMap = await loadRosterAlertCounts(supabase, householdIds)
-
-  const { data: advisorListing } = await supabase
-    .from('advisor_directory')
-    .select('referral_code')
-    .eq('profile_id', user.id)
-    .maybeSingle()
 
   const referralCode = advisorListing?.referral_code ?? null
   const eventReferralUrls = referralCode

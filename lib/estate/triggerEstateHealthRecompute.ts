@@ -1,3 +1,5 @@
+import { after } from 'next/server'
+
 const LOG_PREFIX = '[triggerEstateHealthRecompute]'
 
 const recomputeTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -85,20 +87,23 @@ export async function triggerEstateHealthRecompute(
     return
   }
 
-  // Vercel serverless often freezes before a post-response setTimeout fires on fast routes (e.g. assets POST).
+  const schedule = () => {
+    const existing = recomputeTimers.get(householdId)
+    if (existing) clearTimeout(existing)
+    recomputeTimers.set(
+      householdId,
+      setTimeout(() => {
+        recomputeTimers.delete(householdId)
+        void runRecomputeHttp(householdId, appUrl)
+      }, DEBOUNCE_MS),
+    )
+  }
+
+  // Extend lifetime on Vercel so debounced setTimeout can fire (same 3s coalescing as local).
   if (process.env.VERCEL) {
-    void runRecomputeHttp(householdId, appUrl)
+    after(schedule)
     return
   }
 
-  const existing = recomputeTimers.get(householdId)
-  if (existing) clearTimeout(existing)
-
-  recomputeTimers.set(
-    householdId,
-    setTimeout(() => {
-      recomputeTimers.delete(householdId)
-      void runRecomputeHttp(householdId, appUrl)
-    }, DEBOUNCE_MS),
-  )
+  schedule()
 }

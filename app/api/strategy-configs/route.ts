@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { afterHouseholdWrite } from '@/lib/consumer/afterHouseholdWrite'
 import { requireHouseholdAccess } from '@/lib/api/assertHouseholdAccess'
 import { parseHouseholdIdBody, parseHouseholdIdParam } from '@/lib/api/schemas/householdAccess'
 
@@ -54,6 +55,7 @@ export async function POST(request: NextRequest) {
     )
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  await afterHouseholdWrite(supabase, parsed.householdId)
   return NextResponse.json({ success: true })
 }
 
@@ -81,5 +83,6 @@ export async function DELETE(request: NextRequest) {
     .eq('strategy_type', strategyType)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  await afterHouseholdWrite(supabase, parsed.householdId)
   return NextResponse.json({ success: true })
 }

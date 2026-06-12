@@ -22,9 +22,6 @@ export const PLANNING_MISSING_PROJECTION_ACTIONS_TIER3 = [
   { href: '/my-estate-strategy', label: 'Generate estate plan →' },
 ] as const
 
-/** @deprecated Use TIER2 on `/projections` and `/complete`; TIER3 only where base_case generate applies. */
-export const PLANNING_MISSING_PROJECTION_ACTIONS = PLANNING_MISSING_PROJECTION_ACTIONS_TIER3
-
 export function planningMissingProjectionActions(userTier: number) {
   return userTier >= 3
     ? [...PLANNING_MISSING_PROJECTION_ACTIONS_TIER3]
