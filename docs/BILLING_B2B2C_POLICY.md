@@ -2,7 +2,7 @@
 
 **Canonical pricing + handoff policy** for professional subscriptions, firm seats, and optional consumer billing transfer when a client connects.
 
-**Related:** [LAUNCH_CHECKLIST.md § Stripe](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) · [DECISION_LOG.md](./DECISION_LOG.md)
+**Related:** ./archive/LAUNCH_CHECKLIST.md § Stripe](./archive/LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) · [DECISION_LOG.md](./DECISION_LOG.md)
 
 ---
 
@@ -81,7 +81,7 @@ Status: **TBD — fill Stripe Dashboard + env vars on go-live day.** Code refere
 | Retirement (2) | + projections, MC | TBD | TBD | `STRIPE_PRICE_RETIREMENT_*` |
 | Estate (3) | + strategies, estate tax | TBD | TBD | `STRIPE_PRICE_ESTATE_*` |
 
-See [LAUNCH_CHECKLIST § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
+See [archived LAUNCH.md § Stripe Setup](./archive/LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
 
 ---
 

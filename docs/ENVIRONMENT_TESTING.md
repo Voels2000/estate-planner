@@ -4,7 +4,7 @@
 
 **Audience:** Solo founder today; structured so a future collaborator can follow the same flow without putting production secrets in GitHub.
 
-**Related:** [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) (enforceable local → preview → prod gates) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [docs/audits/README.md](./audits/README.md)
+**Related:** [LAUNCH.md](./LAUNCH.md) (enforceable local → preview → prod gates) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [LAUNCH.md](./archive/LAUNCH_CHECKLIST.md) · [docs/audits/README.md](./audits/README.md)
 
 ---
 

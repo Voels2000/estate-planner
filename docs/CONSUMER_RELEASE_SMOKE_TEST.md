@@ -34,7 +34,7 @@ Tester: Manual
 ### Post-launch (not blockers)
 
 - **Sprint P-1 + P-2 (2026-06-02):** Pre-launch perf shipped (`5c24160`, `47a38f3`) — Promise.all, indexes, debounce, next/font, recommendations cache, projections cache-first, auth dedup. Re-verify dashboard TTFB after deploy; remaining ceiling is estate composition read model ([PERF_SPRINT_P1.md](./archive/sprints/PERF_SPRINT_P1.md)).
-- **Before open signups (non-code):** [LAUNCH_GATE.md](./LAUNCH_GATE.md) + C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)); go-live day: signup → **confirm email** → login → dashboard
+- **Before open signups (non-code):** [LAUNCH.md](./LAUNCH.md) + C-4 manual Stripe walkthrough ([BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md)); go-live day: signup → **confirm email** → login → dashboard
 - E2E staging flakiness under parallel workers — re-run with `--workers=1`
 
 ### Sprint 17 — production drip verify
@@ -61,9 +61,9 @@ Schedule reference: `lib/emails/drip-templates.ts` (day 3 step 2, day 7 step 3).
 | Account | Consumer with an existing household and some assets already entered |
 | Tier | **Estate (tier 3)** for My Family + Titling; **Retirement (tier 2)+** for Allocation |
 | Baseline | Open **Dashboard** and note **Estate Readiness Score** (0–100) and any **Action Items** |
-| Waitlist mode | If waitlist is on (default on Production), public **Get started** goes to `/waitlist` — set `PUBLIC_SIGNUP_OPEN=true` or use invite URL to test full signup (see [LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
+| Waitlist mode | If waitlist is on (default on Production), public **Get started** goes to `/waitlist` — set `PUBLIC_SIGNUP_OPEN=true` or use invite URL to test full signup (see ./archive/LAUNCH_CHECKLIST.md § Opening signups — go-live flip](./archive/LAUNCH_CHECKLIST.md#opening-signups--go-live-flip)) |
 
-**Pass criteria for “recompute worked”:** Within ~10 seconds of a successful save, refresh Dashboard — score, gaps, or action items should **change or stay consistent** (not silently stale). If nothing ever updates after multiple saves, flag for engineering (check `RECOMPUTE_SECRET` / `NEXT_PUBLIC_APP_URL` in Vercel — see [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live)).
+**Pass criteria for “recompute worked”:** Within ~10 seconds of a successful save, refresh Dashboard — score, gaps, or action items should **change or stay consistent** (not silently stale). If nothing ever updates after multiple saves, flag for engineering (check `RECOMPUTE_SECRET` / `NEXT_PUBLIC_APP_URL` in Vercel — see ./archive/LAUNCH_CHECKLIST.md § Vercel Production env vars](./archive/LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live)).
 
 ---
 
@@ -84,7 +84,7 @@ npm run seed:e2e
 
 Legacy one-off seeds (`seed-test-attorney.ts`, `seed-test-consumer-estate.ts`) superseded by `seed:e2e` — see [E2E_TEST_RESET.md](./E2E_TEST_RESET.md).
 
-For production go-live env vars (not seed scripts), see [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md).
+For production go-live env vars (not seed scripts), see [LAUNCH.md](./archive/LAUNCH_CHECKLIST.md).
 
 ---
 

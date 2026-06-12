@@ -6,12 +6,11 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 
 | Doc | Purpose |
 |-----|---------|
-| [LAUNCH_GATE.md](./LAUNCH_GATE.md) | Single go-live sign-off checklist (legal, Stripe, smoke gates) |
+| [LAUNCH.md](./LAUNCH.md) | **Single go-live checklist** (Buckets A–D); archived detail: [LAUNCH_CHECKLIST](./archive/LAUNCH_CHECKLIST.md) |
 | `ops_tasks` / `cron_health` | Admin-A calendar obligations + cron last-run — `/admin` Ops Home |
 | [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) | Segment, personas, pricing, UX principles |
 | [ROADMAP.md](./ROADMAP.md) | Sprint plan and item status |
 | [NEXT_SESSION.md](./NEXT_SESSION.md) | **Current session handoff** — paste block, go-live blockers, queued ops |
-| [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Go-live checklist — SEO, domain, Resend (update at launch, not each sprint) |
 | [DECISION_LOG.md](./DECISION_LOG.md) | Settled product/UX decisions — add new entries, do not edit old |
 | [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | Engineering architecture |
 | [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) | **Canonical calculation registry** — read before any tax/projection/strategy math |
@@ -60,7 +59,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Schema-only session notes (no table/RPC shape change) → one line in `docs/SCHEMA_CHANGELOG.md`
 - Sprint item completed or new product decision → `docs/ROADMAP.md` and/or `docs/DECISION_LOG.md` (new entry)
 - End of UI sprint session → update `docs/NEXT_SESSION.md` (completed tasks, remaining work, discovered file paths)
-- Launch / go-live work (robots, Search Console, domain cutover, production email, **Vercel Production env vars**, **waitlist disable**) → update `docs/LAUNCH_CHECKLIST.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
+- Launch / go-live work (robots, Search Console, domain cutover, production email, **Vercel Production env vars**, **waitlist disable**) → update `docs/LAUNCH.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
@@ -446,7 +445,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Master docs: MASTER_ARCHITECTURE · UPDATE_CHECKLIST · SCHEMA_CHANGELOG · DECISION_LOG · ROADMAP · NEXT_SESSION · LAUNCH_CHECKLIST · CONSUMER_FLOWS · DATABASE_SCHEMA_REFERENCE · docs/audits/README.md
 - [x] Pre-launch RLS fix migration `20260527150000` + `/api/advisor/gst-entry` (`1f41ce1`, `7cab1be`, `35b0738`)
 - [x] Prod `db push` + `scripts/verify-loose-rls-policies.sql` (zero rows); post-fix CSV `docs/audits/rls-policies-post-fix-2026-05-27.csv`
-- [ ] Manual isolation smoke (two consumers + advisor/client) — [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)
+- [ ] Manual isolation smoke (two consumers + advisor/client) — [LAUNCH.md](./archive/LAUNCH_CHECKLIST.md)
 
 ## PROF-1/2 — Profile cleanup (2026-05-27)
 
@@ -546,7 +545,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 ## Queued next (2026-05-29) — not scheduled
 
 - [ ] **Dashboard `canShowPartial` nudge** — low priority; revisit after ~2 weeks traffic ([ROADMAP.md](./ROADMAP.md))
-- [ ] **Attorney drip cron verification** — SQL ~3 days after first real attorney ([LAUNCH_CHECKLIST § Attorney drip cron (ops)](./LAUNCH_CHECKLIST.md#attorney-drip-cron-ops), [NEXT_SESSION.md](./NEXT_SESSION.md#queued-next-post-ship-ops))
+- [ ] **Attorney drip cron verification** — SQL ~3 days after first real attorney ([archived LAUNCH.md § Attorney drip cron (ops)](./archive/LAUNCH_CHECKLIST.md#attorney-drip-cron-ops), [NEXT_SESSION.md](./NEXT_SESSION.md#queued-next-post-ship-ops))
 
 ## Inline profile prompts E2E (2026-05-27) — shipped
 
@@ -628,7 +627,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 
 ## Signup trigger — pre-go-live
 
-- [ ] `20260526000001_handle_new_user_trigger.sql` applied to production ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md))
+- [ ] `20260526000001_handle_new_user_trigger.sql` applied to production ([LAUNCH.md](./archive/LAUNCH_CHECKLIST.md))
 
 ## Required updates before merge
 
@@ -675,7 +674,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] Sprint 15 cont. (2026-05-24) — Preview waitlist; sitemap/middleware infra bypass (`73648e5`); test cleanup (`3f732e3`); dev workflow local → preview → production
 - [x] **UX Language Audit** — Sprint C-2b complete (automated grep + all `DISCLAIMER_STRINGS` surfaces wired: PDF cover, estate-tax, my-estate-strategy, footer). Manual per-surface checklist QA remains open in [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md). Run `bash scripts/audit-ux-language.sh` before any PR that touches consumer-facing strings.
 
-| [LAUNCH_GATE.md](./LAUNCH_GATE.md) | Sprint C-5 — pre-go-live legal checklist; [Gate 1 Legal](./LAUNCH_GATE.md#gate-1--must-be-complete-before-public_signup_opentrue) (one redline, one commit) |
+| [LAUNCH.md](./LAUNCH.md) | Sprint C-5 — pre-go-live legal checklist; [Gate 1 Legal](./LAUNCH.md#gate-1--must-be-complete-before-public_signup_opentrue) (one redline, one commit) |
 
 ## Sprint P-1 focus — closed ✅ 2026-06-02
 
@@ -707,7 +706,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] `scripts/verify-deletion.ts` — `npm run verify:deletion`
 - [x] `scripts/cleanup-test-accounts.ts --rolobe`, `scripts/verify-drip-sequence.ts` — `84388ad`
 - [x] Auth table clean — 9 accounts; all `@rolobe.resend.app` retired
-- [x] [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md), [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md), [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md), [NEXT_SESSION.md](./NEXT_SESSION.md), [ROADMAP.md](./ROADMAP.md)
+- [x] [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SCHEMA_REFERENCE.md), [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md), [LAUNCH.md](./archive/LAUNCH_CHECKLIST.md), [NEXT_SESSION.md](./NEXT_SESSION.md), [ROADMAP.md](./ROADMAP.md)
 
 ## Sprint UX-1 — Life events hub ✅ closed 2026-05-25
 
@@ -759,7 +758,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 
 | Item | Notes |
 |------|-------|
-| [ ] **LAUNCH_GATE.md** | Counsel handoff: §10/§11/§13 flagged, one consolidated redline; placeholders + redlines in one commit — [Gate 1 Legal](./LAUNCH_GATE.md#gate-1--must-be-complete-before-public_signup_opentrue) |
+| [ ] **LAUNCH_GATE.md** | Counsel handoff: §10/§11/§13 flagged, one consolidated redline; placeholders + redlines in one commit — [Gate 1 Legal](./LAUNCH.md#gate-1--must-be-complete-before-public_signup_opentrue) |
 | [ ] **Stripe Dashboard config** | invoice.upcoming, portal cancel, receipts — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) |
 | [ ] **C-4 manual walkthrough** | Signup → paid → receipt → self-serve cancel on production |
 | [ ] **Stripe production billing** | Required before opening signups |
@@ -798,7 +797,7 @@ Verified in **Vercel → Production**:
 - [x] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → **not needed** (Cloudflare Search Console verification)
 - [ ] **Open signups:** `PUBLIC_SIGNUP_OPEN=true` → Sprint 17 go-live day (after legal + C-4 manual verify)
 
-Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-sprint-15-go-live--verified-2026-05-24).
+Full table: ./archive/LAUNCH_CHECKLIST.md § Vercel Production env vars](./archive/LAUNCH_CHECKLIST.md#vercel-production-env-vars-sprint-15-go-live--verified-2026-05-24).
 
 ## Sprint — RPC guards + attorney RLS + edge auth ✅ closed 2026-05-29
 
@@ -809,7 +808,7 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Unit test `simpleRateLimit.spec.ts` — **39/39** in `npm run test:unit`
 - [x] **Prod deploy:** `supabase db push` + `supabase functions deploy estate-monte-carlo` — applied 2026-05-29 on `fnzvlmrqwcqwiqueevux`
 - [x] **Prod SQL verify:** migrations `20260629120000` + `20260629130000`; `assert_household_caller_access` present; attorney policies use `attorney_listings` join — `scripts/verify-security-sprint-20260629.sql`
-- [x] **Prod browser smoke:** [LAUNCH_CHECKLIST § Security hardening post-deploy](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) — 7/7 on prod 2026-05-30 (`npm run test:e2e:security-smoke`)
+- [x] **Prod browser smoke:** [archived LAUNCH.md § Security hardening post-deploy](./archive/LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29) — 7/7 on prod 2026-05-30 (`npm run test:e2e:security-smoke`)
 
 ## Sprint — State exemption dashboard wire ✅ closed 2026-05-30
 
@@ -1041,7 +1040,7 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Wire `page.tsx` → `exportMappers.ts` → `ExportPanel` → `generatePDFHTML`
 - [x] Meeting Prep — top 3 open alerts above Export
 - [x] Master docs synced
-- [ ] **Post-deploy smoke:** Voels → Meeting Prep → Export PDF — cover narrative · tax callout · grouped action items ([LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md#pdf-narrative-engine-manual-smoke-2026-05-30))
+- [ ] **Post-deploy smoke:** Voels → Meeting Prep → Export PDF — cover narrative · tax callout · grouped action items ([LAUNCH_CHECKLIST](./archive/LAUNCH_CHECKLIST.md#pdf-narrative-engine-manual-smoke-2026-05-30))
 
 ## Sprint — Roth methodology note ✅ closed 2026-05-30
 
@@ -1103,7 +1102,7 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 
 - [x] Documents slug conflict — `GET /api/documents/household/[household_id]` (was `/api/documents/[household_id]`)
 - [x] `lib/supabase/routeAuth.ts`, `GET /api/health`, advisor preset route runtime flags
-- [x] [LAUNCH_GATE.md](./LAUNCH_GATE.md) added; master docs synced
+- [x] [LAUNCH.md](./LAUNCH.md) added; master docs synced
 - [x] Commit `af12ff0`
 
 ## Sprint — 6-step onboarding wizard ✅ closed 2026-05-29
@@ -1174,7 +1173,7 @@ Full table: [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLI
 - [x] Advisor empty state, `AdvisorFirstClientPlaybook`, needs-attention panel
 - [x] Migration renames: `20260530100000_onboarding_persona.sql`, `20260530110000_attorney_intake_requests.sql`
 - [x] Master docs: ROADMAP · LAUNCH_CHECKLIST · MASTER_ARCHITECTURE · DECISION_LOG · NEXT_SESSION · UPDATE_CHECKLIST
-- [ ] Manual smoke Tracks 1–2 (18 steps) — [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md#health-score--advisor-playbook-manual-smoke-2026-05-29)
+- [ ] Manual smoke Tracks 1–2 (18 steps) — [LAUNCH_CHECKLIST](./archive/LAUNCH_CHECKLIST.md#health-score--advisor-playbook-manual-smoke-2026-05-29)
 
 ## Verification pass
 

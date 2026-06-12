@@ -1,3 +1,5 @@
+> ARCHIVED 2026-06-12 — superseded by [LAUNCH.md](../LAUNCH.md)
+
 # LAUNCH_CHECKLIST.md
 # My Wealth Maps — Production Go-Live
 # Last updated: 2026-05-30 (PDF export path wiring)

@@ -1,3 +1,5 @@
+> ARCHIVED 2026-06-12 — superseded by [LAUNCH.md](../LAUNCH.md)
+
 # Release routine — local → preview → production
 
 **Canonical checklist** for shipping changes safely. Follow this on every meaningful release once go-live discipline is enabled.

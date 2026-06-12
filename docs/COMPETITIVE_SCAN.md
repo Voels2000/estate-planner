@@ -4,7 +4,7 @@
 **Scope:** Code + docs review vs leading consumer fintech, RIA planning tools, and legal-tech platforms.  
 **Purpose:** Prioritized backlog to close competitive gaps over time — not a market-share study.
 
-**Related:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md)
+**Related:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · [LAUNCH.md](./archive/LAUNCH_CHECKLIST.md) · [LAUNCH.md](./LAUNCH.md)
 
 ---
 
@@ -208,7 +208,7 @@ You have invested heavily in E2E; without CI, regressions ship silently — espe
 
 **Effort:** Tier 1 ~1 day; Tier 2 ~2 days (flake tuning, secrets, staging DB).
 
-**Shipped (2026-06-07):** `.github/workflows/e2e-smoke.yml` — off until `E2E_SMOKE_IN_CI=true`. Pre-launch enable steps: [LAUNCH_CHECKLIST § GitHub Actions E2E smoke](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live).
+**Shipped (2026-06-07):** `.github/workflows/e2e-smoke.yml` — off until `E2E_SMOKE_IN_CI=true`. Pre-launch enable steps: [archived LAUNCH.md § GitHub Actions E2E smoke](./archive/LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live).
 
 **M3 cron (2026-06-07):** `/api/cron/post-deploy-verify` daily 9:00 UTC — `ensureVoelsMonteCarloCached()` then 7 checks. Manual: `npm run verify:post-deploy-voels`; immediate: `npm run smoke:mc-voels`.
 
@@ -293,7 +293,7 @@ You store estate values, beneficiary names, document vault PDFs, and WCPA deleti
 | **M5** | Attorney Stripe products + attorney E2E expansion | Go-live day — live `STRIPE_PRICE_ATTORNEY_*`, expand `tests/e2e/attorney/` |
 | **L5** | Attorney firm **team** multi-seat | Parity with advisor `/advisor/firm` — multiple attorney logins + seat billing; separate from solo client caps |
 
-**Ops (not competitive backlog):** Enable [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) gates before `PUBLIC_SIGNUP_OPEN`.
+**Ops (not competitive backlog):** Enable [LAUNCH.md](./LAUNCH.md) gates before `PUBLIC_SIGNUP_OPEN`.
 
 ```
 Quarter 1 (pre/post go-live) — DONE

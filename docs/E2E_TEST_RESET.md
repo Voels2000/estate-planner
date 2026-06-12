@@ -41,7 +41,7 @@ One-time migration from legacy Playwright accounts to canonical **`@mywealthmaps
 ## Go-live database cleanup
 
 **Pre-launch gate:** Full checklist (purge, re-seed, compliance admin cleanup, sign-off) —
-[this doc § Go-live database cleanup](#go-live-database-cleanup) (also [LAUNCH_GATE.md](./LAUNCH_GATE.md) Gate 1 pre-flip smoke).
+[this doc § Go-live database cleanup](#go-live-database-cleanup) (also [LAUNCH.md](./LAUNCH.md) Gate 1 pre-flip smoke).
 
 **Production auth table (2026-06-07):** **10 accounts** — canonical `@mywealthmaps.test` + Voels + `david@gmail.com` + `stephen.a.voels@sbcglobal.net`. Purge removed last stragglers (`e2e-client.johnson@`, `test1@rolobe.resend.app`). Re-run purge before flip if new test signups accumulated.
 

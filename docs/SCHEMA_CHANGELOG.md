@@ -1138,7 +1138,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 **Commits:** `b1c7b49`, `fd00b69`
 
-**Prod:** Apply migration before deploying OB-1 code ([LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md)).
+**Prod:** Apply migration before deploying OB-1 code ([LAUNCH.md](./archive/LAUNCH_CHECKLIST.md)).
 
 ---
 
@@ -1314,7 +1314,7 @@ All `@rolobe.resend.app` accounts deleted; soft-deleted scrambled accounts hard-
 - **Components:** `components/legal/LegalDocumentLayout.tsx`, `components/layout/LegalFooterLinks.tsx`
 - **Content:** `lib/legal/privacy-policy-sections.ts`, `lib/legal/terms-of-service-sections.ts`
 - **SEO:** `app/sitemap.ts`, `app/robots.ts` include `/privacy`, `/terms`
-- **Manual remaining:** [LAUNCH_GATE.md](./LAUNCH_GATE.md) — 3 TODO placeholders; counsel sign-off; email aliases
+- **Manual remaining:** [LAUNCH.md](./LAUNCH.md) — 3 TODO placeholders; counsel sign-off; email aliases
 
 ---
 
@@ -1371,8 +1371,8 @@ All advisor-scoped joins use `status = ANY(ARRAY['active', 'accepted'])` per `CO
 - **Compliance code (C-2b through C-5):** ✅ All closed on `main` — see commit log in [NEXT_SESSION.md](./NEXT_SESSION.md)
 - **Sprint P-1 closed 2026-06-02:** Performance quick wins (`5c24160`); indexes in prod.
 - **Sprint P-2 closed 2026-06-02:** Recommendations cache, projections cache-first, auth dedup (`47a38f3`); migration `20260602130000_sprint_p2_recommendations_cache.sql`.
-- **Sprint 17 remaining (non-code):** [LAUNCH_GATE.md](./LAUNCH_GATE.md); Stripe Dashboard + C-4 walkthrough; counsel sign-off; go-live day Supabase Auth + `PUBLIC_SIGNUP_OPEN=true` + Core §1–3 smoke
-- **Docs:** [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [LAUNCH_GATE.md](./LAUNCH_GATE.md)
+- **Sprint 17 remaining (non-code):** [LAUNCH.md](./LAUNCH.md); Stripe Dashboard + C-4 walkthrough; counsel sign-off; go-live day Supabase Auth + `PUBLIC_SIGNUP_OPEN=true` + Core §1–3 smoke
+- **Docs:** [LAUNCH.md](./archive/LAUNCH_CHECKLIST.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [LAUNCH.md](./LAUNCH.md)
 
 ## Sprint 16 — C-2b UX language audit (May 2026)
 

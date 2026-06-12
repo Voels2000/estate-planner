@@ -14,14 +14,14 @@
 
 ## Current focus (2026-06-09)
 
-Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, **WA estate tax SEO**, **State estate tax content system**, **`/learn` discovery & cross-linking**, and **`/assess` dynamic state picker** are **complete**. Remaining pre-launch work is **non-code**: [LAUNCH_GATE.md](./LAUNCH_GATE.md) Gate 1 only (legal review, Stripe production config, smoke tests).
+Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, **WA estate tax SEO**, **State estate tax content system**, **`/learn` discovery & cross-linking**, and **`/assess` dynamic state picker** are **complete**. Remaining pre-launch work is **non-code**: [LAUNCH.md](./LAUNCH.md) Bucket B + A (legal review, Stripe production config, smoke tests).
 
 | Area | Status | Canonical doc |
 |------|--------|---------------|
 | B2B2C billing + seat pricing | ✅ Shipped | [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) |
-| Release routine (local → preview → prod) | ✅ Documented | [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) |
+| Release routine (local → preview → prod) | ✅ Documented | [LAUNCH.md](./LAUNCH.md) |
 | Environment / CI credential policy | ✅ Documented | [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) |
-| Go-live blockers (legal, Stripe, smoke) | ☐ Blocker | [LAUNCH_GATE.md](./LAUNCH_GATE.md) |
+| Go-live blockers (legal, Stripe, smoke) | ☐ Blocker | [LAUNCH.md](./LAUNCH.md) |
 | Admin Ops Home + task engine | ✅ Shipped | `/admin` → Ops Home · `ops_tasks` · `cron_health` |
 | Admin P1 (tax config, user detail, waitlist) | ✅ Shipped | `/admin` → Tax Rules · Users · Waitlist |
 | Admin-Redesign (sidebar, debug/funnel fixes) | ✅ Shipped | `/admin` sidebar nav · `admin-shell.tsx` |
@@ -84,7 +84,7 @@ Detail for each item: [ROADMAP.md](./ROADMAP.md) · [SCHEMA_CHANGELOG.md](./SCHE
 
 ## Go-live blockers (non-code)
 
-Do NOT set `PUBLIC_SIGNUP_OPEN=true` until all Gate 1 items in [LAUNCH_GATE.md](./LAUNCH_GATE.md) are checked.
+Do NOT set `PUBLIC_SIGNUP_OPEN=true` until **B&O-READY** per [LAUNCH.md](./LAUNCH.md) (Bucket B complete; Bucket A when ruling lands).
 
 **Post-deploy automated gate:** `npm run test:e2e:prod:smoke` (42 tests, production) · `npm run test:e2e:go-live-profile` (pre-flip profile) · `npm run verify:post-deploy-voels` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md).
 
@@ -105,9 +105,9 @@ Do NOT set `PUBLIC_SIGNUP_OPEN=true` until all Gate 1 items in [LAUNCH_GATE.md](
 
 > My Wealth Maps — **go-live prep.** Admin sprints + **WA estate tax SEO** + **13-state `/learn`** + **`/learn` discovery** + **`/assess` state picker** + **pricing/billing alignment** are **shipped**. Per-seat advisor checkout on `/pricing` and `/billing`; attorney flat tiers on `/pricing`; consumer checkout is consumer-only. Admin-A (Ops Home), Admin-P1 (tax config, user detail, waitlist), Admin-Redesign (sidebar nav). L1–L4 + B2B2C billing complete. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
 >
-> **Remaining blockers before open signups:** [LAUNCH_GATE.md](./LAUNCH_GATE.md) **Gate 1 only** — legal review, Stripe production catalog/config, production smoke (drip, E2E, billing walkthrough). No further engineering sprints required for launch.
+> **Remaining blockers before open signups:** [LAUNCH.md](./LAUNCH.md) **Bucket B** (+ Bucket A when B&O ruling lands) — legal review, Stripe production catalog/config, production smoke (drip, E2E, billing walkthrough). No further engineering sprints required for launch.
 >
-> **Go-live day:** Stripe Phase 2 live catalog → [LAUNCH_CHECKLIST § Opening signups](./LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) · then `PUBLIC_SIGNUP_OPEN=true`.
+> **Go-live day:** Stripe Phase 2 live catalog → [archived LAUNCH.md § Opening signups](./archive/LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) · then `PUBLIC_SIGNUP_OPEN=true`.
 >
 > **Post-deploy:** `npm run verify:post-deploy-voels` · `npm run test:e2e:go-live-profile` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md).
 
@@ -204,7 +204,7 @@ Full scan across consumer, advisor, and attorney surfaces. **Shipped today** add
 
 ### 3. Attorney drip steps 2 & 3 — cron verification
 
-Worth a manual DB check once a **real** attorney has registered (not seed-only). See [LAUNCH_CHECKLIST § Attorney drip cron (ops)](./LAUNCH_CHECKLIST.md#attorney-drip-cron-ops).
+Worth a manual DB check once a **real** attorney has registered (not seed-only). See [archived LAUNCH.md § Attorney drip cron (ops)](./archive/LAUNCH_CHECKLIST.md#attorney-drip-cron-ops).
 
 | Step | When | Column |
 |------|------|--------|

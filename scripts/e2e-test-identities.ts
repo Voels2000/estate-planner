@@ -82,7 +82,6 @@ export const ROLOBE_ACCOUNTS = [
   'consumer19@rolobe.resend.app',
   'consumer20@rolobe.resend.app',
   'consumer21@rolobe.resend.app',
-  'david@rolobe.resend.app',
   'advisor@rolobe.resend.app',
   'advisor2@rolobe.resend.app',
   'consumer1@rolobe.resend.app',

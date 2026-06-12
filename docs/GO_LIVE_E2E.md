@@ -1,6 +1,6 @@
 # Go-live E2E pre-flight
 
-Run **production** smoke after deploy (`PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com` in `.env.test`) when validating a prod release — and as part of the final gate before `PUBLIC_SIGNUP_OPEN=true`. **Ordered gates:** [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md). **Envs & credentials:** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
+Run **production** smoke after deploy (`PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com` in `.env.test`) when validating a prod release — and as part of the final gate before `PUBLIC_SIGNUP_OPEN=true`. **Ordered gates:** [LAUNCH.md](./LAUNCH.md). **Envs & credentials:** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
 
 **Environment model:** Local → Preview → Production flow and **where credentials live** — [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (canonical). **Policy:** GitHub gets **staging Supabase only**; production service role stays in Vercel Production; **`SUPABASE_DB_URL` local-only** (never GitHub).
 
@@ -83,9 +83,9 @@ After profile pre-flight, import unit tests should pass:
 npm run test:import:unit   # 24 tests — projection readiness, wizard gate, import normalizer
 ```
 
-**Prospect + Mobile sprint (2026-05-29):** Playwright: `advisor-prospect-mode.spec.ts`, `consumer-mobile-review.spec.ts` (Track 2 — `npm run test:e2e:mobile`). **Accessibility (L1):** `npm run test:e2e:a11y`. Manual 19-step checklist: [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29).
+**Prospect + Mobile sprint (2026-05-29):** Playwright: `advisor-prospect-mode.spec.ts`, `consumer-mobile-review.spec.ts` (Track 2 — `npm run test:e2e:mobile`). **Accessibility (L1):** `npm run test:e2e:a11y`. Manual 19-step checklist: [archived LAUNCH.md § Prospect + Mobile manual smoke](./archive/LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29).
 
-**Health Score + Playbook + Security sprint (2026-05-29):** Playwright: `consumer-health-score-narrative.spec.ts`, `advisor/overview.spec.ts` (roster + playbook). CI: `.github/workflows/ci.yml` (lint, build, security audit, unit tests). Manual: [LAUNCH_CHECKLIST § Health Score + Playbook](./LAUNCH_CHECKLIST.md#health-score--advisor-first-client-playbook-manual-smoke-2026-05-29).
+**Health Score + Playbook + Security sprint (2026-05-29):** Playwright: `consumer-health-score-narrative.spec.ts`, `advisor/overview.spec.ts` (roster + playbook). CI: `.github/workflows/ci.yml` (lint, build, security audit, unit tests). Manual: [archived LAUNCH.md § Health Score + Playbook](./archive/LAUNCH_CHECKLIST.md#health-score--advisor-first-client-playbook-manual-smoke-2026-05-29).
 
 ---
 
@@ -200,7 +200,7 @@ Expected: **401**
 
 **Consumer RPCs:** `e2e-consumer@mywealthmaps.test` → `/estate-tax`, `/my-estate-trust-strategy?tab=gifting` — data visible, no 403.
 
-Checklist: [LAUNCH_CHECKLIST § Security hardening post-deploy browser smoke](./LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29).
+Checklist: [archived LAUNCH.md § Security hardening post-deploy browser smoke](./archive/LAUNCH_CHECKLIST.md#security-hardening-post-deploy-browser-smoke-2026-05-29).
 
 ---
 
@@ -224,12 +224,12 @@ See [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) for mapping to manual
 - Stripe live-card checkout (Phase 2)
 - Fresh signup → Supabase attribution (`?ref=` / `?aref=`)
 - Email drip inbox delivery
-- Counsel sign-off on ToS ([LAUNCH_GATE.md](./LAUNCH_GATE.md))
-- **Prospect Mode + Mobile Review (2026-05-29)** — 19-step checklist: [LAUNCH_CHECKLIST § Prospect + Mobile manual smoke](./LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29)
+- Counsel sign-off on ToS ([LAUNCH.md](./LAUNCH.md))
+- **Prospect Mode + Mobile Review (2026-05-29)** — 19-step checklist: [archived LAUNCH.md § Prospect + Mobile manual smoke](./archive/LAUNCH_CHECKLIST.md#prospect--mobile-review-mode-manual-smoke-2026-05-29)
 
 ---
 
 ## Checklist integration
 
-- [LAUNCH_CHECKLIST.md § Pre-launch E2E](./LAUNCH_CHECKLIST.md) — checkbox targets this doc
+- ./archive/LAUNCH_CHECKLIST.md § Pre-launch E2E](./archive/LAUNCH_CHECKLIST.md) — checkbox targets this doc
 - Inline prompt manual rows: [CONSUMER_RELEASE_SMOKE_TEST.md §3.4](./CONSUMER_RELEASE_SMOKE_TEST.md)

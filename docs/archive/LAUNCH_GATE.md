@@ -1,3 +1,5 @@
+> ARCHIVED 2026-06-12 — superseded by [LAUNCH.md](../LAUNCH.md)
+
 # LAUNCH_GATE.md
 # The single go-live sign-off checklist for My Wealth Maps
 # Last updated: 2026-06-10

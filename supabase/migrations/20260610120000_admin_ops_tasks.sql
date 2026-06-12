@@ -54,7 +54,7 @@ INSERT INTO public.ops_tasks (slug, title, description, cadence, next_due_at, ca
 
 ('launch-gate-review',
  'Launch Gate review',
- 'Open docs/LAUNCH_GATE.md — confirm no new blockers added, check attorney drip steps',
+ 'Open docs/LAUNCH.md — confirm no new blockers added, check attorney drip steps',
  'weekly',
  date_trunc('week', now()) + interval '7 days',
  'ops', false, NULL),
@@ -146,5 +146,5 @@ INSERT INTO public.cron_health (job_name, last_status) VALUES
   ('post-deploy-verify', 'unknown')
 ON CONFLICT (job_name) DO NOTHING;
 
-COMMENT ON TABLE public.ops_tasks IS 'Calendar compliance obligations — seeded from COMPLIANCE_CALENDAR + LAUNCH_GATE Gate 3.';
+COMMENT ON TABLE public.ops_tasks IS 'Calendar compliance obligations — seeded from COMPLIANCE_CALENDAR + LAUNCH.md Bucket D.';
 COMMENT ON TABLE public.cron_health IS 'Last-run status per Vercel cron job for Admin Ops Home.';
