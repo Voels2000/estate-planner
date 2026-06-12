@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-12  
+**Last updated:** 2026-06-12 (Prompt 2 verification sweep)  
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -39,22 +39,23 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 ### B1. Redeploy + automated smoke (do first)
 
 - [ ] Vercel redeploy of latest `main` (attest: __ / __)
-- [ ] `npm run release:preflight` (verify: command green)
-- [ ] `npm run test:e2e:go-live-profile` (verify: 17 passing)
+- [ ] `npm run release:preflight` (verify: command green — includes `verify:rls` + go-live profile + security-smoke)
+- [ ] `npm run test:e2e:go-live-profile` (verify: 17 passing — **2026-06-12 sweep:** 0/17 run; `consumer-setup` auth timeout 120s against `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000` / staging Supabase; re-run after redeploy)
 - [ ] `npm run test:e2e:security-isolation` (verify: green)
 - [ ] `npm run test:e2e:cross-role` (verify: green)
-- [ ] `npm run release:post-deploy` (verify: green)
-- [ ] `npm run test:e2e:prod:smoke -- --workers=1` (verify: 42 `@production` passing)
+- [ ] `npm run release:post-deploy` (verify: green — needs `SUPABASE_DB_URL` in `.env.local`; attest if prod credentials not loaded: __ / __)
+- [ ] `npm run test:e2e:prod:smoke -- --workers=1` (verify: 42 `@production` — command: `PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- --workers=1`; attest: __ / __)
 
 ### B2. TERMS-1
 
-- [ ] Signup checkbox sets `terms_accepted_at` on account creation (verify: `app/(auth)/signup/_signup-form.tsx` — Prompt 2 resolves; `terms_version` not set at signup today)
+- [x] Signup checkbox sets `terms_accepted_at` on account creation (verify: `app/(auth)/signup/_signup-form.tsx:64-67,73,101` — metadata on `signUp`; email-confirm path syncs profile via `app/auth/callback/route.ts:40-54` → `recordTermsAcceptance`)
+- **Deferred (post-B&O-READY, not blocking launch):** persist `terms_version` at signup — checkbox/metadata today writes only `terms_accepted_at`; `recordTermsAcceptance` sets `terms_version` from `TERMS_OF_SERVICE_VERSION` (`lib/legal/terms-of-service-sections.ts:5`) on callback/accept page, not in signup metadata. Follow-up: add `terms_version` to signup metadata or call `recordTermsAcceptance` on immediate session path.
 
 ### B3. CI discipline
 
-- [ ] `E2E_SMOKE_IN_CI=true` + staging secrets (verify: `.github/workflows/e2e-smoke.yml` + GitHub variables)
-- [ ] `RLS_VERIFY_IN_CI=true` (verify: `.github/workflows/rls-verify.yml` + GitHub variables)
-- [ ] Branch protection on `main`: `verify`, `e2e-smoke`, `rls-verify` (verify: `gh api` or attest: __ / __)
+- [ ] `E2E_SMOKE_IN_CI=true` + staging secrets (verify: job exists `.github/workflows/e2e-smoke.yml:14-15` — `if: vars.E2E_SMOKE_IN_CI == 'true'`; **repo variable value** attest: __ / __ — `gh` unavailable in sweep env)
+- [ ] `RLS_VERIFY_IN_CI=true` (verify: job exists `.github/workflows/rls-verify.yml:14-15` — `if: vars.RLS_VERIFY_IN_CI == 'true'`; **repo variable value** attest: __ / __)
+- [ ] Branch protection on `main`: `verify`, `e2e-smoke`, `rls-verify` (attest: __ / __ — run `gh api repos/Voels2000/estate-planner/branches/main/protection`)
 
 ### B4. Manual smokes (run before any DB purge)
 
@@ -66,9 +67,9 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 ### B5. Stripe (code wired; live config is ops-attested)
 
-- [ ] Live keys in Vercel Production (`sk_live_` / `pk_live_` / live `whsec_`) (attest via `vercel env ls`: __ / __)
-- [ ] Live catalog: 6 consumer + attorney starter/growth (+ advisor firm seats if billing firms at launch) (attest: __ / __)
-- [ ] Live price IDs in env (`STRIPE_PRICE_*`, `STRIPE_PRICE_ATTORNEY_*`, `STRIPE_PRICE_ADVISOR_*`) (verify: `vercel env ls` names + `lib/billing/stripePrices.ts`)
+- [ ] Live keys in Vercel Production (`sk_live_` / `pk_live_` / live `whsec_`) (attest: __ / __ — Confirm: `vercel env ls production` shows `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` with live values)
+- [ ] Live catalog: 6 consumer + attorney starter/growth (+ advisor firm seats if billing firms at launch) (attest: __ / __ — Confirm: Stripe Dashboard → Products has 6 consumer prices + attorney starter/growth live)
+- [ ] Live price IDs in env (`STRIPE_PRICE_*`, `STRIPE_PRICE_ATTORNEY_*`, `STRIPE_PRICE_ADVISOR_*`) (verify: code refs `lib/billing/stripePrices.ts:28-68` consumer 6 vars; `lib/tiers.ts:139-142` advisor firm; `lib/tiers.ts:167-169` attorney — **Vercel Production names populated** attest: __ / __ — `vercel env ls production` not available in sweep env)
 - [ ] C-4 manual walkthrough on prod: signup → checkout → active → cancel → deletion schedule — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (attest: __ / __)
 - [ ] One real-card live smoke, smallest tier, refund/cancel after verify (attest: __ / __)
 
@@ -83,8 +84,10 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 ### B7. Pre-flip cleanup — RUN LAST, never now
 
-- [ ] Verify PROTECTED list in `scripts/cleanup-test-accounts.ts` BEFORE running purge. Confirm it contains: `avoels@comcast.net`, `avoels@outlook.com`, `david@gmail.com`, `Stephen.a.voels@sbcglobal.net`, and all `@mywealthmaps.test` E2E identities. Report full effective PROTECTED array. (`david@rolobe.resend.app` **removed** from rolobe protect list 2026-06-12 — eligible for purge.) (verify: read script)
-- [ ] Confirm purge safety guards (verify: `cleanup:purge` uses `.env.local`; `--purge-unprotected --dry-run` first; interactive confirm without `--yes`; **no production URL / `--force` gate in script today** — confirm `SUPABASE_URL` target before `--yes`)
+**Run only immediately before Gate 2, after all B4 manual smokes pass and PROTECTED re-verified, to avoid re-seeding test junk.**
+
+- [x] Verify PROTECTED list in `scripts/cleanup-test-accounts.ts` BEFORE running purge (verify: `scripts/cleanup-test-accounts.ts:70-95` — effective `PROTECTED` = `CANONICAL_PROTECTED` + `GO_LIVE_PROTECTED` + `ROLOBE_PROTECTED_FROM_LEGACY`: `e2e-consumer@`, `e2e-consumer-tier1@`, `e2e-golden-path@`, `e2e-advisor@`, `e2e-advisor-client@`, `e2e-attorney@`, `e2e-attorney-listing@`, `e2e-advisor-listing@`, `e2e-drip@` (all `@mywealthmaps.test`), `avoels@comcast.net`, `avoels@outlook.com`, `david@gmail.com`, `Stephen.a.voels@sbcglobal.net`, plus 13 `@rolobe.resend.app` in `ROLOBE_ACCOUNTS`. **`david@rolobe.resend.app` not protected** — eligible for `--purge-unprotected`. `david@gmail.com` stays protected.)
+- [x] Confirm purge safety guards (verify: `package.json:47-48` loads `.env.local`; `--purge-unprotected --dry-run` exits before deletes; interactive `confirm()` without `--yes` at `scripts/cleanup-test-accounts.ts:350-359`; production guard `assertPurgeTargetSafe` at `:35-55`, called `:416` — aborts on ref `fnzvlmrqwcqwiqueevux` unless `--force`)
 - [ ] Only then: `npm run cleanup:purge:dry-run` → `npm run cleanup:purge` → `npm run seed:e2e` → compliance SQL per [E2E_TEST_RESET.md § Go-live database cleanup](./E2E_TEST_RESET.md) (attest: __ / __)
 
 ### B8. Engineering gates (shipped on `main` — spot-check only)
@@ -204,8 +207,30 @@ See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) for credential placement.
 | Item | Resolution |
 |------|------------|
 | robots.txt | [x] — `app/robots.ts:5-37` (GATE had open; CHECKLIST had done) |
-| TERMS-1 | [ ] — CHECKLIST says shipped; GATE open; `terms_accepted_at` in signup metadata; `terms_version` not at signup — verify in Prompt 2 |
+| TERMS-1 | [x] `terms_accepted_at` at signup (`_signup-form.tsx:101`); `terms_version` deferred post-launch (callback sets via `recordTermsAcceptance`) |
+| Purge guard | [x] `assertPurgeTargetSafe` — prod ref abort unless `--force` (`cleanup-test-accounts.ts:35-55`) |
 | seed scripts | Canonical `npm run seed:e2e` only |
 | Migration count | Not pinned — use `db push` / dashboard compare |
 
 **References updated:** all non-archive docs except `MASTER_ARCHITECTURE.md`, `DECISION_LOG.md`, `ROADMAP.md`, `CALCULATION_ENGINES.md` (launch-only pass — update those separately if needed).
+
+---
+
+## Prompt 2 sweep scoreboard (2026-06-12)
+
+**Bucket B:** **11 of 38** checked (29 open).
+
+**Checked this sweep:** B2 TERMS-1 · B6 legal placeholders (prior) · B7 PROTECTED + purge guards · B8 robots/security/deletion/billing/prod harness (prior).
+
+**Still open — verify (re-run locally):**
+
+| Item | Action |
+|------|--------|
+| B1 preflight / E2E / post-deploy / prod smoke | `npm run release:preflight`; fix auth timeout then re-run go-live-profile; `npm run release:post-deploy`; prod smoke with `PLAYWRIGHT_BASE_URL` |
+| B3 CI vars + branch protection | GitHub → Settings → Variables: `E2E_SMOKE_IN_CI`, `RLS_VERIFY_IN_CI` = `true`; branch protection required checks |
+| B5 Vercel Stripe env names | `vercel env ls production` |
+| B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
+
+**Still open — attest (Al):** B1 redeploy · B4 all 5 manual smokes · B5 live keys/catalog/C-4/card smoke · B6 counsel/LLC/bank/B&O/email · B7 purge execution (last).
+
+**B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.

@@ -19,6 +19,41 @@ if (!supabaseUrl || !serviceKey) {
 
 const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } })
 
+/** Production Supabase project ref — destructive cleanup refused unless --force */
+const PRODUCTION_SUPABASE_PROJECT_REF = 'fnzvlmrqwcqwiqueevux'
+
+function extractSupabaseProjectRef(url: string): string | null {
+  try {
+    const match = new URL(url).hostname.match(/^([a-z0-9]+)\.supabase\.co$/i)
+    return match?.[1] ?? null
+  } catch {
+    return null
+  }
+}
+
+/** Loud target banner + abort on production unless --force. Runs before any deletion. */
+function assertPurgeTargetSafe(): void {
+  const projectRef = extractSupabaseProjectRef(supabaseUrl)
+  const force = process.argv.includes('--force')
+
+  console.log('\n========================================')
+  console.log(`PURGE TARGET: ${projectRef ?? '(unparsed ref)'} (${supabaseUrl})`)
+  console.log('========================================\n')
+
+  if (!projectRef) {
+    console.error('SAFETY: could not parse Supabase project ref from SUPABASE_URL — aborting.')
+    process.exit(1)
+  }
+
+  if (projectRef === PRODUCTION_SUPABASE_PROJECT_REF && !force) {
+    console.error(
+      `SAFETY: refusing destructive cleanup on production Supabase (ref: ${PRODUCTION_SUPABASE_PROJECT_REF}).`,
+    )
+    console.error('Pass --force only if you intentionally target production.')
+    process.exit(1)
+  }
+}
+
 /** Pre-go-live clutter — early rolobe captures without full accounts */
 const DELETE_EMAILS = [
   'consumer3@rolobe.resend.app',
@@ -378,6 +413,8 @@ async function runRoblobeCleanup() {
 }
 
 async function main() {
+  assertPurgeTargetSafe()
+
   if (process.argv.includes('--purge-unprotected')) {
     await runPurgeUnprotected()
     return
