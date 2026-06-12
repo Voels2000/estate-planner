@@ -10,6 +10,20 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+## Supabase Disk IO optimization (2026-06-11)
+
+**Migrations:** `20260709150000_optimize_calculate_state_estate_tax.sql`, `20260709160000_batch_resolve_household_alerts.sql`
+
+| Change | Detail |
+|--------|--------|
+| **`idx_state_estate_tax_rules_state_tax_year`** | `(state, tax_year)` — supports indexed bracket lookups |
+| **`calculate_state_estate_tax`** | Replaced unfiltered year scan + redundant EXISTS/MIN/loop pattern with indexed queries |
+| **`resolve_household_alerts_batch`** | New RPC; `lib/conflict-detector.ts` calls once per `detectConflicts` |
+| **Verify** | Voels (`avoels@outlook.com`) post-migration: WA ~$261K `estimated_state_tax` |
+| **Future** | Inline `UPDATE household_alerts … ANY(p_rule_ids)`; optional 9-index batch if IO still high — [NEXT_SESSION.md](./NEXT_SESSION.md) |
+
+---
+
 ## Pricing surfaces alignment + firm seat billing (2026-06-10)
 
 **No schema migration.** Application-layer billing alignment:

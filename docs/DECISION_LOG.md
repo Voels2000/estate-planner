@@ -2651,6 +2651,18 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Supabase Disk IO: state tax RPC + batched alert resolve
+
+**Decision:** Two migrations to cut Disk IO on hot paths: (1) optimize `calculate_state_estate_tax` with `idx_state_estate_tax_rules_state_tax_year` and indexed state+year filters instead of unfiltered year scans; (2) add `resolve_household_alerts_batch` and call it once from `detectConflicts` instead of six sequential `resolve_household_alert` HTTP RPCs.
+
+**Reasoning:** Perf audit showed ~883 `calculate_state_estate_tax` calls with ~5 `state_estate_tax_rules` hits each, and ~24K `resolve_household_alert` client round trips from recompute. Batch RPC cuts network hops; state tax rewrite cuts redundant table access. Voels household verified post-migration (WA MFJ ~$261K state tax).
+
+**Alternatives considered:** Inline `UPDATE household_alerts` in batch RPC now (deferred — batch still runs 6 internal function calls but one client round trip). Full 9-index migration batch now (deferred — monitor Disk IO 24h first; `assets` seq scans may need separate investigation).
+
+**Implication:** Migrations `20260709150000`, `20260709160000` applied via `db push`. **Redeploy Vercel** for `conflict-detector.ts`. Future: single-statement alert resolve + optional index batch per [NEXT_SESSION.md § Disk IO](./NEXT_SESSION.md#4-disk-io--post-deploy-monitoring-2026-06-11).
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

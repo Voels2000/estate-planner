@@ -95,6 +95,17 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] MASTER_ARCHITECTURE · DECISION_LOG · NEXT_SESSION · PLAYWRIGHT_E2E · GO_LIVE_E2E · E2E_TEST_RESET synced
 - [x] No migration
 
+## Supabase Disk IO optimization (2026-06-11) — shipped
+
+- [x] **`calculate_state_estate_tax`** — `20260709150000`: indexed `(state, tax_year)` lookups; removed unfiltered year-validation scan; Voels verified (WA ~$261K state tax)
+- [x] **`resolve_household_alerts_batch`** — `20260709160000` + `lib/conflict-detector.ts`: 1 RPC vs 6 per `detectConflicts` (~24K → ~4K client round trips)
+- [x] **Index shipped:** `idx_state_estate_tax_rules_state_tax_year`
+- [x] **Ops:** `npx supabase db push` applied both migrations; **redeploy Vercel** for `conflict-detector.ts`
+- [x] **Monitor:** Supabase Dashboard → Infrastructure → Disk IO (check in 24h)
+- [ ] **Future (if IO still high):** inline `UPDATE household_alerts … WHERE rule_id = ANY(p_rule_ids)` inside batch RPC (1 statement vs 6 internal function calls) — see [NEXT_SESSION.md § Disk IO](./NEXT_SESSION.md#4-disk-io--post-deploy-monitoring-2026-06-11)
+- [ ] **Future (if IO still high):** optional **9-index batch** on hot lookup columns — run Query B in [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql); `assets` still ~35K seq scans in audit
+- [x] SCHEMA_CHANGELOG · DECISION_LOG · NEXT_SESSION · MASTER_ARCHITECTURE · DATABASE_SCHEMA_REFERENCE synced
+
 ## Billing E2E production resilience (2026-06-09) — shipped
 
 - [x] Consumer duplicate-sub test — POST `{ tier, period }` so server resolves live price IDs (not test-bundle `priceId`)

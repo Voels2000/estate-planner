@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-09 (billing E2E production resilience — 21 passed / 2 skipped)
+# Last updated: 2026-06-11 (Supabase Disk IO — state tax RPC + batched alert resolve)
 
 ---
 
@@ -31,6 +31,7 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 | `/assess` dynamic state picker | ✅ Shipped | `useSelectedState` · `StatePickerDropdown` · 13-state callout on intro |
 | Pricing surfaces + firm seat billing | ✅ Shipped | `/pricing` advisor/attorney · firm-checkout seat sync · `/billing` seat picker |
 | Billing hardening + billing E2E | ✅ Shipped | P0–P2 + polish · `test:e2e:billing` (21 pass / 2 skip prod) · `billing-e2e.ts` |
+| Supabase Disk IO optimization | ✅ Shipped | `calculate_state_estate_tax` · `resolve_household_alerts_batch` · redeploy Vercel |
 | Legal entity placeholders (`/terms`, `/privacy`) | ✅ Shipped | `lib/legal/company.ts` — My Wealth Maps LLC · Snohomish address · RA Alan Voels |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
@@ -43,6 +44,7 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 | Pricing surfaces + firm seat billing | `/pricing` · `firm-checkout` · webhook `seat_count` · `_firm-billing-client.tsx` |
 | Billing hardening + E2E | `npm run test:e2e:billing` · `lib/firm/firmRoster.ts` · consumer duplicate-sub guard |
 | Billing E2E prod fixes | `billing-e2e.ts` · tier/period checkout body · attorney UI redirect race · firm starter skip on Stripe 500 |
+| Disk IO optimization | `20260709150000` · `20260709160000` · `conflict-detector.ts` batch resolve |
 | Legal entity constants | `lib/legal/company.ts` → `/terms` · `/privacy` · public footer copyright |
 | `/assess` dynamic state picker | `lib/learn/useSelectedState.ts` · `StatePickerDropdown` · `mwm_selected_state` localStorage |
 | `/learn` discovery & cross-linking | `PublicNav` → `/learn` · homepage state guide card · `/estate-tax` in-app link |
@@ -123,6 +125,36 @@ Run in sequence after deploy (each catches a different failure mode):
 ### 2. Dashboard `canShowPartial` nudge — low priority
 
 Deferred. Show a subtle setup card on `/dashboard` when the user has financial data but is missing birth year or retirement age for projections. Revisit after ~2 weeks of traffic — `/projections` already has inline prompts.
+
+### 4. Disk IO — post-deploy monitoring (2026-06-11)
+
+**Shipped today (expected ~60–70% IO reduction combined):**
+
+| Change | Expected impact |
+|--------|-----------------|
+| `idx_state_estate_tax_rules_state_tax_year` + prior P-1 indexes (`assets`/`liabilities` `owner_id`) | Fewer seq scans on hot lookup columns |
+| `calculate_state_estate_tax` optimized (`20260709150000`) | ~40% fewer `state_estate_tax_rules` hits per call |
+| `resolve_household_alerts_batch` (`20260709160000` + `conflict-detector.ts`) | Client round trips ~24K → ~4K per audit window |
+
+**Ops now:**
+
+1. Confirm `git push origin main` (commits `88c7427`, `7d22330`)
+2. **Redeploy Vercel Production** — picks up `lib/conflict-detector.ts` batch RPC
+3. Supabase Dashboard → **Infrastructure → Disk IO** — recheck in **24 hours**
+
+**Future optimizations (only if IO still elevated after monitoring):**
+
+1. **Inline alert resolve** — replace `resolve_household_alerts_batch` internals (6× `PERFORM resolve_household_alert`) with one indexed `UPDATE`:
+
+```sql
+UPDATE household_alerts
+SET resolved_at = now()
+WHERE household_id = p_household_id
+  AND rule_id = ANY(p_rule_ids)
+  AND resolved_at IS NULL;
+```
+
+2. **Optional 9-index batch** — run Query B in [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) on production; add missing indexes on `household_id` / `owner_id` / `user_id` for high-traffic tables. Audit flagged **`assets` ~35K seq scans** — investigate `idx_assets_owner_id` usage and additional composite indexes if needed.
 
 ### 3. Attorney drip steps 2 & 3 — cron verification
 

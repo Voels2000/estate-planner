@@ -443,6 +443,9 @@ Projection snapshots should be invalidated when newer data exists in:
 | `calculate_gifting_summary` | Gifting summary outputs (`lifetime_exemption_used`, annual caps, `gifts` array); horizon callers pass `lifetime_exemption_used` as `lifetimeGiftsUsed` |
 | `get_state_exemptions` | State exemption batch lookup |
 | `upsert_household_alert` | Safe alert writes |
+| `resolve_household_alert` | Mark one rule's alert resolved for a household |
+| `resolve_household_alerts_batch` | Batch resolve (one client RPC; used by `detectConflicts`) |
+| `calculate_state_estate_tax` | State estate tax estimate JSONB; indexed via `idx_state_estate_tax_rules_state_tax_year` (2026-06-11) |
 
 ---
 
@@ -459,7 +462,7 @@ After each schema-affecting session:
 
 ## Migration Reference (Recent)
 
-**Total in repo:** **77** timestamped SQL files — `supabase/migrations/[0-9]*.sql` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Count with: `ls -1 supabase/migrations/[0-9]*.sql | wc -l`
+**Total in repo:** **79** timestamped SQL files — `supabase/migrations/[0-9]*.sql` (excludes `VERIFY_session27_migrations.sql` and `reference/`). Count with: `ls -1 supabase/migrations/[0-9]*.sql | wc -l`
 
 - `20260427190300_create_state_income_tax_brackets_2026.sql`
 - `20260428000001_create_advisor_projection_assumptions.sql`
@@ -496,6 +499,8 @@ After each schema-affecting session:
 - `20260610120000_admin_ops_tasks.sql` — `ops_tasks`, `cron_health` (Admin-A)
 - `20260610130000_deletion_retry_policy.sql` — `deletion_schedule` retry columns (Admin-A)
 - `20260709140000_email_captures_invite_tracking.sql` — `email_captures.invited_at`, `invite_label` (Admin P1)
+- `20260709150000_optimize_calculate_state_estate_tax.sql` — `idx_state_estate_tax_rules_state_tax_year`; optimized `calculate_state_estate_tax` RPC
+- `20260709160000_batch_resolve_household_alerts.sql` — `resolve_household_alerts_batch` RPC
 
 **`app_config`:** Terms and other feature keys. Pre-launch A/B rows `ab_upgrade_copy` / `ab_assessment_gate` removed in `20260531000000_remove_ab_test_app_config.sql` (Sprint 12 — personalized upgrade copy and score-visible assess shipped in code).
 

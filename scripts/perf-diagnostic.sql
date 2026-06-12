@@ -102,3 +102,22 @@ FROM pg_indexes
 WHERE schemaname = 'public'
   AND tablename IN ('assets', 'liabilities')
 ORDER BY tablename, indexname;
+
+-- QUERY H: Sequential scan leaders (run if Disk IO still high after 2026-06-11 migrations)
+SELECT
+  relname AS table_name,
+  seq_scan,
+  seq_tup_read,
+  idx_scan,
+  n_live_tup AS live_rows
+FROM pg_stat_user_tables
+WHERE schemaname = 'public'
+ORDER BY seq_scan DESC
+LIMIT 15;
+
+-- FUTURE INDEX BATCH (optional — only if Query B/H still show gaps after 24h monitoring):
+-- Add CREATE INDEX IF NOT EXISTS for each MISSING INDEX row from Query B on hot tables
+-- (households, estate_health_scores, assets, advisor_clients, strategy_line_items, etc.).
+-- Shipped 2026-06-11: idx_state_estate_tax_rules_state_tax_year (20260709150000).
+-- Shipped P-1: idx_assets_owner_id, idx_liabilities_owner_id (20260602120000).
+-- If assets seq_scan remains ~35K+, consider composite indexes on common filter columns.
