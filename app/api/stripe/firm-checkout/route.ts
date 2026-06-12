@@ -16,6 +16,12 @@ const tierBandMax: Record<string, number> = {
   [ADVISOR_FIRM_PRICE_IDS.enterprise]: 250,
 }
 
+const tierBandMin: Record<string, number> = {
+  [ADVISOR_FIRM_PRICE_IDS.starter]: 1,
+  [ADVISOR_FIRM_PRICE_IDS.growth]: 11,
+  [ADVISOR_FIRM_PRICE_IDS.enterprise]: 51,
+}
+
 export async function POST(req: Request) {
   try {
     const ctx = await getAccessContext()
@@ -33,15 +39,15 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}))
     const priceId = typeof body.priceId === 'string' ? body.priceId : undefined
 
-    console.log('[firm-checkout] price validation', {
-      incomingPriceId: priceId,
-      advisorFirmPriceIds: ADVISOR_FIRM_PRICE_IDS,
-      allowedPriceIds: [...VALID_FIRM_PRICE_IDS],
-      isAllowed: priceId ? VALID_FIRM_PRICE_IDS.has(priceId) : false,
-    })
-
     if (!priceId || !VALID_FIRM_PRICE_IDS.has(priceId)) {
       return NextResponse.json({ error: 'Bad request' }, { status: 400 })
+    }
+
+    if (priceId === ADVISOR_FIRM_PRICE_IDS.enterprise) {
+      return NextResponse.json(
+        { error: 'Enterprise plans require contacting sales at support@mywealthmaps.com.' },
+        { status: 403 },
+      )
     }
 
     const firmId = ctx.firm_id
@@ -94,6 +100,13 @@ export async function POST(req: Request) {
         : Math.max(1, ctx.seat_count ?? 1)
 
     const maxSeats = tierBandMax[priceId] ?? 250
+    const minSeats = tierBandMin[priceId] ?? 1
+    if (seatCount < minSeats) {
+      return NextResponse.json(
+        { error: `Minimum seat count for this plan is ${minSeats}` },
+        { status: 400 },
+      )
+    }
     if (seatCount > maxSeats) {
       return NextResponse.json(
         { error: `Seat count exceeds maximum for this plan (${maxSeats})` },
@@ -102,11 +115,6 @@ export async function POST(req: Request) {
     }
 
     const siteUrl = getAppUrl()
-
-    console.log('[firm-checkout] stripe.checkout.sessions.create', {
-      lineItemPriceId: priceId,
-      seatCount,
-    })
 
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,

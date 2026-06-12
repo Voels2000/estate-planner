@@ -11,12 +11,13 @@ import {
   type ConsumerPlanForCheckout,
 } from '@/lib/billing/consumerPlanCatalog'
 import type { BillingPeriod } from '@/lib/billing/stripePrices'
-import { TIER_PRICES } from '@/lib/tiers'
+import { TIER_PRICES, PRICE_ID_TO_TIER, TIER_NAMES } from '@/lib/tiers'
 
 type Props = {
   currentPlan: string | null
   subscriptionStatus: string | null
   subscriptionPeriodEnd: string | null
+  subscribedPeriod?: BillingPeriod | null
   isAdvisorClient: boolean
   annualBillingAvailable: boolean
   recommendedPlanId?: 'financial' | 'retirement' | 'estate' | null
@@ -26,11 +27,12 @@ export function BillingClient({
   currentPlan,
   subscriptionStatus,
   subscriptionPeriodEnd,
+  subscribedPeriod = null,
   isAdvisorClient,
   annualBillingAvailable,
   recommendedPlanId = null,
 }: Props) {
-  const [period, setPeriod] = useState<BillingPeriod>('monthly')
+  const [period, setPeriod] = useState<BillingPeriod>(() => subscribedPeriod ?? 'monthly')
   const billingPeriod = annualBillingAvailable ? period : 'monthly'
   const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -39,6 +41,14 @@ export function BillingClient({
   const plans = useMemo(
     () => getConsumerPlansForPeriod(billingPeriod),
     [billingPeriod],
+  )
+
+  const subscribedPlans = useMemo(
+    () =>
+      subscribedPeriod && annualBillingAvailable
+        ? getConsumerPlansForPeriod(subscribedPeriod)
+        : plans,
+    [subscribedPeriod, annualBillingAvailable, plans],
   )
 
   async function handleSubscribe(plan: ConsumerPlanForCheckout) {
@@ -133,11 +143,23 @@ export function BillingClient({
     subscriptionStatus === 'active' ||
     subscriptionStatus === 'trialing' ||
     subscriptionStatus === 'canceling'
-  const activePlan = plans.find((p) => p.priceId === currentPlan)
+  const currentTier =
+    currentPlan != null ? (PRICE_ID_TO_TIER[currentPlan] ?? null) : null
+  const activePlan =
+    currentTier != null ? subscribedPlans.find((p) => p.tier === currentTier) : undefined
+  const activePlanName =
+    activePlan?.name ??
+    (currentTier != null ? TIER_NAMES[currentTier as 1 | 2 | 3] : null)
   const activeRenewalDate = formatRenewalDate(subscriptionPeriodEnd)
   const recommendedPlan = recommendedPlanId
     ? plans.find((p) => p.id === recommendedPlanId) ?? null
     : null
+
+  useEffect(() => {
+    if (subscribedPeriod && annualBillingAvailable) {
+      setPeriod(subscribedPeriod)
+    }
+  }, [subscribedPeriod, annualBillingAvailable])
 
   useEffect(() => {
     if (!recommendedPlanId) return
@@ -169,9 +191,9 @@ export function BillingClient({
         <p className="mt-1 text-sm text-[color:var(--mwm-text-muted)]">
           {`Starting at $${TIER_PRICES[1]}/month · Estate plan includes a 14-day free trial`}
         </p>
-        {isActive && activePlan && (
+        {isActive && activePlanName && (
           <p className="mt-2 text-sm font-medium text-green-600">
-            You are currently on the {activePlan.name} plan
+            You are currently on the {activePlanName} plan
           </p>
         )}
       </div>
@@ -205,7 +227,7 @@ export function BillingClient({
       {isActive && activePlan && activeRenewalDate && (
         <div className="mb-6 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-center text-sm text-neutral-800">
           {BILLING_DISCLOSURES.activeSubscription(
-            activePlan.name,
+            activePlanName ?? activePlan.name,
             `$${activePlan.displayPrice}`,
             activeRenewalDate,
           )}
@@ -215,7 +237,8 @@ export function BillingClient({
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {plans.map((plan) => {
           const { main, sub } = formatPlanPriceDisplay(plan)
-          const isCurrentPlan = currentPlan === plan.priceId
+          const isCurrentPlan =
+            currentTier !== null && plan.tier === currentTier
           const showCheckout = !(isCurrentPlan && isActive)
           const isEstate = plan.tier === 3
           const highlighted = isEstate

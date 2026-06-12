@@ -16,7 +16,7 @@ One-time migration from legacy Playwright accounts to canonical **`@mywealthmaps
 |------|-------------|----------|--------|
 | Consumer (tier 3) | `e2e-consumer@mywealthmaps.test` | `E2eTest!2026Mwm` | Full household + assets; `PLAYWRIGHT_HOUSEHOLD_ID` |
 | Consumer (tier 1) | `e2e-consumer-tier1@mywealthmaps.test` | same | Upgrade-banner Playwright project |
-| Advisor portal | `e2e-advisor@mywealthmaps.test` | same | Linked to advisor client below |
+| Advisor portal | `e2e-advisor@mywealthmaps.test` | same | Firm owner (`ensureAdvisorFirmForE2e`) + linked client below |
 | Advisor client | `e2e-advisor-client@mywealthmaps.test` | same | Rich FL household (401k, IRA, domicile, RMD E2E) |
 | Attorney portal | `e2e-attorney@mywealthmaps.test` | same | Newsletter kit on `/attorney` |
 | Golden path (optional) | `e2e-golden-path@mywealthmaps.test` | same | Stage-1 onramp smoke |

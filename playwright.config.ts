@@ -82,7 +82,7 @@ if (hasTier1Consumer) {
     {
       name: 'consumer-tier1',
       dependencies: ['consumer-tier1-setup'],
-      testMatch: /consumer-tier1-gates\.spec\.ts/,
+      testMatch: /consumer-tier1-gates\.spec\.ts|consumer-tier1-billing-checkout\.spec\.ts/,
       use: { storageState: '.auth/consumer-tier1.json' },
     },
   )

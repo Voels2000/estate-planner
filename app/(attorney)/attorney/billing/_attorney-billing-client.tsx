@@ -33,8 +33,26 @@ export function AttorneyBillingClient({
   checkoutSuccess = false,
   canceled = false,
 }: Props) {
-  const [loading, setLoading] = useState<AttorneyPlanKey | null>(null)
+  const [loading, setLoading] = useState<AttorneyPlanKey | 'portal' | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  async function handleManageBilling() {
+    setLoading('portal')
+    setError(null)
+    try {
+      const res = await fetch('/api/stripe/portal', { method: 'POST' })
+      const data = (await res.json()) as { url?: string; error?: string }
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        setError(data.error ?? 'Could not open billing portal.')
+      }
+    } catch {
+      setError('Network error. Please try again.')
+    } finally {
+      setLoading(null)
+    }
+  }
 
   async function handleSubscribe(planKey: AttorneyPlanKey) {
     setLoading(planKey)
@@ -91,6 +109,19 @@ export function AttorneyBillingClient({
       {error && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {currentTier >= 1 && (
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={() => void handleManageBilling()}
+            disabled={loading !== null}
+            className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-800 transition-opacity hover:bg-neutral-50 disabled:opacity-50"
+          >
+            {loading === 'portal' ? 'Loading…' : 'Manage billing'}
+          </button>
         </div>
       )}
 

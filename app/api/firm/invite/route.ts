@@ -3,8 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
-import { syncFirmStripeQuantity } from '@/lib/stripe/syncFirmQuantity'
 import { getAppUrl } from '@/lib/app-url'
+import { countFirmRosterSeats, getFirmTierMaxSeats } from '@/lib/firm/firmRoster'
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
@@ -70,11 +70,54 @@ export async function POST(request: Request) {
 
     const inviteToken = crypto.randomUUID()
 
-    const { data: firmRowBefore } = await admin
+    const { data: firmRowBefore, error: firmFetchError } = await admin
       .from('firms')
-      .select('seat_count')
+      .select('seat_count, tier, subscription_status')
       .eq('id', ctx.firm_id)
       .single()
+
+    if (firmFetchError || !firmRowBefore) {
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+
+    if (!['active', 'trialing'].includes(firmRowBefore.subscription_status ?? '')) {
+      return NextResponse.json(
+        { error: 'An active firm subscription is required to invite advisors.' },
+        { status: 403 },
+      )
+    }
+
+    const tierMax = getFirmTierMaxSeats(firmRowBefore.tier)
+    const purchasedSeats = firmRowBefore.seat_count ?? 1
+    const roster = await countFirmRosterSeats(admin, ctx.firm_id)
+
+    if (roster.total >= tierMax) {
+      const tier = firmRowBefore.tier ?? 'starter'
+      const upgradeHint =
+        tier === 'starter'
+          ? ' Upgrade to Growth (11–50 seats) via Manage firm billing.'
+          : tier === 'growth'
+            ? ' Contact support for Enterprise (51+ seats).'
+            : ''
+      return NextResponse.json(
+        {
+          error: `Seat limit reached for your plan (${tierMax} seats).${upgradeHint}`,
+          code: 'tier_seat_limit',
+          tier,
+        },
+        { status: 400 },
+      )
+    }
+
+    if (roster.total >= purchasedSeats) {
+      return NextResponse.json(
+        {
+          error: `All ${purchasedSeats} purchased seats are reserved. Add seats via Manage firm billing before inviting more advisors.`,
+          code: 'purchased_seat_limit',
+        },
+        { status: 400 },
+      )
+    }
 
     const { data: inserted, error: insertError } = await admin
       .from('firm_members')
@@ -93,17 +136,6 @@ export async function POST(request: Request) {
 
     if (insertError || !inserted) {
       console.error('firm invite insert:', insertError)
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
-    }
-
-    const { error: seatError } = await admin
-      .from('firms')
-      .update({ seat_count: (firmRowBefore?.seat_count ?? 0) + 1 })
-      .eq('id', ctx.firm_id)
-
-    if (seatError) {
-      console.error('firm invite seat_count:', seatError)
-      await admin.from('firm_members').delete().eq('id', inserted.id)
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
@@ -132,14 +164,8 @@ export async function POST(request: Request) {
     if (emailError) {
       console.error('Resend error (firm invite):', emailError)
       await admin.from('firm_members').delete().eq('id', inserted.id)
-      await admin
-        .from('firms')
-        .update({ seat_count: firmRowBefore?.seat_count ?? 1 })
-        .eq('id', ctx.firm_id)
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
-
-    await syncFirmStripeQuantity(ctx.firm_id)
 
     return NextResponse.json({
       success: true,

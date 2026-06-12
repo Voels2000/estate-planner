@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ADVISOR_FIRM_SEAT_RATES, ADVISOR_FIRM_SEAT_RANGES } from '@/lib/tiers'
+import { getFirmTierMaxSeats } from '@/lib/firm/firmRoster'
 import type { FirmMemberRow } from './page'
 
 type Props = {
@@ -77,6 +78,10 @@ export default function FirmClient({
   const seats = seatCount ?? 0
   const rate = perSeatRate(firmTier)
   const monthly = rate * seats
+  const rosterTotal = members.length
+  const tierMax = getFirmTierMaxSeats(firmTier)
+  const atTierCap = rosterTotal >= tierMax
+  const showStarterUpgrade = atTierCap && (firmTier ?? 'starter') === 'starter'
 
   async function handleRemove(memberId: string) {
     if (!window.confirm('Remove this advisor from your firm?')) return
@@ -296,6 +301,16 @@ export default function FirmClient({
             </span>
           </div>
         </div>
+        {showStarterUpgrade && (
+          <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            Starter is capped at {tierMax} seats. Upgrade to Growth (
+            {ADVISOR_FIRM_SEAT_RANGES.growth.label}) via{' '}
+            <a href="/billing" className="font-medium underline underline-offset-2">
+              Manage Billing
+            </a>{' '}
+            to invite more advisors.
+          </p>
+        )}
         <div className="mt-6">
           <a
             href="/billing"

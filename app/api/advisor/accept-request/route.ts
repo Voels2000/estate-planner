@@ -47,13 +47,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Request not found' }, { status: 404 })
   }
 
-  const { currentCount, maxClients, tierName } = await getAdvisorClientCapacity(admin, user.id)
+  const { cap, current, atLimit, tierName } = await getAdvisorClientCapacity(admin, user.id)
 
-  if (currentCount >= maxClients) {
+  if (atLimit) {
     return NextResponse.json({
       error: 'tier_limit_reached',
-      current_count: currentCount,
-      max_clients: maxClients,
+      current_count: current,
+      max_clients: cap,
       tier_name: tierName,
     }, { status: 403 })
   }

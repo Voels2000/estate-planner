@@ -263,10 +263,21 @@ export async function POST(req: NextRequest) {
 
         const firmId = subscription.metadata?.firm_id
         if (firmId) {
-          const mappedStatus = mapFirmSubscriptionStatus(subscription.status)
+          const mappedStatus = subscription.cancel_at_period_end
+            ? 'canceling'
+            : mapFirmSubscriptionStatus(subscription.status)
+          const stripeQuantity = subscription.items.data[0]?.quantity ?? 1
+          const stripePriceId = subscription.items.data[0]?.price?.id
+          const firmTier = stripePriceId
+            ? FIRM_PRICE_ID_TO_TIER[stripePriceId]
+            : undefined
           const { data: firmRows } = await supabase
             .from('firms')
-            .update({ subscription_status: mappedStatus })
+            .update({
+              subscription_status: mappedStatus,
+              seat_count: stripeQuantity,
+              ...(firmTier ? { tier: firmTier } : {}),
+            })
             .eq('id', firmId)
             .select('owner_id')
           console.log('customer.subscription.updated — firm subscription updated:', mappedStatus)
@@ -302,10 +313,13 @@ export async function POST(req: NextRequest) {
         const priceId = subscription.items.data[0]?.price.id ?? null
         const consumerTier = priceId ? getTierFromPriceId(priceId) : null
         const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
+        const status = subscription.cancel_at_period_end
+          ? 'canceling'
+          : subscription.status
         await supabase
           .from('profiles')
           .update({
-            subscription_status: subscription.status,
+            subscription_status: status,
             subscription_period_end: renewalIso,
             ...(priceId ? { subscription_plan: priceId } : {}),
             ...(consumerTier ? { consumer_tier: consumerTier } : {}),
@@ -334,8 +348,38 @@ export async function POST(req: NextRequest) {
             .from('firms')
             .update({ subscription_status: 'past_due' })
             .eq('id', firmId)
+
+          const { data: firm } = await supabase
+            .from('firms')
+            .select('owner_id')
+            .eq('id', firmId)
+            .single()
+          if (firm?.owner_id) {
+            await supabase
+              .from('profiles')
+              .update({ subscription_status: 'past_due' })
+              .eq('id', firm.owner_id)
+          }
+
           console.log('invoice.payment_failed — firm marked past_due')
           break
+        }
+
+        const customerId =
+          typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+        if (customerId) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, stripe_customer_id')
+            .eq('stripe_customer_id', customerId)
+            .maybeSingle()
+          if (profile) {
+            await supabase
+              .from('profiles')
+              .update({ subscription_status: 'past_due' })
+              .eq('id', profile.id)
+            console.log('invoice.payment_failed — consumer profile marked past_due')
+          }
         }
         break
       }

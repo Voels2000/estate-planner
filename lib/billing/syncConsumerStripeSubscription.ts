@@ -87,7 +87,7 @@ export async function syncConsumerStripeSubscription(
     const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
 
     update = {
-      subscription_status: activeSub.status,
+      subscription_status: activeSub.cancel_at_period_end ? 'canceling' : activeSub.status,
       subscription_period_end: renewalIso,
       stripe_subscription_id: activeSub.id,
       ...(priceId ? { subscription_plan: priceId } : {}),

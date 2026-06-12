@@ -89,6 +89,20 @@ npm run test:import:unit   # 24 tests — projection readiness, wizard gate, imp
 
 ---
 
+## Billing post-deploy smoke (2026-06-09)
+
+After billing hardening deploy:
+
+```bash
+npm run test:e2e:billing
+```
+
+Optional: set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` in `.env.test` to the **production** Stripe webhook signing secret (enables signed noop webhook test).
+
+Re-seed if advisor firm billing fails: `npm run seed:e2e`.
+
+---
+
 ## Security hardening post-deploy smoke (2026-05-29)
 
 Run on **production** (`https://www.mywealthmaps.com`) after `db push` + `estate-monte-carlo` deploy + API route fix (`af12ff0`).

@@ -25,7 +25,7 @@ export async function POST() {
 
     const { data: firm, error: firmFetchError } = await admin
       .from('firms')
-      .select('id, stripe_subscription_id, subscription_status')
+      .select('id, owner_id, stripe_subscription_id, subscription_status')
       .eq('id', ctx.firm_id)
       .maybeSingle()
 
@@ -36,6 +36,8 @@ export async function POST() {
     if (!firm) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
+
+    const ownerId = firm.owner_id ?? ctx.user.id
 
     if (firm.stripe_subscription_id && firm.subscription_status !== 'canceled') {
       try {
@@ -88,8 +90,8 @@ export async function POST() {
 
     const { error: ownerProfileError } = await admin
       .from('profiles')
-      .update({ firm_id: null, firm_role: null })
-      .eq('id', ctx.user.id)
+      .update({ firm_id: null, firm_role: null, subscription_status: 'none' })
+      .eq('id', ownerId)
 
     if (ownerProfileError) {
       console.error('firm dissolve: clear owner profile', ownerProfileError)

@@ -31,6 +31,7 @@ export function PricingConsumerPlans({
 }: Props) {
   const [period, setPeriod] = useState<BillingPeriod>('monthly')
   const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const billingPeriod = annualBillingAvailable ? period : 'monthly'
   const plans = useMemo(
     () => getConsumerPlansForPeriod(billingPeriod),
@@ -38,6 +39,7 @@ export function PricingConsumerPlans({
   )
 
   async function handleCheckout(plan: ConsumerPlanForCheckout) {
+    setCheckoutError(null)
     setLoadingPriceId(plan.priceId)
     try {
       const res = await fetch('/api/stripe/checkout', {
@@ -48,7 +50,15 @@ export function PricingConsumerPlans({
       const data = await res.json()
       if (res.ok && data.url) {
         window.location.assign(data.url)
+        return
       }
+      setCheckoutError(
+        typeof data.error === 'string'
+          ? data.error
+          : 'Checkout failed. Please try again or visit Billing after signing in.',
+      )
+    } catch {
+      setCheckoutError('Network error. Please try again.')
     } finally {
       setLoadingPriceId(null)
     }
@@ -61,6 +71,23 @@ export function PricingConsumerPlans({
         onChange={setPeriod}
         annualAvailable={annualBillingAvailable}
       />
+
+      {checkoutError && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '12px 16px',
+            borderRadius: 8,
+            border: '1px solid #fecaca',
+            background: '#fef2f2',
+            color: '#b91c1c',
+            fontSize: 14,
+            textAlign: 'center',
+          }}
+        >
+          {checkoutError}
+        </div>
+      )}
 
       <div
         style={{

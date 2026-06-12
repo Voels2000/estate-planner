@@ -2621,6 +2621,24 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Billing hardening: P0–P2 + polish + Playwright billing E2E
+
+**Decision:** Three audit/fix cycles on consumer, advisor firm, and attorney billing — without changing locked price constants in `lib/tiers.ts` / `lib/billing/stripePrices.ts` (except `resolveConsumerTier` annual fallback and optional env overrides for advisor firm price IDs).
+
+**Key behaviors:**
+- Consumer checkout reuses Stripe customer; duplicate-sub guard when already active/trialing/canceling
+- Firm seats billed on **join**, not invite; roster caps via `countFirmRosterSeats`
+- Enterprise firm checkout API returns 403 (mailto-only in UI)
+- Advisor **client** connections unlimited per B2B2C policy when firm sub active (not seat-tier client caps)
+- Webhook: `canceling` state, firm `past_due` + owner profile sync, firm `subscription.updated` quantity/tier
+- E2E: `npm run test:e2e:billing`; production signed webhook uses `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` (not local Stripe CLI secret)
+
+**Reasoning:** Close gaps found in billing audits before go-live; keep Stripe quantity aligned with active roster; prevent double checkout and wrong-portal cancellations.
+
+**Implication:** Re-run `npm run seed:e2e` so advisor has firm owner row. Deploy before billing E2E assertions pass on production.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

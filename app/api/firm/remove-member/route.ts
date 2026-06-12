@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { syncFirmStripeQuantity } from '@/lib/stripe/syncFirmQuantity'
+import { countFirmRosterSeats } from '@/lib/firm/firmRoster'
 
 export async function POST(request: Request) {
   try {
@@ -73,13 +74,8 @@ export async function POST(request: Request) {
       }
     }
 
-    const { data: firmRow } = await admin
-      .from('firms')
-      .select('seat_count')
-      .eq('id', ctx.firm_id)
-      .single()
-
-    const nextSeats = Math.max((firmRow?.seat_count ?? 1) - 1, 1)
+    const roster = await countFirmRosterSeats(admin, ctx.firm_id)
+    const nextSeats = Math.max(roster.active, 1)
     const { error: seatError } = await admin
       .from('firms')
       .update({ seat_count: nextSeats })
@@ -90,7 +86,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    await syncFirmStripeQuantity(ctx.firm_id)
+    if (row.status === 'active') {
+      await syncFirmStripeQuantity(ctx.firm_id)
+    }
 
     return NextResponse.json({ success: true })
   } catch (err) {

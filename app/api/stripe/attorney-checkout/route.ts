@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { ATTORNEY_PLAN_PRICE_IDS, type AttorneyPlanKey } from '@/lib/tiers'
 
 export async function POST(req: NextRequest) {
@@ -15,6 +16,15 @@ export async function POST(req: NextRequest) {
     } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_attorney, role, stripe_customer_id')
+      .eq('id', user.id)
+      .single()
+    if (!profile?.is_attorney && profile?.role !== 'attorney') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const { planKey, returnTo } = (await req.json()) as {
@@ -36,6 +46,21 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    let stripeCustomerId = profile?.stripe_customer_id ?? null
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: { user_id: user.id },
+      })
+      stripeCustomerId = customer.id
+
+      const admin = createAdminClient()
+      await admin
+        .from('profiles')
+        .update({ stripe_customer_id: stripeCustomerId })
+        .eq('id', user.id)
+    }
+
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mywealthmaps.com'
     const successUrl = `${baseUrl}/attorney/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`
     const cancelUrl = returnTo
@@ -45,7 +70,7 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      customer_email: user.email,
+      customer: stripeCustomerId,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,

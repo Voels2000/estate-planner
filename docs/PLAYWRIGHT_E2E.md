@@ -41,6 +41,7 @@ Template: [.env.test.example](../.env.test.example)
 | `npm run test:e2e:security-smoke` | public health/referral/telemetry + consumer RPC pages + advisor Monte Carlo |
 | `npm run test:e2e:security-isolation` | consumer-setup + advisor-setup + cross-household IDOR matrix |
 | `npm run test:e2e:cross-role` | advisor sync, persona onboarding, attorney documents, cross-household (subset) |
+| `npm run test:e2e:billing` | **Billing smoke:** consumer/advisor/attorney checkout APIs + webhook signature (`--workers=1`) |
 | `npm run test:e2e:complete` | consumer + advisor + attorney + public |
 | `npm run test:e2e:nightly` | public (attribution sessionStorage) |
 | `npm run test:import:unit` | import-unit (incl. `guided-onboarding-href.spec.ts` — 11 cases) |
@@ -60,6 +61,7 @@ Setup projects map retired `@rolobe.resend.app` emails to canonical `@mywealthma
 | Variable | Purpose |
 |----------|---------|
 | `PLAYWRIGHT_BASE_URL` | Target deployment — default **`https://www.mywealthmaps.com`**. Preview `*.vercel.app` serves pages but **`/api/*` routes may hang**; use production for API-heavy specs (presets, import, strategy writes). After changing base URL, re-run setup: `rm -rf .auth && npm run test:e2e:complete -- --project=advisor-setup --project=consumer-setup --project=attorney-setup` |
+| `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` | Optional — production webhook signing secret for signed noop webhook E2E. **Not** the local `stripe listen` secret from `.env.local`. |
 | `PLAYWRIGHT_PUBLIC_API_BASE_URL` | Optional — public API smoke defaults to `https://www.mywealthmaps.com` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Must match the Supabase project your `PLAYWRIGHT_BASE_URL` app uses (from `seed:e2e` output) |
 | `PLAYWRIGHT_CONSUMER_EMAIL` / `PASSWORD` | Estate-tier consumer (`e2e-consumer@mywealthmaps.test`; password defaults to `E2eTest!2026Mwm` from `e2e-test-identities.ts`) |
@@ -111,6 +113,8 @@ See [NEXT_SESSION.md](./NEXT_SESSION.md) — Estate verification suite.
 | 2026-05-30 | Production | `test:e2e:security-isolation` | **10/10** — IDOR matrix |
 | 2026-05-30 | Production | `test:e2e:cross-role` | **12/12** after deploy `12734a3` — persona + attorney + advisor sync |
 | 2026-05-30 | Production | `test:e2e:security-smoke` | **7/7** incl. `/api/health` |
+| 2026-06-09 | Production | `test:e2e:complete --workers=1` | **288 passed**, 20 failed, 7 skipped — billing specs need deploy; re-seed advisor client fixture |
+| 2026-06-09 | Production | `test:e2e:billing` | Run after deploy — checkout guards, firm/attorney APIs, webhook signature |
 
 Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) under parallel load.
 
@@ -123,6 +127,8 @@ Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) unde
 **Security / cross-role (2026-05-30):** `tests/e2e/security/cross-household-isolation.spec.ts` — consumer + advisor IDOR matrix (403/404 deny). `tests/e2e/advisor/advisor-consumer-sync.spec.ts` — Johnson asset POST → advisor estate-composition. `tests/e2e/attorney/attorney-documents-gaps.spec.ts` — documents list, gap-dismissals, attorney dashboard link. `tests/e2e/consumer/onboarding-persona.spec.ts` — golden-path persona selection (click `[aria-pressed]` card wrapper; wait for PATCH). Commands: `npm run test:e2e:security-isolation`, `npm run test:e2e:cross-role`.
 
 **Consumer:** `dashboard`, `consumer-core-recompute`, financial/strategy/trust/import specs, `consumer-routes-estate-tier`, `consumer-sidebar-navigation`, `consumer-route-regression`, `consumer-profile-save` (full + **3 partial PATCH** cases), `consumer-profile-spouse-layout` (slim profile negative), **`consumer-profile-field-prompt`** (ProfileFieldPrompt UI on Scenarios + SS), `consumer-growth-assumptions-api` (PATCH contract + empty-body 400), `consumer-api-writes` (allocation + health-check + generate-base-case), `consumer-ui-asset-save`, `consumer-health-check-ui`, `consumer-family-crud`, `consumer-my-advisor`, `consumer-billing-route`, `consumer-digital-assets`, `consumer-life-events`, `consumer-import-access`, `consumer-strategy-recommendation-ui`, `terms-accept-flow`, **`onboarding-persona`**, `consumer-tier1-gates` (optional).
+
+**Billing E2E (2026-06-09):** `tests/e2e/consumer/consumer-billing-checkout.spec.ts` · `advisor/advisor-firm-billing.spec.ts` · `attorney/attorney-billing.spec.ts` · `public/stripe-webhook.spec.ts` · helper `tests/e2e/helpers/stripe-webhook.ts`. Command: `npm run test:e2e:billing`. Advisor seed creates firm owner via `ensureAdvisorFirmForE2e()`.
 
 **Go-live:** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) — `npm run test:e2e:go-live-profile` before flip.
 

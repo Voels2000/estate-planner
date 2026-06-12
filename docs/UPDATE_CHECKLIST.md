@@ -85,6 +85,16 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] ROADMAP · MASTER_ARCHITECTURE · DECISION_LOG · BILLING_B2B2C_POLICY · LAUNCH_CHECKLIST · NEXT_SESSION synced
 - [x] No migration — `.env.live-stripe` template for live Stripe env vars (gitignored)
 
+## Billing hardening + Playwright billing E2E (2026-06-09) — shipped
+
+- [x] **P0/P1/P2** — attorney checkout guard + customer reuse; firm past_due gates; invite/join seat sync; portal firm routing; webhook canceling/past_due/tier sync
+- [x] **Polish** — consumer checkout customer reuse + duplicate-sub guard; cancel route firm-aware; enterprise API 403; firm invite seat on accept; unlimited advisor clients (B2B2C); admin MRR (`computeAdminMrr.ts`); renewal banner subscribed period
+- [x] **Helpers** — `lib/firm/firmRoster.ts` · `lib/billing/subscribedBillingPeriod.ts`
+- [x] **E2E** — `consumer-billing-checkout` · `advisor-firm-billing` · `attorney-billing` · `stripe-webhook` · `npm run test:e2e:billing`
+- [x] **Seed** — `ensureAdvisorFirmForE2e()` in `seed:e2e` (firm owner for advisor billing tests)
+- [x] MASTER_ARCHITECTURE · DECISION_LOG · NEXT_SESSION · PLAYWRIGHT_E2E · GO_LIVE_E2E · E2E_TEST_RESET synced
+- [x] No migration
+
 ## `/assess` dynamic state picker (2026-06-10) — shipped
 
 - [x] `lib/learn/us-states.ts` — 50 states + DC

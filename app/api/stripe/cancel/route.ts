@@ -6,18 +6,24 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-02-24.acacia',
 })
 
+const ACTIVE_FIRM_STATUSES = new Set(['active', 'trialing', 'canceling', 'past_due'])
+
 async function resolveSubscriptionId(
   stripeCustomerId: string | null | undefined,
   stripeSubscriptionId: string | null | undefined,
 ): Promise<string | null> {
   if (stripeSubscriptionId) return stripeSubscriptionId
   if (!stripeCustomerId) return null
-  const subs = await stripe.subscriptions.list({
-    customer: stripeCustomerId,
-    status: 'active',
-    limit: 1,
-  })
-  return subs.data[0]?.id ?? null
+  for (const status of ['active', 'trialing'] as const) {
+    const subs = await stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      status,
+      limit: 1,
+    })
+    const id = subs.data[0]?.id
+    if (id) return id
+  }
+  return null
 }
 
 export async function POST() {
@@ -31,10 +37,30 @@ export async function POST() {
     const { data: profile } = await supabase
       .from('profiles')
       .select(
-        'stripe_subscription_id, stripe_customer_id, subscription_status, subscription_period_end',
+        'stripe_subscription_id, stripe_customer_id, subscription_status, subscription_period_end, firm_role',
       )
       .eq('id', user.id)
       .single()
+
+    const { data: ownedFirm } = await supabase
+      .from('firms')
+      .select('subscription_status, stripe_subscription_id')
+      .eq('owner_id', user.id)
+      .maybeSingle()
+
+    if (
+      profile?.firm_role === 'owner' &&
+      ownedFirm &&
+      ACTIVE_FIRM_STATUSES.has(ownedFirm.subscription_status ?? '')
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Your firm subscription is billed separately. Use Manage firm billing to cancel or change seats.',
+        },
+        { status: 400 },
+      )
+    }
 
     const subscriptionId = await resolveSubscriptionId(
       profile?.stripe_customer_id,

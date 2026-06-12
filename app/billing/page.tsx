@@ -11,6 +11,7 @@ import {
 } from '@/lib/tiers'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
+import { getSubscribedBillingPeriod } from '@/lib/billing/subscribedBillingPeriod'
 
 export default async function BillingPage({
   searchParams,
@@ -69,21 +70,15 @@ export default async function BillingPage({
     const supabase = await createClient()
     const { data: firmRow } = await supabase
       .from('firms')
-      .select('stripe_customer_id, stripe_subscription_id, subscription_status')
+      .select('stripe_customer_id, stripe_subscription_id, subscription_status, tier, seat_count')
       .eq('id', access.firm_id)
       .single()
 
-    if (
-      firmRow?.subscription_status === 'active' ||
-      firmRow?.subscription_status === 'trialing'
-    ) {
-      redirect('/advisor')
-    }
-
     type FirmTierKey = keyof typeof ADVISOR_FIRM_SEAT_RATES
     const firmTierKey = (
-      access.firm_tier && access.firm_tier in ADVISOR_FIRM_SEAT_RATES
-        ? access.firm_tier
+      (firmRow?.tier ?? access.firm_tier) &&
+      (firmRow?.tier ?? access.firm_tier) in ADVISOR_FIRM_SEAT_RATES
+        ? (firmRow?.tier ?? access.firm_tier)
         : 'starter'
     ) as FirmTierKey
     const firmCheckoutPriceId =
@@ -91,7 +86,7 @@ export default async function BillingPage({
     const checkoutTier =
       FIRM_PRICE_ID_TO_TIER[firmCheckoutPriceId as keyof typeof FIRM_PRICE_ID_TO_TIER]
     const perSeatRate = ADVISOR_FIRM_SEAT_RATES[firmTierKey]
-    const seatCount = access.seat_count ?? 0
+    const seatCount = firmRow?.seat_count ?? access.seat_count ?? 0
     const totalMonthly = perSeatRate * seatCount
 
     return (
@@ -169,6 +164,7 @@ export default async function BillingPage({
       currentPlan={profile?.subscription_plan ?? null}
       subscriptionStatus={profile?.subscription_status ?? null}
       subscriptionPeriodEnd={profile?.subscription_period_end ?? null}
+      subscribedPeriod={getSubscribedBillingPeriod(profile?.subscription_plan ?? null)}
       isAdvisorClient={isAdvisorClient}
       annualBillingAvailable={isAnnualBillingConfigured()}
       recommendedPlanId={recommendedPlanId}

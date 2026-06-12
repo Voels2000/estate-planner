@@ -77,6 +77,18 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
   const profileFirmName = profile?.firm_name?.trim() || null
   const resolvedFirmName = firm?.name?.trim() || profileFirmName || null
 
+  const isFirmOwner = profile?.firm_role === 'owner'
+  const profileStatus = profile?.subscription_status ?? null
+  const firmStatus = firm?.subscription_status ?? null
+  const isPastDue =
+    profileStatus === 'past_due' ||
+    (isFirmOwner && firmStatus === 'past_due')
+  const hasActiveSubscription =
+    !isPastDue &&
+    (profileStatus === 'active' ||
+      profileStatus === 'trialing' ||
+      profileStatus === 'canceling')
+
   // isSuperuser grants admin, advisor, and attorney portal access regardless of role.
   return {
     user: { id: user.id, email: user.email ?? '' },
@@ -86,14 +98,12 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
     isAdvisor: isSuperuser || role === 'advisor',
     isAttorney: isSuperuser || role === 'attorney' || profile?.is_attorney === true,
     isConsumer: role === 'consumer',
-    hasActiveSubscription:
-      profile?.subscription_status === 'active' ||
-      profile?.subscription_status === 'trialing',
+    hasActiveSubscription,
     firm_id: profile?.firm_id ?? null,
     firm_role: profile?.firm_role ?? null,
     firm_name: resolvedFirmName,
     firm_tier: firm?.tier ?? null,
     seat_count: firm?.seat_count ?? null,
-    isFirmOwner: profile?.firm_role === 'owner',
+    isFirmOwner,
   }
 })

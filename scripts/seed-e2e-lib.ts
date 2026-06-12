@@ -687,6 +687,84 @@ export async function seedE2eAdvisorClientHousehold(
   return householdId
 }
 
+/** Ensure E2E advisor is a firm owner (required for /billing firm + firm-checkout E2E). */
+export async function ensureAdvisorFirmForE2e(
+  advisorUserId: string,
+  firmName: string,
+): Promise<string> {
+  const admin = createAdminClient()
+
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('firm_id, firm_role')
+    .eq('id', advisorUserId)
+    .single()
+
+  let firmId = profile?.firm_id ?? null
+
+  if (!firmId) {
+    const { data: existingFirm } = await admin
+      .from('firms')
+      .select('id')
+      .eq('owner_id', advisorUserId)
+      .maybeSingle()
+    firmId = existingFirm?.id ?? null
+  }
+
+  if (!firmId) {
+    const { data: firm, error } = await admin
+      .from('firms')
+      .insert({
+        name: firmName,
+        owner_id: advisorUserId,
+        tier: 'starter',
+        seat_count: 1,
+        subscription_status: null,
+      })
+      .select('id')
+      .single()
+    if (error || !firm?.id) {
+      throw new Error(`firms insert: ${error?.message ?? 'no id'}`)
+    }
+    firmId = firm.id
+    console.log(`  firms: created ${firmId}`)
+  } else {
+    console.log(`  firms: existing ${firmId}`)
+  }
+
+  await admin
+    .from('profiles')
+    .update({
+      firm_id: firmId,
+      firm_role: 'owner',
+      firm_name: firmName,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', advisorUserId)
+
+  const { data: ownerMember } = await admin
+    .from('firm_members')
+    .select('id')
+    .eq('firm_id', firmId)
+    .eq('user_id', advisorUserId)
+    .eq('firm_role', 'owner')
+    .maybeSingle()
+
+  if (!ownerMember) {
+    const { error: memberError } = await admin.from('firm_members').insert({
+      firm_id: firmId,
+      user_id: advisorUserId,
+      firm_role: 'owner',
+      status: 'active',
+      joined_at: new Date().toISOString(),
+    })
+    if (memberError) throw new Error(`firm_members owner insert: ${memberError.message}`)
+    console.log('  firm_members: owner row created')
+  }
+
+  return firmId
+}
+
 /** Fail loudly if any @mywealthmaps.test account is in an invalid state. */
 export async function verifyE2eAccounts(): Promise<void> {
   const admin = createAdminClient()

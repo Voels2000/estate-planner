@@ -1,38 +1,55 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
-export const ADVISOR_CLIENT_LIMITS: Record<string, number> = {
-  advisor_starter: 10,
-  advisor_pro: 50,
-  advisor_enterprise: 9999,
-  active: 10,
-  trialing: 10,
+const ACTIVE_FIRM_STATUSES = new Set(['active', 'trialing'])
+
+export type AdvisorClientCapacity = {
+  cap: number | null
+  current: number
+  atLimit: boolean
+  tierName: string
 }
 
-export function getAdvisorClientLimit(subscriptionStatus: string | null | undefined): number {
-  if (!subscriptionStatus) return ADVISOR_CLIENT_LIMITS.advisor_starter
-  return ADVISOR_CLIENT_LIMITS[subscriptionStatus] ?? ADVISOR_CLIENT_LIMITS.advisor_starter
-}
-
+/**
+ * Firm advisors may connect unlimited consumer households per seat (B2B2C policy).
+ * Requires an active firm subscription; no per-tier client cap.
+ */
 export async function getAdvisorClientCapacity(
   admin: SupabaseClient,
   advisorId: string,
-): Promise<{ currentCount: number; maxClients: number; tierName: string }> {
+): Promise<AdvisorClientCapacity> {
   const { data: currentClients } = await admin
     .from('advisor_clients')
     .select('id')
     .eq('advisor_id', advisorId)
     .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES, 'pending', 'consumer_requested'])
 
+  const current = currentClients?.length ?? 0
+
   const { data: advisorProfile } = await admin
     .from('profiles')
-    .select('subscription_status')
+    .select('firm_id')
     .eq('id', advisorId)
     .maybeSingle()
 
-  const tierName = advisorProfile?.subscription_status ?? 'advisor_starter'
-  const maxClients = getAdvisorClientLimit(tierName)
-  const currentCount = currentClients?.length ?? 0
+  if (!advisorProfile?.firm_id) {
+    return { cap: null, current, atLimit: true, tierName: 'none' }
+  }
 
-  return { currentCount, maxClients, tierName }
+  const { data: firm } = await admin
+    .from('firms')
+    .select('tier, subscription_status')
+    .eq('id', advisorProfile.firm_id)
+    .maybeSingle()
+
+  if (!firm || !ACTIVE_FIRM_STATUSES.has(firm.subscription_status ?? '')) {
+    return { cap: null, current, atLimit: true, tierName: firm?.tier ?? 'none' }
+  }
+
+  return {
+    cap: null,
+    current,
+    atLimit: false,
+    tierName: firm.tier ?? 'starter',
+  }
 }

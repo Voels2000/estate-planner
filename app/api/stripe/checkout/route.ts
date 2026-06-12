@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   getPriceConfig,
   getTierFromPriceId,
   type BillingPeriod,
   type PlanTier,
 } from '@/lib/billing/stripePrices'
+
+const BLOCKED_CONSUMER_SUB_STATUSES = new Set(['active', 'trialing', 'canceling'])
 
 const PLAN_NAME_TO_TIER: Record<string, PlanTier> = {
   financial: 1,
@@ -95,6 +98,37 @@ export async function POST(req: Request) {
       )
     }
 
+    const { data: billingProfile } = await supabase
+      .from('profiles')
+      .select('subscription_status, stripe_customer_id')
+      .eq('id', user.id)
+      .single()
+
+    if (BLOCKED_CONSUMER_SUB_STATUSES.has(billingProfile?.subscription_status ?? '')) {
+      return NextResponse.json(
+        {
+          error:
+            'You already have an active subscription. Use Manage billing to change or cancel your plan.',
+        },
+        { status: 400 },
+      )
+    }
+
+    let stripeCustomerId = billingProfile?.stripe_customer_id ?? null
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: { user_id: user.id },
+      })
+      stripeCustomerId = customer.id
+
+      const admin = createAdminClient()
+      await admin
+        .from('profiles')
+        .update({ stripe_customer_id: stripeCustomerId })
+        .eq('id', user.id)
+    }
+
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
     let successUrl: string
@@ -126,7 +160,7 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      customer_email: user.email,
+      customer: stripeCustomerId,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: returnTo

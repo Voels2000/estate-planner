@@ -18,6 +18,7 @@ const ADVISOR_PLANS = [
     seatRate: ADVISOR_FIRM_SEAT_RATES.starter,
     range: ADVISOR_FIRM_SEAT_RANGES.starter.label,
     priceId: ADVISOR_FIRM_PRICE_IDS.starter,
+    minSeats: ADVISOR_FIRM_SEAT_RANGES.starter.min,
     maxSeats: ADVISOR_FIRM_SEAT_RANGES.starter.max ?? 10,
     popular: false,
     features: [
@@ -35,6 +36,7 @@ const ADVISOR_PLANS = [
     seatRate: ADVISOR_FIRM_SEAT_RATES.growth,
     range: ADVISOR_FIRM_SEAT_RANGES.growth.label,
     priceId: ADVISOR_FIRM_PRICE_IDS.growth,
+    minSeats: ADVISOR_FIRM_SEAT_RANGES.growth.min,
     maxSeats: ADVISOR_FIRM_SEAT_RANGES.growth.max ?? 50,
     popular: true,
     features: [
@@ -323,6 +325,7 @@ export default async function PricingPage() {
                     planName={plan.name}
                     seatRate={plan.seatRate}
                     priceId={plan.priceId}
+                    minSeats={'minSeats' in plan ? plan.minSeats : 1}
                     maxSeats={plan.maxSeats}
                   />
                 ) : (

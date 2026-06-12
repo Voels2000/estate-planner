@@ -108,6 +108,9 @@ export function resolveConsumerTier(
   if (subscriptionPlan === CONSUMER_PRICE_IDS.starter) return 1
   if (subscriptionPlan === CONSUMER_PRICE_IDS.retirement) return 2
   if (subscriptionPlan === CONSUMER_PRICE_IDS.estate) return 3
+  // Fall back to PRICE_ID_TO_TIER map (covers annual IDs)
+  const mappedTier = PRICE_ID_TO_TIER[subscriptionPlan ?? '']
+  if (mappedTier) return mappedTier
   // Default
   return 1
 }
@@ -134,9 +137,9 @@ export function featureUpgradeTier(feature: string): 2 | 3 {
 export const PRICE_ID_TO_TIER: Record<string, 1 | 2 | 3> = buildPriceIdToTierMap()
 
 export const ADVISOR_FIRM_PRICE_IDS = {
-  starter:    'price_1TIW5xCaljka9gJtTw9uF5E5',
-  growth:     'price_1TIW78Caljka9gJt8vlD9GnF',
-  enterprise: 'price_1TIW8gCaljka9gJtTfmEgO2C',
+  starter: process.env.STRIPE_PRICE_ADVISOR_FIRM_STARTER?.trim() || 'price_1TIW5xCaljka9gJtTw9uF5E5',
+  growth: process.env.STRIPE_PRICE_ADVISOR_FIRM_GROWTH?.trim() || 'price_1TIW78Caljka9gJt8vlD9GnF',
+  enterprise: process.env.STRIPE_PRICE_ADVISOR_FIRM_ENTERPRISE?.trim() || 'price_1TIW8gCaljka9gJtTfmEgO2C',
 }
 
 export const FIRM_PRICE_ID_TO_TIER: Record<string, string> = {

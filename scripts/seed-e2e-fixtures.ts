@@ -26,6 +26,7 @@ import {
   ensureAdvisorDirectoryListing,
   ensureAttorneyListingAndPortal,
   ensureAuthUser,
+  ensureAdvisorFirmForE2e,
   initSupabaseEnv,
   seedE2eAdvisorClientHousehold,
   seedE2eConsumerHousehold,
@@ -110,6 +111,7 @@ async function main() {
       })
       .eq('id', advisorId)
     await ensureAdvisorDirectoryListing()
+    await ensureAdvisorFirmForE2e(advisorId, E2E_IDENTITIES.advisor.firmName)
     console.log('')
   }
 

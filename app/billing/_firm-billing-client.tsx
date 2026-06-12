@@ -5,6 +5,7 @@ import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ADVISOR_FIRM_SEAT_RANGES } from '@/lib/tiers'
+import { getFirmTierMaxSeats } from '@/lib/firm/firmRoster'
 
 const TIER_LABEL: Record<string, string> = {
   starter: `Starter (${ADVISOR_FIRM_SEAT_RANGES.starter.label})`,
@@ -16,6 +17,12 @@ const TIER_MAX_SEATS: Record<string, number> = {
   starter: 10,
   growth: 50,
   enterprise: 250,
+}
+
+const TIER_MIN_SEATS: Record<string, number> = {
+  starter: 1,
+  growth: 11,
+  enterprise: 51,
 }
 
 type Props = {
@@ -38,15 +45,20 @@ export function FirmBillingClient({
   firmCheckoutPriceId,
 }: Props) {
   const maxSeats = TIER_MAX_SEATS[firmTierKey] ?? 10
+  const minSeats = TIER_MIN_SEATS[firmTierKey] ?? 1
   const [seatCountInput, setSeatCountInput] = useState(
-    Math.min(Math.max(1, initialSeatCount || 1), maxSeats),
+    Math.min(Math.max(minSeats, initialSeatCount || minSeats), maxSeats),
   )
   const [loadingSubscribe, setLoadingSubscribe] = useState(false)
+  const [loadingPortal, setLoadingPortal] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const isActive =
     subscriptionStatus === 'active' || subscriptionStatus === 'trialing'
-  const effectiveSeats = Math.min(Math.max(1, seatCountInput || 1), maxSeats)
+  const tierMaxSeats = getFirmTierMaxSeats(firmTierKey)
+  const atTierSeatCap = isActive && initialSeatCount >= tierMaxSeats
+  const canUpgradeTier = atTierSeatCap && firmTierKey === 'starter'
+  const effectiveSeats = Math.min(Math.max(minSeats, seatCountInput || minSeats), maxSeats)
   const displaySeats = isActive ? initialSeatCount : effectiveSeats
   const totalMonthly = perSeatRate * displaySeats
 
@@ -84,6 +96,33 @@ export function FirmBillingClient({
     }
   }
 
+  async function handleManageBilling() {
+    setError(null)
+    setLoadingPortal(true)
+    try {
+      const res = await fetch('/api/stripe/portal', { method: 'POST' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(
+          typeof data.error === 'string'
+            ? data.error
+            : 'Something went wrong. Please try again.',
+        )
+        setLoadingPortal(false)
+        return
+      }
+      if (data.url && typeof data.url === 'string') {
+        window.location.href = data.url
+        return
+      }
+      setError('Something went wrong. Please try again.')
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setLoadingPortal(false)
+    }
+  }
+
   const resolvedTierLabel =
     TIER_LABEL[firmTierKey] ?? firmTierKey.replace(/^\w/, (c) => c.toUpperCase())
 
@@ -110,6 +149,21 @@ export function FirmBillingClient({
       {error && (
         <div className="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
           {error}
+        </div>
+      )}
+
+      {canUpgradeTier && (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          You&apos;ve reached the Starter plan limit ({tierMaxSeats} seats). Upgrade to Growth (
+          {ADVISOR_FIRM_SEAT_RANGES.growth.label}) via Manage firm billing to add more advisors.
+          <button
+            type="button"
+            onClick={() => void handleManageBilling()}
+            disabled={loadingPortal}
+            className="ml-2 font-medium underline underline-offset-2 hover:text-amber-950 disabled:opacity-50"
+          >
+            Upgrade in Stripe
+          </button>
         </div>
       )}
 
@@ -151,9 +205,20 @@ export function FirmBillingClient({
 
         <div className="flex flex-wrap gap-3 pt-2">
           {isActive && (
-            <ButtonLink href="/advisor/firm" variant="dark" className="rounded-lg px-4 py-2.5 text-sm">
-              Manage Subscription
-            </ButtonLink>
+            <>
+              <Button
+                type="button"
+                onClick={() => void handleManageBilling()}
+                disabled={loadingPortal}
+                variant="dark"
+                className="rounded-lg px-4 py-2.5 text-sm"
+              >
+                {loadingPortal ? 'Loading…' : 'Manage firm billing'}
+              </Button>
+              <ButtonLink href="/advisor/firm" variant="secondary" className="rounded-lg px-4 py-2.5 text-sm">
+                Manage firm roster
+              </ButtonLink>
+            </>
           )}
           {!isActive && (
             <>
@@ -167,12 +232,12 @@ export function FirmBillingClient({
                 <input
                   id="firm-billing-seats"
                   type="number"
-                  min={1}
+                  min={minSeats}
                   max={maxSeats}
                   value={seatCountInput}
                   onChange={(e) => {
                     const parsed = parseInt(e.target.value, 10)
-                    setSeatCountInput(Number.isNaN(parsed) ? 1 : parsed)
+                    setSeatCountInput(Number.isNaN(parsed) ? minSeats : parsed)
                   }}
                   className="w-full max-w-xs rounded-lg border border-neutral-300 px-3 py-2 text-sm"
                 />

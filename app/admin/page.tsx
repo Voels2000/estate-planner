@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { ADVISOR_FIRM_SEAT_RATES, TIER_PRICES } from '@/lib/tiers'
+import { computeAdminMrr } from '@/lib/billing/computeAdminMrr'
 import { getCanonicalTerms } from '@/lib/terms/getCanonicalTerms'
 import { computeOpsTaskUrgency } from '@/lib/admin/opsTasks'
 import type { OpsTaskRow } from '@/lib/admin/opsTasks'
@@ -14,7 +14,7 @@ export default async function AdminPage() {
   // User stats
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, email, full_name, role, consumer_tier, subscription_status, subscription_plan, created_at')
+    .select('id, email, full_name, role, consumer_tier, attorney_tier, subscription_status, subscription_plan, created_at')
     .order('created_at', { ascending: false })
 
   // Usage stats
@@ -253,27 +253,15 @@ export default async function AdminPage() {
   const tier3Count =
     profiles?.filter((p) => p.consumer_tier === 3 && activePaid(p)).length ?? 0
 
-  // Advisor firm MRR: seat_count × per-seat rate by firm tier (not per-advisor flat $99).
-  // TODO: add attorney-tier MRR (profiles.attorney_tier × ATTORNEY_PLAN_LIMITS) when admin reporting expands.
   const { data: activeFirms } = await admin
     .from('firms')
     .select('seat_count, tier')
     .in('subscription_status', ['active', 'trialing'])
 
-  const firmMrr = (activeFirms ?? []).reduce((sum, firm) => {
-    const tierKey = firm.tier ?? 'starter'
-    const rate =
-      ADVISOR_FIRM_SEAT_RATES[tierKey] ?? ADVISOR_FIRM_SEAT_RATES.starter
-    const seats = firm.seat_count ?? 1
-    return sum + seats * rate
-  }, 0)
-
-  const consumerMrr =
-    tier1Count * TIER_PRICES[1] +
-    tier2Count * TIER_PRICES[2] +
-    tier3Count * TIER_PRICES[3]
-
-  const mrr = consumerMrr + firmMrr
+  const { consumerMrr, firmMrr, attorneyMrr, mrr } = computeAdminMrr(
+    profiles ?? [],
+    activeFirms ?? [],
+  )
 
   const nowIso = new Date().toISOString()
   const sevenDaysFromNow = new Date()

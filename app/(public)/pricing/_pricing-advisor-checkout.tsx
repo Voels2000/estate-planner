@@ -7,15 +7,22 @@ type Props = {
   planName: string
   seatRate: number
   priceId: string
+  minSeats?: number
   maxSeats: number
 }
 
-export function PricingAdvisorCheckout({ planName, seatRate, priceId, maxSeats }: Props) {
-  const [seatCount, setSeatCount] = useState(1)
+export function PricingAdvisorCheckout({
+  planName,
+  seatRate,
+  priceId,
+  minSeats = 1,
+  maxSeats,
+}: Props) {
+  const [seatCount, setSeatCount] = useState(minSeats)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const effectiveSeats = Math.min(Math.max(1, seatCount || 1), maxSeats)
+  const effectiveSeats = Math.min(Math.max(minSeats, seatCount || minSeats), maxSeats)
   const totalMonthly = seatRate * effectiveSeats
 
   async function handleCheckout() {
@@ -56,12 +63,12 @@ export function PricingAdvisorCheckout({ planName, seatRate, priceId, maxSeats }
         <input
           id={`advisor-seats-${planName}`}
           type="number"
-          min={1}
+          min={minSeats}
           max={maxSeats}
           value={seatCount}
           onChange={(e) => {
             const parsed = parseInt(e.target.value, 10)
-            setSeatCount(Number.isNaN(parsed) ? 1 : parsed)
+            setSeatCount(Number.isNaN(parsed) ? minSeats : parsed)
           }}
           style={{
             width: '100%',

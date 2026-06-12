@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { syncFirmStripeQuantity } from '@/lib/stripe/syncFirmQuantity'
+import { countFirmRosterSeats, getFirmTierMaxSeats } from '@/lib/firm/firmRoster'
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
@@ -53,6 +55,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const { data: firmRow } = await admin
+      .from('firms')
+      .select('seat_count, tier, subscription_status')
+      .eq('id', firm_id)
+      .single()
+
+    if (!firmRow) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    const tierMax = getFirmTierMaxSeats(firmRow.tier)
+    const roster = await countFirmRosterSeats(admin, firm_id)
+    const activeAfterJoin = roster.active + 1
+
+    if (activeAfterJoin > tierMax) {
+      return NextResponse.json(
+        { error: 'This firm has reached its seat limit. Ask the firm owner to upgrade.' },
+        { status: 403 },
+      )
+    }
+
     const now = new Date().toISOString()
 
     const { error: memberError } = await admin
@@ -78,6 +101,19 @@ export async function POST(request: Request) {
       console.error('firm join profile update:', profileError)
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
+
+    const nextSeatCount = Math.max(activeAfterJoin, firmRow.seat_count ?? 1)
+    const { error: seatError } = await admin
+      .from('firms')
+      .update({ seat_count: nextSeatCount })
+      .eq('id', firm_id)
+
+    if (seatError) {
+      console.error('firm join seat_count:', seatError)
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    }
+
+    await syncFirmStripeQuantity(firm_id)
 
     return NextResponse.json({ success: true })
   } catch (err) {

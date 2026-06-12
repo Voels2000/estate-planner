@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-10 (pricing surfaces alignment + firm seat billing)
+# Last updated: 2026-06-09 (billing hardening P0–P2 + polish + billing E2E)
 
 ---
 
@@ -756,8 +756,12 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Single source of truth for Stripe price IDs: `lib/billing/stripePrices.ts` (`getPriceConfig(tier, period)`, `getTierFromPriceId(priceId)`). Env vars: `STRIPE_PRICE_FINANCIAL_MONTHLY`, `_ANNUAL`, etc.
 - Plan display shared by billing and public pricing: `lib/billing/consumerPlanCatalog.ts` (names/descriptions from `TIER_NAMES` / `TIER_DESCRIPTIONS` in `lib/tiers.ts`).
 - **Public `/pricing` (2026-06-10):** Consumer plans via `_pricing-consumer-plans.tsx`; advisor **per-seat** Starter/Growth/Enterprise from `ADVISOR_FIRM_SEAT_RATES` + `ADVISOR_FIRM_SEAT_RANGES`; attorney Free/Starter/Growth from `ATTORNEY_PLAN_LIMITS`. Advisor checkout: `_pricing-advisor-checkout.tsx` → `POST /api/stripe/firm-checkout`.
-- **Advisor firm billing (2026-06-10):** `POST /api/stripe/firm-checkout` — `{ priceId, seatCount }`; tier-band validation (Starter ≤10, Growth ≤50, Enterprise ≤250). Webhook `checkout.session.completed` writes `firms.seat_count` from Stripe subscription quantity. Roster invite/remove updates `firms.seat_count` and calls `syncFirmStripeQuantity`. Firm owner pre-subscribe seat picker on `/billing` (`_firm-billing-client.tsx`).
-- **Consumer checkout (2026-06-10):** `POST /api/stripe/checkout` is **consumer-only** — rejects price IDs not in `STRIPE_PRICES` / legacy consumer map. Advisor/attorney use firm-checkout and attorney-checkout respectively.
+- **Advisor firm billing (2026-06-10, hardened 2026-06-09):** `POST /api/stripe/firm-checkout` — `{ priceId, seatCount }`; tier-band validation (Starter ≤10, Growth ≤50, Enterprise ≤250); **Enterprise self-serve returns 403**. Webhook `checkout.session.completed` writes `firms.seat_count` from Stripe subscription quantity; `subscription.updated` syncs quantity + tier; `payment_failed` → firm + owner `past_due`. **Seat count increments on firm join (accept), not invite send** (`lib/firm/firmRoster.ts`). Invite/remove syncs Stripe via `syncFirmStripeQuantity`. Firm owner pre-subscribe seat picker + Starter-at-cap upgrade CTA on `/billing` (`_firm-billing-client.tsx`).
+- **Consumer checkout (2026-06-10, hardened 2026-06-09):** `POST /api/stripe/checkout` is **consumer-only** — rejects non-consumer price IDs; reuses/creates `stripe_customer_id`; blocks checkout when subscription is `active` / `trialing` / `canceling`. Advisor/attorney use firm-checkout and attorney-checkout respectively.
+- **Attorney checkout (2026-06-09):** `POST /api/stripe/attorney-checkout` — `is_attorney || role === 'attorney'` guard; reuses `stripe_customer_id`; 503 if `TODO_*` price placeholders.
+- **Cancel / portal (2026-06-09):** `POST /api/stripe/cancel` — consumer profile sub only; firm owners directed to portal. `POST /api/stripe/portal` — firm customer when firm sub is active/trialing/canceling/past_due.
+- **Access (2026-06-09):** `getAccessContext` — `hasActiveSubscription` includes `canceling`; firm-owner `past_due` blocks access. `advisorClientLimits` — unlimited consumer clients when firm sub active (B2B2C policy).
+- **Admin MRR (2026-06-09):** `lib/billing/computeAdminMrr.ts` — annual-aware consumer + attorney tier + firm seat MRR.
 - Billing page (`/billing`) and public pricing (`/pricing`) include **monthly/annual toggle** (`components/billing/BillingPeriodToggle.tsx`) when `isAnnualBillingConfigured()` is true (all three `STRIPE_PRICE_*_ANNUAL` env vars set server-side). Toggle hidden otherwise; monthly plans only.
 - **Go-live:** [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) — Phase 1 test mode, then Phase 2 live keys; never mix test price IDs with live secret key.
 - Checkout (`POST /api/stripe/checkout`) accepts `priceId` + `period` or `plan` query param; Estate subscriptions get `subscription_data.trial_period_days: 14`.
@@ -1252,7 +1256,7 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 
 | Surface | Implementation |
 |---------|----------------|
-| Checkout | `POST /api/stripe/attorney-checkout` — `ATTORNEY_PLAN_PRICE_IDS` in `lib/tiers.ts`; 503 if `TODO_*` placeholders |
+| Checkout | `POST /api/stripe/attorney-checkout` — `ATTORNEY_PLAN_PRICE_IDS` in `lib/tiers.ts`; 503 if `TODO_*` placeholders; reuses `stripe_customer_id`; attorney role guard |
 | Webhook | `checkout.session.completed` / `subscription.updated` / `subscription.deleted` → `profiles.attorney_tier` via `getAttorneyTierFromPriceId()` |
 | Billing UI | `app/(attorney)/attorney/billing/_attorney-billing-client.tsx` |
 | Upgrade prompts | `components/attorney/AttorneyUpgradePrompt.tsx` — client cap, PDF export, doc dashboard blur |
