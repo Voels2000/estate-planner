@@ -97,7 +97,12 @@ After billing hardening deploy:
 npm run test:e2e:billing
 ```
 
-Optional: set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` in `.env.test` to the **production** Stripe webhook signing secret (enables signed noop webhook test).
+Optional env in `.env.test`:
+
+- `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` — production webhook signing secret (signed noop webhook test; not local Stripe CLI secret)
+- `PLAYWRIGHT_ADVISOR_FIRM_STARTER_PRICE_ID` — live firm starter price when code fallbacks differ from Vercel
+
+**Expected (2026-06-09):** 21 passed, 2 skipped — unsigned webhook + firm starter URL when Stripe session creation fails until live price IDs verified.
 
 Re-seed if advisor firm billing fails: `npm run seed:e2e`.
 

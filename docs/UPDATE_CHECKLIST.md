@@ -95,6 +95,16 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] MASTER_ARCHITECTURE · DECISION_LOG · NEXT_SESSION · PLAYWRIGHT_E2E · GO_LIVE_E2E · E2E_TEST_RESET synced
 - [x] No migration
 
+## Billing E2E production resilience (2026-06-09) — shipped
+
+- [x] Consumer duplicate-sub test — POST `{ tier, period }` so server resolves live price IDs (not test-bundle `priceId`)
+- [x] Advisor firm starter checkout — skip on 500/invalid price; `firmStarterPriceIdForE2e()` + optional `PLAYWRIGHT_ADVISOR_FIRM_STARTER_PRICE_ID`
+- [x] Attorney subscribe UI — race Stripe redirect vs in-page error (no `response.json()` after navigation)
+- [x] Helper `tests/e2e/helpers/billing-e2e.ts`
+- [x] Production verify: `npm run test:e2e:billing` — **21 passed**, 2 skipped (signed webhook + firm starter URL when Stripe 500)
+- [x] DECISION_LOG · NEXT_SESSION · PLAYWRIGHT_E2E · GO_LIVE_E2E · `.env.test.example` synced
+- [x] No migration
+
 ## `/assess` dynamic state picker (2026-06-10) — shipped
 
 - [x] `lib/learn/us-states.ts` — 50 states + DC

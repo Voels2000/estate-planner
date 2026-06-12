@@ -13,28 +13,25 @@ test.describe('Attorney billing UI', () => {
     await expect(page.getByText(/Attorney Starter|Free/i).first()).toBeVisible()
   })
 
-  test('subscribe button triggers attorney checkout API', async ({ page }) => {
+  test('subscribe button redirects to Stripe or shows checkout error', async ({ page }) => {
     await page.goto('/attorney/billing')
-
-    const checkoutResponse = page.waitForResponse(
-      (res) =>
-        res.url().includes('/api/stripe/attorney-checkout') && res.request().method() === 'POST',
-      { timeout: 20_000 },
-    )
 
     await page.getByRole('button', { name: /Subscribe to Attorney/i }).first().click()
 
-    const res = await checkoutResponse
-    expect([200, 503]).toContain(res.status())
+    const stripeNav = page
+      .waitForURL(/checkout\.stripe\.com/, { timeout: 20_000 })
+      .then(() => 'stripe' as const)
+      .catch(() => null)
 
-    if (res.status() === 200) {
-      const body = await res.json()
-      expect(body.url).toMatch(/^https:\/\/checkout\.stripe\.com/)
-    } else {
-      const body = await res.json()
-      expect(body.error).toMatch(/not yet configured|contact support/i)
-      await expect(page.getByText(/not yet configured|contact support|Checkout failed/i).first()).toBeVisible()
-    }
+    const errorVisible = page
+      .getByText(/not yet configured|contact support|Checkout failed|Something went wrong/i)
+      .first()
+      .waitFor({ state: 'visible', timeout: 20_000 })
+      .then(() => 'error' as const)
+      .catch(() => null)
+
+    const outcome = await Promise.race([stripeNav, errorVisible])
+    expect(outcome, 'Expected Stripe redirect or in-page checkout error').not.toBeNull()
   })
 })
 

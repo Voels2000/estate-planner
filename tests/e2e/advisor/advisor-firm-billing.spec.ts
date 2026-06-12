@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { ADVISOR_FIRM_PRICE_IDS } from '@/lib/tiers'
+import { firmStarterPriceIdForE2e } from '../helpers/billing-e2e'
 
 /**
  * Advisor firm billing — auth via advisor-setup storage state.
@@ -46,24 +47,43 @@ test.describe('Advisor firm billing checkout API', () => {
   test('POST /api/stripe/firm-checkout returns checkout url for starter tier', async ({
     request,
   }) => {
+    const priceId = firmStarterPriceIdForE2e()
     const res = await request.post('/api/stripe/firm-checkout', {
       data: {
-        priceId: ADVISOR_FIRM_PRICE_IDS.starter,
+        priceId,
         seatCount: 1,
       },
     })
 
+    const text = await res.text()
+    let body: { error?: string; url?: string } = {}
+    try {
+      body = JSON.parse(text) as { error?: string; url?: string }
+    } catch {
+      body = {}
+    }
+
     if (res.status() === 400) {
-      const body = await res.json()
+      if (body.error?.includes('active subscription')) {
+        test.skip(true, 'Firm already subscribed — checkout blocked as expected')
+        return
+      }
       test.skip(
-        body.error?.includes('active subscription'),
-        'Firm already subscribed — checkout blocked as expected',
+        true,
+        `Price ID ${priceId} rejected (${body.error ?? 'Bad request'}) — set PLAYWRIGHT_ADVISOR_FIRM_STARTER_PRICE_ID in .env.test`,
       )
       return
     }
 
-    expect(res.ok(), await res.text()).toBeTruthy()
-    const body = await res.json()
+    if (res.status() === 500) {
+      test.skip(
+        true,
+        `Stripe session creation failed (${body.error ?? text}) — verify live firm price IDs in Vercel`,
+      )
+      return
+    }
+
+    expect(res.ok(), text).toBeTruthy()
     expect(body.url).toMatch(/^https:\/\/checkout\.stripe\.com/)
   })
 

@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test'
-import { getPriceConfig } from '@/lib/billing/stripePrices'
 
 /**
  * Consumer billing checkout API — auth via consumer-setup storage state.
  * E2E consumer seed uses tier 3 + active subscription (duplicate guard).
+ * Use tier + period in POST body so the server resolves price IDs from its env (not test-bundle IDs).
  */
 test.describe('Consumer billing checkout API', () => {
   test('POST /api/stripe/checkout rejects unauthenticated requests', async ({ browser }) => {
@@ -16,9 +16,8 @@ test.describe('Consumer billing checkout API', () => {
   })
 
   test('POST /api/stripe/checkout blocks duplicate subscription', async ({ request }) => {
-    const financial = getPriceConfig(1, 'monthly')
     const res = await request.post('/api/stripe/checkout', {
-      data: { priceId: financial.priceId, period: 'monthly' },
+      data: { tier: 1, period: 'monthly' },
     })
     expect(res.status()).toBe(400)
     const body = await res.json()

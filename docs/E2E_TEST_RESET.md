@@ -121,6 +121,8 @@ npm run verify:estate:e2e
 
 Copy the printed block from step 1, or start from [.env.test.example](../.env.test.example) and fill `PLAYWRIGHT_HOUSEHOLD_ID` from seed output.
 
+**Billing smoke (optional):** `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` · `PLAYWRIGHT_ADVISOR_FIRM_STARTER_PRICE_ID` — see [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · `npm run test:e2e:billing`
+
 ### 4. Prune Playwright test debris (optional)
 
 ```bash

@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-09 (billing hardening P0–P2 + polish + billing E2E)
+# Last updated: 2026-06-09 (billing E2E production resilience — 21 passed / 2 skipped)
 
 ---
 
@@ -30,7 +30,7 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 | `/learn` discovery & cross-linking | ✅ Shipped | `PublicNav` State tax guides · homepage callout · `/estate-tax` guide link |
 | `/assess` dynamic state picker | ✅ Shipped | `useSelectedState` · `StatePickerDropdown` · 13-state callout on intro |
 | Pricing surfaces + firm seat billing | ✅ Shipped | `/pricing` advisor/attorney · firm-checkout seat sync · `/billing` seat picker |
-| Billing hardening + billing E2E | ✅ Shipped | P0–P2 + polish · `test:e2e:billing` · `ensureAdvisorFirmForE2e` |
+| Billing hardening + billing E2E | ✅ Shipped | P0–P2 + polish · `test:e2e:billing` (21 pass / 2 skip prod) · `billing-e2e.ts` |
 | Legal entity placeholders (`/terms`, `/privacy`) | ✅ Shipped | `lib/legal/company.ts` — My Wealth Maps LLC · Snohomish address · RA Alan Voels |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
@@ -42,6 +42,7 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 |------|------------------------|
 | Pricing surfaces + firm seat billing | `/pricing` · `firm-checkout` · webhook `seat_count` · `_firm-billing-client.tsx` |
 | Billing hardening + E2E | `npm run test:e2e:billing` · `lib/firm/firmRoster.ts` · consumer duplicate-sub guard |
+| Billing E2E prod fixes | `billing-e2e.ts` · tier/period checkout body · attorney UI redirect race · firm starter skip on Stripe 500 |
 | Legal entity constants | `lib/legal/company.ts` → `/terms` · `/privacy` · public footer copyright |
 | `/assess` dynamic state picker | `lib/learn/useSelectedState.ts` · `StatePickerDropdown` · `mwm_selected_state` localStorage |
 | `/learn` discovery & cross-linking | `PublicNav` → `/learn` · homepage state guide card · `/estate-tax` in-app link |

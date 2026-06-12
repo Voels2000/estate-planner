@@ -2639,6 +2639,18 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Billing E2E: production-safe assertions (not test-bundle price IDs)
+
+**Decision:** Billing Playwright specs against production must let the **server** resolve Stripe price IDs — never send hardcoded test-mode `priceId` values from `getPriceConfig`. Consumer duplicate-sub uses `{ tier: 1, period: 'monthly' }`. Advisor firm starter uses `firmStarterPriceIdForE2e()` with optional `PLAYWRIGHT_ADVISOR_FIRM_STARTER_PRICE_ID` override; skip (not fail) when Stripe returns 500 or price ID mismatch. Attorney subscribe UI races `checkout.stripe.com` navigation vs in-page error — do not call `response.json()` after redirect.
+
+**Reasoning:** Production E2E runs against live Stripe catalog on Vercel; test-bundle price IDs trigger `"Invalid plan"` or session-creation 500s unrelated to app guard logic.
+
+**Alternatives considered:** Mock Stripe in E2E (rejected — smoke targets real deploy). Always fail on firm starter 500 (rejected — blocks suite when live price IDs need ops verification).
+
+**Implication:** `tests/e2e/helpers/billing-e2e.ts`. Production `npm run test:e2e:billing`: 21 passed, 2 skipped (unsigned webhook + firm starter when Stripe rejects session).
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]
