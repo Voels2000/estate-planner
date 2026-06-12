@@ -15,6 +15,19 @@ npm run test:e2e:complete -- --workers=1
 Canonical emails/passwords: [scripts/e2e-test-identities.ts](../scripts/e2e-test-identities.ts)  
 Template: [.env.test.example](../.env.test.example)
 
+### Local E2E and recompute load
+
+For day-to-day local E2E, set **`E2E_SKIP_RECOMPUTE=true`** in `.env.test` to avoid triggering the full recompute chain on every asset/strategy write (major staging DB load). Playwright’s local `webServer` loads `.env.test` into the Next server so the flag applies to API writes.
+
+Tests that specifically verify recompute behavior (`consumer-core-recompute`, `consumer-gift-history`, charitable composition polls) skip or need `RECOMPUTE_SECRET` with **`E2E_SKIP_RECOMPUTE=false`** for that run only.
+
+| Scenario | Command | Notes |
+|----------|---------|-------|
+| Post-fix verify (scoped) | `npx playwright test [files]` | Fast, low DB load; keep `E2E_SKIP_RECOMPUTE=true` |
+| Pre-merge billing | `npm run test:e2e:billing` | With `E2E_SKIP_RECOMPUTE=true` |
+| Full suite (occasional) | Split consumer/public then advisor/attorney batches | With `E2E_SKIP_RECOMPUTE=true` |
+| Post-deploy production | `npm run test:e2e:prod:smoke` | Real env, 42 tests; flag unset on Vercel |
+
 ## Commands
 
 | Script | Projects |
@@ -83,6 +96,7 @@ Setup projects map retired `@rolobe.resend.app` emails to canonical `@mywealthma
 | `PLAYWRIGHT_HOUSEHOLD_ID` | Strategy + recompute + titling tests — from `seed:e2e` |
 | `SUPABASE_SERVICE_ROLE_KEY` | `seed:e2e` + setup projects sync Auth password before login; do not use in browser polls |
 | `RECOMPUTE_SECRET` | Optional — golden-path seed triggers `/api/recompute-estate-health`; copy from `.env.local` |
+| `E2E_SKIP_RECOMPUTE` | Set `true` in `.env.test` for local runs — skips background `/api/recompute-estate-health` from write APIs; unset on Vercel Production |
 
 ## Production env (`.env.test.prod`)
 

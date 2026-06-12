@@ -105,7 +105,8 @@ export default defineConfig({
   projects,
   webServer: useLocalWebServer
     ? {
-        command: 'npm run start',
+        // Load .env.test so E2E_SKIP_RECOMPUTE reaches the Next server (not just Playwright).
+        command: 'dotenv -o -e .env.local -e .env.test -- npm run start',
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

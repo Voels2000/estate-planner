@@ -80,6 +80,11 @@ export async function triggerEstateHealthRecompute(
   householdId: string,
   appUrl: string,
 ): Promise<void> {
+  if (process.env.E2E_SKIP_RECOMPUTE === 'true') {
+    console.debug('[e2e] skipping recompute trigger')
+    return
+  }
+
   // Vercel serverless often freezes before a post-response setTimeout fires on fast routes (e.g. assets POST).
   if (process.env.VERCEL) {
     void runRecomputeHttp(householdId, appUrl)
