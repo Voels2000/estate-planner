@@ -314,7 +314,7 @@ Optional (defaults to canonical `@mywealthmaps.test` accounts if omitted):
 
 **What runs:** `npm run build` → local app at `http://127.0.0.1:3000` → `test:e2e:go-live-profile` + `test:e2e:security-smoke` against **staging** Supabase.
 
-**Optional prod smoke before go-live:** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) with `PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com` — manual only.
+**Production post-deploy smoke:** `npm run test:e2e:prod:smoke` — 42 `@production` tests via `.env.test.prod` — [GO_LIVE_E2E.md § Production smoke](./GO_LIVE_E2E.md#production-smoke-suite-2026-06-12).
 
 #### GitHub Actions RLS verify (pre-go-live)
 

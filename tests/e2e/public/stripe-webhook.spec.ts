@@ -8,6 +8,7 @@ import {
  * Stripe webhook route smoke — no auth; uses STRIPE_WEBHOOK_SECRET when set.
  * Safe on production: signature failures + ignored event types only (no DB mutations).
  */
+test.describe('@production', () => {
 test.describe('Stripe webhook route', () => {
   test('POST /api/stripe/webhook rejects missing signature', async ({ request }) => {
     const res = await request.post('/api/stripe/webhook', {
@@ -64,4 +65,5 @@ test.describe('Stripe webhook route', () => {
     const body = await res.json()
     expect(body.received).toBe(true)
   })
+})
 })

@@ -4,6 +4,7 @@ import { firmStarterPriceIdForE2e } from '../helpers/billing-e2e'
 /**
  * Attorney billing — auth via attorney-setup storage state.
  */
+test.describe('@production', () => {
 test.describe('Attorney billing UI', () => {
   test('/attorney/billing loads plans page', async ({ page }) => {
     await page.goto('/attorney/billing')
@@ -67,4 +68,5 @@ test.describe('Attorney billing checkout API', () => {
     })
     expect(res.status()).toBe(403)
   })
+})
 })

@@ -42,10 +42,23 @@ Template: [.env.test.example](../.env.test.example)
 | `npm run test:e2e:security-isolation` | consumer-setup + advisor-setup + cross-household IDOR matrix |
 | `npm run test:e2e:cross-role` | advisor sync, persona onboarding, attorney documents, cross-household (subset) |
 | `npm run test:e2e:billing` | **Billing smoke:** consumer/advisor/attorney checkout APIs + webhook signature (`--workers=1`) |
-| `npm run test:e2e:complete` | consumer + advisor + attorney + public |
+| `npm run test:e2e:complete` | consumer + advisor + attorney + public (**395 tests** — full local dev suite) |
+| `npm run test:e2e:prod:smoke` | **Production post-deploy:** 42 tests tagged `@production` (`.env.test.prod`, `--workers=1`) |
+| `npm run test:e2e:prod:billing` | **Production billing only:** `@production` + `billing` in title (~17 specs + auth setups) |
 | `npm run test:e2e:nightly` | public (attribution sessionStorage) |
 | `npm run test:import:unit` | import-unit (incl. `guided-onboarding-href.spec.ts` — 11 cases) |
 | `npm run test:import:api` | consumer import API (local base URL) |
+
+## E2E workflow (local vs production)
+
+| Command | When | Tests | Environment |
+|---------|------|-------|-------------|
+| `test:e2e:complete` | During development | 395 | Local (`.env.test`) |
+| `test:e2e:billing` | Before merging billing changes | ~25 | Local |
+| `test:e2e:prod:smoke` | After every production deploy | **42** | Production (`.env.test.prod`) |
+| `test:e2e:prod:billing` | After Stripe config changes | ~17 (+ setups) | Production |
+
+Production smoke uses `@production` tags on live-wiring tests only (auth setups, billing, webhook, RLS isolation, route smokes, terms). See [GO_LIVE_E2E.md § Production smoke](./GO_LIVE_E2E.md#production-smoke-suite-2026-06-12).
 
 ## Required env (`.env.test`)
 
@@ -70,6 +83,22 @@ Setup projects map retired `@rolobe.resend.app` emails to canonical `@mywealthma
 | `PLAYWRIGHT_HOUSEHOLD_ID` | Strategy + recompute + titling tests — from `seed:e2e` |
 | `SUPABASE_SERVICE_ROLE_KEY` | `seed:e2e` + setup projects sync Auth password before login; do not use in browser polls |
 | `RECOMPUTE_SECRET` | Optional — golden-path seed triggers `/api/recompute-estate-health`; copy from `.env.local` |
+
+## Production env (`.env.test.prod`)
+
+Copy [.env.test.prod.example](../.env.test.prod.example) → `.env.test.prod` (never commit). Run `npm run seed:e2e:prod` against production Supabase before first prod smoke.
+
+| Variable | Purpose |
+|----------|---------|
+| `PLAYWRIGHT_BASE_URL` | `https://www.mywealthmaps.com` |
+| `NEXT_PUBLIC_SUPABASE_URL` / keys | **Production** Supabase (not staging) |
+| `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` | Live webhook signing secret |
+| `PLAYWRIGHT_ADVISOR_FIRM_STARTER_PRICE_ID` | Live firm starter price ID |
+
+```bash
+npm run test:e2e:prod:smoke -- --workers=1
+npm run test:e2e:prod:billing -- --workers=1
+```
 
 ## Optional env
 
@@ -116,6 +145,7 @@ See [NEXT_SESSION.md](./NEXT_SESSION.md) — Estate verification suite.
 | 2026-05-30 | Production | `test:e2e:security-smoke` | **7/7** incl. `/api/health` |
 | 2026-06-09 | Production | `test:e2e:complete --workers=1` | **288 passed**, 20 failed, 7 skipped — billing specs need deploy; re-seed advisor client fixture |
 | 2026-06-09 | Production | `test:e2e:billing` | **21 passed**, 2 skipped — tier/period consumer body; firm starter skips on Stripe 500; attorney UI redirect race |
+| 2026-06-12 | — | `@production` tags + `test:e2e:prod:smoke` | **42 tests** in 12 files — auth, billing, webhook, security, routes, terms |
 
 Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) under parallel load.
 
@@ -123,7 +153,15 @@ Use `--workers=1` on staging to avoid Supabase statement timeouts (`57014`) unde
 
 **Recompute on Vercel:** `afterHouseholdWrite` uses Next.js `after()` + immediate trigger (no post-response `setTimeout`) so asset POSTs fire `/api/recompute-estate-health` reliably after deploy.
 
-## Spec inventory (42 spec files + setup/helpers; 280 tests total)
+## `@production` tag (42 tests)
+
+Tagged files: `helpers/*.setup.ts` (×4) · `consumer-billing-checkout` · `advisor-firm-billing` · `attorney-billing` · `stripe-webhook` · `cross-household-isolation` · `security-sprint-post-deploy` · `terms-accept-flow` · `public-routes` (`/`, `/pricing`, `/assess`, `/login`, `/signup` only).
+
+```bash
+npx playwright test --list --grep @production   # expect 42
+```
+
+## Spec inventory (76 spec files + setup/helpers; 395 tests total)
 
 **Security / cross-role (2026-05-30):** `tests/e2e/security/cross-household-isolation.spec.ts` — consumer + advisor IDOR matrix (403/404 deny). `tests/e2e/advisor/advisor-consumer-sync.spec.ts` — Johnson asset POST → advisor estate-composition. `tests/e2e/attorney/attorney-documents-gaps.spec.ts` — documents list, gap-dismissals, attorney dashboard link. `tests/e2e/consumer/onboarding-persona.spec.ts` — golden-path persona selection (click `[aria-pressed]` card wrapper; wait for PATCH). Commands: `npm run test:e2e:security-isolation`, `npm run test:e2e:cross-role`.
 

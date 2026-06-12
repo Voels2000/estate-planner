@@ -24,6 +24,8 @@
     "test:e2e:nightly": "dotenv -o -e .env.test -- npx playwright test --project=public",
     "// E2E production smoke — requires .env.test.prod (never committed)": "",
     "test:e2e:prod": "dotenv -o -e .env.test.prod -- npx playwright test",
+    "test:e2e:prod:smoke": "dotenv -o -e .env.test.prod -- npx playwright test --grep @production --workers=1",
+    "test:e2e:prod:billing": "dotenv -o -e .env.test.prod -- npx playwright test --grep '@production.*billing|billing.*@production' --workers=1",
     "test:e2e:billing:prod": "dotenv -o -e .env.test.prod -- npx playwright test --grep billing --workers=1",
     "test:e2e:security-smoke:prod": "dotenv -o -e .env.test.prod -- npx playwright test --grep security --workers=1",
     "seed:e2e:prod": "dotenv -o -e .env.test.prod -- npx tsx scripts/seed-e2e-fixtures.ts",

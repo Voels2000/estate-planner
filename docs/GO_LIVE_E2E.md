@@ -89,9 +89,42 @@ npm run test:import:unit   # 24 tests — projection readiness, wizard gate, imp
 
 ---
 
+## Production smoke suite (2026-06-12)
+
+**After every production deploy** — scoped to live wiring only (not the full 395-test dev suite):
+
+```bash
+cp .env.test.prod.example .env.test.prod   # once — fill production values
+npm run seed:e2e:prod                      # once per prod test-user reset
+npm run test:e2e:prod:smoke -- --workers=1
+```
+
+**42 tests** tagged `@production` in 12 files:
+
+| Category | Count | Files |
+|----------|-------|-------|
+| Auth setup | 4 | `helpers/*.setup.ts` |
+| Billing | 17 | consumer / advisor / attorney billing specs |
+| Webhook | 3 | `stripe-webhook.spec.ts` |
+| Security | 11 | `cross-household-isolation` + `security-sprint-post-deploy` |
+| Route smoke | 5 | `public-routes` — `/`, `/pricing`, `/assess`, `/login`, `/signup` |
+| Terms | 2 | `terms-accept-flow` |
+
+**After Stripe config changes:**
+
+```bash
+npm run test:e2e:prod:billing -- --workers=1
+```
+
+**Expected on first live run:** auth setups pass; billing tests skip gracefully when no live Stripe session exists yet; security + route smokes pass. Billing may show skips on firm starter 500 until live price IDs verified.
+
+**Local dev suite unchanged:** `npm run test:e2e:complete` (395 tests).
+
+---
+
 ## Billing post-deploy smoke (2026-06-09)
 
-After billing hardening deploy:
+After billing hardening deploy (local/staging):
 
 ```bash
 npm run test:e2e:billing

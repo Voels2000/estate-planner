@@ -40,6 +40,7 @@ test.beforeAll(async () => {
   expect(consumerHouseholdId).not.toBe(advisorClientHouseholdId)
 })
 
+test.describe('@production', () => {
 test.describe('Consumer isolation', () => {
   test.use({ storageState: '.auth/consumer.json' })
 
@@ -111,4 +112,5 @@ test.describe('Advisor access to linked client', () => {
     })
     expect(res.ok(), await res.text()).toBeTruthy()
   })
+})
 })

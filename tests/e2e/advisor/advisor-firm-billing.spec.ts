@@ -6,6 +6,7 @@ import { firmStarterPriceIdForE2e } from '../helpers/billing-e2e'
  * Advisor firm billing — auth via advisor-setup storage state.
  * Requires ensureAdvisorFirmForE2e in seed:e2e (firm owner + starter tier).
  */
+test.describe('@production', () => {
 test.describe('Advisor firm billing UI', () => {
   test('/billing loads firm billing for firm owner', async ({ page }) => {
     await page.goto('/billing')
@@ -111,4 +112,5 @@ test.describe('Advisor firm billing checkout API', () => {
     // Advisor profile may have consumer sub only — accept success or no-subscription errors.
     expect([200, 400]).toContain(res.status())
   })
+})
 })

@@ -6,6 +6,7 @@ import { firmStarterPriceIdForE2e } from '../helpers/billing-e2e'
  * E2E consumer seed uses tier 3 + active subscription (duplicate guard).
  * Use tier + period in POST body so the server resolves price IDs from its env (not test-bundle IDs).
  */
+test.describe('@production', () => {
 test.describe('Consumer billing checkout API', () => {
   test('POST /api/stripe/checkout rejects unauthenticated requests', async ({ browser }) => {
     const context = await browser.newContext({ storageState: { cookies: [], origins: [] } })
@@ -53,4 +54,5 @@ test.describe('Consumer billing checkout API', () => {
     })
     expect(res.status()).toBe(403)
   })
+})
 })

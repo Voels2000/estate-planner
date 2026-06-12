@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-12 (Pre-launch DB perf: dashboard bundle + MC staleness)
+# Last updated: 2026-06-12 (Production E2E smoke tags)
 
 ---
 
@@ -2648,6 +2648,16 @@ Pass = at least one row with referral code matching a test signup.
 **Alternatives considered:** Mock Stripe in E2E (rejected — smoke targets real deploy). Always fail on firm starter 500 (rejected — blocks suite when live price IDs need ops verification).
 
 **Implication:** `tests/e2e/helpers/billing-e2e.ts`. Production `npm run test:e2e:billing`: 21 passed, 2 skipped (unsigned webhook + firm starter when Stripe rejects session).
+
+---
+
+### June 2026 — Production E2E smoke: `@production` tag subset
+
+**Decision:** Tag 42 tests across 12 files with `@production` for post-deploy smoke against live production (`.env.test.prod`). Subset covers auth wiring, billing APIs, webhook signature, RLS isolation, critical public routes, and terms accept — not the full 395-test dev suite.
+
+**Alternatives considered:** Run full `test:e2e:complete` on prod (rejected — slow, flaky, tests logic already covered locally). Separate prod spec files (rejected — duplicate maintenance).
+
+**Implication:** `npm run test:e2e:prod:smoke` after every deploy; `npm run test:e2e:prod:billing` after Stripe config changes. Dry-run after Stripe review clears: fill `.env.test.prod`, `npm run seed:e2e:prod`, then smoke.
 
 ---
 

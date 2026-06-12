@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-12 (Pre-launch DB perf: dashboard bundle + MC staleness)
+# Last updated: 2026-06-12 (Production E2E smoke tags + pre-launch checklist)
 
 ---
 
@@ -34,6 +34,7 @@ Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, *
 | Supabase Disk IO + recompute dedupe | ✅ Shipped | `20260709150000`–`20260709180100` · recompute route · **redeploy Vercel** |
 | Go-live performance audit | ✅ Done | Consumers / advisors / attorneys — see §5 below |
 | Pre-launch DB perf (bundle + MC staleness) | ✅ Shipped | `loadDashboardBundle` · `projection_inputs_hash` · `touchHousehold` on all writes |
+| Production E2E smoke (`@production`) | ✅ Shipped | 42 tests · `test:e2e:prod:smoke` · `test:e2e:prod:billing` |
 | Legal entity placeholders (`/terms`, `/privacy`) | ✅ Shipped | `lib/legal/company.ts` — My Wealth Maps LLC · Snohomish address · RA Alan Voels |
 | Advisor Profile Settings UI | `[~]` partial | Logo upload shipped; see [ROADMAP.md](./ROADMAP.md) |
 
@@ -77,8 +78,9 @@ Detail for each item: [ROADMAP.md](./ROADMAP.md) · [SCHEMA_CHANGELOG.md](./SCHE
 
 Do NOT set `PUBLIC_SIGNUP_OPEN=true` until all Gate 1 items in [LAUNCH_GATE.md](./LAUNCH_GATE.md) are checked.
 
-**Post-deploy automated gate:** `npm run test:e2e:go-live-profile` · `npm run test:e2e:cross-role`
-· `npm run test:e2e:security-isolation` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md).
+**Post-deploy automated gate:** `npm run test:e2e:prod:smoke` (42 tests, production) · `npm run test:e2e:go-live-profile` (pre-flip profile) · `npm run verify:post-deploy-voels` — [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md).
+
+**Pre-launch checklist (engineering):** pricing aligned ✓ · Stripe + webhook ✓ · billing P0/P1/P2 ✓ · DB indexes ✓ · dashboard bundle ✓ · MC staleness ✓ · E2E scoped ✓ · Stripe account review ⏳ 2–3 days.
 
 ---
 

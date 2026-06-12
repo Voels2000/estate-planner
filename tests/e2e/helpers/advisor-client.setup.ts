@@ -2,7 +2,7 @@ import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import { resolveE2eEmail, resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
 
-setup('authenticate E2E advisor client household', async ({ page }) => {
+setup('authenticate E2E advisor client household @production', async ({ page }) => {
   const email = resolveE2eEmail(
     process.env.SEED_CLIENT_EMAIL,
     E2E_IDENTITIES.advisorClient.email,

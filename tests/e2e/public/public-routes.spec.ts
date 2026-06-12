@@ -2,11 +2,14 @@ import { test, expect } from '@playwright/test'
 import { EVENT_SLUGS, SPOT_CHECK_EVENT_SLUGS } from '../helpers/event-slugs'
 import { PUBLIC_MARKETING_ROUTES } from '../helpers/routes'
 
+const PRODUCTION_SMOKE_PATHS = new Set(['/', '/pricing', '/assess'])
+
 test.describe('Public marketing routes', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
   for (const route of PUBLIC_MARKETING_ROUTES) {
-    test(`${route.path} loads`, async ({ page }) => {
+    const productionTag = PRODUCTION_SMOKE_PATHS.has(route.path) ? ' @production' : ''
+    test(`${route.path} loads${productionTag}`, async ({ page }) => {
       const res = await page.goto(route.path)
       expect(res?.status(), `${route.path} should not 404`).toBeLessThan(400)
       await expect(page.getByRole('heading', { name: route.heading }).first()).toBeVisible({
@@ -14,6 +17,20 @@ test.describe('Public marketing routes', () => {
       })
     })
   }
+
+  test('/login renders @production', async ({ page }) => {
+    const res = await page.goto('/login')
+    expect(res?.status(), '/login should not 404').toBeLessThan(400)
+    await expect(page.getByRole('heading', { name: /sign in/i }).first()).toBeVisible({
+      timeout: 30_000,
+    })
+  })
+
+  test('/signup renders @production', async ({ page }) => {
+    const res = await page.goto('/signup')
+    expect(res?.status(), '/signup should not 404').toBeLessThan(400)
+    await expect(page.locator('h1').first()).toBeVisible({ timeout: 30_000 })
+  })
 
   test('/advisor-directory redirects to find-advisor', async ({ page }) => {
     await page.goto('/advisor-directory')

@@ -35,6 +35,7 @@ async function getPublicApi(
   return request.get(url, { timeout: API_REQUEST_TIMEOUT_MS })
 }
 
+test.describe('@production', () => {
 test.describe('Security sprint — public API smoke', () => {
   test('/api/health returns ok', async ({ request }) => {
     let res: Awaited<ReturnType<APIRequestContext['get']>>
@@ -95,4 +96,5 @@ test.describe('Security sprint — public API smoke', () => {
     }
     expect(res.status()).toBe(401)
   })
+})
 })

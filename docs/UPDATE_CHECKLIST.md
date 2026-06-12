@@ -64,6 +64,13 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Production E2E smoke tags (2026-06-12) — shipped
+
+- [x] `@production` tag on 42 tests in 12 files (auth, billing, webhook, security, routes, terms)
+- [x] `npm run test:e2e:prod:smoke` · `npm run test:e2e:prod:billing` in `package.json`
+- [x] PLAYWRIGHT_E2E · GO_LIVE_E2E · NEXT_SESSION · DECISION_LOG synced
+- [x] `.env.test.prod.example` documents prod smoke prerequisites
+
 ## Legal entity placeholders (2026-06-10) — shipped
 
 - [x] `lib/legal/company.ts` — `COMPANY_LEGAL_NAME`, `COMPANY_ADDRESS`, `REGISTERED_AGENT`

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 
+test.describe('@production', () => {
 test.describe('Terms accept flow (post-checkout)', () => {
   test('/terms/accept loads for authenticated user', async ({ page }) => {
     await page.goto('/terms/accept?returnTo=/dashboard')
@@ -22,4 +23,5 @@ test.describe('Terms accept flow (post-checkout)', () => {
     const body = await res.json()
     expect(body.success).toBe(true)
   })
+})
 })
