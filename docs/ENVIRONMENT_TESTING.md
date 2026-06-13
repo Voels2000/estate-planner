@@ -206,7 +206,14 @@ npm run release:preflight
 npm run release:post-deploy
 ```
 
-Store production `SUPABASE_DB_URL` only in `.env.local` (gitignored). Get it from Supabase → Database → Connection string → **Session pooler**.
+Store production `SUPABASE_DB_URL` only in `.env.local` (gitignored). Supabase → **Connect** → **Session pooler** → **Copy** the full URI.
+
+**Format pitfalls (common):**
+
+- Must be `SUPABASE_DB_URL=postgresql://...` — a bare URL line without the key name is ignored by dotenv.
+- Do not hand-edit `[region]` or wrap the password in brackets; use the dashboard copy as-is.
+- Region in the hostname must match your project (e.g. `aws-0-us-west-2`, not a placeholder from docs).
+- Never commit this value or add it to GitHub/Vercel.
 
 ---
 

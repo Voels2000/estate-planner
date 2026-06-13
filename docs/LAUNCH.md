@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-12 (Prompt 2 verification sweep)  
+**Last updated:** 2026-06-09 (B1 E2E + post-deploy verification)  
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -41,11 +41,11 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 ### B1. Redeploy + automated smoke (do first)
 
 - [ ] Vercel redeploy of latest `main` (attest: __ / __)
-- [ ] `npm run release:preflight` (verify: command green — includes `verify:rls` + go-live profile + security-smoke)
-- [ ] `npm run test:e2e:go-live-profile` (verify: 17 passing — **2026-06-12 sweep:** 0/17 run; `consumer-setup` auth timeout 120s against `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000` / staging Supabase; re-run after redeploy)
-- [ ] `npm run test:e2e:security-isolation` (verify: green)
-- [ ] `npm run test:e2e:cross-role` (verify: green)
-- [ ] `npm run release:post-deploy` (verify: green — needs `SUPABASE_DB_URL` in `.env.local`; attest if prod credentials not loaded: __ / __)
+- [ ] `npm run release:preflight` (verify: command green — includes `verify:rls` JWT + go-live profile + security-smoke)
+- [x] `npm run test:e2e:go-live-profile` (verify: **17/17** — 2026-06-09; spouse field `id`s + `npm run build` before local run; `--workers=1`)
+- [x] `npm run test:e2e:security-isolation` (verify: **10/10** — 2026-06-09; stray `advisor_clients` link to e2e-consumer pruned via `pruneStrayE2eAdvisorClientLinks` in seed/prune)
+- [ ] `npm run test:e2e:cross-role` (verify: green — `advisor-client-setup` not legacy `johnson-setup`)
+- [x] `npm run release:post-deploy` (verify: **Voels 7/7 + RLS 3/3** — 2026-06-09; `SUPABASE_DB_URL` in `.env.local` only — Session pooler URI from Supabase **Connect → Copy**, must be `SUPABASE_DB_URL=postgresql://...`; region must match project e.g. `us-west-2`)
 - [ ] `npm run test:e2e:prod:smoke -- --workers=1` (verify: 42 `@production` — command: `PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- --workers=1`; attest: __ / __)
 
 ### B2. TERMS-1
@@ -218,17 +218,17 @@ See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) for credential placement.
 
 ---
 
-## Prompt 2 sweep scoreboard (2026-06-12)
+## Prompt 2 sweep scoreboard (2026-06-09)
 
-**Bucket B:** **11 of 38** checked (29 open).
+**Bucket B:** **14 of 38** checked (24 open).
 
-**Checked this sweep:** B2 TERMS-1 · B6 legal placeholders (prior) · B7 PROTECTED + purge guards · B8 robots/security/deletion/billing/prod harness (prior).
+**Checked this sweep:** B1 go-live-profile (17/17) · B1 security-isolation (10/10) · B1 post-deploy (Voels 7/7 + RLS 3/3) · B2 TERMS-1 · B6 legal placeholders (prior) · B7 PROTECTED + purge guards · B8 robots/security/deletion/billing/prod harness (prior).
 
 **Still open — verify (re-run locally):**
 
 | Item | Action |
 |------|--------|
-| B1 preflight / E2E / post-deploy / prod smoke | `npm run release:preflight`; fix auth timeout then re-run go-live-profile; `npm run release:post-deploy`; prod smoke with `PLAYWRIGHT_BASE_URL` |
+| B1 preflight / cross-role / prod smoke | `npm run release:preflight`; `npm run test:e2e:cross-role`; prod smoke with `PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com` |
 | B3 CI vars + branch protection | GitHub → Settings → Variables: `E2E_SMOKE_IN_CI`, `RLS_VERIFY_IN_CI` = `true`; branch protection required checks |
 | B5 Vercel Stripe env names | `vercel env ls production` |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |

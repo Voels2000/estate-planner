@@ -391,6 +391,7 @@ export function ProfileClient({
                 <div className="space-y-4">
                   <Field label="Spouse Name" required>
                     <input
+                      id="profile-field-person2-name"
                       type="text"
                       required
                       value={person2Name}
@@ -401,6 +402,7 @@ export function ProfileClient({
                   </Field>
                   <Field label="Spouse Birth Year" required>
                     <input
+                      id="profile-field-person2-birth-year"
                       type="number"
                       min="1920"
                       max="2005"

@@ -14,16 +14,20 @@ const CANONICAL_BY_EMAIL = new Map<string, string>([
   [E2E_IDENTITIES.attorneyPortal.email, E2E_IDENTITIES.attorneyPortal.password],
 ].map(([email, password]) => [email.toLowerCase(), password] as const))
 
-/** Retired @rolobe.resend.app → canonical @mywealthmaps.test (shell env may still export old values). */
-const LEGACY_ROLOBE_EMAIL_MAP = new Map<string, string>([
+/** Retired addresses → canonical @mywealthmaps.test (stale .env.test / shell exports). */
+const LEGACY_EMAIL_MAP = new Map<string, string>([
   ['david@rolobe.resend.app', E2E_IDENTITIES.consumer.email],
   ['advisor2@rolobe.resend.app', E2E_IDENTITIES.advisor.email],
   ['consumer1@rolobe.resend.app', E2E_IDENTITIES.consumerTier1.email],
   ['advisor@rolobe.resend.app', E2E_IDENTITIES.advisor.email],
   ['test-attorney-portal@rolobe.resend.app', E2E_IDENTITIES.attorneyPortal.email],
+  ['e2e-client.johnson@mywealthmaps.test', E2E_IDENTITIES.advisorClient.email],
+  ['michael.johnson.demo@local.estate', E2E_IDENTITIES.advisorClient.email],
+  ['test-advisor@mywealthmaps.test', E2E_IDENTITIES.advisor.email],
+  ['test-attorney@mywealthmaps.test', E2E_IDENTITIES.attorneyPortal.email],
 ])
 
-/** Prefer canonical identity; ignore retired rolobe addresses from stale shell exports. */
+/** Prefer canonical identity; remap retired rolobe / pre-v2 addresses from stale env. */
 export function resolveE2eEmail(
   envEmail: string | undefined,
   canonicalEmail: string,
@@ -31,12 +35,24 @@ export function resolveE2eEmail(
   const trimmed = envEmail?.trim()
   if (!trimmed) return canonicalEmail
 
-  const mapped = LEGACY_ROLOBE_EMAIL_MAP.get(trimmed.toLowerCase())
-  if (mapped) return mapped
+  const mapped = LEGACY_EMAIL_MAP.get(trimmed.toLowerCase())
+  if (mapped) {
+    if (mapped !== trimmed) {
+      console.warn(`[e2e] Remapping retired email ${trimmed} → ${mapped}`)
+    }
+    return mapped
+  }
 
   if (trimmed.toLowerCase().endsWith('@rolobe.resend.app')) {
     console.warn(
       `[e2e] Ignoring retired rolobe email ${trimmed}; using ${canonicalEmail}`,
+    )
+    return canonicalEmail
+  }
+
+  if (!trimmed.toLowerCase().endsWith('@mywealthmaps.test')) {
+    console.warn(
+      `[e2e] Non-canonical E2E email ${trimmed}; using ${canonicalEmail}`,
     )
     return canonicalEmail
   }

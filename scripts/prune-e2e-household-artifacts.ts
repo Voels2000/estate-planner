@@ -8,6 +8,7 @@
 
 import { createAdminClient } from '../lib/supabase/admin'
 import { E2E_IDENTITIES } from './e2e-test-identities'
+import { findUserIdByEmail, initSupabaseEnv, pruneStrayE2eAdvisorClientLinks } from './seed-e2e-lib'
 
 const PLAYWRIGHT_NAME_PREFIXES = [
   'Playwright',
@@ -99,6 +100,13 @@ async function main() {
     .in('strategy_source', ['daf', 'charitable'])
     .eq('scenario_name', 'base')
   if (dafCount) console.log('  strategy_line_items daf/charitable base:', dafCount)
+
+  initSupabaseEnv()
+  const advisorId = await findUserIdByEmail(E2E_IDENTITIES.advisor.email)
+  const advisorClientId = await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)
+  if (advisorId && advisorClientId) {
+    await pruneStrayE2eAdvisorClientLinks(advisorId, advisorClientId)
+  }
 
   console.log('Done.')
 }

@@ -454,6 +454,28 @@ export async function linkAdvisorToClient(advisorId: string, clientId: string) {
   }
 }
 
+/** Drop advisor→consumer links so cross-household IDOR tests stay valid (seed only links advisor client). */
+export async function pruneStrayE2eAdvisorClientLinks(
+  advisorId: string,
+  keepClientUserId: string,
+): Promise<void> {
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('advisor_clients')
+    .delete()
+    .eq('advisor_id', advisorId)
+    .neq('client_id', keepClientUserId)
+    .select('id, client_id')
+
+  if (error) {
+    console.warn('  advisor_clients prune:', error.message)
+    return
+  }
+  if (data?.length) {
+    console.log(`  advisor_clients: removed ${data.length} stray link(s)`)
+  }
+}
+
 /** Rich advisor-client household (401k, IRA, domicile, documents) for advisor workspace E2E. */
 export async function seedE2eAdvisorClientHousehold(
   clientUserId: string,
@@ -683,6 +705,7 @@ export async function seedE2eAdvisorClientHousehold(
 
   await seedE2eEstateHealthForHousehold(householdId)
   await linkAdvisorToClient(advisorId, clientUserId)
+  await pruneStrayE2eAdvisorClientLinks(advisorId, clientUserId)
 
   return householdId
 }

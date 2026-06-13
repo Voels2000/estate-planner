@@ -10,6 +10,8 @@ import { test, expect, type APIRequestContext } from '@playwright/test'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import fs from 'fs'
 import path from 'path'
+import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
+import { resolveE2eEmail } from '../helpers/e2e-auth'
 
 const FIXTURES = path.join(process.cwd(), 'tests/fixtures/import')
 
@@ -75,7 +77,10 @@ async function resolveConsumerOwnerId(
 async function cleanupPlaywrightImportAssets() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  const email = process.env.PLAYWRIGHT_CONSUMER_EMAIL
+  const email = resolveE2eEmail(
+    process.env.PLAYWRIGHT_CONSUMER_EMAIL,
+    E2E_IDENTITIES.consumer.email,
+  )
   if (!url || !key || !email) return
 
   const admin = createClient(url, key, {
@@ -178,7 +183,10 @@ test.describe('Import API — traceability (Test 5)', () => {
   test('committed rows have ingestion_job_id when service role available', async ({ request }) => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-    const email = process.env.PLAYWRIGHT_CONSUMER_EMAIL
+    const email = resolveE2eEmail(
+      process.env.PLAYWRIGHT_CONSUMER_EMAIL,
+      E2E_IDENTITIES.consumer.email,
+    )
     test.skip(!url || !key || !email, 'SUPABASE_SERVICE_ROLE_KEY required for DB traceability assert')
 
     await cleanupPlaywrightImportAssets()

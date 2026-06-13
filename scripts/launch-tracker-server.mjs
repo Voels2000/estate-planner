@@ -55,9 +55,28 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log('')
 })
 
-server.on('error', (err) => {
+server.on('error', async (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is in use. Stop the other process or change PORT in scripts/launch-tracker-server.mjs`)
+    const url = `http://127.0.0.1:${PORT}/launch-tracker.html`
+    try {
+      const res = await fetch(url)
+      const body = await res.text()
+      if (body.includes('B&amp;O-READY Launch Tracker') || body.includes('launch-tracker-app.jsx')) {
+        console.log('')
+        console.log('  Launch tracker is already running.')
+        console.log(`  → ${url}`)
+        console.log('')
+        console.log('  Open that URL in your browser (no need to start again).')
+        console.log('  To restart: lsof -ti :3456 | xargs kill   then npm run launch:tracker')
+        console.log('')
+        process.exit(0)
+      }
+    } catch {
+      /* not our server */
+    }
+    console.error(`Port ${PORT} is in use by another app.`)
+    console.error(`  Free it: lsof -ti :${PORT} | xargs kill`)
+    console.error('  Then: npm run launch:tracker')
   } else {
     console.error(err)
   }
