@@ -1,5 +1,10 @@
 // Single source of truth for Stripe price IDs (from env) and display metadata.
 
+import {
+  CONSUMER_STRIPE_PRICE_ENV_VARS,
+  type ConsumerStripePriceEnvVar,
+} from '@/lib/env/manifest'
+
 export type BillingPeriod = 'monthly' | 'annual'
 export type PlanTier = 1 | 2 | 3
 
@@ -12,20 +17,22 @@ export interface PriceConfig {
   trialDays: number
 }
 
-/** Legacy monthly price IDs — used when env vars are unset (local dev). */
+type PriceMeta = Omit<PriceConfig, 'priceId'> & {
+  envVar: ConsumerStripePriceEnvVar
+  legacyFallback: string
+}
+
+/** Legacy monthly price IDs — used when env vars are unset (local/preview). */
 const LEGACY_MONTHLY_PRICE_IDS = {
   financial: 'price_1TILBRCaljka9gJt6dr44Znq',
   retirement: 'price_1TILEXCaljka9gJtrHqnG3bl',
   estate: 'price_1TILGOCaljka9gJtCDLiKFHp',
 } as const
 
-function envPrice(key: string, legacyFallback: string): string {
-  return process.env[key]?.trim() || legacyFallback
-}
-
-export const STRIPE_PRICES: Record<string, PriceConfig> = {
+const PRICE_META: Record<string, PriceMeta> = {
   financial_monthly: {
-    priceId: envPrice('STRIPE_PRICE_FINANCIAL_MONTHLY', LEGACY_MONTHLY_PRICE_IDS.financial),
+    envVar: 'STRIPE_PRICE_FINANCIAL_MONTHLY',
+    legacyFallback: LEGACY_MONTHLY_PRICE_IDS.financial,
     tier: 1,
     period: 'monthly',
     monthlyEquivalent: 29,
@@ -33,7 +40,8 @@ export const STRIPE_PRICES: Record<string, PriceConfig> = {
     trialDays: 0,
   },
   financial_annual: {
-    priceId: envPrice('STRIPE_PRICE_FINANCIAL_ANNUAL', ''),
+    envVar: 'STRIPE_PRICE_FINANCIAL_ANNUAL',
+    legacyFallback: '',
     tier: 1,
     period: 'annual',
     monthlyEquivalent: 24,
@@ -41,7 +49,8 @@ export const STRIPE_PRICES: Record<string, PriceConfig> = {
     trialDays: 0,
   },
   retirement_monthly: {
-    priceId: envPrice('STRIPE_PRICE_RETIREMENT_MONTHLY', LEGACY_MONTHLY_PRICE_IDS.retirement),
+    envVar: 'STRIPE_PRICE_RETIREMENT_MONTHLY',
+    legacyFallback: LEGACY_MONTHLY_PRICE_IDS.retirement,
     tier: 2,
     period: 'monthly',
     monthlyEquivalent: 79,
@@ -49,7 +58,8 @@ export const STRIPE_PRICES: Record<string, PriceConfig> = {
     trialDays: 0,
   },
   retirement_annual: {
-    priceId: envPrice('STRIPE_PRICE_RETIREMENT_ANNUAL', ''),
+    envVar: 'STRIPE_PRICE_RETIREMENT_ANNUAL',
+    legacyFallback: '',
     tier: 2,
     period: 'annual',
     monthlyEquivalent: 66,
@@ -57,7 +67,8 @@ export const STRIPE_PRICES: Record<string, PriceConfig> = {
     trialDays: 0,
   },
   estate_monthly: {
-    priceId: envPrice('STRIPE_PRICE_ESTATE_MONTHLY', LEGACY_MONTHLY_PRICE_IDS.estate),
+    envVar: 'STRIPE_PRICE_ESTATE_MONTHLY',
+    legacyFallback: LEGACY_MONTHLY_PRICE_IDS.estate,
     tier: 3,
     period: 'monthly',
     monthlyEquivalent: 149,
@@ -65,7 +76,8 @@ export const STRIPE_PRICES: Record<string, PriceConfig> = {
     trialDays: 14,
   },
   estate_annual: {
-    priceId: envPrice('STRIPE_PRICE_ESTATE_ANNUAL', ''),
+    envVar: 'STRIPE_PRICE_ESTATE_ANNUAL',
+    legacyFallback: '',
     tier: 3,
     period: 'annual',
     monthlyEquivalent: 124,
@@ -80,33 +92,86 @@ const TIER_PERIOD_KEYS: Record<PlanTier, Record<BillingPeriod, string>> = {
   3: { monthly: 'estate_monthly', annual: 'estate_annual' },
 }
 
-export function hasPriceConfig(tier: PlanTier, period: BillingPeriod): boolean {
-  const key = TIER_PERIOD_KEYS[tier][period]
-  return Boolean(STRIPE_PRICES[key]?.priceId)
+const resolvedPriceCache = new Map<string, string>()
+let priceIdToTierMap: Record<string, PlanTier> | null = null
+
+/** Resolve-time guard: refuse fallback IDs in Vercel production. */
+export function resolveConsumerPriceId(
+  envVarName: ConsumerStripePriceEnvVar,
+  legacyFallback: string,
+): string {
+  const trimmed = process.env[envVarName]?.trim()
+  if (trimmed) return trimmed
+  if (process.env.VERCEL_ENV === 'production') {
+    throw new Error(`${envVarName} is unset in production`)
+  }
+  return legacyFallback
 }
 
-/** True when all three annual Stripe price IDs are set (env or future fallbacks). */
+function metaKey(tier: PlanTier, period: BillingPeriod): string {
+  return TIER_PERIOD_KEYS[tier][period]
+}
+
+function getResolvedPriceId(key: string): string {
+  const cached = resolvedPriceCache.get(key)
+  if (cached !== undefined) return cached
+
+  const meta = PRICE_META[key]
+  const priceId = resolveConsumerPriceId(meta.envVar, meta.legacyFallback)
+  resolvedPriceCache.set(key, priceId)
+  return priceId
+}
+
+/** Non-throwing snapshot for tier maps at import (no checkout path). */
+function snapshotPriceIdForMap(envVarName: ConsumerStripePriceEnvVar, legacyFallback: string): string {
+  const trimmed = process.env[envVarName]?.trim()
+  if (trimmed) return trimmed
+  if (process.env.VERCEL_ENV === 'production') return ''
+  return legacyFallback
+}
+
+export function hasPriceConfig(tier: PlanTier, period: BillingPeriod): boolean {
+  const key = metaKey(tier, period)
+  const meta = PRICE_META[key]
+  if (process.env[meta.envVar]?.trim()) return true
+  if (process.env.VERCEL_ENV === 'production') return false
+  return Boolean(meta.legacyFallback)
+}
+
+/** True when all three annual Stripe price IDs are set (env or preview/local fallback). */
 export function isAnnualBillingConfigured(): boolean {
   return ([1, 2, 3] as PlanTier[]).every((tier) => hasPriceConfig(tier, 'annual'))
 }
 
 export function getPriceConfig(tier: PlanTier, period: BillingPeriod): PriceConfig {
-  const key = TIER_PERIOD_KEYS[tier][period]
-  const config = STRIPE_PRICES[key]
-  if (!config?.priceId) {
+  const key = metaKey(tier, period)
+  const meta = PRICE_META[key]
+  const priceId = getResolvedPriceId(key)
+  if (!priceId) {
     throw new Error(
-      `No Stripe price configured for tier ${tier} (${period}). Set STRIPE_PRICE_* env vars.`,
+      `No Stripe price configured for tier ${tier} (${period}). Set ${meta.envVar}.`,
     )
   }
-  return config
+  return {
+    priceId,
+    tier: meta.tier,
+    period: meta.period,
+    monthlyEquivalent: meta.monthlyEquivalent,
+    annualTotal: meta.annualTotal,
+    trialDays: meta.trialDays,
+  }
 }
 
 export function buildPriceIdToTierMap(): Record<string, PlanTier> {
+  if (priceIdToTierMap) return priceIdToTierMap
+
   const map: Record<string, PlanTier> = {}
-  for (const config of Object.values(STRIPE_PRICES)) {
-    if (config.priceId) map[config.priceId] = config.tier
+  for (const meta of Object.values(PRICE_META)) {
+    const priceId = snapshotPriceIdForMap(meta.envVar, meta.legacyFallback)
+    if (priceId) map[priceId] = meta.tier
   }
   map['price_1TAlJjCaljka9gJthGTMogQb'] = 2
+  priceIdToTierMap = map
   return map
 }
 
@@ -118,3 +183,26 @@ export function getTierFromPriceId(priceId: string): PlanTier | null {
 export function getMonthlyPriceIds(): string[] {
   return [1, 2, 3].map((tier) => getPriceConfig(tier as PlanTier, 'monthly').priceId)
 }
+
+export function findConsumerPriceByPriceId(priceId: string): PriceConfig | null {
+  for (const tier of [1, 2, 3] as PlanTier[]) {
+    for (const period of ['monthly', 'annual'] as BillingPeriod[]) {
+      try {
+        const config = getPriceConfig(tier, period)
+        if (config.priceId === priceId) return config
+      } catch {
+        continue
+      }
+    }
+  }
+  return null
+}
+
+/** @internal Test helper — reset module caches between env-scoped unit tests. */
+export function __resetStripePriceCachesForTests(): void {
+  resolvedPriceCache.clear()
+  priceIdToTierMap = null
+}
+
+/** Re-export for drift checks — guard and verifier share this list. */
+export { CONSUMER_STRIPE_PRICE_ENV_VARS }
