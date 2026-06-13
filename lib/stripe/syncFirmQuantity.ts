@@ -1,10 +1,9 @@
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-
 export async function syncFirmStripeQuantity(firmId: string): Promise<void> {
   try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
     const admin = createAdminClient()
     const { data: firm, error } = await admin
       .from('firms')

@@ -3,10 +3,9 @@ import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-
 export async function POST() {
   try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
     const ctx = await getAccessContext()
     if (!ctx.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

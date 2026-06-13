@@ -11,8 +11,6 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -20,6 +18,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
     const admin = createAdminClient()
     const now = new Date().toISOString()
 

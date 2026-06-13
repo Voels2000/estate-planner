@@ -7,11 +7,11 @@ import { syncConsumerStripeSubscription } from '@/lib/billing/syncConsumerStripe
 
 type RouteContext = { params: Promise<{ userId: string }> }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-
 export async function POST(_request: Request, context: RouteContext) {
   const auth = await requireAdminApi()
   if (auth instanceof NextResponse) return auth
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
   const { userId } = await context.params
   const admin = createAdminClient()

@@ -10,8 +10,6 @@ import {
   scheduleDeletionOnSubscriptionCancelled,
 } from '@/lib/compliance/scheduleDeletionOnCancel'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-
 function formatUsdCents(amountCents: number) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -30,6 +28,7 @@ function formatRenewalDate(unixSeconds: number) {
 }
 
 async function sendConsumerRenewalReminder(
+  stripe: Stripe,
   supabase: ReturnType<typeof createAdminClient>,
   customerId: string,
   subscription: Stripe.Subscription,
@@ -81,6 +80,7 @@ function mapFirmSubscriptionStatus(status: Stripe.Subscription.Status): string {
 }
 
 export async function POST(req: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')!
   let event: Stripe.Event
@@ -395,7 +395,7 @@ export async function POST(req: NextRequest) {
         if (!customerId || subscription.metadata?.firm_id) break
 
         try {
-          await sendConsumerRenewalReminder(supabase, customerId, subscription, invoice)
+          await sendConsumerRenewalReminder(stripe, supabase, customerId, subscription, invoice)
           console.log('invoice.upcoming — renewal reminder sent')
         } catch (err) {
           console.error(
