@@ -6,8 +6,6 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { ADVISOR_FIRM_PRICE_IDS } from '@/lib/tiers'
 import { getAppUrl } from '@/lib/app-url'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-
 const VALID_FIRM_PRICE_IDS = new Set(
   Object.values(ADVISOR_FIRM_PRICE_IDS).filter((id): id is string => Boolean(id)),
 )
@@ -26,6 +24,7 @@ const tierBandMin: Record<string, number> = {
 
 export async function POST(req: Request) {
   try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
     const ctx = await getAccessContext()
 
     if (!ctx.user) {
