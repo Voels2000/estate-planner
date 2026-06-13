@@ -80,6 +80,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [ ] Live keys in Vercel Production (`sk_live_` / `pk_live_` / live `whsec_`) (attest: __ / __ — Confirm: `vercel env ls production` shows `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` with live values)
 - [ ] Live catalog: 6 consumer + attorney starter/growth (+ advisor firm seats if billing firms at launch) (attest: __ / __ — Confirm: Stripe Dashboard → Products has 6 consumer prices + attorney starter/growth live)
 - [ ] Live price IDs in env (`STRIPE_PRICE_*`, `STRIPE_PRICE_ATTORNEY_*`, `STRIPE_PRICE_ADVISOR_*`) (verify: code refs `lib/billing/stripePrices.ts:28-68` consumer 6 vars; `lib/tiers.ts:139-142` advisor firm; `lib/tiers.ts:167-169` attorney — **Vercel Production names populated** attest: __ / __ — `vercel env ls production` not available in sweep env)
+- [ ] **Silent test-price-in-prod:** closed by `GET /api/admin/verify-env?live=1` (periodic audit) + `resolveConsumerPriceId` throw in production (runtime seatbelt). Real-card checkout smoke remains manual below.
 - [ ] C-4 manual walkthrough on prod: signup → checkout → active → cancel → deletion schedule — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (attest: __ / __)
 - [ ] One real-card live smoke, smallest tier, refund/cancel after verify (attest: __ / __)
 

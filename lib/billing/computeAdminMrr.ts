@@ -1,4 +1,4 @@
-import { STRIPE_PRICES } from '@/lib/billing/stripePrices'
+import { findConsumerPriceByPriceId } from '@/lib/billing/stripePrices'
 import {
   ADVISOR_FIRM_SEAT_RATES,
   ATTORNEY_PLAN_LIMITS,
@@ -30,11 +30,8 @@ export function consumerMonthlyRevenue(
   consumerTier: number | null | undefined,
 ): number {
   if (priceId) {
-    for (const config of Object.values(STRIPE_PRICES)) {
-      if (config.priceId === priceId) {
-        return config.monthlyEquivalent
-      }
-    }
+    const config = findConsumerPriceByPriceId(priceId)
+    if (config) return config.monthlyEquivalent
   }
 
   const tier = consumerTier ?? 1

@@ -32,7 +32,19 @@ function entry(
   return { name, scopes, ...rest }
 }
 
-function consumerPrice(name: string): EnvVarEntry {
+/** Consumer tier prices in stripePrices.ts — shared with env verifier (no duplicate list). */
+export const CONSUMER_STRIPE_PRICE_ENV_VARS = [
+  'STRIPE_PRICE_FINANCIAL_MONTHLY',
+  'STRIPE_PRICE_FINANCIAL_ANNUAL',
+  'STRIPE_PRICE_RETIREMENT_MONTHLY',
+  'STRIPE_PRICE_RETIREMENT_ANNUAL',
+  'STRIPE_PRICE_ESTATE_MONTHLY',
+  'STRIPE_PRICE_ESTATE_ANNUAL',
+] as const
+
+export type ConsumerStripePriceEnvVar = (typeof CONSUMER_STRIPE_PRICE_ENV_VARS)[number]
+
+function consumerPrice(name: ConsumerStripePriceEnvVar): EnvVarEntry {
   return entry(name, {
     scopes: ALL_SCOPES,
     requiredInScopes: ['production'],
@@ -102,12 +114,7 @@ export const ENV_MANIFEST: EnvVarEntry[] = [
   }),
 
   // --- Consumer Stripe prices (preview: warn — legacy fallbacks exist in stripePrices.ts) ---
-  consumerPrice('STRIPE_PRICE_FINANCIAL_MONTHLY'),
-  consumerPrice('STRIPE_PRICE_FINANCIAL_ANNUAL'),
-  consumerPrice('STRIPE_PRICE_RETIREMENT_MONTHLY'),
-  consumerPrice('STRIPE_PRICE_RETIREMENT_ANNUAL'),
-  consumerPrice('STRIPE_PRICE_ESTATE_MONTHLY'),
-  consumerPrice('STRIPE_PRICE_ESTATE_ANNUAL'),
+  ...CONSUMER_STRIPE_PRICE_ENV_VARS.map((name) => consumerPrice(name)),
 
   // --- Advisor / attorney firm prices (no safe fallbacks) ---
   entry('STRIPE_PRICE_ADVISOR_STARTER_MONTHLY', {

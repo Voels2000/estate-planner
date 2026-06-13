@@ -3,10 +3,16 @@
 import { buildPriceIdToTierMap, getPriceConfig } from '@/lib/billing/stripePrices'
 
 export const CONSUMER_PRICE_IDS = {
-  starter: getPriceConfig(1, 'monthly').priceId,
-  retirement: getPriceConfig(2, 'monthly').priceId,
-  estate: getPriceConfig(3, 'monthly').priceId,
-} as const
+  get starter() {
+    return getPriceConfig(1, 'monthly').priceId
+  },
+  get retirement() {
+    return getPriceConfig(2, 'monthly').priceId
+  },
+  get estate() {
+    return getPriceConfig(3, 'monthly').priceId
+  },
+}
 // Legacy $19 price maps to tier 2
 export const LEGACY_PRICE_ID = 'price_1TAlJjCaljka9gJthGTMogQb'
 export const TIER_NAMES = {
