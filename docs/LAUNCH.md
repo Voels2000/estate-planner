@@ -61,9 +61,9 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 **Enforcement (manual — mandatory):** See [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when) for commit-type → command matrix.
 
-- [ ] Branch protection on `main`: **`verify` required**; PR required; admins included (attest: __ / __)
-- [ ] Confirm **no** GitHub Actions secrets/variables for Supabase, Stripe, or E2E (attest: __ / __ — Settings → Secrets and variables → Actions: empty or absent)
-- [ ] Local release discipline adopted: `release:local` before PR; `release:preflight` before merge when touching sensitive paths; `release:post-deploy` after prod deploy when required (attest: Al / __)
+- [x] Branch protection on `main`: **`verify` required**; PR required; admins included (attest: Al / 2026-06-13)
+- [x] Confirm **no** GitHub Actions secrets/variables for Supabase, Stripe, or E2E (attest: Al / 2026-06-13 — removed legacy `CRON_SECRET`; secrets/variables empty)
+- [x] Local release discipline adopted: `release:local` before PR; `release:preflight` before merge when touching sensitive paths; `release:post-deploy` after prod deploy when required (attest: Al / 2026-06-13)
 
 **Deferred until second Supabase exists:** restore E2E/RLS workflows from [docs/templates/github-workflows/](./templates/github-workflows/README.md).
 

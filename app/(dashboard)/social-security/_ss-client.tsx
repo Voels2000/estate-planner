@@ -60,7 +60,7 @@ function computeBreakevenAge(person: PersonData): number {
 function electedBadge(person: PersonData): string {
   if (person.electedAge === Math.round(person.fra)) return 'At FRA'
   if (person.electedAge > person.fra) {
-    return person.electedAge >= 70 ? 'Delayed — optimal' : 'Delayed'
+    return person.electedAge >= 70 ? 'Delayed — to age 70+' : 'Delayed'
   }
   return 'Early'
 }

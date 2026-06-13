@@ -47,7 +47,7 @@ export function getGreeting(score: number, firstName: string): { headline: strin
   }
   if (score >= 60) {
     return {
-      headline: `Your plan is in good shape, ${firstName}.`,
+      headline: `Your household readiness looks strong, ${firstName}.`,
       sub: "One or two gaps to close — you're ahead of most households.",
     }
   }

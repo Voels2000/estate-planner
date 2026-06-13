@@ -47,7 +47,7 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
       mode: 'attorney',
       label: 'Attorney Summary',
       description:
-        'Concise intake summary formatted for your estate attorney — household profile, asset overview, document status, and beneficiary designations. Ready for your first meeting.',
+        'Concise intake summary formatted for an estate attorney — household profile, asset overview, document status, and beneficiary designations. Ready for your first meeting.',
       sub: 'PDF · Attorney intake format',
       badge: 'New',
       badgeColor: 'text-[10px] font-semibold uppercase tracking-wide text-[#C9A84C] bg-[#C9A84C]/10 border border-[#C9A84C]/30 px-1.5 py-0.5 rounded',

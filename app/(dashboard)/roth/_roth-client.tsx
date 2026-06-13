@@ -45,7 +45,7 @@ function WhatIfPanel({
     return `${sign}$${Math.round(abs)}`;
   }
 
-  const conversionIsOptimal = projectedRmdRatePct > currentRatePct;
+  const modelFavorsConversion = projectedRmdRatePct > currentRatePct;
   const rateDiff = projectedRmdRatePct - currentRatePct;
   const conversionAmount = annualConversion * 1000;
 
@@ -53,7 +53,7 @@ function WhatIfPanel({
   const lifetimeNetBenefit = Math.round(conversionAmount * (rateDiff / 100) * 15);
 
   const breakeven =
-    conversionIsOptimal && taxThisYear > 0
+    modelFavorsConversion && taxThisYear > 0
       ? new Date().getFullYear() +
         Math.round(taxThisYear / Math.max(Math.abs(lifetimeNetBenefit) / 15, 1))
       : null;
@@ -70,9 +70,9 @@ function WhatIfPanel({
   return (
     <div className="rounded-[var(--mwm-radius)] bg-[var(--mwm-bg-muted)] p-4">
       <p className="mb-3 text-xs font-medium text-[color:var(--mwm-navy)]">
-        {conversionIsOptimal
+        {modelFavorsConversion
           ? "What if I converted more?"
-          : "What if I converted anyway? (delay is optimal)"}
+          : "What if I converted anyway? (delay looks favorable in this model)"}
       </p>
 
       <div className="mb-3 flex items-center gap-3">
@@ -100,11 +100,11 @@ function WhatIfPanel({
         </div>
         <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white px-3 py-2">
           <p className="mb-1 text-[10px] text-[color:var(--mwm-text-secondary)]">
-            {conversionIsOptimal ? "Lifetime savings" : "Lifetime extra cost"}
+            {modelFavorsConversion ? "Lifetime savings" : "Lifetime extra cost"}
           </p>
           <p
             className={`text-sm font-medium ${
-              conversionIsOptimal
+              modelFavorsConversion
                 ? "text-emerald-700"
                 : lifetimeNetBenefit < 0
                   ? "text-red-700"
@@ -121,9 +121,9 @@ function WhatIfPanel({
         <div className="rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white px-3 py-2">
           <p className="mb-1 text-[10px] text-[color:var(--mwm-text-secondary)]">Break-even year</p>
           <p className="text-sm font-medium text-[color:var(--mwm-navy)]">
-            {conversionIsOptimal && breakeven
+            {modelFavorsConversion && breakeven
               ? breakeven
-              : conversionIsOptimal
+              : modelFavorsConversion
                 ? "—"
                 : "Delay is better"}
           </p>
@@ -500,10 +500,10 @@ export function RothClient({ result, householdId }: Props) {
             &ldquo;projected RMD rate&rdquo; in the insight card.
           </li>
           <li>
-            <span className="font-medium text-foreground">When we recommend a conversion — </span>
+            <span className="font-medium text-foreground">When a conversion year is flagged — </span>
             Each year, both spouses must be at least age 60 (a simplified stand-in for 59½). The
-            year&apos;s combined marginal rate must be below the projected RMD rate, and you must
-            still have tax-deferred balance remaining.
+            year&apos;s combined marginal rate needs to be below the projected RMD rate, and there must
+            still be tax-deferred balance remaining.
           </li>
           <li>
             <span className="font-medium text-foreground">How much — </span>
