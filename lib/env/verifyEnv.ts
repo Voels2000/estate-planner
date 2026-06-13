@@ -1,5 +1,5 @@
 import Stripe from 'stripe'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@supabase/supabase-js'
 import {
   ENV_MANIFEST,
   MANIFEST_VAR_NAMES,
@@ -36,6 +36,7 @@ export interface EnvVerifyReport {
   flags: EnvFlag[]
   liveness?: {
     stripe: 'LIVE_OK' | 'LIVE_FAIL'
+    stripe_key_mode: 'live' | 'test' | 'unknown' | 'unset'
     stripe_reason?: string
     supabase: 'LIVE_OK' | 'LIVE_FAIL'
     supabase_reason?: string
@@ -73,11 +74,38 @@ const EXPOSED_SECRET_PATTERNS: { re: RegExp; label: string }[] = [
   { re: /^postgres(ql)?:\/\/[^/]+:[^@]+@/, label: 'Postgres connection string with credentials' },
 ]
 
-export function resolveEnvScope(): EnvScope {
-  const vercelEnv = process.env.VERCEL_ENV
+export type EnvSource = Record<string, string | undefined>
+
+export function resolveEnvScope(env: EnvSource = process.env): EnvScope {
+  const vercelEnv = env.VERCEL_ENV
   if (vercelEnv === 'production') return 'production'
   if (vercelEnv === 'preview') return 'preview'
   return 'local'
+}
+
+export function inferStripeKeyMode(
+  key: string | undefined,
+): 'live' | 'test' | 'unknown' | 'unset' {
+  const trimmed = key?.trim() ?? ''
+  if (!trimmed) return 'unset'
+  if (trimmed.startsWith('sk_live_')) return 'live'
+  if (trimmed.startsWith('sk_test_')) return 'test'
+  return 'unknown'
+}
+
+/** Returns a failure reason when scope and key mode disagree; otherwise undefined. */
+export function stripeKeyScopeMismatch(
+  scope: EnvScope,
+  keyMode: ReturnType<typeof inferStripeKeyMode>,
+): string | undefined {
+  if (keyMode === 'unset' || keyMode === 'unknown') return undefined
+  if (scope === 'production' && keyMode === 'test') {
+    return 'Production scope but STRIPE_SECRET_KEY is test mode (sk_test_)'
+  }
+  if (scope === 'preview' && keyMode === 'live') {
+    return 'Preview scope but STRIPE_SECRET_KEY is live mode (sk_live_)'
+  }
+  return undefined
 }
 
 function valueMatchesShape(value: string, shape: EnvShape): boolean {
@@ -157,7 +185,7 @@ function isSystemEnvKey(key: string): boolean {
   return SYSTEM_PREFIXES.some((prefix) => key.startsWith(prefix))
 }
 
-function detectExposedSecrets(env: NodeJS.ProcessEnv): EnvFlag[] {
+function detectExposedSecrets(env: EnvSource): EnvFlag[] {
   const flags: EnvFlag[] = []
   for (const [key, raw] of Object.entries(env)) {
     if (!key.startsWith('NEXT_PUBLIC_')) continue
@@ -192,7 +220,7 @@ function detectExposedSecrets(env: NodeJS.ProcessEnv): EnvFlag[] {
   return flags
 }
 
-function detectUnknownVars(env: NodeJS.ProcessEnv): EnvFlag[] {
+function detectUnknownVars(env: EnvSource): EnvFlag[] {
   const flags: EnvFlag[] = []
   for (const key of Object.keys(env)) {
     if (MANIFEST_VAR_NAMES.has(key)) continue
@@ -207,33 +235,52 @@ function detectUnknownVars(env: NodeJS.ProcessEnv): EnvFlag[] {
   return flags
 }
 
-async function runLivenessChecks(): Promise<EnvVerifyReport['liveness']> {
+async function runLivenessChecks(
+  env: EnvSource,
+  scope: EnvScope,
+): Promise<EnvVerifyReport['liveness']> {
   const result: NonNullable<EnvVerifyReport['liveness']> = {
     stripe: 'LIVE_FAIL',
+    stripe_key_mode: 'unset',
     supabase: 'LIVE_FAIL',
   }
 
-  const stripeKey = process.env.STRIPE_SECRET_KEY?.trim()
+  const stripeKey = env.STRIPE_SECRET_KEY?.trim()
+  const keyMode = inferStripeKeyMode(stripeKey)
+  result.stripe_key_mode = keyMode
+
   if (!stripeKey) {
     result.stripe_reason = 'STRIPE_SECRET_KEY unset'
   } else {
-    try {
-      const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' })
-      await stripe.balance.retrieve()
-      result.stripe = 'LIVE_OK'
-    } catch (err) {
-      result.stripe_reason =
-        err instanceof Error ? err.message : 'Stripe balance.retrieve failed'
+    const mismatch = stripeKeyScopeMismatch(scope, keyMode)
+    if (mismatch) {
+      result.stripe_reason = mismatch
+    } else {
+      try {
+        const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' })
+        await stripe.balance.retrieve()
+        result.stripe = 'LIVE_OK'
+      } catch (err) {
+        result.stripe_reason =
+          err instanceof Error ? err.message : 'Stripe balance.retrieve failed'
+      }
     }
   }
 
   try {
-    const admin = createAdminClient()
-    const { error } = await admin.from('profiles').select('id').limit(1)
-    if (error) {
-      result.supabase_reason = error.message
+    const url = env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+    const key = env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+    if (!url || !key) {
+      result.supabase_reason =
+        'Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY'
     } else {
-      result.supabase = 'LIVE_OK'
+      const admin = createClient(url, key)
+      const { error } = await admin.from('profiles').select('id').limit(1)
+      if (error) {
+        result.supabase_reason = error.message
+      } else {
+        result.supabase = 'LIVE_OK'
+      }
     }
   } catch (err) {
     result.supabase_reason =
@@ -245,10 +292,10 @@ async function runLivenessChecks(): Promise<EnvVerifyReport['liveness']> {
 
 export async function verifyEnvironment(options?: {
   live?: boolean
-  env?: NodeJS.ProcessEnv
+  env?: EnvSource
 }): Promise<EnvVerifyReport> {
   const env = options?.env ?? process.env
-  const scope = resolveEnvScope()
+  const scope = resolveEnvScope(env)
   const vars: Record<string, VarStatus> = {}
   const flags: EnvFlag[] = []
 
@@ -284,7 +331,7 @@ export async function verifyEnvironment(options?: {
   }
 
   if (options?.live) {
-    report.liveness = await runLivenessChecks()
+    report.liveness = await runLivenessChecks(env, scope)
   }
 
   return report
