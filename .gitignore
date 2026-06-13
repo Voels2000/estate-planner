@@ -32,7 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.*.check
 !.env.local.example
+!.env.projects.example
 !.env.test.example
 !.env.test.prod.example
 
