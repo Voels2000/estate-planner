@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-09 (B1 E2E + post-deploy verification)  
+**Last updated:** 2026-06-09 (B1 complete; B3 solo — no GitHub secrets)  
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -40,24 +40,32 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 ### B1. Redeploy + automated smoke (do first)
 
-- [ ] Vercel redeploy of latest `main` (attest: __ / __)
-- [ ] `npm run release:preflight` (verify: command green — includes `verify:rls` JWT + go-live profile + security-smoke)
+- [x] Vercel redeploy of latest `main` (attest: Al / 2026-06-09)
+- [x] `npm run release:preflight` (verify: **green** — 2026-06-09; lint/build/unit + RLS JWT + go-live-profile **17/17** + security-smoke **5/5**; `--workers=1`)
 - [x] `npm run test:e2e:go-live-profile` (verify: **17/17** — 2026-06-09; spouse field `id`s + `npm run build` before local run; `--workers=1`)
 - [x] `npm run test:e2e:security-isolation` (verify: **10/10** — 2026-06-09; stray `advisor_clients` link to e2e-consumer pruned via `pruneStrayE2eAdvisorClientLinks` in seed/prune)
-- [ ] `npm run test:e2e:cross-role` (verify: green — `advisor-client-setup` not legacy `johnson-setup`)
+- [x] `npm run test:e2e:cross-role` (verify: green — 2026-06-09; `advisor-client-setup`)
 - [x] `npm run release:post-deploy` (verify: **Voels 7/7 + RLS 3/3** — 2026-06-09; `SUPABASE_DB_URL` in `.env.local` only — Session pooler URI from Supabase **Connect → Copy**, must be `SUPABASE_DB_URL=postgresql://...`; region must match project e.g. `us-west-2`)
-- [ ] `npm run test:e2e:prod:smoke -- --workers=1` (verify: 42 `@production` — command: `PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- --workers=1`; attest: __ / __)
+- [x] `npm run test:e2e:prod:smoke -- --workers=1` (verify: **40/42 passed, 2 advisory skips** — 2026-06-09; `.env.test.prod` live `PLAYWRIGHT_ADVISOR_FIRM_*` aligned with Vercel `STRIPE_PRICE_ADVISOR_*_MONTHLY`; skips: webhook (`PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` unset) + referral 429 (in-memory limits without Upstash); `--workers=1`)
 
 ### B2. TERMS-1
 
 - [x] Signup checkbox sets `terms_accepted_at` on account creation (verify: `app/(auth)/signup/_signup-form.tsx:64-67,73,101` — metadata on `signUp`; email-confirm path syncs profile via `app/auth/callback/route.ts:40-54` → `recordTermsAcceptance`)
 - **Deferred (post-B&O-READY, not blocking launch):** persist `terms_version` at signup — checkbox/metadata today writes only `terms_accepted_at`; `recordTermsAcceptance` sets `terms_version` from `TERMS_OF_SERVICE_VERSION` (`lib/legal/terms-of-service-sections.ts:5`) on callback/accept page, not in signup metadata. Follow-up: add `terms_version` to signup metadata or call `recordTermsAcceptance` on immediate session path.
 
-### B3. CI discipline
+### B3. CI discipline (solo policy — no secrets in GitHub)
 
-- [ ] `E2E_SMOKE_IN_CI=true` + staging secrets (verify: job exists `.github/workflows/e2e-smoke.yml:14-15` — `if: vars.E2E_SMOKE_IN_CI == 'true'`; **repo variable value** attest: __ / __ — `gh` unavailable in sweep env)
-- [ ] `RLS_VERIFY_IN_CI=true` (verify: job exists `.github/workflows/rls-verify.yml:14-15` — `if: vars.RLS_VERIFY_IN_CI == 'true'`; **repo variable value** attest: __ / __)
-- [ ] Branch protection on `main`: `verify`, `e2e-smoke`, `rls-verify` (attest: __ / __ — run `gh api repos/Voels2000/estate-planner/branches/main/protection`)
+**Hard rule:** Do **not** add Supabase keys, service roles, `PLAYWRIGHT_*`, Stripe, Resend, cron secrets, or `SUPABASE_DB_URL` to GitHub Actions **while production and CI share one Supabase project**. Only `.github/workflows/ci.yml` (`verify`) runs in GitHub — no repository secrets.
+
+**Enforcement (automated):** GitHub branch protection on `main` — require status check **`verify`** only; require PR before merge; no direct pushes to `main`.
+
+**Enforcement (manual — mandatory):** See [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when) for commit-type → command matrix.
+
+- [ ] Branch protection on `main`: **`verify` required**; PR required; admins included (attest: __ / __)
+- [ ] Confirm **no** GitHub Actions secrets/variables for Supabase, Stripe, or E2E (attest: __ / __ — Settings → Secrets and variables → Actions: empty or absent)
+- [ ] Local release discipline adopted: `release:local` before PR; `release:preflight` before merge when touching sensitive paths; `release:post-deploy` after prod deploy when required (attest: Al / __)
+
+**Deferred until second Supabase exists:** restore E2E/RLS workflows from [docs/templates/github-workflows/](./templates/github-workflows/README.md).
 
 ### B4. Manual smokes (run before any DB purge)
 
@@ -100,7 +108,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] Billing code + B2B2C handoff + pricing surfaces
 - [x] Production `@production` smoke harness (`test:e2e:prod:smoke`, 42 tests)
 - [ ] `handle_new_user` + signup defaults migrations applied on prod (verify: fresh signup → `subscription_status = 'none'`, `consumer_tier = 1`)
-- [ ] Optional: Upstash Redis for referral rate limits (falls back to in-memory)
+- [ ] Optional: Upstash Redis for referral rate limits (falls back to in-memory; prod smoke skips 429 assertion until configured)
 
 ---
 
@@ -190,13 +198,13 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 
 | Gate | Command / action |
 |------|------------------|
-| Local minimum | `npm run release:local` |
-| Local full (pre-merge) | `npm run release:preflight` |
-| Preview | Vercel build green + auth callback spot-check |
-| CI | `verify`, `e2e-smoke`, `rls-verify` green on PR |
-| Production | `npm run release:post-deploy` |
+| Local minimum (any PR) | `npm run release:local` |
+| Local full (sensitive paths — see ENVIRONMENT_TESTING) | `npm run release:preflight -- --workers=1` |
+| Preview | Vercel Preview build green + spot-check if auth/billing touched |
+| CI (GitHub — **no secrets**) | **`verify` only** — lint, build (placeholders), unit tests |
+| Production (after deploy) | `npm run release:post-deploy` (+ optional `test:e2e:prod:smoke`) |
 
-See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) for credential placement.
+**Credential policy:** [ENVIRONMENT_TESTING.md § Hard rule — no secrets in GitHub](./ENVIRONMENT_TESTING.md#hard-rule--no-secrets-in-github). **Commit-type matrix:** [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when).
 
 ---
 
@@ -220,19 +228,19 @@ See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) for credential placement.
 
 ## Prompt 2 sweep scoreboard (2026-06-09)
 
-**Bucket B:** **14 of 38** checked (24 open).
+**Bucket B:** **17 of 38** checked (21 open).
 
-**Checked this sweep:** B1 go-live-profile (17/17) · B1 security-isolation (10/10) · B1 post-deploy (Voels 7/7 + RLS 3/3) · B2 TERMS-1 · B6 legal placeholders (prior) · B7 PROTECTED + purge guards · B8 robots/security/deletion/billing/prod harness (prior).
+**Checked this sweep:** B1 Vercel redeploy · B1 release:preflight (full green) · B1 go-live-profile (17/17) · B1 security-isolation (10/10) · B1 cross-role · B1 post-deploy (Voels 7/7 + RLS 3/3) · B1 prod smoke (40/42, 2 advisory skips) · B2 TERMS-1 · B6 legal placeholders (prior) · B7 PROTECTED + purge guards · B8 robots/security/deletion/billing/prod harness (prior).
 
 **Still open — verify (re-run locally):**
 
 | Item | Action |
 |------|--------|
-| B1 preflight / cross-role / prod smoke | `npm run release:preflight`; `npm run test:e2e:cross-role`; prod smoke with `PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com` |
-| B3 CI vars + branch protection | GitHub → Settings → Variables: `E2E_SMOKE_IN_CI`, `RLS_VERIFY_IN_CI` = `true`; branch protection required checks |
+| B1 prod smoke optional passes | Set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` (live `whsec_`) in `.env.test.prod`; enable Upstash on Vercel for 429 test |
+| B3 branch protection (`verify` only) | GitHub → Settings → Branches → `main` → require PR + `verify`; confirm no Action secrets |
 | B5 Vercel Stripe env names | `vercel env ls production` |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
-**Still open — attest (Al):** B1 redeploy · B4 all 5 manual smokes · B5 live keys/catalog/C-4/card smoke · B6 counsel/LLC/bank/B&O/email · B7 purge execution (last).
+**Still open — attest (Al):** B4 all 5 manual smokes · B5 live keys/catalog/C-4/card smoke · B6 counsel/LLC/bank/B&O/email · B7 purge execution (last).
 
 **B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.

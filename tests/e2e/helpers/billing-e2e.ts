@@ -7,3 +7,12 @@ export function firmStarterPriceIdForE2e(): string {
     ADVISOR_FIRM_PRICE_IDS.starter
   )
 }
+
+/** Enterprise price on the deployment under test — required for firm-checkout rejection smoke. */
+export function firmEnterprisePriceIdForE2e(): string {
+  return (
+    process.env.PLAYWRIGHT_ADVISOR_FIRM_ENTERPRISE_PRICE_ID?.trim() ||
+    process.env.STRIPE_PRICE_ADVISOR_ENTERPRISE_MONTHLY?.trim() ||
+    ADVISOR_FIRM_PRICE_IDS.enterprise
+  )
+}

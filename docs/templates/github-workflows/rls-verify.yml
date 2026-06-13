@@ -1,7 +1,7 @@
 name: RLS verify
 
-# Off by default — set repository variable RLS_VERIFY_IN_CI=true and staging Supabase secrets.
-# JWT isolation only in CI — SQL invariants require SUPABASE_DB_URL locally (see docs/ENVIRONMENT_TESTING.md).
+# TEMPLATE ONLY — restore to .github/workflows/ after dedicated staging Supabase exists.
+# See docs/templates/github-workflows/README.md
 
 on:
   push:

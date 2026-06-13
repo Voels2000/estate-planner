@@ -25,17 +25,28 @@ test.describe.configure({ mode: 'serial' })
 let consumerHouseholdId: string
 let advisorClientHouseholdId: string
 
-test.beforeAll(async () => {
-  consumerHouseholdId =
-    process.env.PLAYWRIGHT_HOUSEHOLD_ID ??
-    (await fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.consumer.email)) ??
-    ''
-  advisorClientHouseholdId = (await fetchAdvisorClientHouseholdId()) ?? ''
+test.beforeAll(async ({}, testInfo) => {
+  const canAdminLookup =
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()) &&
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim())
+
+  consumerHouseholdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID?.trim() ?? ''
+  advisorClientHouseholdId = process.env.PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID?.trim() ?? ''
+
+  if (!consumerHouseholdId && canAdminLookup) {
+    consumerHouseholdId =
+      (await fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.consumer.email)) ?? ''
+  }
+  if (!advisorClientHouseholdId && canAdminLookup) {
+    advisorClientHouseholdId = (await fetchAdvisorClientHouseholdId()) ?? ''
+  }
 
   if (!consumerHouseholdId || !advisorClientHouseholdId) {
-    throw new Error(
-      'Missing household IDs — run npm run seed:e2e and set PLAYWRIGHT_HOUSEHOLD_ID in .env.test',
+    testInfo.skip(
+      true,
+      'Missing household IDs — create .env.test.prod (see .env.test.prod.example): copy PLAYWRIGHT_HOUSEHOLD_ID and PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID from .env.test, or add Supabase service role for lookup',
     )
+    return
   }
   expect(consumerHouseholdId).not.toBe(advisorClientHouseholdId)
 })

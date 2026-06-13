@@ -8,7 +8,8 @@
  *   npm run verify:rls -- --skip-behavioral
  *   npm run verify:rls -- --require-sql
  *
- * CI: .github/workflows/rls-verify.yml (RLS_VERIFY_IN_CI=true)
+ * Local: npm run verify:rls / release:preflight / release:post-deploy
+ * Future CI template: docs/templates/github-workflows/rls-verify.yml
  */
 import { config } from 'dotenv'
 

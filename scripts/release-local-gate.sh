@@ -4,7 +4,7 @@
 #   npm run release:local              CI parity (lint, build, unit, OpenAPI)
 #   npm run release:preflight          + RLS JWT + go-live profile + security E2E
 #
-# See docs/RELEASE_ROUTINE.md
+# See docs/ENVIRONMENT_TESTING.md
 
 set -euo pipefail
 

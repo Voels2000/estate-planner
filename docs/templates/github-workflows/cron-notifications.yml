@@ -1,7 +1,9 @@
 name: Daily Notifications Cron
 
+# TEMPLATE ONLY — Vercel cron handles production schedule; this needed CRON_SECRET in GitHub.
+
 on:
-  workflow_dispatch:  # manual trigger only — Vercel cron handles the schedule
+  workflow_dispatch:
 
 jobs:
   notify:

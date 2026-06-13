@@ -51,13 +51,13 @@ const SECTIONS = [
   },
   {
     id: "b3",
-    title: "B3 · CI discipline",
-    note: "GitHub repo variables + branch protection.",
+    title: "B3 · CI discipline (solo — no GitHub secrets)",
+    note: "Only ci.yml verify runs in GitHub. E2E/RLS = local release:preflight + post-deploy.",
     accent: C.ink,
     items: [
-      { id: "b3-e2e", label: "E2E_SMOKE_IN_CI=true (repo variable)", type: "open", attest: true },
-      { id: "b3-rls", label: "RLS_VERIFY_IN_CI=true (repo variable)", type: "open", attest: true },
-      { id: "b3-branch", label: "Branch protection on main: verify, e2e-smoke, rls-verify", type: "open", attest: true },
+      { id: "b3-no-secrets", label: "No GitHub Actions secrets (Supabase / Stripe / E2E)", type: "open", attest: true },
+      { id: "b3-branch", label: "Branch protection on main: verify + PR required", type: "open", attest: true },
+      { id: "b3-local", label: "Local release discipline (local / preflight / post-deploy)", type: "open", attest: true },
     ],
   },
   {

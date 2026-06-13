@@ -2,28 +2,31 @@
 
 Run **production** smoke after deploy (`PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com` in `.env.test`) when validating a prod release — and as part of the final gate before `PUBLIC_SIGNUP_OPEN=true`. **Ordered gates:** [LAUNCH.md](./LAUNCH.md). **Envs & credentials:** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
 
-**Environment model:** Local → Preview → Production flow and **where credentials live** — [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (canonical). **Policy:** GitHub gets **staging Supabase only**; production service role stays in Vercel Production; **`SUPABASE_DB_URL` local-only** (never GitHub).
+**Environment model:** Local → Preview → Production — [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (canonical). **Hard rule:** **No sensitive keys in GitHub** while production shares one Supabase project; E2E/RLS CI workflows stay **disabled**. Local `release:preflight` + `release:post-deploy` instead.
 
-**Prerequisites (local E2E):** `npm run seed:e2e` on **staging** Supabase; copy block to `.env.test` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)).
+**Prerequisites (local E2E):** `npm run seed:e2e`; copy block to `.env.test` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)).
 
-**GitHub Actions (pre-go-live):** Enable `E2E_SMOKE_IN_CI` + `RLS_VERIFY_IN_CI` with **staging** secrets — [ENVIRONMENT_TESTING.md § GitHub Actions setup](./ENVIRONMENT_TESTING.md#github-actions-setup-pre-go-live).
+**GitHub Actions (solo):** **`verify` only** on PRs — no repository secrets. See [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when).
 
-**Post-deploy (production, manual):** `verify:post-deploy-voels` + `verify:rls --require-sql` from your machine after prod deploy ([ENVIRONMENT_TESTING.md § Flow](./ENVIRONMENT_TESTING.md#flow-local--preview--production)).
+**Post-deploy (production, manual):** `npm run release:post-deploy` from your machine after prod deploy.
 
 **Post-deploy cron:** `/api/cron/post-deploy-verify` (daily 9:00 UTC, `CRON_SECRET`) **backfills missing Voels MC cache**, then runs the 7 checks. Manual: `npm run verify:post-deploy-voels` (no auto-remediate) or `npm run smoke:mc-voels` for immediate backfill.
 
 ---
 
-## Pre-go-live GitHub Actions
+## Pre-go-live GitHub Actions (solo)
 
-**Full setup:** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) — staging Supabase project, secret placement, solo-founder threat model, 2FA.
+**Policy:** [ENVIRONMENT_TESTING.md § Hard rule](./ENVIRONMENT_TESTING.md#hard-rule--no-secrets-in-github) — do **not** enable CI E2E/RLS or add Supabase secrets until a **dedicated staging Supabase** exists.
 
-| Variable | Workflow | CI behavior |
-|----------|----------|-------------|
-| `E2E_SMOKE_IN_CI` | `e2e-smoke.yml` | Localhost app + **staging** Supabase |
-| `RLS_VERIFY_IN_CI` | `rls-verify.yml` | JWT isolation on **staging** (no `SUPABASE_DB_URL`) |
+| What runs in CI today | Workflow | Secrets |
+|-----------------------|----------|---------|
+| Lint, build, unit, OpenAPI | `ci.yml` → **`verify`** | None (compile placeholders only) |
+| E2E smoke | — | **Removed** — local `release:preflight`; template: `docs/templates/github-workflows/e2e-smoke.yml` |
+| RLS JWT verify | — | **Removed** — local `verify:rls` + `release:post-deploy`; template: `docs/templates/github-workflows/rls-verify.yml` |
 
-**Never in GitHub:** production Supabase keys, `SUPABASE_DB_URL`.
+**Branch protection:** require **`verify`** on `main` only.
+
+**Local substitute before merge:** `npm run release:preflight -- --workers=1`
 
 **After production deploy (local only):**
 

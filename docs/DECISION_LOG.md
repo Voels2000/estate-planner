@@ -6,6 +6,18 @@
 
 ---
 
+## GitHub credential hard rule — solo (2026-06-09)
+
+**Decision:** While production and local E2E share **one Supabase project**, **no sensitive credentials go in GitHub Actions** — no repository secrets. Only `ci.yml` → **`verify`** runs in GitHub. E2E/RLS workflow YAML removed from `.github/workflows/`; templates in `docs/templates/github-workflows/`. Local: `release:preflight` + `release:post-deploy`.
+
+**Only exception:** After dedicated staging Supabase — restore templates, staging-only keys in GitHub. Production keys and `SUPABASE_DB_URL` **still never** in GitHub.
+
+**Commit-type → check matrix:** [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when).
+
+**Supersedes (for solo):** Pre-go-live guidance to enable `E2E_SMOKE_IN_CI` with staging secrets on a shared project.
+
+---
+
 ## Domicile API gate + shared roster net worth (2026-06-12)
 
 **Decision:** Align domicile advisor access with `assertHouseholdAccess` (`CONNECTED_ADVISOR_CLIENT_STATUSES` only). Share one roster net-worth loader and column definition across advisor and attorney home pages.

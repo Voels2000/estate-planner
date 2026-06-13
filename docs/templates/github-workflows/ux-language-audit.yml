@@ -1,5 +1,7 @@
 name: UX Language Audit
 
+# TEMPLATE ONLY — optional; ci.yml verify job already runs audit-ux-language.sh on every PR.
+
 on:
   pull_request:
     paths:

@@ -4,7 +4,7 @@
 #
 #   npm run release:post-deploy
 #
-# See docs/RELEASE_ROUTINE.md
+# See docs/ENVIRONMENT_TESTING.md
 
 set -euo pipefail
 
