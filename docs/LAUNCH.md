@@ -61,9 +61,9 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 **Enforcement (manual — mandatory):** See [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when) for commit-type → command matrix.
 
-- [ ] Branch protection on `main`: **`verify` required**; PR required; admins included (attest: __ / __)
-- [ ] Confirm **no** GitHub Actions secrets/variables for Supabase, Stripe, or E2E (attest: __ / __ — Settings → Secrets and variables → Actions: empty or absent)
-- [ ] Local release discipline adopted: `release:local` before PR; `release:preflight` before merge when touching sensitive paths; `release:post-deploy` after prod deploy when required (attest: Al / __)
+- [x] Branch protection on `main`: **`verify` required**; PR required; admins included (attest: Al / 2026-06-13 — `gh api` protection enabled; check context `verify`)
+- [x] Confirm **no** GitHub Actions secrets/variables for Supabase, Stripe, or E2E (attest: Al / 2026-06-13 — removed legacy `CRON_SECRET`; secrets/variables list empty)
+- [x] Local release discipline adopted: `release:local` before PR; `release:preflight` before merge when touching sensitive paths; `release:post-deploy` after prod deploy when required (attest: Al / 2026-06-09)
 
 **Deferred until second Supabase exists:** restore E2E/RLS workflows from [docs/templates/github-workflows/](./templates/github-workflows/README.md).
 
@@ -228,16 +228,15 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 
 ## Prompt 2 sweep scoreboard (2026-06-09)
 
-**Bucket B:** **17 of 38** checked (21 open).
+**Bucket B:** **20 of 38** checked (18 open).
 
-**Checked this sweep:** B1 Vercel redeploy · B1 release:preflight (full green) · B1 go-live-profile (17/17) · B1 security-isolation (10/10) · B1 cross-role · B1 post-deploy (Voels 7/7 + RLS 3/3) · B1 prod smoke (40/42, 2 advisory skips) · B2 TERMS-1 · B6 legal placeholders (prior) · B7 PROTECTED + purge guards · B8 robots/security/deletion/billing/prod harness (prior).
+**Checked this sweep:** B1 complete · B2 TERMS-1 · **B3 CI discipline (solo)** · B6 legal placeholders · B7 PROTECTED + purge guards · B8 robots/security/deletion/billing/prod harness.
 
 **Still open — verify (re-run locally):**
 
 | Item | Action |
 |------|--------|
-| B1 prod smoke optional passes | Set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` (live `whsec_`) in `.env.test.prod`; enable Upstash on Vercel for 429 test |
-| B3 branch protection (`verify` only) | GitHub → Settings → Branches → `main` → require PR + `verify`; confirm no Action secrets |
+| **CI `verify` green** | UX language audit failing (13 findings) — run `bash scripts/audit-ux-language.sh`; fix or allowlist before next merge to `main` |
 | B5 Vercel Stripe env names | `vercel env ls production` |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
