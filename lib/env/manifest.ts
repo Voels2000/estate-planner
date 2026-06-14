@@ -20,7 +20,9 @@ const ALL_DEPLOYED: EnvScope[] = ['preview', 'production']
 const ALL_SCOPES: EnvScope[] = ['local', 'preview', 'production']
 
 const HTTPS = /^https:\/\//
-const JWT = /^eyJ/
+/** Legacy JWT and new Supabase API key formats (staging vs prod projects differ). */
+const SUPABASE_SERVICE_ROLE = /^(eyJ|sb_secret_)/
+const SUPABASE_ANON_KEY = /^(eyJ|sb_publishable_)/
 const PRICE = /^price_/
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -84,13 +86,13 @@ export const ENV_MANIFEST: EnvVarEntry[] = [
     scopes: ALL_SCOPES,
     requiredInScopes: ALL_DEPLOYED,
     secret: false,
-    shape: { preview: JWT, production: JWT },
+    shape: { local: SUPABASE_ANON_KEY, preview: SUPABASE_ANON_KEY, production: SUPABASE_ANON_KEY },
   }),
   entry('SUPABASE_SERVICE_ROLE_KEY', {
     scopes: ALL_SCOPES,
     requiredInScopes: ALL_DEPLOYED,
     secret: true,
-    shape: { preview: JWT, production: JWT },
+    shape: { local: SUPABASE_SERVICE_ROLE, preview: SUPABASE_SERVICE_ROLE, production: SUPABASE_SERVICE_ROLE },
   }),
 
   // --- Stripe secrets ---
@@ -290,9 +292,16 @@ export const ENV_MANIFEST: EnvVarEntry[] = [
     secret: false,
   }),
 
+  // Prod canary E2E — password belongs in production; warn if missing until account exists
+  entry('E2E_CANARY_PASSWORD', {
+    scopes: ['production'],
+    requiredInScopes: [],
+    warnIfMissingInScopes: ['production'],
+    secret: true,
+  }),
+
   // --- Forbidden in deployed scopes (test / E2E / debug) ---
   forbiddenTestVar('E2E_SKIP_RECOMPUTE'),
-  forbiddenTestVar('E2E_CANARY_PASSWORD'),
   forbiddenTestVar('PLAYWRIGHT_BASE_URL'),
   forbiddenTestVar('PLAYWRIGHT_CONSUMER_EMAIL'),
   forbiddenTestVar('PLAYWRIGHT_CONSUMER_PASSWORD'),
