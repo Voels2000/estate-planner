@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Write .env.local + .env.test for GitHub Actions E2E/RLS jobs.
+# Expects staging credentials in the environment (from Actions secrets).
+# Never commit the generated files.
+
+set -euo pipefail
+
+required=(
+  NEXT_PUBLIC_SUPABASE_URL
+  NEXT_PUBLIC_SUPABASE_ANON_KEY
+  SUPABASE_SERVICE_ROLE_KEY
+  PLAYWRIGHT_CONSUMER_EMAIL
+  PLAYWRIGHT_CONSUMER_PASSWORD
+)
+
+for key in "${required[@]}"; do
+  if [[ -z "${!key:-}" ]]; then
+    echo "Missing required env var: $key" >&2
+    exit 1
+  fi
+done
+
+if [[ "${NEXT_PUBLIC_SUPABASE_URL}" != *cmzyxpxfyvdvbsykjvsg* ]]; then
+  echo "SAFETY: NEXT_PUBLIC_SUPABASE_URL must be staging (cmzyxpxfyvdvbsykjvsg), not production." >&2
+  exit 1
+fi
+
+cat > .env.local <<EOF
+NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_placeholder_ci_build_only}
+RESEND_API_KEY=${RESEND_API_KEY:-re_placeholder_ci_build_only}
+NEXT_PUBLIC_APP_URL=http://127.0.0.1:3000
+REQUIRE_PRIVILEGED_MFA=false
+E2E_SKIP_RECOMPUTE=true
+EOF
+
+cat > .env.test <<EOF
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000
+NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+PLAYWRIGHT_HOUSEHOLD_ID=${PLAYWRIGHT_HOUSEHOLD_ID:-}
+PLAYWRIGHT_CONSUMER_EMAIL=${PLAYWRIGHT_CONSUMER_EMAIL}
+PLAYWRIGHT_CONSUMER_PASSWORD=${PLAYWRIGHT_CONSUMER_PASSWORD}
+PLAYWRIGHT_ADVISOR_EMAIL=${PLAYWRIGHT_ADVISOR_EMAIL:-}
+PLAYWRIGHT_ADVISOR_PASSWORD=${PLAYWRIGHT_ADVISOR_PASSWORD:-}
+REQUIRE_PRIVILEGED_MFA=false
+E2E_SKIP_RECOMPUTE=true
+EOF
+
+echo "Wrote .env.local and .env.test for CI (staging ref check passed)."

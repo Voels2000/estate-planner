@@ -1,0 +1,38 @@
+# Uses STAGING Supabase only (cmzyxpxfyvdvbsykjvsg). Production credentials must
+# never be added to GitHub Actions secrets. See ENVIRONMENT_TESTING.md.
+
+name: rls-verify
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  rls-verify:
+    if: vars.RLS_VERIFY_IN_CI == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PLAYWRIGHT_CONSUMER_EMAIL: ${{ secrets.PLAYWRIGHT_CONSUMER_EMAIL }}
+      PLAYWRIGHT_CONSUMER_PASSWORD: ${{ secrets.PLAYWRIGHT_CONSUMER_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Prepare staging env files
+        run: bash scripts/write-ci-staging-env.sh
+
+      - name: RLS JWT isolation verify (staging)
+        run: npm run verify:rls
