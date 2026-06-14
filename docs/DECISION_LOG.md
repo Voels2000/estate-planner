@@ -1,8 +1,76 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-12 (Audit Sprint C/D + domicile gate + roster alignment)
+# Last updated: 2026-06-13 (two-DB steady state + env verifier + credential rule revision)
 
 ---
+
+---
+
+## Two-database topology — staging vs production (2026-06-13)
+
+**Decision:** Split Supabase into **staging** (`mwm-staging` / `cmzyxpxfyvdvbsykjvsg`) and **production** (`fnzvlmrqwcqwiqueevux`). **Local dev + Vercel Preview** use staging; **Vercel Production** uses prod only. Code promotes via git → Vercel; **data never promotes** between projects.
+
+**What lives where:**
+- **Staging:** full `@mywealthmaps.test` E2E cast, multi-role testing, wipe-able via `cleanup:purge`.
+- **Production:** exactly three protected auth users — `david@gmail.com`, `avoels@comcast.net`, `canary-consumer@mywealthmaps.com`.
+
+**Docs / scripts:** [DEPLOYMENT.md](./DEPLOYMENT.md) (steady state), archived [TWO_DB_MIGRATION.md](./archive/TWO_DB_MIGRATION.md) (one-time runbook, PR #6).
+
+**Reasoning:** Shared prod/staging caused purge risk and blocked staging-only CI secrets. Staging is disposable; prod is never bulk-wiped again.
+
+---
+
+## GitHub credential rule revision — staging-only secrets OK (2026-06-13)
+
+**Decision:** Revise the 2026-06-09 solo rule. **Production** credentials (`SUPABASE_DB_URL`, prod service role, prod Stripe/Resend, `.env.test.prod`) **still never** go in GitHub Actions. **Staging-only** Supabase URL/keys + `PLAYWRIGHT_*` **may** go in repository secrets to restore E2E/RLS workflows on PRs.
+
+**Reversal:** The 2026-06-09 entry remains valid for its context (one shared project). It is **superseded for staging CI** now that Preview/local no longer touch prod data.
+
+**Still on GitHub without secrets:** `ci.yml` → `verify`; `staging-keepalive.yml` (public health ping).
+
+**Reasoning:** The original ban existed because CI and production shared one database. Two-DB split removes that blast radius for staging keys.
+
+---
+
+## Stripe mode separation — Preview test / Production live (2026-06-13)
+
+**Decision:** Vercel **Preview** uses Stripe **test** keys; Vercel **Production** uses Stripe **live** keys. Env verifier cross-checks `stripe_key_mode` vs deployment scope (`lib/env/verifyEnv.ts`).
+
+**Reasoning:** Prevents accidental live charges on preview deploys and catches mis-scoped keys before flip.
+
+---
+
+## Lazy resolve-time initialization — Stripe clients + consumer prices (2026-06-13)
+
+**Decision:** Do not construct `new Stripe()` at module load in API routes (breaks Vercel Preview build when env empty). Construct inside request handlers. Consumer Stripe price IDs resolve lazily via `resolveConsumerPriceId()` — throws in production if env unset (no silent test-price fallback).
+
+**Files:** `lib/billing/stripePrices.ts`, deferred-init routes (PR #3 follow-up), `lib/tiers.ts` consumer getters.
+
+**Reasoning:** Module-load Stripe init failed Preview builds; eager price bake-in hid missing prod env vars until checkout.
+
+---
+
+## Prod consumer canary + staging-only purge (2026-06-13)
+
+**Decision:** Keep one synthetic consumer on production — `canary-consumer@mywealthmaps.com` — for `@production` E2E smoke. Password in Vercel `E2E_CANARY_PASSWORD` only. Reset via `npm run seed:prod-canary -- --confirm`. Protected in `cleanup-test-accounts.ts` `GO_LIVE_PROTECTED`.
+
+**Purge rule:** `npm run cleanup:purge` targets **staging** (via `.env.local`). Production bulk delete was one-time (attested); ongoing cleanup uses `bash scripts/run-cleanup-prod.sh` with keep-list.
+
+**Reasoning:** Prod needs a headless consumer login without `@mywealthmaps.test` fixtures; purge must never threaten prod residents.
+
+---
+
+## Env verifier + production price throw-guard — silent test-price risk (2026-06-13)
+
+**Decision:** Standing infra closes the “test price ID in production” risk:
+1. **`GET /api/admin/verify-env`** — token-gated (`ADMIN_VERIFY_TOKEN`); manifest-driven presence/shape/exposure flags; optional `?live=1` Stripe/Supabase liveness.
+2. **`resolveConsumerPriceId` throw** — runtime seatbelt when `VERCEL_ENV=production` and consumer price env empty.
+
+**Manifest SSOT:** `lib/env/manifest.ts` — dual Supabase key formats (`eyJ` | `sb_secret_` / `sb_publishable_`); dead vars intentionally omitted until dashboard deletion.
+
+**Gate-2 use:** Run `verify-env?live=1` before `PUBLIC_SIGNUP_OPEN=true` — attest only when report is actually clean (after Vercel dashboard fixes).
+
+**Reasoning:** Periodic audit + runtime throw beats hoping env vars stayed correct across deploys.
 
 ---
 
