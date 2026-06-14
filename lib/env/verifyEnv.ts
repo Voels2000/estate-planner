@@ -51,6 +51,7 @@ const SYSTEM_PREFIXES = [
   'AWS_',
   'LAMBDA_',
   'TURBO_',
+  '__NEXT_',
 ] as const
 
 const SYSTEM_EXACT = new Set([
@@ -61,18 +62,26 @@ const SYSTEM_EXACT = new Set([
   'PWD',
   'SHLVL',
   '_',
+  'LANG',
+  'LD_LIBRARY_PATH',
+  'NOW_REGION',
+  'NX_DAEMON',
+  'TZ',
+  'VERCEL',
+  'TURBOPACK',
 ])
-
-/** NEXT_PUBLIC_ keys that may legitimately hold a JWT (anon key). */
-const SAFE_PUBLIC_JWT_KEYS = new Set(['NEXT_PUBLIC_SUPABASE_ANON_KEY'])
 
 const EXPOSED_SECRET_PATTERNS: { re: RegExp; label: string }[] = [
   { re: /^sk_(live|test)_/, label: 'Stripe secret key (sk_)' },
   { re: /^rk_/, label: 'Stripe restricted key (rk_)' },
   { re: /^whsec_/, label: 'Stripe webhook secret (whsec_)' },
   { re: /^re_/, label: 'Resend API key (re_)' },
+  { re: /^sb_secret_/, label: 'Supabase secret key (sb_secret_)' },
   { re: /^postgres(ql)?:\/\/[^/]+:[^@]+@/, label: 'Postgres connection string with credentials' },
 ]
+
+/** Only this NEXT_PUBLIC_ key may hold a legacy anon JWT (eyJ) or sb_publishable_. */
+const SUPABASE_ANON_PUBLIC_KEY = 'NEXT_PUBLIC_SUPABASE_ANON_KEY'
 
 export type EnvSource = Record<string, string | undefined>
 
@@ -204,11 +213,23 @@ function detectExposedSecrets(env: EnvSource): EnvFlag[] {
       }
     }
 
-    if (
-      /^eyJ/.test(value) &&
-      !SAFE_PUBLIC_JWT_KEYS.has(key) &&
-      !flags.some((f) => f.name === key)
-    ) {
+    if (flags.some((f) => f.name === key)) continue
+
+    // sb_publishable_ is public-by-design — only valid on the Supabase anon key var
+    if (/^sb_publishable_/.test(value)) {
+      if (key !== SUPABASE_ANON_PUBLIC_KEY) {
+        flags.push({
+          name: key,
+          level: 'CRITICAL',
+          reason: 'NEXT_PUBLIC_ var exposes a Supabase publishable key on the wrong var.',
+          action: 'Use NEXT_PUBLIC_SUPABASE_ANON_KEY only / move server-side.',
+        })
+      }
+      continue
+    }
+
+    // Legacy anon JWT on the anon var is fine; eyJ elsewhere is likely service-role leak
+    if (/^eyJ/.test(value) && key !== SUPABASE_ANON_PUBLIC_KEY) {
       flags.push({
         name: key,
         level: 'CRITICAL',
