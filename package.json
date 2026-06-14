@@ -27,6 +27,7 @@
     "test:e2e:prod:billing": "dotenv -o -e .env.test.prod -- npx playwright test --grep '@production.*billing|billing.*@production' --workers=1",
     "test:e2e:security-smoke:prod": "dotenv -o -e .env.test.prod -- npx playwright test tests/e2e/public/security-sprint-post-deploy.spec.ts tests/e2e/consumer/security-sprint-rpc-pages.spec.ts tests/e2e/advisor/security-sprint-monte-carlo.spec.ts --project=public --project=consumer-setup --project=consumer --project=advisor-setup --project=advisor-client-setup --project=advisor --workers=1",
     "seed:e2e:prod": "dotenv -o -e .env.test.prod -- npx tsx scripts/seed-e2e-fixtures.ts",
+    "seed:prod-canary": "npx tsx scripts/seed-prod-canary.ts",
     "test:e2e:golden-path": "dotenv -o -e .env.local -e .env.test -- npx playwright test --project=golden-path",
     "seed:golden-path": "dotenv -e .env.local -e .env.test -- npx tsx scripts/seed-golden-path-stage1.ts",
     "test:e2e:report": "npx playwright show-report",

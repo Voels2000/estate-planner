@@ -72,6 +72,8 @@ const GO_LIVE_PROTECTED = [
   'avoels@outlook.com',
   'david@gmail.com',
   'Stephen.a.voels@sbcglobal.net',
+  // prod consumer canary — E2E target, never delete
+  'canary-consumer@mywealthmaps.com',
 ]
 
 /** Canonical @mywealthmaps.test — never delete */

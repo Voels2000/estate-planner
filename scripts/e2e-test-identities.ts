@@ -15,6 +15,13 @@ export const E2E_DEFAULT_BASE_URL = 'https://www.mywealthmaps.com'
 /** Drip smoke — capture via /assess or homepage; verify with verify-drip-sequence.ts */
 export const DRIP_SMOKE_EMAIL = 'e2e-drip@mywealthmaps.test'
 
+/** Production consumer canary — password from E2E_CANARY_PASSWORD at seed time */
+export const PROD_CANARY = {
+  email: 'canary-consumer@mywealthmaps.com',
+  fullName: 'Canary Consumer',
+  householdName: 'Canary Test Household',
+} as const
+
 export const E2E_IDENTITIES = {
   consumer: {
     email: 'e2e-consumer@mywealthmaps.test',
