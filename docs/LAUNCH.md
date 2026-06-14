@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-09 (B1 complete; B3 solo — no GitHub secrets)  
+**Last updated:** 2026-06-13 (two-DB steady state; B3 reclassified; B7 prod cleanup done)  
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -53,21 +53,28 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] Signup checkbox sets `terms_accepted_at` on account creation (verify: `app/(auth)/signup/_signup-form.tsx:64-67,73,101` — metadata on `signUp`; email-confirm path syncs profile via `app/auth/callback/route.ts:40-54` → `recordTermsAcceptance`)
 - **Deferred (post-B&O-READY, not blocking launch):** persist `terms_version` at signup — checkbox/metadata today writes only `terms_accepted_at`; `recordTermsAcceptance` sets `terms_version` from `TERMS_OF_SERVICE_VERSION` (`lib/legal/terms-of-service-sections.ts:5`) on callback/accept page, not in signup metadata. Follow-up: add `terms_version` to signup metadata or call `recordTermsAcceptance` on immediate session path.
 
-### B3. CI discipline (solo policy — no secrets in GitHub)
+### B3. CI discipline (production secrets never in GitHub; staging-only secrets now OK)
 
-**Hard rule:** Do **not** add Supabase keys, service roles, `PLAYWRIGHT_*`, Stripe, Resend, cron secrets, or `SUPABASE_DB_URL` to GitHub Actions **while production and CI share one Supabase project**. Only `.github/workflows/ci.yml` (`verify`) runs in GitHub — no repository secrets.
+**Revised rule (2026-06-13):** The original “no secrets in GitHub” rule applied while **production and CI shared one Supabase project**. That condition no longer holds — local + Preview use **staging** (`cmzyxpxfyvdvbsykjvsg`); Production uses **prod** (`fnzvlmrqwcqwiqueevux`). See [DEPLOYMENT.md](./DEPLOYMENT.md).
 
-**Enforcement (automated):** GitHub branch protection on `main` — require status check **`verify`** only; require PR before merge; no direct pushes to `main`.
+**Still never in GitHub:** production Supabase keys, `SUPABASE_DB_URL`, production Stripe/Resend/cron secrets, `.env.test.prod` contents.
 
-**Enforcement (manual — mandatory):** See [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when) for commit-type → command matrix.
+**Now actionable:** restore E2E/RLS workflows from [docs/templates/github-workflows/](./templates/github-workflows/README.md) with **staging-only** repository secrets + `E2E_SMOKE_IN_CI` / `RLS_VERIFY_IN_CI`. Details: [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
+
+**Today on GitHub:** `.github/workflows/ci.yml` → **`verify`** (no secrets) + `staging-keepalive.yml` (secret-free health ping). No E2E/RLS workflows yet.
+
+**Enforcement (automated):** GitHub branch protection on `main` — require status check **`verify`**; require PR before merge.
+
+**Enforcement (manual — mandatory):** See [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when).
 
 - [x] Branch protection on `main`: **`verify` required**; PR required; admins included (attest: Al / 2026-06-13)
-- [x] Confirm **no** GitHub Actions secrets/variables for Supabase, Stripe, or E2E (attest: Al / 2026-06-13 — removed legacy `CRON_SECRET`; secrets/variables empty)
-- [x] Local release discipline adopted: `release:local` before PR; `release:preflight` before merge when touching sensitive paths; `release:post-deploy` after prod deploy when required (attest: Al / 2026-06-13)
+- [x] Confirm **no production** credentials in GitHub Actions secrets/variables (attest: Al / 2026-06-13)
+- [x] Local release discipline adopted (attest: Al / 2026-06-13)
+- [x] Two-DB split live: Preview → staging; Production → prod (attest: Al / 2026-06-13)
+- [x] Staging keep-alive workflow on `main` and green in Actions (attest: Al / 2026-06-13)
+- [ ] Restore E2E/RLS PR workflows with **staging-only** GitHub secrets (do-now — unblocked by two-DB split)
 
-**Deferred until second Supabase exists:** restore E2E/RLS workflows from [docs/templates/github-workflows/](./templates/github-workflows/README.md).
-
-### B4. Manual smokes (run before any DB purge)
+### B4. Manual smokes (run before Gate 2; before any **staging** purge if needed)
 
 - [ ] Prospect + Mobile (19 steps, Track 1 before Track 2) — [archived checklist § Prospect](./archive/LAUNCH_CHECKLIST.md) (attest: __ / __)
 - [ ] Health Score + Advisor Playbook (18 steps) (attest: __ / __)
@@ -77,10 +84,19 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 ### B5. Stripe (code wired; live config is ops-attested)
 
-- [ ] Live keys in Vercel Production (`sk_live_` / `pk_live_` / live `whsec_`) (attest: __ / __ — Confirm: `vercel env ls production` shows `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` with live values)
-- [ ] Live catalog: 6 consumer + attorney starter/growth (+ advisor firm seats if billing firms at launch) (attest: __ / __ — Confirm: Stripe Dashboard → Products has 6 consumer prices + attorney starter/growth live)
-- [ ] Live price IDs in env (`STRIPE_PRICE_*`, `STRIPE_PRICE_ATTORNEY_*`, `STRIPE_PRICE_ADVISOR_*`) (verify: code refs `lib/billing/stripePrices.ts:28-68` consumer 6 vars; `lib/tiers.ts:139-142` advisor firm; `lib/tiers.ts:167-169` attorney — **Vercel Production names populated** attest: __ / __ — `vercel env ls production` not available in sweep env)
-- [ ] **Silent test-price-in-prod:** closed by `GET /api/admin/verify-env?live=1` (periodic audit) + `resolveConsumerPriceId` throw in production (runtime seatbelt). Real-card checkout smoke remains manual below.
+**Code on `main` (machine-verifiable — no live curl attestation yet):**
+
+- [x] Admin env verifier: `GET /api/admin/verify-env` + `lib/env/manifest.ts` + `lib/env/verifyEnv.ts` (verify: `app/api/admin/verify-env/route.ts`, PRs #3/#5)
+- [x] Production consumer price throw-guard: `resolveConsumerPriceId` throws when unset in `VERCEL_ENV=production` (verify: `lib/billing/stripePrices.ts:99-110`, PR #4)
+- [x] Silent test-price **runtime seatbelt** (code pair above) — live `?live=1` clean report still required after dashboard fixes below
+
+**Vercel / Stripe dashboard (ops — still open):**
+
+- [ ] Live keys in Vercel Production (`sk_live_` / `pk_live_` / live `whsec_`) (attest: __ / __)
+- [ ] Live catalog: 6 consumer + attorney starter/growth (+ advisor firm seats if billing firms at launch) (attest: __ / __)
+- [ ] Live price IDs in env (`STRIPE_PRICE_*`, `STRIPE_PRICE_ATTORNEY_*`, `STRIPE_PRICE_ADVISOR_*`) populated in Vercel Production (attest: __ / __)
+- [ ] Vercel dashboard fixes: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed; declare `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA`, `EMAIL_FROM`; delete dead vars (`STRIPE_CUSTOMER_PORTAL_URL`, `RESEND_WEBHOOK_SECRET` if present) (attest: __ / __)
+- [ ] Gate-2 pre-check: `GET /api/admin/verify-env?live=1` → `missing: []`, liveness green — **only after dashboard fixes**; record attestation when actually clean (attest: __ / __)
 - [ ] C-4 manual walkthrough on prod: signup → checkout → active → cancel → deletion schedule — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (attest: __ / __)
 - [ ] One real-card live smoke, smallest tier, refund/cancel after verify (attest: __ / __)
 
@@ -93,13 +109,19 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [ ] B&O / DOR account registered (attest: __ / __ — confirm w/ accountant OK pre-ruling)
 - [ ] Email aliases `security@`, `legal@` live (`privacy@` routed) (attest: __ / __)
 
-### B7. Pre-flip cleanup — RUN LAST, never now
+### B7. Database cleanup (prod one-time done; ongoing purge is staging-only)
 
-**Run only immediately before Gate 2, after all B4 manual smokes pass and PROTECTED re-verified, to avoid re-seeding test junk.**
+**Production one-time cleanup** — synthetic rows removed; prod holds exactly three protected auth users (`david@gmail.com`, `avoels@comcast.net`, `canary-consumer@mywealthmaps.com`). Never run `cleanup:purge` against production.
 
-- [x] Verify PROTECTED list in `scripts/cleanup-test-accounts.ts` BEFORE running purge (verify: `scripts/cleanup-test-accounts.ts:70-95` — effective `PROTECTED` = `CANONICAL_PROTECTED` + `GO_LIVE_PROTECTED` + `ROLOBE_PROTECTED_FROM_LEGACY`: `e2e-consumer@`, `e2e-consumer-tier1@`, `e2e-golden-path@`, `e2e-advisor@`, `e2e-advisor-client@`, `e2e-attorney@`, `e2e-attorney-listing@`, `e2e-advisor-listing@`, `e2e-drip@` (all `@mywealthmaps.test`), `avoels@comcast.net`, `avoels@outlook.com`, `david@gmail.com`, `Stephen.a.voels@sbcglobal.net`, plus 13 `@rolobe.resend.app` in `ROLOBE_ACCOUNTS`. **`david@rolobe.resend.app` not protected** — eligible for `--purge-unprotected`. `david@gmail.com` stays protected.)
-- [x] Confirm purge safety guards (verify: `package.json:47-48` loads `.env.local`; `--purge-unprotected --dry-run` exits before deletes; interactive `confirm()` without `--yes` at `scripts/cleanup-test-accounts.ts:350-359`; production guard `assertPurgeTargetSafe` at `:35-55`, called `:416` — aborts on ref `fnzvlmrqwcqwiqueevux` unless `--force`)
-- [ ] Only then: `npm run cleanup:purge:dry-run` → `npm run cleanup:purge` → `npm run seed:e2e` → compliance SQL per [E2E_TEST_RESET.md § Go-live database cleanup](./E2E_TEST_RESET.md) (attest: __ / __)
+- [x] One-time prod cleanup executed (attest: Al / 2026-06-13)
+- [x] `canary-consumer@mywealthmaps.com` in `GO_LIVE_PROTECTED` (verify: `scripts/cleanup-test-accounts.ts:76`)
+- [x] PROTECTED list verified (verify: `scripts/cleanup-test-accounts.ts:70-97` — includes `@mywealthmaps.test` cast, go-live emails, rolobe list, canary)
+- [x] Purge safety guards on production ref (verify: `assertPurgeTargetSafe` at `scripts/cleanup-test-accounts.ts:35-55`)
+
+**Staging purge** (low-stakes; repeatable anytime `.env.local` points at staging):
+
+- [x] Confirm staging target: `.env.local` → staging Supabase, not prod (verify: [DEPLOYMENT.md §3](./DEPLOYMENT.md#3-environment-files-local))
+- [ ] When needed: `npm run cleanup:purge:dry-run` → `npm run cleanup:purge` → `npm run seed:e2e` (attest: __ / __ — staging only)
 
 ### B8. Engineering gates (shipped on `main` — spot-check only)
 
@@ -107,7 +129,9 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] Security hardening manual smoke 4/4 (2026-05-30)
 - [x] Deletion / WCPA / privacy compliance code (Sprint C-6/C-7)
 - [x] Billing code + B2B2C handoff + pricing surfaces
-- [x] Production `@production` smoke harness (`test:e2e:prod:smoke`, 42 tests)
+- [x] Production `@production` smoke harness (`test:e2e:prod:smoke`, canary subset)
+- [x] Prod canary reset: `npm run seed:prod-canary -- --confirm` (verify: `package.json`, `scripts/seed-prod-canary.ts`, `PROD_CANARY` in `scripts/e2e-test-identities.ts:19-23`)
+- [x] Two-DB steady-state docs + scripts on `main` (verify: `docs/DEPLOYMENT.md`, PR #6)
 - [ ] `handle_new_user` + signup defaults migrations applied on prod (verify: fresh signup → `subscription_status = 'none'`, `consumer_tier = 1`)
 - [ ] Optional: Upstash Redis for referral rate limits (falls back to in-memory; prod smoke skips 429 assertion until configured)
 
@@ -115,19 +139,20 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 ## Bucket C — Gate 2 flip sequence (DO NOT run until B&O-READY)
 
-**Rule:** Do NOT set `PUBLIC_SIGNUP_OPEN=true` until every Bucket B box is checked (except B7 until immediately pre-flip).
+**Rule:** Do NOT set `PUBLIC_SIGNUP_OPEN=true` until every Bucket B box is checked.
 
 ### Gate 2 — Go-live day sequence (in order)
 
-1. Verify Bucket B — every checkbox above is checked (B7 run last, immediately before this list)
-2. Supabase Auth → confirm email-confirm flow is ON for production project
-3. Verify `/auth/callback` works on production (sign in with existing account)
-4. Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production environment variables
-5. Redeploy (trigger Vercel redeploy from dashboard or push empty commit)
-6. Core smoke with a FRESH email address (not a test account):
+1. Verify Bucket B — every checkbox above is checked
+2. **Env pre-check (after B5 dashboard fixes):** `GET /api/admin/verify-env?live=1` with `x-admin-token` → `missing: []`, liveness green — attest only when actually clean
+3. Supabase Auth → confirm email-confirm flow is ON for production project
+4. Verify `/auth/callback` works on production (sign in with existing account)
+5. Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production environment variables
+6. Redeploy (trigger Vercel redeploy from dashboard or push empty commit)
+7. Core smoke with a FRESH email address (not a test account):
    - Sign up → confirm email → profile → wizard → dashboard → billing upgrade
-7. `npm run release:post-deploy` (Voels gate + RLS SQL verify)
-8. Check Stripe Dashboard: new subscription appears under the fresh signup customer
+8. `npm run release:post-deploy` (Voels gate + RLS SQL verify)
+9. Check Stripe Dashboard: new subscription appears under the fresh signup customer
 
 ### Expanded flip steps (same order — do not reorder)
 
@@ -205,7 +230,7 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | CI (GitHub — **no secrets**) | **`verify` only** — lint, build (placeholders), unit tests |
 | Production (after deploy) | `npm run release:post-deploy` (+ optional `test:e2e:prod:smoke`) |
 
-**Credential policy:** [ENVIRONMENT_TESTING.md § Hard rule — no secrets in GitHub](./ENVIRONMENT_TESTING.md#hard-rule--no-secrets-in-github). **Commit-type matrix:** [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when).
+**Credential policy:** [ENVIRONMENT_TESTING.md § Credential policy](./ENVIRONMENT_TESTING.md#credential-policy--two-database-steady-state). **Deploy matrix:** [DEPLOYMENT.md](./DEPLOYMENT.md). **Commit-type matrix:** [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when).
 
 ---
 
@@ -223,7 +248,7 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | seed scripts | Canonical `npm run seed:e2e` only |
 | Migration count | Not pinned — use `db push` / dashboard compare |
 
-**References updated:** all non-archive docs except `MASTER_ARCHITECTURE.md`, `DECISION_LOG.md`, `ROADMAP.md`, `CALCULATION_ENGINES.md` (launch-only pass — update those separately if needed).
+**References updated (2026-06-13):** `MASTER_ARCHITECTURE.md`, `DECISION_LOG.md`, `ROADMAP.md`, `DEPLOYMENT.md`, `ENVIRONMENT_TESTING.md` aligned to two-DB steady state. `CALCULATION_ENGINES.md` unchanged.
 
 ---
 
@@ -242,6 +267,6 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | B5 Vercel Stripe env names | `vercel env ls production` |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
-**Still open — attest (Al):** B4 all 5 manual smokes · B5 live keys/catalog/C-4/card smoke · B6 counsel/LLC/bank/B&O/email · B7 purge execution (last).
+**Still open — attest (Al):** B4 all 5 manual smokes · B5 Vercel dashboard fixes + clean `verify-env?live=1` + C-4/card smoke · B6 counsel/LLC/bank/B&O/email · B3 E2E/RLS on PRs (staging secrets).
 
 **B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.
