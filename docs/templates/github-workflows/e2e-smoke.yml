@@ -17,7 +17,6 @@ jobs:
     timeout-minutes: 45
 
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       REQUIRE_PRIVILEGED_MFA: 'false'
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -30,9 +29,9 @@ jobs:
       PLAYWRIGHT_ADVISOR_PASSWORD: ${{ secrets.PLAYWRIGHT_ADVISOR_PASSWORD }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: npm
