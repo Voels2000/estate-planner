@@ -75,7 +75,7 @@ Details: [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [E2E_TEST_RESET.md](./E2E_T
 | `bash scripts/run-cleanup-prod.sh --purge-unprotected` | Production | List-only dry-run; loads `PROD_*` from `.env.projects.local` |
 | `bash scripts/run-cleanup-prod.sh --purge-unprotected --yes --force` | Production | **Irreversible** — keep-list enforced; use only if intentional |
 
-Schema parity script (one-time / drift): `bash scripts/two-db-schema-parity.sh` (reads `.env.projects.local`).
+Schema parity script (emergency full schema clone): `bash scripts/two-db-schema-parity.sh` (reads `.env.projects.local`). **Ongoing schema updates use `db push` on staging** — see [§9](#9-refreshing--maintaining-staging).
 
 > **Note:** Bash helpers above are candidates for `npm run` wrappers later so docs and runnable commands cannot drift.
 
@@ -101,11 +101,13 @@ Verifier shape rules: `lib/env/manifest.ts` (`SUPABASE_ANON_KEY` / `SUPABASE_SER
 | Workflow | Purpose |
 |----------|---------|
 | `ci.yml` → **`verify`** | Lint, build (placeholders), audits, unit tests — **no secrets** |
+| `e2e-smoke.yml` → **`e2e-smoke`** | PR smoke — localhost + **staging** Supabase (gated: `E2E_SMOKE_IN_CI=true`) |
+| `rls-verify.yml` → **`rls-verify`** | PR RLS SQL checks on **staging** (gated: `RLS_VERIFY_IN_CI=true`) |
 | `staging-keepalive.yml` | Ping staging Supabase every 3 days (prevents free-tier pause) |
 
-**Optional next step:** restore E2E/RLS workflows from [docs/templates/github-workflows/](./templates/github-workflows/) using **staging-only** GitHub secrets (never production keys). See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
+**GitHub secrets (staging only):** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `PLAYWRIGHT_HOUSEHOLD_ID`, `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_ADVISOR_EMAIL`, `PLAYWRIGHT_ADVISOR_PASSWORD`. Never production keys. See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
 
-Branch protection on `main`: require PR + **`verify`**.
+Branch protection on `main`: require PR + **`verify`** + **`e2e-smoke`** + **`rls-verify`**.
 
 ---
 
@@ -119,3 +121,122 @@ Branch protection on `main`: require PR + **`verify`**.
 | After production deploy (optional) | `npm run test:e2e:prod:smoke -- --workers=1` |
 
 Full matrix: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when).
+
+---
+
+## 9. Refreshing / maintaining staging
+
+Staging (`cmzyxpxfyvdvbsykjvsg`) is disposable test infrastructure — not a copy of prod user data. Two things must stay aligned with production or CI will pass against a database your users do not have:
+
+1. **Schema** — migrations applied through the same repo as prod
+2. **Reference data** — admin-managed tax tables and similar lookup rows (not user households)
+
+### When to run this
+
+| Trigger | Action |
+|---------|--------|
+| New migration in `supabase/migrations/` | `db push` to **both** prod and staging (see below) |
+| Fresh staging project or `two-db-schema-parity.sh` rebuild | Full checklist below |
+| After `cleanup:purge` on staging | Re-seed E2E cast + refresh `PLAYWRIGHT_HOUSEHOLD_ID` |
+| Admin tax rollover on prod | Re-copy reference data to staging (or repeat rollover on staging) |
+
+### 1. Apply migrations (ongoing — prevents schema drift)
+
+Whenever you ship a migration, push it to **staging before or with** production. Staging was initially created via schema clone (`two-db-schema-parity.sh`), which copies shape but **not** `supabase_migrations` history — `db push` is the ongoing source of truth.
+
+```bash
+# Staging (CI + local dev target)
+npx supabase db push --project-ref cmzyxpxfyvdvbsykjvsg
+
+# Production (before/at deploy)
+npx supabase db push --project-ref fnzvlmrqwcqwiqueevux
+```
+
+If a migration changes the Monte Carlo edge function, redeploy on staging too:
+
+```bash
+supabase functions deploy estate-monte-carlo --project-ref cmzyxpxfyvdvbsykjvsg
+```
+
+Verify RLS after policy migrations: `npm run verify:rls` (uses `.env.local` → staging).
+
+### 2. Seed reference data from prod
+
+Migrations seed **2026 anchor rows**; production may also have admin rollover years (e.g. 2027 estate/IRMAA). Staging does not inherit this automatically. Copy the full reference set from prod so projections and tax engines match.
+
+**Tables** (truncate staging, then load from prod):
+
+- `federal_tax_brackets`
+- `federal_estate_tax_brackets`
+- `federal_tax_config`
+- `state_income_tax_brackets`
+- `state_estate_tax_rules`
+- `state_inheritance_tax_rules`
+- `irmaa_brackets`
+
+```bash
+# Requires PROD_SUPABASE_DB_URL + STAGING_SUPABASE_DB_URL in .env.projects.local
+eval "$(bash scripts/load-env-projects.sh)"
+
+DUMP="/tmp/mwm_prod_tax_reference.sql"
+pg_dump "$PROD_SUPABASE_DB_URL" --data-only --no-owner --no-privileges \
+  -t public.federal_tax_brackets \
+  -t public.federal_estate_tax_brackets \
+  -t public.federal_tax_config \
+  -t public.state_income_tax_brackets \
+  -t public.state_estate_tax_rules \
+  -t public.state_inheritance_tax_rules \
+  -t public.irmaa_brackets \
+  -f "$DUMP"
+
+psql "$STAGING_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -c "
+  TRUNCATE TABLE
+    federal_tax_brackets,
+    federal_estate_tax_brackets,
+    federal_tax_config,
+    state_income_tax_brackets,
+    state_estate_tax_rules,
+    state_inheritance_tax_rules,
+    irmaa_brackets
+  RESTART IDENTITY CASCADE;"
+
+psql "$STAGING_SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f "$DUMP"
+```
+
+**Projection horizon:** the engine carry-forwards the latest `tax_year ≤ projection year` — you do not need per-year rows through 2050. Matching prod's reference set is sufficient (verified 2026-06-14 when empty staging caused CI failure on year 2037).
+
+**Verify after copy:**
+
+```bash
+bash scripts/sync-env-from-projects.sh staging
+npm run verify:tax-coverage   # expects PASS for current calendar year
+```
+
+### 3. Re-seed E2E cast and refresh household ID
+
+Synthetic users and households live only on staging. After purge, fresh project, or any re-seed:
+
+```bash
+bash scripts/sync-env-from-projects.sh staging   # .env.local → staging
+npm run seed:e2e                                 # prints PLAYWRIGHT_HOUSEHOLD_ID
+```
+
+Then update **both**:
+
+| Location | Variable |
+|----------|----------|
+| `.env.test` | `PLAYWRIGHT_HOUSEHOLD_ID` (and `PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID` if printed) |
+| GitHub repository secret | `PLAYWRIGHT_HOUSEHOLD_ID` — `gh secret set PLAYWRIGHT_HOUSEHOLD_ID` |
+
+Stale household IDs cause CI auth passes but projection/household tests fail with "household not found". Re-copy after every `seed:e2e`.
+
+### Full staging refresh checklist
+
+Use after creating a new staging project or major rebuild:
+
+1. `bash scripts/two-db-schema-parity.sh` (or `db push` if migrations history is healthy)
+2. `npx supabase db push --project-ref cmzyxpxfyvdvbsykjvsg`
+3. Reference data copy (§9 step 2 above)
+4. `supabase functions deploy estate-monte-carlo --project-ref cmzyxpxfyvdvbsykjvsg`
+5. `npm run seed:e2e` → update `.env.test` + GitHub `PLAYWRIGHT_HOUSEHOLD_ID`
+6. Smoke: `npm run test:e2e:go-live-profile -- --workers=1` locally, or re-run `e2e-smoke` workflow on a PR
