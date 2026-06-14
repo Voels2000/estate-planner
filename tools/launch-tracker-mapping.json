@@ -6,9 +6,12 @@
   "b1-xrole": { "launchContains": "npm run test:e2e:cross-role" },
   "b1-postdeploy": { "launchContains": "npm run release:post-deploy", "attest": true },
   "b1-prodsmoke": { "launchContains": "npm run test:e2e:prod:smoke", "attest": true },
-  "b3-no-secrets": { "launchContains": "Confirm **no** GitHub Actions secrets", "attest": true },
+  "b3-no-prod-secrets": { "launchContains": "Confirm **no production** credentials", "attest": true },
   "b3-branch": { "launchContains": "Branch protection on `main`: **`verify` required**", "attest": true },
   "b3-local": { "launchContains": "Local release discipline adopted", "attest": true },
+  "b3-twodb": { "launchContains": "Two-DB split live", "attest": true },
+  "b3-keepalive": { "launchContains": "Staging keep-alive workflow", "attest": true },
+  "b3-e2e-ci": { "launchContains": "Restore E2E/RLS PR workflows" },
   "b4-prospect": { "launchContains": "Prospect + Mobile", "attest": true },
   "b4-health": { "launchContains": "Health Score + Advisor Playbook", "attest": true },
   "b4-pdf": { "launchContains": "PDF narrative engine", "attest": true },
@@ -17,6 +20,8 @@
   "b5-keys": { "launchContains": "Live keys in Vercel Production", "attest": true },
   "b5-catalog": { "launchContains": "Live catalog: 6 consumer", "attest": true },
   "b5-envls": { "launchContains": "Live price IDs in env", "attest": true },
+  "b5-dashboard": { "launchContains": "Vercel dashboard fixes", "attest": true },
+  "b5-verify-live": { "launchContains": "Gate-2 pre-check: `GET /api/admin/verify-env?live=1`", "attest": true },
   "b5-c4": { "launchContains": "C-4 manual walkthrough on prod", "attest": true },
   "b5-card": { "launchContains": "One real-card live smoke", "attest": true },
   "b6-counsel": { "launchContains": "Counsel sign-off ToS", "attest": true },
@@ -24,5 +29,5 @@
   "b6-bank": { "launchContains": "Business bank account open", "attest": true },
   "b6-dor": { "launchContains": "B&O / DOR account registered", "attest": true },
   "b6-aliases": { "launchContains": "Email aliases", "attest": true },
-  "b7-exec": { "launchContains": "Only then: `npm run cleanup:purge:dry-run`", "attest": true }
+  "b7-staging-purge": { "launchContains": "When needed: `npm run cleanup:purge:dry-run`", "attest": true }
 }

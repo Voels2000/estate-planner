@@ -71,7 +71,7 @@ Mapping file: [tools/launch-tracker-mapping.json](../tools/launch-tracker-mappin
 
 ## Persistence
 
-- Tracker state: browser `localStorage` key `mwm-launch-tracker-v1`
+- Tracker state: browser `localStorage` key `mwm-launch-tracker-v2` (v2 — 2026-06-13 two-DB LAUNCH.md alignment; v1 ignored)
 - Optional backup: save downloaded JSON to `tools/launch-tracker-state.json` (gitignored)
 
 Reset in the tracker clears browser state only — not `LAUNCH.md`.

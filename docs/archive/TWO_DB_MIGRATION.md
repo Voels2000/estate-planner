@@ -1,4 +1,4 @@
-# EXECUTED 2026-06-13 — repo bundle committed in associated PR; live steps (Preview repoint, prod cleanup, canary seed) attested by Al, not repo-verifiable.
+# EXECUTED 2026-06-13 — repo bundle committed in PR #6; live steps (Preview repoint, prod cleanup, canary seed, keep-alive green) attested by Al, not repo-verifiable.
 
 **Steady state:** [DEPLOYMENT.md](../DEPLOYMENT.md)
 
@@ -6,7 +6,7 @@
 
 # TWO_DB_MIGRATION.md — split staging from production
 
-**Status:** EXECUTED 2026-06-13 — repo bundle in associated PR; live dashboard steps attested by Al, not repo-verifiable.
+**Status:** EXECUTED 2026-06-13 — repo bundle in PR #6; live dashboard steps attested by Al, not repo-verifiable.
 
 One-time migration runbook. After it's executed and verified, archive this file;
 `DEPLOYMENT.md` then describes the permanent two-DB steady state.

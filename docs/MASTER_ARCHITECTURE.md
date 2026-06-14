@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-09 (billing hardening P0–P2 + polish + billing E2E)
+# Last updated: 2026-06-13 (two-DB topology, env manifest, verify-env, deploy flow)
 
 ---
 
@@ -12,7 +12,46 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (session handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [LAUNCH_GATE.md](./LAUNCH_GATE.md) (legal/ops go-live blockers) · [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) (product + technical go-live) · [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) (professional + consumer handoff toggles) · [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) (local → preview → prod gates) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [COMPETITIVE_SCAN.md](./COMPETITIVE_SCAN.md) (gap backlog) · [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md) (journeys) · [CONSUMER_NAV_MAP.md](./CONSUMER_NAV_MAP.md) (routes) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) (go-live test user reset) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (pre-flip automated gate) · [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) (automated vs manual smoke) · [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) (compliance language policy) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (billing go-live verify) · [LAUNCH_GATE.md](./LAUNCH_GATE.md) (legal gate) · [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) (merge/release checklist) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [DEPLOYMENT.md](./DEPLOYMENT.md) (two-DB steady state) · [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (session handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [LAUNCH.md](./LAUNCH.md) (go-live checklist) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) · [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+
+---
+
+## Infrastructure and environments (2026-06-13)
+
+### Two-database topology
+
+| Database | Project | Consumers |
+|----------|---------|-----------|
+| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local `.env.local`, Vercel **Preview**, future CI E2E |
+| **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **Production**, prod canary smoke (`.env.test.prod`) |
+
+Data does **not** promote between projects. Schema parity: `bash scripts/two-db-schema-parity.sh`.
+
+### Deploy flow
+
+```text
+local dev (staging DB) → PR → Vercel Preview (staging DB) → merge main → Vercel Production (prod DB)
+                              ↘ GitHub verify (no secrets)
+                              ↘ staging-keepalive (cron, no secrets)
+```
+
+Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Go-live checklist: [LAUNCH.md](./LAUNCH.md).
+
+### Environment manifest (SSOT for vars)
+
+`lib/env/manifest.ts` — expected variables per scope (`local` / `preview` / `production`), shape regexes, forbidden test vars, consumer price hard-require in production.
+
+**Verifier:** `GET /api/admin/verify-env` (`app/api/admin/verify-env/route.ts`) — `x-admin-token` → `ADMIN_VERIFY_TOKEN`; returns 404 when unauthorized. Optional `?live=1` for Stripe/Supabase liveness + `stripe_key_mode` cross-check.
+
+**Gate-2:** Before `PUBLIC_SIGNUP_OPEN=true`, run `verify-env?live=1` — record attestation only when `missing: []` after dashboard fixes.
+
+### Consumer Stripe prices — lazy resolution
+
+`lib/billing/stripePrices.ts` → `resolveConsumerPriceId()`: reads env at resolve time; **throws** in production if unset (no legacy test-price fallback). `lib/tiers.ts` consumer price getters call resolver lazily. Unit tests: `tests/unit/stripePricesProdGuard.spec.ts`.
+
+### Production canary
+
+`canary-consumer@mywealthmaps.com` — synthetic consumer for `@production` smoke. `PROD_CANARY` in `scripts/e2e-test-identities.ts`; reset `npm run seed:prod-canary -- --confirm`. Protected in `scripts/cleanup-test-accounts.ts`.
 
 ---
 
@@ -646,7 +685,7 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 
 **Full Production env matrix (Sprint 15 go-live):** [LAUNCH_CHECKLIST.md § Vercel Production env vars](./LAUNCH_CHECKLIST.md#vercel-production-env-vars-required-before-sprint-15-go-live).
 
-**Testing & credential placement (local / preview / CI / prod):** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · **Release gates:** [RELEASE_ROUTINE.md](./RELEASE_ROUTINE.md) — `release:local` → preview → CI → `release:post-deploy`.
+**Testing & credential placement (local / preview / CI / prod):** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · **Two-DB deploy matrix:** [DEPLOYMENT.md](./DEPLOYMENT.md) · **Release gates:** [LAUNCH.md § Release routine](./LAUNCH.md#bucket-d--post-go-live--ongoing).
 
 ---
 

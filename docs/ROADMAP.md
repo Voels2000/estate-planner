@@ -904,14 +904,19 @@ See [SPRINT_FRICTION_REDUCTION.md](./archive/sprints/SPRINT_FRICTION_REDUCTION.m
 
 ### Sprint 19 — Go-live hardening **← CURRENT**
 
-**Goal:** Sprint 17/18 ops blockers; manual RLS isolation smoke.
+**Goal:** Sprint 17/18 ops blockers; manual RLS isolation smoke; two-DB steady state.
 
 | Item | Status |
 |------|--------|
+| Two-DB split (staging + prod) | `[x]` PR #6 — `DEPLOYMENT.md`, keep-alive, canary protected |
+| Staging keep-alive workflow | `[x]` `staging-keepalive.yml` on `main`, green in Actions |
+| Env verifier + prod price throw-guard | `[x]` PRs #3–#5 — `verify-env`, manifest, `resolveConsumerPriceId` |
+| E2E/RLS on PRs (staging-only GitHub secrets) | `[ ]` **Near-term** — unblocked; templates in `docs/templates/github-workflows/` |
 | Manual RLS isolation smoke | `[ ]` |
 | LAUNCH_GATE counsel handoff | `[ ]` |
 | Stripe Phase 1 — test mode: 6 prices + preview env + webhook | `[ ]` |
 | Stripe Phase 2 — live mode: live catalog + prod env (go-live day) | `[ ]` |
+| Vercel dashboard env cleanup + clean `verify-env?live=1` | `[ ]` |
 | C-4 billing disclosures walkthrough on preview | `[ ]` |
 | Go-live smoke (fresh email) | `[ ]` |
 
