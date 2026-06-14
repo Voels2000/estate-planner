@@ -1,0 +1,56 @@
+# Uses STAGING Supabase only (cmzyxpxfyvdvbsykjvsg). Production credentials must
+# never be added to GitHub Actions secrets. See ENVIRONMENT_TESTING.md.
+
+name: e2e-smoke
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  e2e-smoke:
+    if: vars.E2E_SMOKE_IN_CI == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      REQUIRE_PRIVILEGED_MFA: 'false'
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PLAYWRIGHT_HOUSEHOLD_ID: ${{ secrets.PLAYWRIGHT_HOUSEHOLD_ID }}
+      PLAYWRIGHT_CONSUMER_EMAIL: ${{ secrets.PLAYWRIGHT_CONSUMER_EMAIL }}
+      PLAYWRIGHT_CONSUMER_PASSWORD: ${{ secrets.PLAYWRIGHT_CONSUMER_PASSWORD }}
+      PLAYWRIGHT_ADVISOR_EMAIL: ${{ secrets.PLAYWRIGHT_ADVISOR_EMAIL }}
+      PLAYWRIGHT_ADVISOR_PASSWORD: ${{ secrets.PLAYWRIGHT_ADVISOR_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Prepare staging env files
+        run: bash scripts/write-ci-staging-env.sh
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
+          RESEND_API_KEY: re_placeholder_ci_build_only
+          STRIPE_SECRET_KEY: sk_test_placeholder_ci_build_only
+
+      - name: E2E go-live profile smoke
+        run: npm run test:e2e:go-live-profile -- --workers=1
+
+      - name: E2E security smoke
+        run: npm run test:e2e:security-smoke -- --workers=1
