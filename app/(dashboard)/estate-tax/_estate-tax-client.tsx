@@ -23,7 +23,7 @@ import {
   type StateInheritanceTaxRule,
 } from '@/lib/calculations/estate-tax'
 import {
-  calculateStateEstateTax as calculateUnifiedStateEstateTax,
+  resolveStateTaxForDeathPhase,
 } from '@/lib/calculations/stateEstateTax'
 import { CollapsibleSection } from '@/components/CollapsibleSection'
 import type { EstateComposition } from '@/lib/estate/types'
@@ -37,7 +37,11 @@ import { taxTermExplainer, type TaxTermContext } from '@/lib/estate/taxTermExpla
 import { annualGiftingCapacity } from '@/lib/gifting/perRecipientLimit'
 import { getStateDisplayName, isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 import { STATE_SLUG_MAP, stateCodeToSlug } from '@/lib/learn/state-estate-tax-slugs'
-import { isWaState, WA_ESTATE_TAX_ESTIMATE_DISCLAIMER } from '@/lib/estate/waRegime'
+import { isWaState } from '@/lib/estate/waRegime'
+import {
+  WA_ESTATE_TAX_CONSUMER_DETAIL,
+  WA_ESTATE_TAX_CONSUMER_SUMMARY,
+} from '@/lib/estate/waDisclaimers'
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -338,27 +342,37 @@ export default function EstateTaxClient({
 
   const primaryStateTax = useMemo(() => {
     if (!statePrimary || !STATE_ESTATE_TAX_STATES.has(statePrimary.toUpperCase())) return null
-    if (isMFJ && hasSpouse) {
-      // First death: marital deduction applies — no state estate tax
+    const code = statePrimary.toUpperCase()
+    const atFirstDeath = resolveStateTaxForDeathPhase({
+      grossEstate,
+      stateCode: code,
+      brackets: primaryStateBrackets,
+      isMFJ,
+      hasSpouse,
+      deathPhase: 'first_death',
+    })
+    if (atFirstDeath.isFirstDeath) {
       return {
-        state:            statePrimary.toUpperCase(),
-        state_taxable:    0,
-        state_exemption:  primaryStateExemption,
+        state: code,
+        state_taxable: 0,
+        state_exemption: atFirstDeath.exemptionUsed || primaryStateExemption,
         state_estate_tax: 0,
-        is_first_death:   true,
+        is_first_death: true,
       }
     }
-    const unified = calculateUnifiedStateEstateTax(
+    const atSecondDeath = resolveStateTaxForDeathPhase({
       grossEstate,
-      statePrimary.toUpperCase(),
-      primaryStateBrackets,
-      isMFJ && hasSpouse,
-    )
+      stateCode: code,
+      brackets: primaryStateBrackets,
+      isMFJ,
+      hasSpouse,
+      deathPhase: 'second_death',
+    })
     return {
-      state: statePrimary.toUpperCase(),
-      state_taxable: unified.taxableEstate,
-      state_exemption: unified.exemptionUsed,
-      state_estate_tax: unified.stateTax,
+      state: code,
+      state_taxable: atSecondDeath.taxableEstate,
+      state_exemption: atSecondDeath.exemptionUsed,
+      state_estate_tax: atSecondDeath.activeStateTax,
       is_first_death: false,
     }
   }, [statePrimary, isMFJ, hasSpouse, grossEstate, primaryStateBrackets, primaryStateExemption])
@@ -379,26 +393,36 @@ export default function EstateTaxClient({
     const sc = stateCompare?.toUpperCase()
     if (!sc || sc === statePrimary?.toUpperCase()) return null
     if (!STATE_ESTATE_TAX_STATES.has(sc)) return null
-    if (isMFJ && hasSpouse) {
+    const atFirstDeath = resolveStateTaxForDeathPhase({
+      grossEstate,
+      stateCode: sc,
+      brackets: compareStateBrackets,
+      isMFJ,
+      hasSpouse,
+      deathPhase: 'first_death',
+    })
+    if (atFirstDeath.isFirstDeath) {
       return {
-        state:            sc,
-        state_taxable:    0,
-        state_exemption:  compareStateBrackets[0]?.exemption_amount ?? 0,
+        state: sc,
+        state_taxable: 0,
+        state_exemption: atFirstDeath.exemptionUsed || compareStateBrackets[0]?.exemption_amount ?? 0,
         state_estate_tax: 0,
-        is_first_death:   true,
+        is_first_death: true,
       }
     }
-    const unified = calculateUnifiedStateEstateTax(
+    const atSecondDeath = resolveStateTaxForDeathPhase({
       grossEstate,
-      sc,
-      compareStateBrackets,
-      isMFJ && hasSpouse,
-    )
+      stateCode: sc,
+      brackets: compareStateBrackets,
+      isMFJ,
+      hasSpouse,
+      deathPhase: 'second_death',
+    })
     return {
       state: sc,
-      state_taxable: unified.taxableEstate,
-      state_exemption: unified.exemptionUsed,
-      state_estate_tax: unified.stateTax,
+      state_taxable: atSecondDeath.taxableEstate,
+      state_exemption: atSecondDeath.exemptionUsed,
+      state_estate_tax: atSecondDeath.activeStateTax,
       is_first_death: false,
     }
   }, [stateCompare, statePrimary, isMFJ, hasSpouse, grossEstate, compareStateBrackets])
@@ -1005,9 +1029,17 @@ export default function EstateTaxClient({
           {(primaryStateTax || compareStateTax) && (
             <div className={`grid gap-6 ${showComparison && compareStateTax ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
               {statePrimary && isWaState(statePrimary) && (
-                <p className="text-xs text-neutral-600 leading-relaxed rounded-lg bg-neutral-50 border border-neutral-200 px-3 py-2 sm:col-span-2">
-                  {WA_ESTATE_TAX_ESTIMATE_DISCLAIMER}
-                </p>
+                <div className="text-xs text-neutral-600 leading-relaxed rounded-lg bg-neutral-50 border border-neutral-200 px-3 py-2 sm:col-span-2">
+                  <p>{WA_ESTATE_TAX_CONSUMER_SUMMARY}</p>
+                  <details className="mt-2 group">
+                    <summary className="cursor-pointer text-neutral-700 font-medium list-none [&::-webkit-details-marker]:hidden">
+                      <span className="underline decoration-dotted underline-offset-2">
+                        How these estimates work
+                      </span>
+                    </summary>
+                    <p className="mt-2 text-neutral-600">{WA_ESTATE_TAX_CONSUMER_DETAIL}</p>
+                  </details>
+                </div>
               )}
 
               {/* Primary state */}

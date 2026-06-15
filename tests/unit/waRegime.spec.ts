@@ -17,6 +17,7 @@ import {
   calculateStateEstateTax,
   computeBypassFundingAmount,
   resolveActiveStateTax,
+  resolveStateTaxForDeathPhase,
 } from '../../lib/calculations/stateEstateTax'
 import { mapAndResolveStateEstateBrackets } from '../../lib/estate/resolveStateEstateBrackets'
 
@@ -130,12 +131,36 @@ test.describe('WA bypass trust modeling (Regime D, second death)', () => {
     expect(result.taxableEstateWithCST).toBeGreaterThan(legacyWithTaxable)
   })
 
-  test('first death WA tax is $0 via marital deduction (engine models second death only)', () => {
-    // calculateStateEstateTax is a second-death snapshot; first-death $0 is enforced
-    // in projection/UI (marital deduction). Document the boundary here.
-    const firstDeathGross = 4_000_000
-    void firstDeathGross
-    const maritalDeductionStateTaxAtFirstDeath = 0
-    expect(maritalDeductionStateTaxAtFirstDeath).toBe(0)
+  test('first death MFJ path returns $0 — raw engine would mis-price if miswired', () => {
+    const gross = voelsGross
+    const rawSecondDeath = calculateStateEstateTax(gross, 'WA', brackets, true)
+    expect(rawSecondDeath.stateTax).toBe(1_063_259)
+
+    const firstDeath = resolveStateTaxForDeathPhase({
+      grossEstate: gross,
+      stateCode: 'WA',
+      brackets,
+      isMFJ: true,
+      hasSpouse: true,
+      deathPhase: 'first_death',
+    })
+    expect(firstDeath.isFirstDeath).toBe(true)
+    expect(firstDeath.activeStateTax).toBe(0)
+    expect(firstDeath.stateTax).toBe(0)
+    expect(firstDeath.stateTaxWithCST).toBe(0)
+    expect(firstDeath.cstBenefit).toBe(0)
+
+    const secondDeath = resolveStateTaxForDeathPhase({
+      grossEstate: gross,
+      stateCode: 'WA',
+      brackets,
+      isMFJ: true,
+      hasSpouse: true,
+      deathPhase: 'second_death',
+    })
+    expect(secondDeath.isFirstDeath).toBe(false)
+    expect(secondDeath.activeStateTax).toBe(1_063_259)
+    expect(secondDeath.stateTaxWithCST).toBe(519_060)
+    expect(secondDeath.cstBenefit).toBe(544_199)
   })
 })

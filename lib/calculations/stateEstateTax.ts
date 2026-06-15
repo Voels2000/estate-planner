@@ -243,6 +243,73 @@ export function calculateStateEstateTax(
   }
 }
 
+/** Modeled death sequence for state estate tax display (marital deduction at first death). */
+export type StateEstateDeathPhase = 'first_death' | 'second_death'
+
+/** MFJ + spouse: unlimited marital deduction → $0 state estate tax at first death. */
+export function shouldZeroStateTaxAtFirstDeath(
+  isMFJ: boolean,
+  hasSpouse: boolean,
+  deathPhase: StateEstateDeathPhase,
+): boolean {
+  return deathPhase === 'first_death' && isMFJ && hasSpouse
+}
+
+export type StateTaxForDeathPhaseResult = StateEstateTaxResult & {
+  isFirstDeath: boolean
+  activeStateTax: number
+}
+
+/**
+ * Resolve state tax for a death phase. First death (MFJ + spouse) returns $0 even when
+ * `calculateStateEstateTax` on the same gross would be non-zero — prevents mis-wiring
+ * the raw engine to a first-death surface.
+ */
+export function resolveStateTaxForDeathPhase(params: {
+  grossEstate: number
+  stateCode: string
+  brackets: StateBracket[]
+  isMFJ: boolean
+  hasSpouse: boolean
+  deathPhase: StateEstateDeathPhase
+  hasBypassTrust?: boolean
+  options?: StateEstateTaxOptions
+}): StateTaxForDeathPhaseResult {
+  const exemption = params.brackets[0]?.exemption_amount ?? 0
+
+  if (shouldZeroStateTaxAtFirstDeath(params.isMFJ, params.hasSpouse, params.deathPhase)) {
+    return {
+      stateTax: 0,
+      stateTaxWithCST: 0,
+      cstBenefit: 0,
+      hasPortabilityGap: params.isMFJ && NO_PORTABILITY_STATES.has(params.stateCode.toUpperCase().trim()),
+      nyCliffTriggered: false,
+      exemptionUsed: exemption,
+      taxableEstate: 0,
+      taxableEstateWithCST: 0,
+      bypassFundingAmount: 0,
+      effectiveRate: 0,
+      isFirstDeath: true,
+      activeStateTax: 0,
+    }
+  }
+
+  const result = calculateStateEstateTax(
+    params.grossEstate,
+    params.stateCode,
+    params.brackets,
+    params.isMFJ,
+    params.hasBypassTrust ?? false,
+    params.options,
+  )
+
+  return {
+    ...result,
+    isFirstDeath: false,
+    activeStateTax: resolveActiveStateTax(result, params.hasBypassTrust ?? false),
+  }
+}
+
 /** Active CST in place → use with-CST amount; otherwise status-quo (no CST). */
 export function resolveActiveStateTax(
   result: StateEstateTaxResult,

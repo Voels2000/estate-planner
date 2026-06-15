@@ -18,7 +18,8 @@ import {
 } from '@/lib/calculations/stateEstateTax'
 import { buildEstateTaxYearBasis } from '@/lib/tax/labelTaxBasis'
 import { resolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
-import { isWaState, WA_ESTATE_TAX_ESTIMATE_DISCLAIMER } from '@/lib/estate/waRegime'
+import { isWaState } from '@/lib/estate/waRegime'
+import { WA_ESTATE_TAX_ADVISOR_PANEL } from '@/lib/estate/waDisclaimers'
 import { InfoTooltip } from '@/components/ui/InfoTooltip'
 import { taxTermExplainer, type TaxTermContext } from '@/lib/estate/taxTermExplainers'
 
@@ -259,7 +260,7 @@ export default function StateTaxPanel({
 
       {isWaState(unifiedStateCode) && (
         <p className="text-xs text-slate-600 leading-relaxed rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
-          {WA_ESTATE_TAX_ESTIMATE_DISCLAIMER}
+          {WA_ESTATE_TAX_ADVISOR_PANEL}
         </p>
       )}
 

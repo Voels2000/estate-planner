@@ -29,9 +29,8 @@ export type WaRegime = {
   statuteNote: string
 }
 
-/** Shown on WA state-estate-tax surfaces (advisor + consumer). */
-export const WA_ESTATE_TAX_ESTIMATE_DISCLAIMER =
-  'Estimate based on Washington law effective July 1, 2026 (top rate 20%, $3.0M exemption, not indexed). Not tax or legal advice.'
+/** Shown on WA state-estate-tax surfaces (advisor + consumer). @deprecated Use waDisclaimers.ts */
+export { WA_ESTATE_TAX_ESTIMATE_DISCLAIMER } from '@/lib/estate/waDisclaimers'
 
 /** Regime D — ESB 6347 rollback (frozen $3.0M exemption, legacy 10%–20% table). */
 export const WA_REGIME_D: WaRegime = {
