@@ -23,6 +23,7 @@ import {
 } from '../../lib/calculations/stateEstateTax'
 import { mapAndResolveStateEstateBrackets } from '../../lib/estate/resolveStateEstateBrackets'
 import {
+  WA_DOR_GROSS_GOLDENS,
   WA_DOR_HIGH_GROSS_GOLDEN,
   WA_DOR_TABLE_W_TAXABLE_GOLDENS,
 } from '../../lib/estate/waRegimeDorGoldens'
@@ -174,6 +175,18 @@ test.describe('WA bypass trust modeling (Regime D, second death)', () => {
 test.describe('WA DOR Table W (eff. 2026-07-01)', () => {
   const brackets = waRegimeToStateBrackets(WA_REGIME_D)
 
+  test('Regime D $7M–$9M band rate is 19.5% (not 19%)', () => {
+    const band = WA_REGIME_D.brackets.find((b) => b.upTo === 9_000_000)
+    expect(band?.rate).toBe(0.195)
+    const engineBand = brackets.find((b) => b.min_amount === 7_000_000)
+    expect(engineBand?.rate_pct).toBe(19.5)
+    expect(engineBand?.max_amount).toBe(9_000_000)
+  })
+
+  test('$9M taxable cumulative base is $1,490,000 ($910K + $2M × 19.5%)', () => {
+    expect(calcWaTaxOnTaxableEstate(9_000_000)).toBe(1_490_000)
+  })
+
   for (const row of WA_DOR_TABLE_W_TAXABLE_GOLDENS) {
     test(`taxable $${row.taxableEstate.toLocaleString()} → $${row.expectedTax.toLocaleString()} (${row.band})`, () => {
       expect(calcWaTaxOnTaxableEstate(row.taxableEstate)).toBe(row.expectedTax)
@@ -183,6 +196,15 @@ test.describe('WA DOR Table W (eff. 2026-07-01)', () => {
         brackets,
         false,
       )
+      expect(engine.stateTax).toBe(row.expectedTax)
+    })
+  }
+
+  for (const row of WA_DOR_GROSS_GOLDENS) {
+    test(`gross $${row.grossEstate.toLocaleString()} → $${row.expectedTax.toLocaleString()} (taxable $${row.taxableEstate.toLocaleString()})`, () => {
+      expect(calcWaEstateTax(row.grossEstate)).toBe(row.expectedTax)
+      const engine = calculateStateEstateTax(row.grossEstate, 'WA', brackets, false)
+      expect(engine.taxableEstate).toBe(row.taxableEstate)
       expect(engine.stateTax).toBe(row.expectedTax)
     })
   }

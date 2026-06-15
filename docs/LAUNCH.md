@@ -152,7 +152,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] Two-DB steady-state docs + scripts on `main` (verify: `docs/DEPLOYMENT.md`, PR #6)
 - [x] **`lifetime_exemption_summary` PostgREST IDOR closed** — revoke `anon`/`authenticated` on SECURITY DEFINER view; CI invariant #6 + isolation attack-sim (PR #16; prod migration applied 2026-06-15)
 - [x] Stale estate-readiness banner shipped (`isScoreStale()` wired in `EstateReadinessCard`; PR #12)
-- [x] WA state estate tax — Regime D only for forward planning (ESB 6347, eff. 2026-07-01; Engine B + `state_estate_tax_rules` migration `20260613120000`; DOR Table W $7M–$9M @ 19.5%, $9M+ @ 20%; attest: Al / 2026-06-13)
+- [x] WA state estate tax — Regime D attested against RCW 83.100.040 (restored by ESB 6347, eff. 2026-07-01): 10–20% schedule, $3.0M frozen exemption; golden vectors taxable $6M→$910,000, $8M→$1,295,000, $9M→$1,490,000, $10M→$1,690,000; Engine B + migrations `20260613120000` / `20260613140000`; live DOR web page may show SB 5813 35% schedule until republished post-07-01 — attest against statute/reference manual (verify: `tests/unit/waRegime.spec.ts`, `lib/estate/waRegimeDorGoldens.ts`; attest: Al / 2026-06-15)
 - [ ] `handle_new_user` + signup defaults migrations applied on prod (verify: fresh signup → `subscription_status = 'none'`, `consumer_tier = 1`)
 - [ ] Optional: Upstash Redis for referral rate limits (falls back to in-memory; prod smoke skips 429 assertion until configured)
 

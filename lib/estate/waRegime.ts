@@ -6,7 +6,8 @@
  * July 1, 2026.
  *
  * Brackets: WA DOR restored legacy schedule (10%–20% on taxable estate above exemption).
- * Source: RCW 83.100.040; ESB 6347; aligned with state_estate_tax_content (2026-06).
+ * Source: RCW 83.100.040; WA DOR Estate & Transfer Tax Reference Manual; ESB 6347.
+ * Cumulative bases: $100K@1M · $240K@2M · $390K@3M · $550K@4M · $910K@6M · $1.1M@7M · $1.49M@9M.
  */
 
 import type { StateBracket } from '@/lib/calculations/stateEstateTax'
@@ -45,8 +46,8 @@ export const WA_REGIME_D: WaRegime = {
     { upTo: 4_000_000, rate: 0.16 },
     { upTo: 6_000_000, rate: 0.18 },
     { upTo: 7_000_000, rate: 0.19 },
-    { upTo: 9_000_000, rate: 0.195 },
-    { upTo: null, rate: 0.2 },
+    { upTo: 9_000_000, rate: 0.195 }, // $7M–$9M taxable — must be 19.5%, not 19%
+    { upTo: null, rate: 0.2 }, // $9M+ ; cumulative base at $9M = $1,490,000
   ],
 }
 
