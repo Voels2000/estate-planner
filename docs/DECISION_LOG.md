@@ -60,6 +60,20 @@
 
 ---
 
+## E2E/RLS on PRs — staging-only GitHub secrets (2026-06-14)
+
+**Decision:** Restore E2E smoke + RLS verify workflows on every PR to `main`, using **staging** Supabase credentials only. Production keys and `SUPABASE_DB_URL` remain forbidden in GitHub.
+
+**Shipped:** [PR #8](https://github.com/Voels2000/estate-planner/pull/8) — `.github/workflows/e2e-smoke.yml`, `rls-verify.yml`, `scripts/write-ci-staging-env.sh`. Repo variables `E2E_SMOKE_IN_CI=true`, `RLS_VERIFY_IN_CI=true`. Eight staging repository secrets. Branch protection requires **`verify`** + **`e2e-smoke`** + **`rls-verify`**.
+
+**Evidence:** Green workflow runs on PRs #8–#10 (2026-06-14). Staging ops: tax reference data synced from prod; `estate-monte-carlo` edge deployed to staging.
+
+**Reasoning:** Two-DB split unblocked staging-only CI. Automated PR gates catch data/schema gaps (first run surfaced empty tax tables on staging) without exposing prod credentials.
+
+**Maintenance:** [DEPLOYMENT.md §9](./DEPLOYMENT.md#9-refreshing--maintaining-staging) — `db push` to staging, reference-data copy, `PLAYWRIGHT_HOUSEHOLD_ID` refresh after re-seed.
+
+---
+
 ## Env verifier + production price throw-guard — silent test-price risk (2026-06-13)
 
 **Decision:** Standing infra closes the “test price ID in production” risk:

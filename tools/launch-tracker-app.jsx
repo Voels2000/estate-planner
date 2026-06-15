@@ -16,13 +16,13 @@ const C = {
 };
 
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
-const STORAGE_KEY = "mwm-launch-tracker-v2";
+const STORAGE_KEY = "mwm-launch-tracker-v3";
 
 const SECTIONS = [
   {
     id: "done",
     title: "Verified & checked",
-    note: "Shipped on main or attested. Synced from docs/LAUNCH.md (2026-06-13 two-DB pass).",
+    note: "Shipped on main or attested. Synced from docs/LAUNCH.md (2026-06-14 B3 E2E/RLS CI).",
     accent: C.ready,
     items: [
       { id: "robots", label: "robots.ts + sitemap allow public routes", cmd: "app/robots.ts:5-37", type: "done" },
@@ -40,25 +40,17 @@ const SECTIONS = [
       { id: "b5-verifier", label: "Admin env verifier route + manifest (PRs #3/#5)", cmd: "/api/admin/verify-env", type: "done" },
       { id: "b5-throwguard", label: "Production consumer price throw-guard (PR #4)", cmd: "lib/billing/stripePrices.ts:99-110", type: "done" },
       { id: "b5-seatbelt", label: "Silent test-price runtime seatbelt (code — live ?live=1 still pending)", type: "done" },
-      { id: "b3-branch", label: "Branch protection on main: verify + PR required", type: "done", attest: true },
+      { id: "b3-branch", label: "Branch protection on main: verify + e2e-smoke + rls-verify + PR", type: "done", attest: true },
       { id: "b3-no-prod-secrets", label: "No production credentials in GitHub Actions", type: "done", attest: true },
       { id: "b3-local", label: "Local release discipline adopted", type: "done", attest: true },
       { id: "b3-twodb", label: "Two-DB split live (Preview→staging, Prod→prod)", type: "done", attest: true },
       { id: "b3-keepalive", label: "Staging keep-alive workflow green in Actions", type: "done", attest: true },
+      { id: "b3-e2e-ci", label: "E2E/RLS PR workflows (staging-only GitHub secrets)", cmd: "PR #8 merged; vars + 8 secrets", type: "done", attest: true },
       { id: "b8-canary", label: "Prod canary reset tool (seed:prod-canary)", cmd: "scripts/seed-prod-canary.ts", type: "done" },
       { id: "b8-twodb-docs", label: "Two-DB steady-state docs on main (DEPLOYMENT.md, PR #6)", type: "done" },
       { id: "sec-smoke", label: "Security hardening manual checks 4/4", type: "done" },
       { id: "b8-eng", label: "B8 engineering gates (billing, deletion, prod harness)", type: "done" },
       { id: "b6-placeholders", label: "Legal placeholders wired (/terms, /privacy)", cmd: "lib/legal/company.ts", type: "done" },
-    ],
-  },
-  {
-    id: "b3",
-    title: "B3 · CI discipline",
-    note: "Production secrets never in GitHub. Staging-only secrets OK for E2E/RLS on PRs — do-now, unblocked.",
-    accent: C.ink,
-    items: [
-      { id: "b3-e2e-ci", label: "Restore E2E/RLS PR workflows (staging-only GitHub secrets)", cmd: "docs/templates/github-workflows/", type: "open" },
     ],
   },
   {
