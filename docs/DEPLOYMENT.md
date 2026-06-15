@@ -107,7 +107,7 @@ Verifier shape rules: `lib/env/manifest.ts` (`SUPABASE_ANON_KEY` / `SUPABASE_SER
 
 **GitHub secrets (staging only):** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `PLAYWRIGHT_HOUSEHOLD_ID`, `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_ADVISOR_EMAIL`, `PLAYWRIGHT_ADVISOR_PASSWORD`. Never production keys. See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
 
-Branch protection on `main`: require PR + **`verify`** + **`e2e-smoke`** + **`rls-verify`**. Direct pushes are blocked for all accounts (ruleset **`main-no-direct-push`**, empty bypass list — personal repos cannot use classic “restrict who can push”; the ruleset `update` rule is equivalent). All changes, including one-line fixes, go branch → PR → green checks → merge. Admin enforcement on; force-push and deletion blocked. Enabled **2026-06-15**. Required approvals stay at **0** (solo — do not bump to 1 without a second reviewer).
+Branch protection on `main`: require PR + **`verify`** + **`e2e-smoke`** + **`rls-verify`**. Direct pushes are blocked (ruleset **`main-no-direct-push`**: `pull_request` + `required_status_checks` + `non_fast_forward`; empty bypass list). Personal repos cannot use classic “restrict who can push” — the ruleset achieves the same outcome without blocking PR merges (the initial `update`-only ruleset did block merges; do not re-enable that alone). All changes go branch → PR → green checks → merge. Admin enforcement on; force-push and deletion blocked. Enabled **2026-06-15**. Required approvals stay at **0** (solo — do not bump to 1 without a second reviewer).
 
 ---
 
