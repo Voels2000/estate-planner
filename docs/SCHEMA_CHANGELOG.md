@@ -8,6 +8,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
+# Last updated: 2026-06-15 (launch tracker, deletion schema drift, E2E beneficiary seed)
+
+---
+
+## Code-only — deletion schema drift + E2E beneficiary seed (2026-06-15)
+
+| Change | Detail |
+|--------|--------|
+| **deleteUser schema drift** | `lib/compliance/deleteUserSchema.ts` — missing table: warn + skip; missing column: abort + audit `schema_skip` (no silent WCPA false-green) |
+| **E2E advisor client** | `seedE2eAdvisorClientHousehold()` → `asset_beneficiaries` (3 rows on 401k); `verifyE2eAccounts()` count check |
+| **Ops** | `scripts/check-auth-emails.ts` — auth lookup after purge |
+| **Launch tracker** | v4 UI + `npm run sync:launch-tracker` → [LAUNCH.md](./LAUNCH.md) scoreboard **44/55** |
+
+**No migration.**
+
 ---
 
 ## Code audit Sprint C + D + roster/domicile alignment (2026-06-12, code only)

@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-13 (two-DB topology, env manifest, verify-env, deploy flow)
+# Last updated: 2026-06-15 (deletion schema drift, launch tracker v4, LAUNCH scoreboard)
 
 ---
 
@@ -35,7 +35,7 @@ local dev (staging DB) → PR → Vercel Preview (staging DB) → merge main →
                               ↘ staging-keepalive (cron, no secrets)
 ```
 
-Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Go-live checklist: [LAUNCH.md](./LAUNCH.md).
+Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Go-live checklist: [LAUNCH.md](./LAUNCH.md) · manual attestations: [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) (`npm run launch:tracker`).
 
 ### Environment manifest (SSOT for vars)
 
@@ -1364,7 +1364,9 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Data deletion (Sprint C-6 — Washington WCPA):**
 
-- **Single path:** `lib/compliance/deleteUser.ts` — CLI (`scripts/gdpr-delete-user.ts`), admin execute API, daily cron, go-live **`npm run cleanup:purge`**, legacy `--rolobe` / `--legacy` cleanup script.
+- **Single path:** `lib/compliance/deleteUser.ts` — CLI (`scripts/gdpr-delete-user.ts`), admin execute API, daily cron, go-live **`npm run cleanup:purge`**, legacy `--rolobe` / `--legacy` cleanup script. Schema drift helpers: `lib/compliance/deleteUserSchema.ts` (`classifySchemaDeleteError`, `formatSchemaDeleteSkips`).
+- **Schema drift (2026-06-15):** Missing **table** → loud warn + skip (0 rows). Missing/wrong **column** → abort before Auth delete; audit `success=false` with `schema_skip:` prefix — prevents WCPA false-green when delete targeted wrong column (e.g. `asset_beneficiaries.household_id`). Future: CI invariant on delete table/column list vs migrations.
+- **Lookup:** `scripts/check-auth-emails.ts` — confirm auth user gone after purge/deletion.
 - **Tables:** `deletion_schedule` (pending automated deletions); `deletion_audit_log` (append-only compliance record).
 - **FK scan before Auth delete:** `notifications`, `assessment_results`, `funnel_events`, `privacy_requests`, `deletion_schedule`, `ingestion_jobs`, `change_log`, `firms`, `firm_members`, `profiles`, `email_captures` (by email). `referral_clicks` via advisor_id / attorney_profile_id OR delete.
 - **Orphan Auth users:** no `profiles` row → FK sweep + Auth delete + audit log (no early return).
