@@ -88,10 +88,10 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 **Automated walkthroughs (staging seed + specs):**
 
-- [ ] Prospect + Mobile — Track 1 steps 3–9, 11 + PDF header (`b4-prospect-form.spec.ts`); Track 2 steps 13–19 (`consumer-mobile-review.spec.ts`, `test:e2e:mobile`) (attest: __ / __)
-- [ ] Health Score + Advisor Playbook — **10 documented behaviors** (not 18 numbered steps in repo): score/context, strategy badge, health-check labels, stale prompt, playbook empty + activation (`b4-health-score.spec.ts`, `b4-playbook-activation.spec.ts`) (attest: __ / __)
-- [ ] PDF narrative engine — steps 1–9 content (`b4-pdf-narrative.spec.ts`, preflight) (attest: __ / __)
-- [ ] Drip step 1 — `email_captures.drip_step_1_sent_at` (`b4-drip-step1.spec.ts` + `npm run verify:drip`) (attest: __ / __)
+- [x] Prospect + Mobile — Track 1 steps 3–9, 11 + PDF header (`b4-prospect-form.spec.ts`); Track 2 steps 13–19 (`consumer-mobile-review.spec.ts`, `test:e2e:mobile`) (attest: CI / PR #12 e2e-smoke 2026-06-14)
+- [x] Health Score + Advisor Playbook — **10 documented behaviors** (not 18 numbered steps in repo): score/context, strategy badge, health-check labels, stale prompt, playbook empty + activation (`b4-health-score.spec.ts`, `b4-playbook-activation.spec.ts`) (attest: CI / PR #12 e2e-smoke 2026-06-14)
+- [x] PDF narrative engine — steps 1–9 content (`b4-pdf-narrative.spec.ts`, preflight) (attest: local preflight 2026-06-14)
+- [x] Drip step 1 — `email_captures.drip_step_1_sent_at` (`b4-drip-step1.spec.ts` + `npm run verify:drip`) (attest: CI / PR #12 e2e-smoke 2026-06-14)
 
 ### B5. Stripe (code wired; live config is ops-attested)
 
@@ -279,6 +279,6 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | B5 Vercel Stripe env names | `vercel env ls production` |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
-**Still open — attest (Al):** B4 all 5 manual smokes · B5 Vercel dashboard fixes + clean `verify-env?live=1` + C-4/card smoke · B6 counsel/LLC/bank/B&O/email.
+**Still open — attest (Al):** B4 irreducible only (BCC inbox, drip cron 2/3, fresh-prod-signup AT-FLIP) · B5 Vercel dashboard fixes + clean `verify-env?live=1` + C-4/card smoke · B6 counsel/LLC/bank/B&O/email.
 
 **B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.
