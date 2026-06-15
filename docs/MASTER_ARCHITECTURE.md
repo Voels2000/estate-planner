@@ -587,7 +587,7 @@ Coherent advisor path with no duplicate entry points or dead-end panels:
 - **`success_rate` / Zero-Tax Paths:** Percent of simulated paths where federal + state estate tax both equal $0 (not federal exemption alone). Stale runs with omitted state tax inflated this metric.
 - **PDF page 3 cards (2026-06-01):** `page3FederalTax` + `page3StateTax` + `page3NetToHeirs` at HTML render — engine B; bypass via `hasBypassTrust` on `PDFReportData`.
 - **Verify:** `scripts/verify-estate-mc-voels-smoke.ts`; redeploy edge after `index.ts` changes.
-- **Post-deploy Voels gate (2026-06-06, cron self-heal 2026-06-07):** `lib/verify/runPostDeployVoelsChecks.ts` + `npm run verify:post-deploy-voels` (7 checks). **Daily cron** `GET /api/cron/post-deploy-verify` (9:00 UTC, `CRON_SECRET`, `vercel.json`) **backfills missing Voels `monte_carlo_results`** via `ensureVoelsMonteCarloCached()` then verifies. Immediate backfill: `npm run smoke:mc-voels`. Also: `scripts/regenerate-base-case-voels.ts`; `scripts/verify-state-tax-panel-states.ts`; **`npm run verify:tax-coverage`** (`lib/tax/admin/scanTaxCoverage.ts`).
+- **Post-deploy Voels gate (2026-06-06, cron self-heal 2026-06-07, prod resolve 2026-06-15):** `lib/verify/runPostDeployVoelsChecks.ts` + `resolveVoelsPostDeployContext.ts` — resolves Voels household (staging consumer UUID → outlook email → **comcast My Plan on prod**). `npm run verify:post-deploy-voels` (7 checks + setup). **Daily cron** `GET /api/cron/post-deploy-verify` (9:00 UTC, `CRON_SECRET`, `vercel.json`) **backfills missing Voels `monte_carlo_results`** via `ensureVoelsMonteCarloCached()` then verifies. Immediate backfill: `npm run smoke:mc-voels`. Override: `VOELS_POST_DEPLOY_HOUSEHOLD_ID`.
 
 ### Consumer + advisor assumption Monte Carlo
 

@@ -10,7 +10,7 @@ Run **production** smoke after deploy (`PLAYWRIGHT_BASE_URL=https://www.mywealth
 
 **Post-deploy (production, manual):** `npm run release:post-deploy` from your machine after prod deploy.
 
-**Post-deploy cron:** `/api/cron/post-deploy-verify` (daily 9:00 UTC, `CRON_SECRET`) **backfills missing Voels MC cache**, then runs the 7 checks. Manual: `npm run verify:post-deploy-voels` (no auto-remediate) or `npm run smoke:mc-voels` for immediate backfill.
+**Post-deploy cron:** `/api/cron/post-deploy-verify` (daily 9:00 UTC, `CRON_SECRET`) **backfills missing Voels MC cache**, then runs the checks. Resolves Voels household at runtime (staging consumer → prod **avoels@comcast.net My Plan** after go-live cleanup). Manual: `npm run verify:post-deploy-voels` (use `.env.test.prod` for prod) or `npm run smoke:mc-voels` for immediate backfill.
 
 ---
 
