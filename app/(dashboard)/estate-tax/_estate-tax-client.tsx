@@ -405,7 +405,7 @@ export default function EstateTaxClient({
       return {
         state: sc,
         state_taxable: 0,
-        state_exemption: atFirstDeath.exemptionUsed || compareStateBrackets[0]?.exemption_amount ?? 0,
+        state_exemption: atFirstDeath.exemptionUsed || (compareStateBrackets[0]?.exemption_amount ?? 0),
         state_estate_tax: 0,
         is_first_death: true,
       }

@@ -20,6 +20,10 @@ import {
   resolveStateTaxForDeathPhase,
 } from '../../lib/calculations/stateEstateTax'
 import { mapAndResolveStateEstateBrackets } from '../../lib/estate/resolveStateEstateBrackets'
+import {
+  WA_DOR_HIGH_GROSS_GOLDEN,
+  WA_DOR_TABLE_W_TAXABLE_GOLDENS,
+} from '../../lib/estate/waRegimeDorGoldens'
 
 test.describe('WA Regime D', () => {
   test('resolveWaRegime returns D for planning dates', () => {
@@ -162,5 +166,39 @@ test.describe('WA bypass trust modeling (Regime D, second death)', () => {
     expect(secondDeath.activeStateTax).toBe(1_063_259)
     expect(secondDeath.stateTaxWithCST).toBe(519_060)
     expect(secondDeath.cstBenefit).toBe(544_199)
+  })
+})
+
+test.describe('WA DOR Table W (eff. 2026-07-01)', () => {
+  const brackets = waRegimeToStateBrackets(WA_REGIME_D)
+
+  for (const row of WA_DOR_TABLE_W_TAXABLE_GOLDENS) {
+    test(`taxable $${row.taxableEstate.toLocaleString()} → $${row.expectedTax.toLocaleString()} (${row.band})`, () => {
+      expect(calcWaTaxOnTaxableEstate(row.taxableEstate)).toBe(row.expectedTax)
+      const engine = calculateStateEstateTax(
+        row.taxableEstate + WA_REGIME_D.exemption,
+        'WA',
+        brackets,
+        false,
+      )
+      expect(engine.stateTax).toBe(row.expectedTax)
+    })
+  }
+
+  test('$12M gross exercises $7M–$9M and $9M+ bands (without bypass)', () => {
+    const { grossEstate, stateTaxWithoutBypass, taxableEstate } = WA_DOR_HIGH_GROSS_GOLDEN
+    expect(calcWaEstateTax(grossEstate)).toBe(stateTaxWithoutBypass)
+    const result = calculateStateEstateTax(grossEstate, 'WA', brackets, true)
+    expect(result.taxableEstate).toBe(taxableEstate)
+    expect(result.stateTax).toBe(stateTaxWithoutBypass)
+  })
+
+  test('$12M gross with full bypass funding — survivor $9M, taxable $6M', () => {
+    const gross = WA_DOR_HIGH_GROSS_GOLDEN.grossEstate
+    const result = calculateStateEstateTax(gross, 'WA', brackets, true)
+    expect(result.bypassFundingAmount).toBe(3_000_000)
+    expect(result.taxableEstateWithCST).toBe(6_000_000)
+    expect(result.stateTaxWithCST).toBe(910_000)
+    expect(result.cstBenefit).toBe(580_000)
   })
 })

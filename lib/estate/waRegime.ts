@@ -44,7 +44,8 @@ export const WA_REGIME_D: WaRegime = {
     { upTo: 3_000_000, rate: 0.15 },
     { upTo: 4_000_000, rate: 0.16 },
     { upTo: 6_000_000, rate: 0.18 },
-    { upTo: 9_000_000, rate: 0.19 },
+    { upTo: 7_000_000, rate: 0.19 },
+    { upTo: 9_000_000, rate: 0.195 },
     { upTo: null, rate: 0.2 },
   ],
 }
@@ -195,5 +196,5 @@ export function mergeWaRegimeIntoStateEstateTaxRules<
   const filtered = rules.filter(
     (r) => !(isWaState(r.state) && waYears.has(Number(r.tax_year))),
   )
-  return [...filtered, ...(waRegimeToStateEstateTaxRuleRows([...waYears]) as T[])]
+  return [...filtered, ...(waRegimeToStateEstateTaxRuleRows([...waYears]) as unknown as T[])]
 }
