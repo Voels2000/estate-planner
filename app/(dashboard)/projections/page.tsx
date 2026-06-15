@@ -11,6 +11,7 @@ import type { HouseholdProjectionProfile } from '@/lib/projections/types'
 import { checkProjectionReadiness } from '@/lib/planning/projectionReadiness'
 import { loadScenarioMonteCarloWithStaleness } from '@/lib/monte-carlo/loadScenarioMonteCarloWithStaleness'
 import { buildProjectionPlanningFields } from '@/lib/profile/profileFieldPromptDefs'
+import { WA_REGIME_D, isWaState } from '@/lib/estate/waRegime'
 import { ProjectionsClient } from './_projections-client'
 
 export default async function ProjectionsPage() {
@@ -83,6 +84,9 @@ export default async function ProjectionsPage() {
     }
     stateExemption =
       rulesRes.data?.exemption_amount != null ? Number(rulesRes.data.exemption_amount) : null
+    if (isWaState(statePrimary)) {
+      stateExemption = WA_REGIME_D.exemption
+    }
   }
 
   const totalAssets = (assetRows ?? []).reduce((sum, row) => sum + Number(row.value ?? 0), 0)

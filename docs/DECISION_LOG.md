@@ -1,8 +1,22 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-15 (launch tracker v4, deletion schema drift, E2E beneficiary seed, post-deploy Voels prod resolve)
+# Last updated: 2026-06-15 (WA Regime D launch, launch tracker v4, deletion schema drift, E2E beneficiary seed, post-deploy Voels prod resolve)
 
 ---
+
+---
+
+## WA Regime D — Engine B launch + top-band gate (2026-06-15)
+
+**Decision:** Washington forward planning uses **Regime D only** (ESB 6347, eff. 2026-07-01): frozen **$3.0M** exemption, restored RCW 83.100.040 marginal schedule (10–20%), **19.5%** on $7M–$9M taxable (not 19%). Engine B (`calculateStateEstateTax`) is canonical; `resolveStateEstateBrackets` overrides stale WA DB rows; SQL RPC `calculate_estate_composition` matches survivor `(G − X) − exemption` with funding cap `X = min(exemption, first-spouse share)`.
+
+**Projection-aware CST:** At Death horizon and `estate-tax-projection` grow CST at household `growth_rate_accumulation`; drawdown does not shrink the irrevocable pot. Today column remains snapshot.
+
+**Goldens:** Voels without bypass **$1,063,259** · with bypass snapshot **$519,060** · DOR vectors through **$10M taxable → $1,690,000**. Attestation: [LAUNCH.md](./LAUNCH.md) B8.
+
+**Disclaimers:** `lib/estate/waDisclaimers.ts` — consumer, advisor, PDF surfaces.
+
+**PR:** #20
 
 ---
 

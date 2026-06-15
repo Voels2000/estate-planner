@@ -17,6 +17,9 @@ import {
   getPortabilityGapLabel,
 } from '@/lib/calculations/stateEstateTax'
 import { buildEstateTaxYearBasis } from '@/lib/tax/labelTaxBasis'
+import { resolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
+import { isWaState } from '@/lib/estate/waRegime'
+import { WA_ESTATE_TAX_ADVISOR_PANEL } from '@/lib/estate/waDisclaimers'
 import { InfoTooltip } from '@/components/ui/InfoTooltip'
 import { taxTermExplainer, type TaxTermContext } from '@/lib/estate/taxTermExplainers'
 
@@ -148,7 +151,11 @@ export default function StateTaxPanel({
         rate_pct: Number(r.rate_pct ?? 0),
         exemption_amount: Number(r.exemption_amount ?? 0),
       }))
-    const brackets = (byYear.length > 0 ? byYear : fallback) as StateBracket[]
+    const rawBrackets = (byYear.length > 0 ? byYear : fallback) as StateBracket[]
+    const brackets = resolveStateEstateBrackets({
+      stateCode: unifiedStateCode,
+      dbBrackets: rawBrackets,
+    })
     if (brackets.length === 0) {
       return {
         year,
@@ -249,6 +256,12 @@ export default function StateTaxPanel({
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-800">
           {getPortabilityGapLabel(unifiedStateCode)}
         </div>
+      )}
+
+      {isWaState(unifiedStateCode) && (
+        <p className="text-xs text-slate-600 leading-relaxed rounded-lg bg-slate-50 border border-slate-100 px-3 py-2">
+          {WA_ESTATE_TAX_ADVISOR_PANEL}
+        </p>
       )}
 
       {/* Year-by-year table */}

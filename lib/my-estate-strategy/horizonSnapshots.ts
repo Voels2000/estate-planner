@@ -8,6 +8,7 @@
 
 import {
   calculateStateEstateTax,
+  calculateStateEstateTaxProjectionAware,
   isMFJFilingStatus,
   resolveActiveStateTax,
   type StateBracket,
@@ -89,6 +90,29 @@ export function findAtDeathRow(
   return rows.find((r) => r.year === deathYear) ?? rows[rows.length - 1]
 }
 
+/** First spouse to die — used for projection-aware CST funding at first death. */
+export function findFirstDeathRow(
+  rows: AnnualOutput[],
+  params: {
+    hasSpouse: boolean
+    person1BirthYear: number | null | undefined
+    person2BirthYear: number | null | undefined
+    person1Longevity: number | null | undefined
+    person2Longevity: number | null | undefined
+  },
+): AnnualOutput | undefined {
+  if (!rows.length) return undefined
+  const { hasSpouse, person1BirthYear, person2BirthYear, person1Longevity, person2Longevity } = params
+  if (!hasSpouse) {
+    return findAtDeathRow(rows, params)
+  }
+  const fallbackYear = new Date().getFullYear()
+  const p1Death = (person1BirthYear ?? fallbackYear) + (person1Longevity ?? 90)
+  const p2Death = (person2BirthYear ?? fallbackYear) + (person2Longevity ?? 90)
+  const firstDeathYear = Math.min(p1Death, p2Death)
+  return rows.find((r) => r.year === firstDeathYear) ?? rows[0]
+}
+
 export function grossEstateFromRow(row: AnnualOutput | undefined | null): number {
   if (!row) return 0
   return Number(row.estate_incl_home ?? 0)
@@ -128,6 +152,11 @@ export function computeColumnTaxes(params: {
   lifetimeGiftsUsed?: number
   hasBypassTrust?: boolean
   lawScenario?: EstateScenario
+  /** First-death gross from projection — enables CST growth between deaths for with-CST / benefit. */
+  grossAtFirstDeath?: number | null
+  yearsBetweenDeaths?: number | null
+  /** Decimal annual CST growth (e.g. 0.07). Defaults to 7% when years are set. */
+  assetGrowthRate?: number | null
 }): {
   federalExemption: number
   federalExposure: number
@@ -159,6 +188,9 @@ export function computeColumnTaxes(params: {
     lifetimeGiftsUsed = 0,
     hasBypassTrust = false,
     lawScenario = 'current_law',
+    grossAtFirstDeath = null,
+    yearsBetweenDeaths = null,
+    assetGrowthRate = null,
   } = params
 
   const isMFJ = isMFJFilingStatus(filingStatus)
@@ -188,13 +220,41 @@ export function computeColumnTaxes(params: {
     }
   }
 
-  const stateResult = calculateStateEstateTax(
-    grossEstate,
-    statePrimary ?? '',
-    stateBrackets,
-    isMFJ,
-    hasBypassTrust,
-  )
+  const useProjectionAware =
+    hasSpouse &&
+    isMFJ &&
+    grossAtFirstDeath != null &&
+    grossAtFirstDeath > 0 &&
+    grossEstate > 0
+
+  const projectionParams =
+    grossAtFirstDeath != null
+      ? {
+          grossAtFirstDeath,
+          ...(yearsBetweenDeaths != null && yearsBetweenDeaths > 0
+            ? {
+                yearsBetweenDeaths,
+                ...(assetGrowthRate != null ? { assetGrowthRate } : {}),
+              }
+            : {}),
+        }
+      : null
+
+  const stateResult = useProjectionAware && projectionParams
+    ? calculateStateEstateTaxProjectionAware(
+        grossEstate,
+        statePrimary ?? '',
+        stateBrackets,
+        isMFJ,
+        projectionParams,
+      )
+    : calculateStateEstateTax(
+        grossEstate,
+        statePrimary ?? '',
+        stateBrackets,
+        isMFJ,
+        hasBypassTrust,
+      )
   const activeStateTax = resolveActiveStateTax(stateResult, hasBypassTrust)
 
   return {
@@ -276,6 +336,8 @@ export type BuildHorizonsInput = {
   federalBrackets?: EstateTaxBracket[]
   /** Law scenario for federal exemption (default current_law). */
   lawScenario?: EstateScenario
+  /** Household accumulation growth % for CST projection (default 7). */
+  assetGrowthRatePct?: number
 }
 
 export type MyEstateStrategyHorizonsResult = ReturnType<typeof buildStrategyHorizons>
@@ -326,6 +388,7 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
     hasBypassTrust = false,
     federalBrackets = [],
     lawScenario = 'current_law',
+    assetGrowthRatePct = 7,
   } = input
 
   const hasSpouse = household.has_spouse ?? false
@@ -346,6 +409,25 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
         person2Longevity: household.person2_longevity_age,
       })
     : undefined
+  const firstDeathRow = hasBaseCase && hasSpouse
+    ? findFirstDeathRow(rows, {
+        hasSpouse,
+        person1BirthYear: household.person1_birth_year,
+        person2BirthYear: household.person2_birth_year,
+        person1Longevity: household.person1_longevity_age,
+        person2Longevity: household.person2_longevity_age,
+      })
+    : undefined
+  const grossAtFirstDeath = firstDeathRow ? grossEstateFromRow(firstDeathRow) : null
+  const yearsBetweenDeaths =
+    firstDeathRow?.year != null && atDeathRow?.year != null
+      ? Math.max(0, atDeathRow.year - firstDeathRow.year)
+      : null
+  const assetGrowthRate = assetGrowthRatePct / 100
+  const bypassSnapshotNote =
+    ' With-bypass figures use today\'s estate snapshot (no growth between spouse deaths).'
+  const bypassProjectionNote =
+    ' With-bypass figures include CST asset growth between spouse deaths from your base case.'
 
   const finalRow = hasBaseCase ? rows[rows.length - 1] : undefined
   const grossAtDeathFinalRow = grossEstateFromRow(finalRow)
@@ -373,7 +455,9 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
   const today: StrategyHorizonColumn = {
     headerTitle: 'Today',
     headerClassName: 'bg-slate-600 text-white',
-    narrative: `Your estate as of ${currentMonthYearLabel}. All figures are estimates.`,
+    narrative: `Your estate as of ${currentMonthYearLabel}. All figures are estimates.${
+      todayTax.hasPortabilityGap ? bypassSnapshotNote : ''
+    }`,
     grossEstate: liveNetWorth,
     federalExemption: todayTax.federalExemption,
     federalExposure: todayTax.federalExposure,
@@ -474,14 +558,22 @@ export function buildStrategyHorizons(input: BuildHorizonsInput): {
       : null
   const atDeathTax =
     atDeathGross !== null && hasBaseCase
-      ? computeColumnTaxes({ grossEstate: atDeathGross, ...taxParams })
+      ? computeColumnTaxes({
+          grossEstate: atDeathGross,
+          grossAtFirstDeath,
+          yearsBetweenDeaths,
+          assetGrowthRate,
+          ...taxParams,
+        })
       : null
 
   const atDeath: StrategyHorizonColumn = hasBaseCase
     ? {
         headerTitle: `At Death (Age ${longevityAge}, ${survivorFirstName})`,
         headerClassName: 'bg-violet-900 text-white',
-        narrative: `Your projected estate at age ${longevityAge} (${survivorFirstName}), based on your current growth assumptions. All figures are estimates.`,
+        narrative: `Your projected estate at age ${longevityAge} (${survivorFirstName}), based on your current growth assumptions. All figures are estimates.${
+          atDeathTax?.hasPortabilityGap ? bypassProjectionNote : ''
+        }`,
         grossEstate: atDeathGross,
         federalExemption: atDeathTax?.federalExemption ?? null,
         federalExposure: atDeathTax?.federalExposure ?? null,

@@ -7,7 +7,8 @@
  * DO NOT add state estate tax logic to narrativeEngine, exportMappers, or components.
  *
  * Exported functions:
- *   calculateStateEstateTax()    — both no-CST and with-CST scenarios
+ *   calculateStateEstateTax()              — both no-CST and with-CST scenarios (snapshot)
+ *   calculateStateEstateTaxProjectionAware() — CST growth between deaths (horizons / projection)
  *   calculateStateTaxScenarios() — advisor PDF comparison table
  *
  * @see docs/CALCULATION_ENGINES.md
@@ -37,9 +38,33 @@ export type StateEstateTaxResult = {
   exemptionUsed: number
   /** Taxable estate in the no-CST calculation */
   taxableEstate: number
+  /** Taxable estate in the with-CST calculation (second death, survivor portion) */
+  taxableEstateWithCST: number
+  /** Amount funded into bypass/CST at first death (capped at min(exemption, first-spouse share)) */
+  bypassFundingAmount: number
   /** Effective rate = stateTax / grossEstate */
   effectiveRate: number
 }
+
+export type StateEstateTaxOptions = {
+  /**
+   * First-to-die spouse's share of combined estate at second death.
+   * WA community-property default: grossEstate / 2.
+   */
+  firstSpouseShare?: number
+}
+
+/** First- and second-death gross estates from projection rows (CST growth between deaths). */
+export type StateEstateTaxProjectionParams = {
+  grossAtFirstDeath: number
+  /** Calendar years between first and second death (from projection rows). */
+  yearsBetweenDeaths?: number
+  /** Decimal annual CST asset growth, e.g. 0.07 for 7%. Defaults to 7% when years are set. */
+  assetGrowthRate?: number
+}
+
+/** Household accumulation growth default — matches projection-complete.ts. */
+export const DEFAULT_CST_ASSET_GROWTH_RATE = 0.07
 
 // ─── Modeled estate-tax states (brackets in `state_estate_tax_rules`) ─────────
 
@@ -158,12 +183,132 @@ function computeStateTaxForExemption(
   return { tax, nyCliffTriggered, taxableEstate: Math.round(taxableEstate) }
 }
 
+/** Bypass funding at first death — capped by first spouse's share (WA CP default: G/2). */
+export function computeBypassFundingAmount(
+  grossEstate: number,
+  exemption: number,
+  firstSpouseShare?: number,
+): number {
+  if (grossEstate <= 0 || exemption <= 0) return 0
+  const share = firstSpouseShare ?? grossEstate / 2
+  return Math.min(exemption, Math.max(0, share))
+}
+
+/**
+ * Survivor gross at second death. CST grows in its own irrevocable pot; survivor drawdown
+ * does not shrink the trust. When years are known, CST compounds at assetGrowthRate; when the
+ * estate grew without year span, proportional scaling applies; on drawdown without years,
+ * CST stays at least at first-death funding (never shrinks because the survivor spent down).
+ */
+export function resolveSurvivorGrossAtSecondDeath(params: {
+  grossAtFirstDeath: number
+  grossAtSecondDeath: number
+  exemption: number
+  firstSpouseShare?: number
+  yearsBetweenDeaths?: number
+  assetGrowthRate?: number
+}): {
+  survivorGross: number
+  bypassFundingAtFirstDeath: number
+  cstValueAtSecondDeath: number
+} {
+  const bypassFundingAtFirstDeath = computeBypassFundingAmount(
+    params.grossAtFirstDeath,
+    params.exemption,
+    params.firstSpouseShare,
+  )
+
+  const years = params.yearsBetweenDeaths ?? 0
+  const rate = params.assetGrowthRate ?? DEFAULT_CST_ASSET_GROWTH_RATE
+  let cstValueAtSecondDeath: number
+
+  if (years > 0) {
+    cstValueAtSecondDeath = bypassFundingAtFirstDeath * Math.pow(1 + rate, years)
+  } else if (params.grossAtSecondDeath >= params.grossAtFirstDeath && params.grossAtFirstDeath > 0) {
+    cstValueAtSecondDeath =
+      bypassFundingAtFirstDeath * (params.grossAtSecondDeath / params.grossAtFirstDeath)
+  } else {
+    cstValueAtSecondDeath = bypassFundingAtFirstDeath
+  }
+
+  cstValueAtSecondDeath = Math.min(cstValueAtSecondDeath, params.grossAtSecondDeath)
+  const survivorGross = Math.max(0, params.grossAtSecondDeath - cstValueAtSecondDeath)
+  return { survivorGross, bypassFundingAtFirstDeath, cstValueAtSecondDeath }
+}
+
+/**
+ * Projection-aware state estate tax for no-portability MFJ households.
+ * Funds CST at first-death gross, grows CST to second-death gross ratio, taxes survivor portion only.
+ * Falls back to snapshot `calculateStateEstateTax` when projection inputs are missing or inapplicable.
+ */
+export function calculateStateEstateTaxProjectionAware(
+  grossAtSecondDeath: number,
+  stateCode: string,
+  brackets: StateBracket[],
+  isMFJ: boolean,
+  projection: StateEstateTaxProjectionParams,
+  options?: StateEstateTaxOptions,
+): StateEstateTaxResult {
+  const code = stateCode.toUpperCase().trim()
+  const hasPortabilityGap = isMFJ && NO_PORTABILITY_STATES.has(code)
+
+  if (
+    !hasPortabilityGap ||
+    projection.grossAtFirstDeath <= 0 ||
+    grossAtSecondDeath <= 0 ||
+    brackets.length === 0
+  ) {
+    return calculateStateEstateTax(
+      grossAtSecondDeath,
+      stateCode,
+      brackets,
+      isMFJ,
+      false,
+      options,
+    )
+  }
+
+  const singleExemption = brackets[0].exemption_amount ?? 0
+  const { survivorGross, bypassFundingAtFirstDeath } = resolveSurvivorGrossAtSecondDeath({
+    grossAtFirstDeath: projection.grossAtFirstDeath,
+    grossAtSecondDeath,
+    exemption: singleExemption,
+    firstSpouseShare: options?.firstSpouseShare,
+    yearsBetweenDeaths: projection.yearsBetweenDeaths,
+    assetGrowthRate: projection.assetGrowthRate,
+  })
+
+  const noCst = computeStateTaxForExemption(
+    grossAtSecondDeath,
+    singleExemption,
+    brackets,
+    code,
+  )
+  const withCst = computeStateTaxForExemption(survivorGross, singleExemption, brackets, code)
+  const cstBenefit = Math.max(0, noCst.tax - withCst.tax)
+  const effectiveRate = grossAtSecondDeath > 0 ? noCst.tax / grossAtSecondDeath : 0
+
+  return {
+    stateTax: noCst.tax,
+    stateTaxWithCST: withCst.tax,
+    cstBenefit,
+    hasPortabilityGap,
+    nyCliffTriggered: noCst.nyCliffTriggered,
+    exemptionUsed: singleExemption,
+    taxableEstate: noCst.taxableEstate,
+    taxableEstateWithCST: withCst.taxableEstate,
+    bypassFundingAmount: bypassFundingAtFirstDeath,
+    effectiveRate,
+  }
+}
+
 export function calculateStateEstateTax(
   grossEstate: number,
   stateCode: string,
   brackets: StateBracket[],
   isMFJ: boolean,
   hasCSTInPlace = false,
+  options?: StateEstateTaxOptions,
 ): StateEstateTaxResult {
   void hasCSTInPlace
 
@@ -178,6 +323,8 @@ export function calculateStateEstateTax(
       nyCliffTriggered: false,
       exemptionUsed: 0,
       taxableEstate: 0,
+      taxableEstateWithCST: 0,
+      bypassFundingAmount: 0,
       effectiveRate: 0,
     }
   }
@@ -188,10 +335,17 @@ export function calculateStateEstateTax(
   const exemptionNoCst = singleExemption
   const noCst = computeStateTaxForExemption(grossEstate, exemptionNoCst, brackets, code)
 
-  const exemptionWithCst = hasPortabilityGap ? singleExemption * 2 : singleExemption
-  const withCst = hasPortabilityGap
-    ? computeStateTaxForExemption(grossEstate, exemptionWithCst, brackets, code)
-    : noCst
+  let withCst = noCst
+  let bypassFundingAmount = 0
+  if (hasPortabilityGap) {
+    bypassFundingAmount = computeBypassFundingAmount(
+      grossEstate,
+      singleExemption,
+      options?.firstSpouseShare,
+    )
+    const survivorEstate = Math.max(0, grossEstate - bypassFundingAmount)
+    withCst = computeStateTaxForExemption(survivorEstate, singleExemption, brackets, code)
+  }
 
   const cstBenefit = Math.max(0, noCst.tax - withCst.tax)
   const effectiveRate = grossEstate > 0 ? noCst.tax / grossEstate : 0
@@ -204,7 +358,76 @@ export function calculateStateEstateTax(
     nyCliffTriggered: noCst.nyCliffTriggered,
     exemptionUsed: exemptionNoCst,
     taxableEstate: noCst.taxableEstate,
+    taxableEstateWithCST: withCst.taxableEstate,
+    bypassFundingAmount,
     effectiveRate,
+  }
+}
+
+/** Modeled death sequence for state estate tax display (marital deduction at first death). */
+export type StateEstateDeathPhase = 'first_death' | 'second_death'
+
+/** MFJ + spouse: unlimited marital deduction → $0 state estate tax at first death. */
+export function shouldZeroStateTaxAtFirstDeath(
+  isMFJ: boolean,
+  hasSpouse: boolean,
+  deathPhase: StateEstateDeathPhase,
+): boolean {
+  return deathPhase === 'first_death' && isMFJ && hasSpouse
+}
+
+export type StateTaxForDeathPhaseResult = StateEstateTaxResult & {
+  isFirstDeath: boolean
+  activeStateTax: number
+}
+
+/**
+ * Resolve state tax for a death phase. First death (MFJ + spouse) returns $0 even when
+ * `calculateStateEstateTax` on the same gross would be non-zero — prevents mis-wiring
+ * the raw engine to a first-death surface.
+ */
+export function resolveStateTaxForDeathPhase(params: {
+  grossEstate: number
+  stateCode: string
+  brackets: StateBracket[]
+  isMFJ: boolean
+  hasSpouse: boolean
+  deathPhase: StateEstateDeathPhase
+  hasBypassTrust?: boolean
+  options?: StateEstateTaxOptions
+}): StateTaxForDeathPhaseResult {
+  const exemption = params.brackets[0]?.exemption_amount ?? 0
+
+  if (shouldZeroStateTaxAtFirstDeath(params.isMFJ, params.hasSpouse, params.deathPhase)) {
+    return {
+      stateTax: 0,
+      stateTaxWithCST: 0,
+      cstBenefit: 0,
+      hasPortabilityGap: params.isMFJ && NO_PORTABILITY_STATES.has(params.stateCode.toUpperCase().trim()),
+      nyCliffTriggered: false,
+      exemptionUsed: exemption,
+      taxableEstate: 0,
+      taxableEstateWithCST: 0,
+      bypassFundingAmount: 0,
+      effectiveRate: 0,
+      isFirstDeath: true,
+      activeStateTax: 0,
+    }
+  }
+
+  const result = calculateStateEstateTax(
+    params.grossEstate,
+    params.stateCode,
+    params.brackets,
+    params.isMFJ,
+    params.hasBypassTrust ?? false,
+    params.options,
+  )
+
+  return {
+    ...result,
+    isFirstDeath: false,
+    activeStateTax: resolveActiveStateTax(result, params.hasBypassTrust ?? false),
   }
 }
 

@@ -9,6 +9,7 @@ import {
   type StateBracket,
   isMFJFilingStatus,
 } from '@/lib/calculations/stateEstateTax'
+import { resolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -144,15 +145,20 @@ export function calculateMoveBreakeven(params: {
         rate_pct: Number(r.rate_pct ?? 0),
         exemption_amount: Number(r.exemption_amount ?? 0),
       }))
-    if (fromRules.length > 0) return fromRules
+    if (fromRules.length > 0) {
+      return resolveStateEstateBrackets({ stateCode: stateKey, dbBrackets: fromRules })
+    }
     const fallbackDb = (dbExemptions ?? []).find((r) => r.state === stateKey && r.tax_year === year)
     if (fallbackDb) {
-      return [{
-        min_amount: 0,
-        max_amount: 9_999_999_999,
-        rate_pct: Number(fallbackDb.top_rate ?? 0) * 100,
-        exemption_amount: Number(fallbackDb.exemption_amount ?? 0),
-      }]
+      return resolveStateEstateBrackets({
+        stateCode: stateKey,
+        dbBrackets: [{
+          min_amount: 0,
+          max_amount: 9_999_999_999,
+          rate_pct: Number(fallbackDb.top_rate ?? 0) * 100,
+          exemption_amount: Number(fallbackDb.exemption_amount ?? 0),
+        }],
+      })
     }
     return []
   }

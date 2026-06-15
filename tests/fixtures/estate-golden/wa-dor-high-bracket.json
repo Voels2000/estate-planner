@@ -1,0 +1,9 @@
+{
+  "_comment": "DOR Table W (eff. 2026-07-01): $12M gross, $3M exemption, $9M taxable → $1,490,000. Validates $7M–$9M (19.5%) and $9M+ (20%) bands. Unit tests: waRegime.spec.ts WA DOR Table W.",
+  "gross_estate": 12000000,
+  "exemption": 3000000,
+  "taxable_estate": 9000000,
+  "state_tax_without_bypass": 1490000,
+  "state_tax_with_bypass_full_funding": 910000,
+  "tolerance": 1
+}

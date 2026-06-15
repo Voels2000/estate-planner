@@ -3,6 +3,7 @@ import {
   calculateStateEstateTax,
   type StateBracket,
 } from '@/lib/calculations/stateEstateTax'
+import { mapAndResolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
 import { getProspectTaxConfig, type ProspectTaxConfig } from '@/lib/prospect/getProspectTaxConfig'
 import { PROSPECT_ASSET_MIDPOINTS } from '@/lib/prospect/constants'
 
@@ -39,12 +40,10 @@ async function loadStateBrackets(
     .eq('tax_year', year)
     .order('min_amount', { ascending: true })
 
-  return (data ?? []).map((row) => ({
-    min_amount: Number(row.min_amount),
-    max_amount: Number(row.max_amount),
-    rate_pct: Number(row.rate_pct),
-    exemption_amount: Number(row.exemption_amount),
-  }))
+  return mapAndResolveStateEstateBrackets({
+    stateCode: state,
+    rows: (data ?? []) as Record<string, unknown>[],
+  })
 }
 
 export function buildProspectSummary(

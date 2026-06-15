@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from '@react-pdf/renderer'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
+import { WA_ESTATE_TAX_PDF_FOOTNOTE } from '@/lib/estate/waDisclaimers'
 import { ESTATE_READINESS_LABEL } from '@/lib/estate-health-score'
 
 const PDF_DOCUMENT_TITLE = 'Estate Planning Preparation Report'
@@ -797,6 +798,11 @@ const TaxSection = ({ data }: { data: EstatePlanPdfData }) => {
           </Text>
         </View>
       </View>
+      {state.domicile_state === 'WA' && (
+        <Text style={{ fontSize: 8, color: GRAY_MID, marginTop: 8, lineHeight: 1.4 }}>
+          {WA_ESTATE_TAX_PDF_FOOTNOTE}
+        </Text>
+      )}
     </Section>
   )
 }

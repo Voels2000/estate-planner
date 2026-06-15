@@ -14,6 +14,7 @@ import {
   buildProjectionInputsHashPayload,
   computeProjectionInputsHash,
 } from '@/lib/monte-carlo/computeProjectionInputsHash'
+import { mapAndResolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
 
 async function fetchStateBrackets(
   supabase: SupabaseClient,
@@ -37,7 +38,10 @@ async function fetchStateBrackets(
       .limit(20)
   }
 
-  return (result.data ?? []) as StateBracket[]
+  return mapAndResolveStateEstateBrackets({
+    stateCode: stateCode,
+    rows: (result.data ?? []) as Record<string, unknown>[],
+  })
 }
 
 export async function runEstateMonteCarloAsync(

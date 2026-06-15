@@ -1,5 +1,6 @@
 import type { DbStateExemption } from '@/lib/projection/stateRegistry'
 import type { StateBracket } from '@/lib/calculations/stateEstateTax'
+import { mergeWaRegimeIntoStateEstateTaxRules } from '@/lib/estate/waRegime'
 import type { StateIncomeTaxBracket } from '@/lib/domicile/moveBreakeven'
 import type { BeneficiaryAccessGrant } from '@/lib/types/beneficiary-grant'
 import type { DomicileScheduleRow } from '@/lib/projection/domicileEngine'
@@ -151,7 +152,9 @@ export function mapAdvisorClientDatasets(results: AdvisorMapperInput): AdvisorMa
     insurancePolicies: (results.insurancePoliciesResult.data ?? []) as NonNullable<ClientViewShellProps['insurancePolicies']>,
     stateExemptions: (results.stateExemptionsResult.data ?? []) as DbStateExemption[],
     stateBrackets: (results.stateBracketsResult.data ?? []) as StateBracket[],
-    stateTaxRulesAllYears: (results.stateTaxRulesAllYearsResult.data ?? []) as AdvisorMappedDatasets['stateTaxRulesAllYears'],
+    stateTaxRulesAllYears: mergeWaRegimeIntoStateEstateTaxRules(
+      (results.stateTaxRulesAllYearsResult.data ?? []) as AdvisorMappedDatasets['stateTaxRulesAllYears'],
+    ),
     stateIncomeTaxBrackets: (results.stateIncomeTaxBracketsResult.data ?? []) as StateIncomeTaxBracket[],
     strategyLineItems: (results.strategyLineItemsResult.data ?? []) as AdvisorMappedDatasets['strategyLineItems'],
     beneficiaryGrants: (results.beneficiaryGrantsResult.data ?? []) as BeneficiaryAccessGrant[],
