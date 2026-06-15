@@ -150,22 +150,30 @@ export async function loadShareLinkData(
 ): Promise<ShareLinkData | { expired: true } | { revoked: true } | null> {
   const supabase = createClient()
 
-  const { data, error } = await supabase
-    .from('estate_flow_share_links')
-    .select('*, estate_flow_snapshots(flow_data), households(name)')
-    .eq('token', token)
-    .single()
+  const { data: flowData, error: flowError } = await supabase.rpc('get_snapshot_for_share_link', {
+    p_token: token,
+  })
+  if (flowError || !flowData) return null
 
-  if (error || !data) return null
+  const { data: linkMeta, error: metaError } = await supabase.rpc('get_share_link_display_meta', {
+    p_token: token,
+  })
+  if (metaError || !linkMeta || typeof linkMeta !== 'object') return null
 
-  if (data.is_revoked) return { revoked: true }
-  if (new Date(data.expires_at) < new Date()) return { expired: true }
+  const meta = linkMeta as {
+    expires_at: string
+    is_revoked: boolean
+    household_name: string | null
+  }
+
+  if (meta.is_revoked) return { revoked: true }
+  if (new Date(meta.expires_at) < new Date()) return { expired: true }
 
   return {
-    flow_data: (data.estate_flow_snapshots as { flow_data: EstateFlowGraph }).flow_data,
-    household_name: (data.households as { name: string }).name ?? 'Estate Plan',
-    expires_at: data.expires_at,
-    is_revoked: data.is_revoked,
+    flow_data: flowData as EstateFlowGraph,
+    household_name: meta.household_name ?? 'Estate Plan',
+    expires_at: meta.expires_at,
+    is_revoked: meta.is_revoked,
   }
 }
 

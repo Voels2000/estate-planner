@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Post-migration RLS verification — SQL invariants + JWT isolation smoke.
+ * Post-migration RLS verification — SQL invariants + structural coverage gate + JWT isolation smoke.
  *
  * Usage:
  *   npm run verify:rls

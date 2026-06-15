@@ -9,6 +9,7 @@ import {
   fetchAdvisorClientHouseholdId,
   fetchHouseholdIdByOwnerEmail,
 } from '../helpers/e2e-households'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { findUserIdByEmail, initSupabaseEnv } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
 
@@ -142,6 +143,72 @@ test.describe('Advisor access to linked client', () => {
       data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
     })
     expect(res.ok(), await res.text()).toBeTruthy()
+  })
+})
+
+test.describe('Advisor revoked link lifecycle', () => {
+  test.use({ storageState: '.auth/advisor.json' })
+
+  let advisorClientLinkId: string | null = null
+  let savedLinkStatus: { status: string; client_status: string | null } | null = null
+
+  test.beforeAll(async ({}, testInfo) => {
+    const canAdminLookup =
+      Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()) &&
+      Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim())
+    if (!canAdminLookup || !advisorClientOwnerUserId) {
+      testInfo.skip(true, 'service role + advisor-client owner required')
+      return
+    }
+
+    initSupabaseEnv()
+    const advisorId = await findUserIdByEmail(E2E_IDENTITIES.advisor.email)
+    if (!advisorId || !advisorClientOwnerUserId) {
+      testInfo.skip(true, 'e2e advisor or advisor-client owner missing')
+      return
+    }
+
+    const admin = createAdminClient()
+    const { data: link } = await admin
+      .from('advisor_clients')
+      .select('id, status, client_status')
+      .eq('advisor_id', advisorId)
+      .eq('client_id', advisorClientOwnerUserId)
+      .maybeSingle()
+
+    advisorClientLinkId = link?.id ?? null
+    savedLinkStatus = link
+      ? { status: link.status, client_status: link.client_status ?? null }
+      : null
+  })
+
+  test.afterAll(async () => {
+    if (!advisorClientLinkId || !savedLinkStatus) return
+    const admin = createAdminClient()
+    await admin
+      .from('advisor_clients')
+      .update({
+        status: savedLinkStatus.status,
+        client_status: savedLinkStatus.client_status,
+      })
+      .eq('id', advisorClientLinkId)
+  })
+
+  test('advisor loses access after link is revoked', async ({ request }) => {
+    test.skip(!advisorClientLinkId, 'e2e advisor→client link missing — run npm run seed:e2e')
+
+    const admin = createAdminClient()
+    const { error: revokeError } = await admin
+      .from('advisor_clients')
+      .update({ status: 'removed', client_status: 'inactive' })
+      .eq('id', advisorClientLinkId!)
+    expect(revokeError, revokeError?.message).toBeNull()
+
+    const res = await request.post('/api/estate-composition', {
+      ...apiOpts(),
+      data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
+    })
+    expectAccessDenied(res.status())
   })
 })
 

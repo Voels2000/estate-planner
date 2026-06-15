@@ -19,29 +19,30 @@ export default async function EstateFlowSharePage({ params }: Props) {
 
   if (error || !flowData) return notFound()
 
-  // Still fetch household name for display
-  const { data: linkRow } = await supabase
-    .from('estate_flow_share_links')
-    .select('household_id, expires_at, is_revoked, created_at')
-    .eq('token', token)
-    .single()
+  const { data: linkMeta, error: metaError } = await supabase.rpc('get_share_link_display_meta', {
+    p_token: token,
+  })
 
-  if (!linkRow || linkRow.is_revoked) return notFound()
+  if (metaError || !linkMeta || typeof linkMeta !== 'object') return notFound()
+
+  const linkRow = linkMeta as {
+    household_id: string
+    expires_at: string
+    is_revoked: boolean
+    created_at: string
+    household_name: string | null
+  }
+
+  if (linkRow.is_revoked) return notFound()
   if (new Date(linkRow.expires_at) < new Date()) {
     return <ExpiredPage message="This link has expired." />
   }
-
-  const { data: household } = await supabase
-    .from('households')
-    .select('name, person1_name')
-    .eq('id', linkRow.household_id)
-    .single()
 
   return (
     <SharePageClient
       flowData={flowData}
       householdName={
-        displayPersonFirstName(household?.person1_name) || household?.name || 'Estate Plan'
+        displayPersonFirstName(linkRow.household_name) || linkRow.household_name || 'Estate Plan'
       }
       expiresAt={linkRow.expires_at}
       generatedAt={linkRow.created_at}

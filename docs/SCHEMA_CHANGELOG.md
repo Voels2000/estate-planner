@@ -8,7 +8,28 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-# Last updated: 2026-06-15 (WA Regime D engine + migrations, launch tracker, deletion schema drift, E2E beneficiary seed)
+# Last updated: 2026-06-15 (pre-launch FOR ALL RLS leak fix, structural coverage gate, negative authz tests)
+
+---
+
+## Pre-launch FOR ALL RLS leak + structural coverage gate (2026-06-15)
+
+**Migrations (apply in order on staging + prod before deploy):**
+- `20260713130000_fix_health_scores_alerts_permissive_rls.sql` — drop `TO public` + `USING (true)` **FOR ALL** on `estate_health_scores`, `household_alerts`, `beneficiary_conflicts`; replace with `TO service_role` + scoped owner/advisor SELECT
+- `20260713140000_rls_coverage_gate_fixes.sql` — `businesses` advisor UPDATE: explicit `WITH CHECK` (Postgres had defaulted `true`); `estate_flow_share_links`: drop `public_select_share_link_by_token`, add `get_share_link_display_meta()` SECURITY DEFINER RPC
+- `20260713150000_service_role_policy_grant_alignment.sql` — `funnel_events`, `referral_clicks`: `TO service_role` (was `TO {public}` + `auth.role()` predicate)
+
+**Exposure / timeline:** FOR ALL leak = cross-tenant read/write/delete (integrity + availability). Found on staging via `verify:rls` 2026-06-13; fixed pre-launch; **zero production rows affected** ([DECISION_LOG.md](./DECISION_LOG.md)).
+
+**Gate:** `scripts/assert-rls-coverage.sql` — structural tenant-scope check (tenancy columns, not 21-table list); wired into `npm run verify:rls` / `release:preflight`. Expect **27/27** checks on fixed schema.
+
+**App:** `app/share/estate-flow/[token]/page.tsx` · `lib/estate-flow/snapshotFlow.ts` — share metadata via RPC.
+
+**Tests:** `tests/e2e/security/cross-household-isolation.spec.ts` (revoked-link lifecycle) · `tests/unit/attorneyClientCap.spec.ts` · `lib/authz/householdScopedTables.ts` · full `HOUSEHOLD_SCOPED_TABLES` JWT matrix in `runRlsVerification.ts`.
+
+**Verify:** `npm run verify:rls` · `npm run test:e2e:security-isolation -- --workers=1` · `npx playwright test tests/unit/attorneyClientCap.spec.ts --project=import-unit`
+
+**PR:** #21
 
 ---
 

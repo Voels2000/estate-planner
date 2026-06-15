@@ -44,7 +44,9 @@ Tests that specifically verify recompute behavior (`consumer-core-recompute`, `c
 | `npm run test:e2e:consumer` | consumer-setup + consumer |
 | `npm run test:e2e:go-live-profile` | **Go-live pre-flight:** profile save + spouse layout + inline prompts (`--workers=1`) |
 | `npm run test:e2e:mobile` | **Mobile review mode:** LAUNCH_CHECKLIST Track 2 steps 13–19 (`consumer-mobile-review.spec.ts`, `--workers=1`) |
-| `npm run verify:rls` | Post-migration RLS SQL invariants + JWT isolation (`--require-sql` for CI) |
+| `npm run verify:rls` | SQL invariants + `assert-rls-coverage` structural gate + JWT isolation on all `HOUSEHOLD_SCOPED_TABLES` (27 checks; `--require-sql` needs `SUPABASE_DB_URL`) |
+| `npm run test:e2e:security-isolation` | consumer-setup + advisor-setup + advisor-empty-setup + cross-household IDOR matrix + revoked-link lifecycle |
+| `npm run test:e2e:authz` | `@authz` subset of security-isolation + route-authz |
 | `npm run verify:consumer-openapi` | Consumer API OpenAPI contract matches route handlers (CI) |
 | `npm run test:e2e:a11y` | **Accessibility:** axe serious/critical on login, signup, assess, dashboard, profile (`--workers=1`) |
 | `npm run test:e2e:partial-patch` | Partial PATCH API smoke only (3 cases) |
@@ -53,7 +55,6 @@ Tests that specifically verify recompute behavior (`consumer-core-recompute`, `c
 | `npm run test:e2e:public` | public |
 | `npm run test:e2e:security-smoke` | Local: consumer RPC pages + advisor Monte Carlo (staging Supabase) |
 | `npm run test:e2e:security-smoke:prod` | Post-deploy: prod public API (`security-sprint-post-deploy`) + RPC + Monte Carlo |
-| `npm run test:e2e:security-isolation` | consumer-setup + advisor-setup + cross-household IDOR matrix |
 | `npm run test:e2e:cross-role` | advisor sync, persona onboarding, attorney documents, cross-household (subset) |
 | `npm run test:e2e:billing` | **Billing smoke:** consumer/advisor/attorney checkout APIs + webhook signature (`--workers=1`) |
 | `npm run test:e2e:complete` | consumer + advisor + attorney + public (**395 tests** — full local dev suite) |

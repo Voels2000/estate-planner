@@ -158,7 +158,7 @@ If a migration changes the Monte Carlo edge function, redeploy on staging too:
 supabase functions deploy estate-monte-carlo --project-ref cmzyxpxfyvdvbsykjvsg
 ```
 
-Verify RLS after policy migrations: `npm run verify:rls` (uses `.env.local` → staging).
+Verify RLS after policy migrations: `npm run verify:rls` (uses `.env.local` → staging). Expect **27/27** after `20260713130000`–`20260713150000` (structural `assert-rls-coverage` + full household JWT matrix). Apply those three migrations on prod before deploy that relies on fixed policies.
 
 ### 2. Seed reference data from prod
 

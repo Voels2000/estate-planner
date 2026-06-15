@@ -1,8 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-15 (WA Regime D launch, launch tracker v4, deletion schema drift, E2E beneficiary seed, post-deploy Voels prod resolve)
+# Last updated: 2026-06-15 (pre-launch FOR ALL RLS leak, structural coverage gate, WA Regime D)
 
 ---
+
+## Pre-launch FOR ALL RLS leak — estate_health_scores, household_alerts, beneficiary_conflicts (2026-06-15)
+
+**Finding:** Three policies named "service role can …" were granted `TO public` with `USING (true)` and `FOR ALL` (not SELECT-only). Any authenticated JWT could read, insert, update, or delete **all rows** in those tables across tenants — an integrity-and-availability hole on financial-planning data (silent corruption of another household's alerts, health scores, or beneficiary-conflict cache), not merely a confidentiality leak.
+
+**Timeline:** Discovered on **staging** via `npm run verify:rls` JWT isolation (consumer read foreign `household_id`). Fixed in migrations `20260713130000`, `20260713140000`, `20260713150000` **before public launch**. Staging held E2E/test identities only (`@mywealthmaps.test`); **no real customer PII or third-party data** existed in those tables at time of fix. **Zero production rows ever affected**; no customer notification required.
+
+**Structural gate:** `scripts/assert-rls-coverage.sql` added — detects tenant-scoped tables (any `household_id` / `user_id` / `owner_id` / link-column table) with missing RLS, zero policies, or permissive `USING (true)` reachable by `public`/`anon`/`authenticated`. Also caught: `businesses` advisor UPDATE with omitted `WITH CHECK` (Postgres defaulted `true`); `estate_flow_share_links` public `SELECT true` (replaced with `get_share_link_display_meta` SECURITY DEFINER RPC). `NAME_ROLE_MISMATCH` (service-role-named policies granted to `{public}`) is **blocking** after `20260713150000`.
+
+**Posture:** Found and closed pre-launch with test data only — meaningfully different from a post-launch discovery requiring incident response.
+
+**PR:** negative-authz / authz test plan (#21)
 
 ---
 

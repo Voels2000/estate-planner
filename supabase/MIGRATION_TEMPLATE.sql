@@ -93,6 +93,9 @@ CREATE POLICY "Consumers manage own example rows"
 --   WITH CHECK (true);
 
 -- NEVER on household data: USING (true) or auth.uid() IS NOT NULL without household/advisor scope
+-- NEVER: service-role-named policy granted TO public/authenticated — use TO service_role + USING (true)
+-- ALWAYS: mirror USING in WITH CHECK on UPDATE/INSERT policies (omitted WITH CHECK defaults to true)
+-- Post-migration gate: scripts/assert-rls-coverage.sql (npm run verify:rls)
 
 -- ── 3. Grants (PostgREST / Data API) ─────────────────────────────────────────
 

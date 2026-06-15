@@ -54,10 +54,12 @@ E2E tenants (seeded by `npm run seed:e2e`):
 PostgREST JWT isolation in `lib/verify/runRlsVerification.ts`:
 
 - Consumer JWT cannot read foreign `owner_id` on `assets`
-- Consumer JWT cannot read foreign `household_id` on each table in `HOUSEHOLD_SCOPED_RLS_SPOT_CHECK`
+- Consumer JWT cannot read foreign `household_id` on each table in `HOUSEHOLD_SCOPED_TABLES`
 - `lifetime_exemption_summary` view denied for anon + authenticated
 
 Structural invariant in `scripts/verify-rls-invariants.sql` check `household_id_table_missing_rls`: every public table with a `household_id` column must have RLS enabled and ≥1 policy.
+
+Structural coverage gate in `scripts/assert-rls-coverage.sql`: any table with a tenancy column (`household_id`, `user_id`, `owner_id`, `advisor_id`, `attorney_id`, `client_id`) must not have missing RLS, zero policies, permissive `USING (true)` / `WITH CHECK (true)` reachable by `public`/`anon`/`authenticated`, or a policy named like "service role …" not granted `TO service_role`. Reference allowlist: `state_estate_tax_content`, `state_estate_tax_rules`.
 
 ---
 
@@ -71,13 +73,13 @@ Structural invariant in `scripts/verify-rls-invariants.sql` check `household_id_
 
 ## 5. Definition of done
 
-- [x] Layer-1 RLS spot-check for `HOUSEHOLD_SCOPED_RLS_SPOT_CHECK`
+- [x] Layer-1 RLS spot-check for all `HOUSEHOLD_SCOPED_TABLES` (verify:rls JWT loop)
 - [x] Layer-2 route spec covers reads, exports, admin
 - [x] `household_id_table_missing_rls` invariant gates `verify:rls` / `release:preflight`
 - [x] `@authz` subset in `test:e2e:prod:smoke` (via `@production` tag)
-- [ ] Revoked-link lifecycle test (seed `advisor_clients.status` inactive row)
-- [ ] Attorney cap-at-assignment test
-- [ ] Full per-table Playwright matrix for every `HOUSEHOLD_SCOPED_TABLES` entry
+- [x] Revoked-link lifecycle test (seed `advisor_clients.status` inactive row)
+- [x] Attorney cap-at-assignment test (`tests/unit/attorneyClientCap.spec.ts`)
+- [x] Full per-table JWT matrix for every `HOUSEHOLD_SCOPED_TABLES` entry (`verify:rls`)
 
 ---
 
