@@ -3,11 +3,13 @@
  * Requires PLAYWRIGHT_HOUSEHOLD_ID (e2e-consumer) and seeded E2E advisor client.
  */
 import { test, expect } from '@playwright/test'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import {
   fetchAdvisorClientHouseholdId,
   fetchHouseholdIdByOwnerEmail,
 } from '../helpers/e2e-households'
+import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
 
 const API_TIMEOUT_MS = 30_000
 
@@ -124,4 +126,46 @@ test.describe('Advisor access to linked client', () => {
     expect(res.ok(), await res.text()).toBeTruthy()
   })
 })
+})
+
+/** SECURITY DEFINER views with public grants bypass table RLS — must not be PostgREST-readable. */
+test.describe('PostgREST view isolation', () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+
+  async function expectLifetimeExemptionViewDenied(client: SupabaseClient, label: string) {
+    const { data, error } = await client
+      .from('lifetime_exemption_summary')
+      .select('household_id')
+      .limit(10)
+
+    if (error) {
+      expect(error.message.toLowerCase()).toMatch(/permission|denied|not authorized|42501/)
+      return
+    }
+    expect(data ?? [], `${label} must not read lifetime_exemption_summary`).toHaveLength(0)
+  }
+
+  test('anon client cannot select lifetime_exemption_summary', async () => {
+    test.skip(!supabaseUrl || !supabaseAnonKey, 'NEXT_PUBLIC_SUPABASE_* required')
+    const client = createClient(supabaseUrl!, supabaseAnonKey!, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    await expectLifetimeExemptionViewDenied(client, 'anon')
+  })
+
+  test('authenticated consumer cannot select lifetime_exemption_summary', async () => {
+    test.skip(!supabaseUrl || !supabaseAnonKey, 'NEXT_PUBLIC_SUPABASE_* required')
+    const email = resolveE2eEmail(
+      process.env.PLAYWRIGHT_CONSUMER_EMAIL,
+      E2E_IDENTITIES.consumer.email,
+    )
+    const password = resolveE2ePassword(email, process.env.PLAYWRIGHT_CONSUMER_PASSWORD)
+    const client = createClient(supabaseUrl!, supabaseAnonKey!, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    const { error: signInError } = await client.auth.signInWithPassword({ email, password })
+    expect(signInError, signInError?.message).toBeNull()
+    await expectLifetimeExemptionViewDenied(client, 'authenticated consumer')
+  })
 })
