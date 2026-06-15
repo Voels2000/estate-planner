@@ -8,7 +8,23 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-# Last updated: 2026-06-15 (launch tracker, deletion schema drift, E2E beneficiary seed)
+# Last updated: 2026-06-15 (WA Regime D engine + migrations, launch tracker, deletion schema drift, E2E beneficiary seed)
+
+---
+
+## WA Regime D — state estate tax rules + CST RPC (2026-06-15)
+
+**Migrations:**
+- `20260613120000_wa_regime_d_state_estate_tax_rules.sql` — WA `state_estate_tax_rules` 2025–2030: $3M exemption, restored 10–20% schedule incl. **19.5%** band $7M–$9M taxable
+- `20260613130000_cst_funding_cap_calculate_estate_composition.sql` — `calculate_estate_composition` survivor formula `(G − X) − exemption` for with-CST path
+- `20260613140000_wa_dor_table_w_content_brackets.sql` — `state_estate_tax_content` JSON brackets aligned to DOR Table W
+
+**App:**
+- `lib/estate/waRegime.ts` · `resolveStateEstateBrackets.ts` — Engine B override for WA (Regime D forward planning)
+- `lib/calculations/stateEstateTax.ts` — bypass funding cap, first-death $0 guard, projection-aware CST growth
+- `lib/estate/waRegimeDorGoldens.ts` · `tests/unit/waRegime.spec.ts` — RCW 83.100.040 golden vectors ($6M→$910K … $10M→$1.69M)
+
+**Verify:** `npx playwright test tests/unit/waRegime.spec.ts --project=import-unit` · post-migration `npm run verify:estate -- --preset voels --check-goldens`
 
 ---
 
