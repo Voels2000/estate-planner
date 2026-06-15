@@ -7,6 +7,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { mapAndResolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
+import { mapAndResolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
 import { loadLatestChangeTs } from '@/lib/dashboard/loaders'
 import { getLatestTimestampMs, isProjectionStale } from '@/lib/projections/staleness'
 import { mapConflictReport } from '@/lib/dashboard/mappers'
@@ -467,6 +469,15 @@ export async function loadAdvisorClientDatasets(
         .order('tax_year', { ascending: false })
         .order('min_amount', { ascending: true })
         .limit(20)
+    }
+    if (params.householdStatePrimary) {
+      fetchedStateBracketsResult = {
+        ...fetchedStateBracketsResult,
+        data: mapAndResolveStateEstateBrackets({
+          stateCode: params.householdStatePrimary,
+          rows: (fetchedStateBracketsResult.data ?? []) as Record<string, unknown>[],
+        }),
+      }
     }
   }
 

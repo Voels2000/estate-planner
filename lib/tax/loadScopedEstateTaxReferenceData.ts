@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { isWaState, waRegimeToStateEstateTaxRuleRows } from '@/lib/estate/waRegime'
 
 /**
  * Load federal + state estate/inheritance tax reference rows for a household.
@@ -70,6 +71,10 @@ export async function loadScopedEstateTaxReferenceData(
       .eq('state', stateCode)
       .order('tax_year', { ascending: false })
     stateInheritanceTaxRows = data ?? []
+  }
+
+  if (isWaState(stateCode)) {
+    stateEstateTaxRows = waRegimeToStateEstateTaxRuleRows([taxYear])
   }
 
   return {

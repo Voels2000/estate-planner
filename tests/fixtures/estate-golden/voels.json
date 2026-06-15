@@ -1,7 +1,7 @@
 {
-  "_comment": "Golden numbers for --check-goldens. Regenerate: npm run verify:estate -- --preset voels --update-goldens",
+  "_comment": "Golden numbers for --check-goldens. Regime D (ESB 6347, eff. 2026-07-01): $3M single exemption, legacy 10–20% brackets, no CST. Regenerate after migration: npm run verify:estate -- --preset voels --update-goldens",
   "gross_estate": 9806626,
   "federal_tax": 0,
-  "state_tax": 997126,
+  "state_tax": 1063259,
   "tolerance": 1
 }

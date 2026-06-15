@@ -17,6 +17,7 @@ import type {
 import { parseGrowthAssumptions } from '@/lib/types/growthAssumptions'
 import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
 import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
+import { mapAndResolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
 import { runEstateMonteCarloAsync } from './run-estate-monte-carlo-async'
 
 export async function generateBaseCase(householdId: string): Promise<{
@@ -193,7 +194,10 @@ export async function generateBaseCase(householdId: string): Promise<{
           .eq('tax_year', new Date().getFullYear())
           .order('min_amount', { ascending: true })
       : { data: [] }
-    const stateBrackets = stateBracketRows ?? []
+    const stateBrackets = mapAndResolveStateEstateBrackets({
+      stateCode: statePrimary,
+      rows: (stateBracketRows ?? []) as Record<string, unknown>[],
+    })
 
     const { data: federalBracketRows } = await admin
       .from('federal_estate_tax_brackets')

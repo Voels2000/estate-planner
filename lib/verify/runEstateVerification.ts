@@ -1,5 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { deriveHasBypassTrustFromLineItems } from '@/lib/constants/strategyTypes'
+import {
+  mapAndResolveStateEstateBrackets,
+} from '@/lib/estate/resolveStateEstateBrackets'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
 import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { loadEstatePlanPdfTaxPayload } from '@/lib/export/loadEstatePlanPdfTaxPayload'
@@ -121,15 +124,6 @@ function snapshotFromProjectionRow(row: Record<string, unknown> | null): EstateS
     stateTax: Math.max(0, Number(row.estate_tax_state ?? row.state_tax ?? 0)),
     netEstate: row.net_to_heirs != null ? Number(row.net_to_heirs) : null,
   }
-}
-
-function mapStateBracketRows(rows: Array<Record<string, unknown>>): StateBracket[] {
-  return rows.map((r) => ({
-    min_amount: Number(r.min_amount ?? 0),
-    max_amount: r.max_amount != null ? Number(r.max_amount) : 9_999_999_999,
-    rate_pct: Number(r.rate_pct ?? 0),
-    exemption_amount: Number(r.exemption_amount ?? 0),
-  }))
 }
 
 function valuesWithinTolerance(a: number | null, b: number | null, tolerance: number): boolean {
@@ -349,7 +343,10 @@ export async function runEstateVerification(
     Number((giftingRes.data as { lifetime_exemption_used?: number } | null)?.lifetime_exemption_used ?? 0),
   )
 
-  let stateBrackets = mapStateBracketRows(stateRulesRes.data ?? [])
+  let stateBrackets = mapAndResolveStateEstateBrackets({
+    stateCode: statePrimary,
+    rows: stateRulesRes.data ?? [],
+  })
   if (statePrimary && stateBrackets.length === 0) {
     const fallback = await admin
       .from('state_estate_tax_rules')
@@ -358,7 +355,10 @@ export async function runEstateVerification(
       .order('tax_year', { ascending: false })
       .order('min_amount', { ascending: true })
       .limit(20)
-    stateBrackets = mapStateBracketRows(fallback.data ?? [])
+    stateBrackets = mapAndResolveStateEstateBrackets({
+      stateCode: statePrimary,
+      rows: fallback.data ?? [],
+    })
   }
 
   const federalBrackets = latestFederalBracketsFromRows(federalBracketRows.data ?? [])

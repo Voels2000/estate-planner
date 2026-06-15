@@ -37,6 +37,7 @@ import { taxTermExplainer, type TaxTermContext } from '@/lib/estate/taxTermExpla
 import { annualGiftingCapacity } from '@/lib/gifting/perRecipientLimit'
 import { getStateDisplayName, isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 import { STATE_SLUG_MAP, stateCodeToSlug } from '@/lib/learn/state-estate-tax-slugs'
+import { isWaState, WA_ESTATE_TAX_ESTIMATE_DISCLAIMER } from '@/lib/estate/waRegime'
 
 // ─────────────────────────────────────────────────────────────
 // Helpers
@@ -1003,6 +1004,11 @@ export default function EstateTaxClient({
 
           {(primaryStateTax || compareStateTax) && (
             <div className={`grid gap-6 ${showComparison && compareStateTax ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+              {statePrimary && isWaState(statePrimary) && (
+                <p className="text-xs text-neutral-600 leading-relaxed rounded-lg bg-neutral-50 border border-neutral-200 px-3 py-2 sm:col-span-2">
+                  {WA_ESTATE_TAX_ESTIMATE_DISCLAIMER}
+                </p>
+              )}
 
               {/* Primary state */}
               {primaryStateTax && (

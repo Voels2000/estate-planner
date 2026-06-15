@@ -9,6 +9,7 @@ import {
   type StateBracket,
   getPortabilityGapLabel,
 } from '@/lib/calculations/stateEstateTax'
+import { resolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
 
 interface Props {
   grossEstate: number
@@ -94,7 +95,10 @@ export default function FederalStateWaterfall({
         })) ?? []
     )
     : []
-  const unifiedBrackets: StateBracket[] = stateRulesForYear.length > 0 ? stateRulesForYear : fallbackRules
+  const unifiedBrackets: StateBracket[] = resolveStateEstateBrackets({
+    stateCode: unifiedStateCode,
+    dbBrackets: stateRulesForYear.length > 0 ? stateRulesForYear : fallbackRules,
+  })
   const unifiedStateResult = hasUnifiedRules && unifiedBrackets.length > 0
     ? calculateUnifiedStateEstateTax(grossEstate, unifiedStateCode, unifiedBrackets, isMFJ)
     : null

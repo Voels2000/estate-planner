@@ -7,15 +7,7 @@ import {
   buildEstatePlanPdfTaxPayload,
   type EstatePlanPdfTaxPayload,
 } from '@/lib/export/buildEstatePlanPdfTaxPayload'
-
-function mapStateBracketRows(rows: Array<Record<string, unknown>>): StateBracket[] {
-  return rows.map((r) => ({
-    min_amount: Number(r.min_amount),
-    max_amount: r.max_amount != null ? Number(r.max_amount) : 9_999_999_999,
-    rate_pct: Number(r.rate_pct),
-    exemption_amount: Number(r.exemption_amount ?? 0),
-  }))
-}
+import { mapAndResolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
 
 /** Engine B tax payload for estate-plan PDF export API. */
 export async function loadEstatePlanPdfTaxPayload(
@@ -60,7 +52,10 @@ export async function loadEstatePlanPdfTaxPayload(
     ),
   )
 
-  let stateBrackets = mapStateBracketRows(stateRulesRes.data ?? [])
+  let stateBrackets = mapAndResolveStateEstateBrackets({
+    stateCode: statePrimary,
+    rows: (stateRulesRes.data ?? []) as Record<string, unknown>[],
+  })
   if (statePrimary && stateBrackets.length === 0) {
     const fallback = await supabase
       .from('state_estate_tax_rules')
@@ -69,7 +64,10 @@ export async function loadEstatePlanPdfTaxPayload(
       .order('tax_year', { ascending: false })
       .order('min_amount', { ascending: true })
       .limit(20)
-    stateBrackets = mapStateBracketRows(fallback.data ?? [])
+    stateBrackets = mapAndResolveStateEstateBrackets({
+      stateCode: statePrimary,
+      rows: (fallback.data ?? []) as Record<string, unknown>[],
+    })
   }
 
   const composition = await getCachedComposition(

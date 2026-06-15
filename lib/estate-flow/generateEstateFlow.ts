@@ -15,6 +15,7 @@ import {
   findAtDeathRow,
 } from '@/lib/my-estate-strategy/horizonSnapshots'
 import { latestFederalBracketsFromRows } from '@/lib/tax/federalExportTax'
+import { mapAndResolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
 import type { AnnualOutput } from '@/lib/types/projection-scenario'
 
 // ─── Node types ──────────────────────────────────────────────────────────────
@@ -336,12 +337,10 @@ export async function generateEstateFlow(
   const beneficiaries = (beneficiariesRes.data ?? []) as RawBeneficiary[]
   const householdPeople = (householdPeopleRes.data ?? []) as RawHouseholdPerson[]
   const estateDocs = (estateDocsRes.data ?? []) as RawEstateDocs[]
-  const stateBrackets = (stateBracketsRes.data ?? []) as {
-    min_amount: number
-    max_amount: number
-    rate_pct: number
-    exemption_amount: number
-  }[]
+  const stateBrackets = mapAndResolveStateEstateBrackets({
+    stateCode: household.state_primary,
+    rows: (stateBracketsRes.data ?? []) as Record<string, unknown>[],
+  })
   const federalBrackets = latestFederalBracketsFromRows(federalBracketsRes.data ?? [])
   const lifetimeGiftsUsed = Math.max(
     0,
