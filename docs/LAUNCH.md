@@ -279,7 +279,7 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 
 **Done since 2026-06-14:** B4 app-logic automated (PR #12) · stale-score UI · B5 live `verify-env?live=1` + webhook delivery + webhook-event verifier (PR #15) · `lifetime_exemption_summary` IDOR closed on staging + prod (PR #16).
 
-**Launch blockers (pre-flip):**
+**Launch blockers (pre-flip):** consolidated checklist → [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md).
 
 | Priority | Item | Bucket |
 |----------|------|--------|
