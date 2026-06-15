@@ -100,17 +100,21 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] Admin env verifier: `GET /api/admin/verify-env` + `lib/env/manifest.ts` + `lib/env/verifyEnv.ts` (verify: `app/api/admin/verify-env/route.ts`, PRs #3/#5)
 - [x] `?live=1` retrieves each `STRIPE_PRICE_*` / advisor / attorney price via `stripe.prices.retrieve()` and fails on missing/inactive (verify: `lib/env/verifyEnv.ts`, PR #12)
 - [x] Production consumer price throw-guard: `resolveConsumerPriceId` throws when unset in `VERCEL_ENV=production` (verify: `lib/billing/stripePrices.ts:99-110`, PR #4)
-- [x] **Live prod attestation:** `GET /api/admin/verify-env?live=1` on `www.mywealthmaps.com` → `missing` empty, `liveness.stripe: LIVE_OK`, **11/11** live prices `active` (6 consumer + 3 advisor + 2 attorney) (attest: Al / 2026-06-15)
+- [x] **Live prod attestation (keys + prices):** `GET /api/admin/verify-env?live=1` on `www.mywealthmaps.com` → `missing` empty, `liveness.stripe: LIVE_OK`, **11/11** live prices `active` (6 consumer + 3 advisor + 2 attorney) (attest: Al / 2026-06-15)
+- [x] **Live prod attestation (post-webhook secret fix):** re-run `verify-env?live=1` after `STRIPE_WEBHOOK_SECRET` aligned in Vercel Production → still `missing` empty, `LIVE_OK`, 11/11 `active` (attest: Al / 2026-06-15)
+- [x] **Live Stripe webhook plumbing:** endpoint on canonical `www.mywealthmaps.com`, signing secret aligned in Vercel Production, delivery confirmed **200** on resend (e.g. `customer.created`) — prior attestation assumed delivery; this proves it (attest: Al / 2026-06-15)
 
 **What `verify-env?live=1` proves:** live Stripe key mode, every configured price ID is real, active, and wired in Vercel Production env.
 
-**What it does not prove:** a customer can complete checkout end-to-end — only a real charge exercises the live webhook path that activates a subscription. That remains the real-card smoke below.
+**What webhook resend proves:** endpoint reachable, signature verifies, handler returns 200.
+
+**What neither proves:** a real `checkout.session.completed` activating a subscription in-app — only the real-card smoke below exercises checkout → live webhook → subscription active.
 
 **Ops — still open (human / card-required):**
 
 - [ ] Vercel dashboard housekeeping: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed; declare `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA`, `EMAIL_FROM`; delete dead vars (`STRIPE_CUSTOMER_PORTAL_URL`, `RESEND_WEBHOOK_SECRET` if present) (attest: __ / __)
 - [ ] C-4 manual walkthrough on prod: signup → checkout → active → cancel → deletion schedule — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (attest: __ / __)
-- [ ] One real-card live smoke, smallest tier, refund/cancel after verify — **only item that proves live billing E2E** (attest: __ / __)
+- [ ] One real-card live smoke, smallest tier, refund/cancel after verify — **proves live checkout → `checkout.session.completed` → subscription active** (attest: __ / __)
 
 ### B6. Legal / entity (ops-attested, ex-tax)
 
@@ -276,9 +280,9 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 |------|--------|
 | B1 prod smoke optional passes | Set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` (live `whsec_`) in `.env.test.prod`; enable Upstash on Vercel for 429 test |
 | B3 branch protection (`verify` + `e2e-smoke` + `rls-verify`) | Done — [PR #8](https://github.com/Voels2000/estate-planner/pull/8) merged 2026-06-14; staging-only secrets; green on PRs #9–#10 |
-| B5 Vercel Stripe env names | Done — `verify-env?live=1` clean (Al / 2026-06-15); real-card smoke still open |
+| B5 Stripe machine slice | Done — `verify-env?live=1` re-run post-webhook-secret fix (Al / 2026-06-15); webhook 200 on resend; real-card smoke still open |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
-**Still open — attest (Al):** B4 irreducible only (BCC inbox, drip cron 2/3, fresh-prod-signup AT-FLIP) · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel/LLC/bank/B&O/email.
+**Still open — attest (Al):** B4 irreducible only (BCC inbox, drip cron 2/3, fresh-prod-signup AT-FLIP) · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel/LLC/bank/B&O/email. **Launch blockers:** real-card smoke, B&O ruling.
 
 **B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.
