@@ -712,6 +712,7 @@ export function DashboardClient(props: Props) {
             score={estateHealthScore.score}
             priorScore={priorScore}
             components={estateHealthScore.components}
+            computedAt={estateHealthScore.computedAt}
           />
 
           {openAlerts.length > 0 && (() => {

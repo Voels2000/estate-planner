@@ -74,19 +74,31 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] Staging keep-alive workflow on `main` and green in Actions (attest: Al / 2026-06-13)
 - [x] Restore E2E/RLS PR workflows with **staging-only** GitHub secrets — `E2E_SMOKE_IN_CI` + `RLS_VERIFY_IN_CI` true; 8 staging secrets; green on PRs #8–#10 (attest: Al / 2026-06-14)
 
-### B4. Manual smokes (run before Gate 2; before any **staging** purge if needed)
+### B4. Manual smokes — automated on staging where noted
 
-- [ ] Prospect + Mobile (19 steps, Track 1 before Track 2) — [archived checklist § Prospect](./archive/LAUNCH_CHECKLIST.md) (attest: __ / __)
-- [ ] Health Score + Advisor Playbook (18 steps) (attest: __ / __)
-- [ ] PDF narrative engine (9 steps) (attest: __ / __)
-- [ ] Drip production smoke (assess → step 1 → cron steps 2/3) (attest: __ / __)
-- [ ] End-to-end fresh signup on production URL (consumer → drip → advisor) (attest: __ / __)
+**PR gate (`e2e-smoke`):** `test:e2e:b4-gate` — prospect form logic, health-score behaviors, playbook empty/activation, drip step-1 DB assert.
+
+**Preflight only (`release:preflight`):** `test:e2e:b4-deep` — full PDF narrative HTML (slow).
+
+**Still manual (irreducible):**
+
+- [ ] Prospect step 10 — BCC inbox (`avoels@comcast.net`) (attest: __ / __)
+- [ ] Drip cron steps 2/3 (day 3 / day 7) unless backdated cron run on staging (attest: __ / __)
+- [ ] End-to-end fresh signup on **production URL** — AT-FLIP (`PUBLIC_SIGNUP_OPEN=true`) (attest: __ / __)
+
+**Automated walkthroughs (staging seed + specs):**
+
+- [ ] Prospect + Mobile — Track 1 steps 3–9, 11 + PDF header (`b4-prospect-form.spec.ts`); Track 2 steps 13–19 (`consumer-mobile-review.spec.ts`, `test:e2e:mobile`) (attest: __ / __)
+- [ ] Health Score + Advisor Playbook — **10 documented behaviors** (not 18 numbered steps in repo): score/context, strategy badge, health-check labels, stale prompt, playbook empty + activation (`b4-health-score.spec.ts`, `b4-playbook-activation.spec.ts`) (attest: __ / __)
+- [ ] PDF narrative engine — steps 1–9 content (`b4-pdf-narrative.spec.ts`, preflight) (attest: __ / __)
+- [ ] Drip step 1 — `email_captures.drip_step_1_sent_at` (`b4-drip-step1.spec.ts` + `npm run verify:drip`) (attest: __ / __)
 
 ### B5. Stripe (code wired; live config is ops-attested)
 
 **Code on `main` (machine-verifiable — no live curl attestation yet):**
 
 - [x] Admin env verifier: `GET /api/admin/verify-env` + `lib/env/manifest.ts` + `lib/env/verifyEnv.ts` (verify: `app/api/admin/verify-env/route.ts`, PRs #3/#5)
+- [x] `?live=1` retrieves each `STRIPE_PRICE_*` / advisor / attorney price via `stripe.prices.retrieve()` and fails on missing/inactive (verify: `lib/env/verifyEnv.ts`)
 - [x] Production consumer price throw-guard: `resolveConsumerPriceId` throws when unset in `VERCEL_ENV=production` (verify: `lib/billing/stripePrices.ts:99-110`, PR #4)
 - [x] Silent test-price **runtime seatbelt** (code pair above) — live `?live=1` clean report still required after dashboard fixes below
 

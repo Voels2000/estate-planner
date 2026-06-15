@@ -1,9 +1,11 @@
 import { createAdminClient } from '../lib/supabase/admin'
+import { createClient } from '@supabase/supabase-js'
 import {
   E2E_DEFAULT_BASE_URL,
   E2E_IDENTITIES,
   E2E_REFERRAL_CODES,
   E2E_TEST_PASSWORD,
+  DRIP_SMOKE_EMAIL,
 } from './e2e-test-identities'
 
 export function initSupabaseEnv() {
@@ -163,20 +165,63 @@ export async function seedE2eConsumerHousehold(
     {
       owner_id: userId,
       owner: 'person1',
-      type: 'financial_account',
-      name: 'E2E Brokerage — Alex',
-      value: 850_000,
+      type: 'traditional_401k',
+      asset_type: 'traditional_401k',
+      name: 'E2E Traditional 401(k) — Alex',
+      value: 750_000,
+      account_type: '401k',
+      institution: 'Fidelity',
+      is_taxable: false,
     },
     {
       owner_id: userId,
       owner: 'person1',
-      type: 'financial_account',
-      name: 'E2E Traditional IRA',
+      type: 'traditional_ira',
+      asset_type: 'traditional_ira',
+      name: 'E2E Traditional IRA — Alex',
       value: 420_000,
+      account_type: 'ira',
+      institution: 'Vanguard',
+      is_taxable: false,
+    },
+    {
+      owner_id: userId,
+      owner: 'joint',
+      type: 'taxable_brokerage',
+      asset_type: 'taxable_brokerage',
+      name: 'E2E Joint brokerage',
+      value: 200_000,
+      account_type: 'brokerage',
+      institution: 'Charles Schwab',
+      is_taxable: true,
     },
   ])
   if (assetErr) console.warn('  assets:', assetErr.message)
-  else console.log('  assets: seeded 2 rows')
+  else console.log('  assets: seeded 3 rows (RMD-eligible + brokerage)')
+
+  await admin.from('income').delete().eq('owner_id', userId)
+  const { error: incomeErr } = await admin.from('income').insert({
+    owner_id: userId,
+    source: 'salary',
+    name: 'E2E Salary',
+    amount: 240_000,
+    start_year: new Date().getFullYear(),
+    inflation_adjust: true,
+    ss_person: 'person1',
+  })
+  if (incomeErr) console.warn('  income:', incomeErr.message)
+  else console.log('  income: seeded salary row')
+
+  await admin.from('expenses').delete().eq('owner_id', userId)
+  const { error: expenseErr } = await admin.from('expenses').insert({
+    owner_id: userId,
+    category: 'living',
+    amount: 96_000,
+    start_year: new Date().getFullYear(),
+    inflation_adjust: true,
+  })
+  if (expenseErr) console.warn('  expenses:', expenseErr.message)
+  else console.log('  expenses: seeded living row')
 
   await seedE2eEstateHealthForHousehold(householdId)
 
@@ -185,8 +230,9 @@ export async function seedE2eConsumerHousehold(
 
 function getSeedAppUrl(): string {
   return (
-    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.SEED_APP_URL ??
     process.env.PLAYWRIGHT_BASE_URL ??
+    process.env.NEXT_PUBLIC_APP_URL ??
     E2E_DEFAULT_BASE_URL
   ).replace(/\/$/, '')
 }
@@ -454,26 +500,37 @@ export async function linkAdvisorToClient(advisorId: string, clientId: string) {
   }
 }
 
-/** Drop advisor→consumer links so cross-household IDOR tests stay valid (seed only links advisor client). */
+/** Drop advisor→consumer links outside the keep-list (seed controls cast topology). */
 export async function pruneStrayE2eAdvisorClientLinks(
   advisorId: string,
-  keepClientUserId: string,
+  keepClientUserIds: string | string[],
 ): Promise<void> {
   const admin = createAdminClient()
+  const keepSet = new Set(
+    (Array.isArray(keepClientUserIds) ? keepClientUserIds : [keepClientUserIds]).filter(Boolean),
+  )
   const { data, error } = await admin
     .from('advisor_clients')
-    .delete()
-    .eq('advisor_id', advisorId)
-    .neq('client_id', keepClientUserId)
     .select('id, client_id')
+    .eq('advisor_id', advisorId)
 
   if (error) {
     console.warn('  advisor_clients prune:', error.message)
     return
   }
-  if (data?.length) {
-    console.log(`  advisor_clients: removed ${data.length} stray link(s)`)
-  }
+
+  const toRemove = (data ?? []).filter((row) => !keepSet.has(row.client_id))
+  if (!toRemove.length) return
+
+  const { error: delErr } = await admin
+    .from('advisor_clients')
+    .delete()
+    .in(
+      'id',
+      toRemove.map((r) => r.id),
+    )
+  if (delErr) console.warn('  advisor_clients prune delete:', delErr.message)
+  else console.log(`  advisor_clients: removed ${toRemove.length} stray link(s)`)
 }
 
 /** Rich advisor-client household (401k, IRA, domicile, documents) for advisor workspace E2E. */
@@ -706,6 +763,7 @@ export async function seedE2eAdvisorClientHousehold(
   await seedE2eEstateHealthForHousehold(householdId)
   await linkAdvisorToClient(advisorId, clientUserId)
   await pruneStrayE2eAdvisorClientLinks(advisorId, clientUserId)
+  await triggerE2eGenerateBaseCase(householdId, E2E_IDENTITIES.advisor.email, 'advisor')
 
   return householdId
 }
@@ -786,6 +844,257 @@ export async function ensureAdvisorFirmForE2e(
   }
 
   return firmId
+}
+
+function supabaseProjectRef(url: string): string {
+  return new URL(url).hostname.split('.')[0] ?? 'local'
+}
+
+function authCookieHeader(
+  supabaseUrl: string,
+  session: {
+    access_token: string
+    refresh_token: string
+    expires_at?: number
+    expires_in?: number
+    token_type: string
+    user: unknown
+  },
+): string {
+  const payload = Buffer.from(JSON.stringify(session)).toString('base64')
+  return `sb-${supabaseProjectRef(supabaseUrl)}-auth-token=base64-${payload}`
+}
+
+/** Magic-link session for seed-time API calls (generate-base-case). */
+export async function createE2eAuthSessionForEmail(email: string) {
+  const admin = createAdminClient()
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !anonKey) {
+    throw new Error('Need NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY for seed API calls')
+  }
+
+  const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+    type: 'magiclink',
+    email,
+  })
+  if (linkErr || !linkData?.properties?.hashed_token) {
+    throw new Error(`generateLink ${email}: ${linkErr?.message ?? 'no token'}`)
+  }
+
+  const anon = createClient(supabaseUrl, anonKey, { auth: { persistSession: false } })
+  const { data, error } = await anon.auth.verifyOtp({
+    type: 'magiclink',
+    token_hash: linkData.properties.hashed_token,
+  })
+  if (error || !data.session) {
+    throw new Error(`verifyOtp ${email}: ${error?.message ?? 'no session'}`)
+  }
+  return { session: data.session, supabaseUrl }
+}
+
+/** POST generate-base-case against deployed app (consumer or advisor route). */
+export async function triggerE2eGenerateBaseCase(
+  householdId: string,
+  sessionEmail: string,
+  mode: 'consumer' | 'advisor',
+): Promise<void> {
+  const baseUrl = getSeedAppUrl()
+  const path =
+    mode === 'consumer' ? '/api/consumer/generate-base-case' : '/api/advisor/generate-base-case'
+
+  try {
+    const { session, supabaseUrl } = await createE2eAuthSessionForEmail(sessionEmail)
+    const res = await fetch(`${baseUrl}${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: authCookieHeader(supabaseUrl, session),
+      },
+      body: JSON.stringify({ householdId }),
+      signal: AbortSignal.timeout(120_000),
+    })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      console.warn(
+        `  generate-base-case (${mode}): HTTP ${res.status} ${JSON.stringify(body).slice(0, 200)}`,
+      )
+      return
+    }
+    console.log(`  generate-base-case (${mode}): ok scenario=${(body as { scenarioId?: string }).scenarioId ?? '—'}`)
+  } catch (err) {
+    console.warn(
+      `  generate-base-case (${mode}):`,
+      err instanceof Error ? err.message : String(err),
+    )
+  }
+}
+
+/** Floor tier-1 household score for needs-attention advisor roster tests. */
+export async function seedE2eLowScoreHousehold(householdId: string, score = 40): Promise<void> {
+  const admin = createAdminClient()
+  const now = new Date().toISOString()
+  const { error } = await admin.from('estate_health_scores').upsert(
+    {
+      household_id: householdId,
+      score,
+      computed_at: now,
+      updated_at: now,
+    },
+    { onConflict: 'household_id' },
+  )
+  if (error) console.warn('  estate_health_scores low-score:', error.message)
+  else console.log(`  estate_health_scores: set ${score} (needs-attention path)`)
+}
+
+/** Pending advisor recommendation on consumer household (mobile step 18). */
+export async function seedE2ePendingAdvisorRecommendation(
+  advisorId: string,
+  consumerHouseholdId: string,
+): Promise<void> {
+  const admin = createAdminClient()
+  const scenarioName = 'E2E Seed Pending Recommendation'
+
+  const { data: existing } = await admin
+    .from('strategy_line_items')
+    .select('id')
+    .eq('household_id', consumerHouseholdId)
+    .eq('strategy_source', 'slat')
+    .eq('source_role', 'advisor')
+    .eq('scenario_name', scenarioName)
+    .maybeSingle()
+
+  const row = {
+    household_id: consumerHouseholdId,
+    scenario_id: 'current_law',
+    projection_year: null,
+    metric_target: 'taxable_estate' as const,
+    category: 'trust_exclusion' as const,
+    strategy_source: 'slat',
+    source_role: 'advisor' as const,
+    advisor_id: advisorId,
+    amount: 250_000,
+    sign: -1,
+    confidence_level: 'probable' as const,
+    effective_year: new Date().getFullYear(),
+    scenario_name: scenarioName,
+    is_active: true,
+    consumer_accepted: false,
+    consumer_rejected: false,
+    metadata: { e2e_seed: true },
+  }
+
+  if (existing?.id) {
+    const { error } = await admin.from('strategy_line_items').update(row).eq('id', existing.id)
+    if (error) console.warn('  strategy_line_items pending rec update:', error.message)
+    else console.log('  strategy_line_items: pending advisor recommendation (updated)')
+    return
+  }
+
+  const { error } = await admin.from('strategy_line_items').insert(row)
+  if (error) console.warn('  strategy_line_items pending rec:', error.message)
+  else console.log('  strategy_line_items: pending advisor recommendation')
+}
+
+/** email_captures row for drip step-1 verify (no inbox). */
+export async function seedE2eDripCapture(): Promise<void> {
+  const admin = createAdminClient()
+  const now = new Date().toISOString()
+
+  const { data: existing } = await admin
+    .from('email_captures')
+    .select('id')
+    .eq('email', DRIP_SMOKE_EMAIL)
+    .maybeSingle()
+
+  const row = {
+    email: DRIP_SMOKE_EMAIL,
+    source: 'e2e-seed',
+    score: 42,
+    captured_at: now,
+    drip_step_1_sent_at: now,
+    drip_step_2_sent_at: null,
+    drip_step_3_sent_at: null,
+    unsubscribed_at: null,
+  }
+
+  if (existing?.id) {
+    const { error } = await admin.from('email_captures').update(row).eq('id', existing.id)
+    if (error) console.warn('  email_captures drip:', error.message)
+    else console.log(`  email_captures: updated ${DRIP_SMOKE_EMAIL} (step 1 sent)`)
+    return
+  }
+
+  const { error } = await admin.from('email_captures').insert(row)
+  if (error) console.warn('  email_captures drip:', error.message)
+  else console.log(`  email_captures: created ${DRIP_SMOKE_EMAIL} (step 1 sent)`)
+}
+
+/** Second advisor with firm — zero linked clients for playbook empty state. */
+export async function ensureAdvisorEmptyForE2e(): Promise<string> {
+  const admin = createAdminClient()
+  const empty = E2E_IDENTITIES.advisorEmpty
+
+  const advisorId = await ensureAuthUser({
+    email: empty.email,
+    password: empty.password,
+    fullName: empty.fullName,
+    role: 'advisor',
+  })
+
+  await admin
+    .from('profiles')
+    .update({
+      subscription_status: 'active',
+      consumer_tier: 3,
+      is_superuser: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', advisorId)
+
+  await ensureAdvisorFirmForE2e(advisorId, empty.firmName)
+
+  const { error } = await admin.from('advisor_clients').delete().eq('advisor_id', advisorId)
+  if (error) console.warn('  advisor-empty links purge:', error.message)
+  else console.log('  advisor-empty: zero linked clients')
+
+  return advisorId
+}
+
+/** Enrich consumer cast after all users exist: projections, pending rec, base case. */
+export async function seedE2eConsumerEnrichments(opts: {
+  consumerUserId: string
+  consumerHouseholdId: string
+  tier1HouseholdId?: string
+  primaryAdvisorId?: string
+  tier1UserId?: string
+  advisorClientUserId?: string
+}): Promise<void> {
+  if (opts.primaryAdvisorId) {
+    await linkAdvisorToClient(opts.primaryAdvisorId, opts.consumerUserId)
+    await seedE2ePendingAdvisorRecommendation(opts.primaryAdvisorId, opts.consumerHouseholdId)
+  }
+
+  await triggerE2eGenerateBaseCase(
+    opts.consumerHouseholdId,
+    E2E_IDENTITIES.consumer.email,
+    'consumer',
+  )
+
+  if (opts.tier1HouseholdId) {
+    await seedE2eLowScoreHousehold(opts.tier1HouseholdId, 40)
+  }
+
+  if (opts.primaryAdvisorId && opts.tier1UserId && opts.advisorClientUserId) {
+    await linkAdvisorToClient(opts.primaryAdvisorId, opts.tier1UserId)
+    await pruneStrayE2eAdvisorClientLinks(opts.primaryAdvisorId, [
+      opts.advisorClientUserId,
+      opts.consumerUserId,
+      opts.tier1UserId,
+    ])
+  }
+
+  await seedE2eDripCapture()
 }
 
 /** Fail loudly if any @mywealthmaps.test account is in an invalid state. */

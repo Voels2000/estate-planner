@@ -2,6 +2,7 @@ import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import {
   ENV_MANIFEST,
+  LIVE_STRIPE_PRICE_ENV_VARS,
   MANIFEST_VAR_NAMES,
   type EnvScope,
   type EnvShape,
@@ -38,6 +39,12 @@ export interface EnvVerifyReport {
     stripe: 'LIVE_OK' | 'LIVE_FAIL'
     stripe_key_mode: 'live' | 'test' | 'unknown' | 'unset'
     stripe_reason?: string
+    stripe_prices?: Array<{
+      env_var: string
+      price_id: string
+      status: 'active' | 'missing' | 'inactive' | 'error' | 'skipped'
+      reason?: string
+    }>
     supabase: 'LIVE_OK' | 'LIVE_FAIL'
     supabase_reason?: string
   }
@@ -256,6 +263,65 @@ function detectUnknownVars(env: EnvSource): EnvFlag[] {
   return flags
 }
 
+async function verifyLiveStripePrices(
+  env: EnvSource,
+  stripe: Stripe,
+  keyMode: ReturnType<typeof inferStripeKeyMode>,
+): Promise<NonNullable<EnvVerifyReport['liveness']>['stripe_prices']> {
+  const rows: NonNullable<EnvVerifyReport['liveness']>['stripe_prices'] = []
+
+  if (keyMode !== 'live') {
+    for (const envVar of LIVE_STRIPE_PRICE_ENV_VARS) {
+      rows.push({
+        env_var: envVar,
+        price_id: env[envVar]?.trim() ?? '',
+        status: 'skipped',
+        reason: 'STRIPE_SECRET_KEY is not live mode',
+      })
+    }
+    return rows
+  }
+
+  for (const envVar of LIVE_STRIPE_PRICE_ENV_VARS) {
+    const priceId = env[envVar]?.trim() ?? ''
+    if (!priceId) {
+      rows.push({ env_var: envVar, price_id: '', status: 'missing', reason: 'env var unset' })
+      continue
+    }
+    if (!/^price_/.test(priceId)) {
+      rows.push({
+        env_var: envVar,
+        price_id: priceId,
+        status: 'error',
+        reason: 'invalid price_ id shape',
+      })
+      continue
+    }
+    try {
+      const price = await stripe.prices.retrieve(priceId)
+      if (!price.active) {
+        rows.push({
+          env_var: envVar,
+          price_id: priceId,
+          status: 'inactive',
+          reason: 'Stripe price exists but is not active',
+        })
+      } else {
+        rows.push({ env_var: envVar, price_id: priceId, status: 'active' })
+      }
+    } catch (err) {
+      rows.push({
+        env_var: envVar,
+        price_id: priceId,
+        status: 'error',
+        reason: err instanceof Error ? err.message : 'prices.retrieve failed',
+      })
+    }
+  }
+
+  return rows
+}
+
 async function runLivenessChecks(
   env: EnvSource,
   scope: EnvScope,
@@ -281,6 +347,15 @@ async function runLivenessChecks(
         const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' })
         await stripe.balance.retrieve()
         result.stripe = 'LIVE_OK'
+        result.stripe_prices = await verifyLiveStripePrices(env, stripe, keyMode)
+        const priceRows = result.stripe_prices ?? []
+        const badPrice = priceRows.find((p) =>
+          ['missing', 'inactive', 'error'].includes(p.status),
+        )
+        if (badPrice) {
+          result.stripe = 'LIVE_FAIL'
+          result.stripe_reason = `Stripe price ${badPrice.env_var}: ${badPrice.reason ?? badPrice.status}`
+        }
       } catch (err) {
         result.stripe_reason =
           err instanceof Error ? err.message : 'Stripe balance.retrieve failed'

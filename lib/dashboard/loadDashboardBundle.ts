@@ -161,7 +161,8 @@ export async function loadDashboardBundle(
     statePrimary: string | null | undefined
   },
 ): Promise<DashboardBundle> {
-  const cached = bundleCache.get(params.householdId)
+  const skipCache = process.env.E2E_SKIP_RECOMPUTE === 'true'
+  const cached = skipCache ? undefined : bundleCache.get(params.householdId)
   if (cached && cached.expiresAt > Date.now()) {
     return cached.bundle
   }
@@ -350,10 +351,12 @@ export async function loadDashboardBundle(
     federalIncomeTaxBracketsChangedAt,
   }
 
-  bundleCache.set(params.householdId, {
-    bundle,
-    expiresAt: Date.now() + TTL_MS,
-  })
+  if (!skipCache) {
+    bundleCache.set(params.householdId, {
+      bundle,
+      expiresAt: Date.now() + TTL_MS,
+    })
+  }
 
   return bundle
 }

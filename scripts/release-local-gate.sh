@@ -25,6 +25,8 @@ if [[ "$PREFLIGHT" == "true" ]]; then
   npm run verify:rls
   npm run test:e2e:go-live-profile -- --workers=1
   npm run test:e2e:security-smoke -- --workers=1
+  npm run test:e2e:b4-gate -- --workers=1
+  npm run test:e2e:b4-deep -- --workers=1
 fi
 
 echo ""

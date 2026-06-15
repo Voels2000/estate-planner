@@ -46,6 +46,16 @@ export const CONSUMER_STRIPE_PRICE_ENV_VARS = [
 
 export type ConsumerStripePriceEnvVar = (typeof CONSUMER_STRIPE_PRICE_ENV_VARS)[number]
 
+/** All Stripe price ID env vars verified with prices.retrieve when ?live=1. */
+export const LIVE_STRIPE_PRICE_ENV_VARS = [
+  ...CONSUMER_STRIPE_PRICE_ENV_VARS,
+  'STRIPE_PRICE_ADVISOR_STARTER_MONTHLY',
+  'STRIPE_PRICE_ADVISOR_GROWTH_MONTHLY',
+  'STRIPE_PRICE_ADVISOR_ENTERPRISE_MONTHLY',
+  'STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY',
+  'STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY',
+] as const
+
 function consumerPrice(name: ConsumerStripePriceEnvVar): EnvVarEntry {
   return entry(name, {
     scopes: ALL_SCOPES,

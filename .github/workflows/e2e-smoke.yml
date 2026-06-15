@@ -54,3 +54,6 @@ jobs:
 
       - name: E2E security smoke
         run: npm run test:e2e:security-smoke -- --workers=1
+
+      - name: E2E B4 gate (prospect, health-score, playbook, drip)
+        run: npm run test:e2e:b4-gate -- --workers=1

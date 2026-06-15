@@ -1,9 +1,14 @@
 'use client'
 
 import { InfoTooltip } from '@/components/ui/InfoTooltip'
-import { scoreCategoryExplainer } from '@/lib/estate-health-score'
+import {
+  isScoreStale,
+  scoreCategoryExplainer,
+  scoreContextSentence,
+} from '@/lib/estate-health-score'
 import { getBand, getPctile } from '@/lib/dashboard/scoreDisplayHelpers'
 import { NAT_AVG_PCT, MWM_AVG_PCT } from '@/lib/dashboard/readinessBenchmarks'
+import Link from 'next/link'
 
 type ComponentRow = {
   key: string
@@ -17,15 +22,39 @@ type EstateReadinessCardProps = {
   score: number
   priorScore: number | null
   components: ComponentRow[]
+  computedAt?: string | null
 }
 
-export function EstateReadinessCard({ score, priorScore, components }: EstateReadinessCardProps) {
+export function EstateReadinessCard({
+  score,
+  priorScore,
+  components,
+  computedAt = null,
+}: EstateReadinessCardProps) {
   const band = getBand(score)
   const delta = priorScore !== null ? score - priorScore : null
   const pctile = getPctile(score)
+  const stale = isScoreStale(computedAt)
+  const context = scoreContextSentence(score)
 
   return (
     <div className="space-y-4 rounded-[var(--mwm-radius)] border border-[color:var(--mwm-border)] bg-white p-5">
+      {stale && (
+        <div
+          className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+          data-testid="estate-score-stale-banner"
+        >
+          Your estate readiness score was last calculated over 30 days ago.{' '}
+          <Link href="/health-check" className="font-semibold underline">
+            Recalculate your score
+          </Link>{' '}
+          after updating your profile.
+        </div>
+      )}
+
+      <p className="text-sm text-[color:var(--mwm-text-secondary)]" data-testid="estate-score-context">
+        {context}
+      </p>
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-baseline gap-2">
