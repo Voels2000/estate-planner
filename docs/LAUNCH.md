@@ -88,29 +88,29 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 **Automated walkthroughs (staging seed + specs):**
 
-- [ ] Prospect + Mobile — Track 1 steps 3–9, 11 + PDF header (`b4-prospect-form.spec.ts`); Track 2 steps 13–19 (`consumer-mobile-review.spec.ts`, `test:e2e:mobile`) (attest: __ / __)
-- [ ] Health Score + Advisor Playbook — **10 documented behaviors** (not 18 numbered steps in repo): score/context, strategy badge, health-check labels, stale prompt, playbook empty + activation (`b4-health-score.spec.ts`, `b4-playbook-activation.spec.ts`) (attest: __ / __)
-- [ ] PDF narrative engine — steps 1–9 content (`b4-pdf-narrative.spec.ts`, preflight) (attest: __ / __)
-- [ ] Drip step 1 — `email_captures.drip_step_1_sent_at` (`b4-drip-step1.spec.ts` + `npm run verify:drip`) (attest: __ / __)
+- [x] Prospect + Mobile — Track 1 steps 3–9, 11 + PDF header (`b4-prospect-form.spec.ts`); Track 2 steps 13–19 (`consumer-mobile-review.spec.ts`, `test:e2e:mobile`) (attest: CI / PR #12 e2e-smoke 2026-06-14)
+- [x] Health Score + Advisor Playbook — **10 documented behaviors** (not 18 numbered steps in repo): score/context, strategy badge, health-check labels, stale prompt, playbook empty + activation (`b4-health-score.spec.ts`, `b4-playbook-activation.spec.ts`) (attest: CI / PR #12 e2e-smoke 2026-06-14)
+- [x] PDF narrative engine — steps 1–9 content (`b4-pdf-narrative.spec.ts`, preflight) (attest: local preflight 2026-06-14)
+- [x] Drip step 1 — `email_captures.drip_step_1_sent_at` (`b4-drip-step1.spec.ts` + `npm run verify:drip`) (attest: CI / PR #12 e2e-smoke 2026-06-14)
 
 ### B5. Stripe (code wired; live config is ops-attested)
 
-**Code on `main` (machine-verifiable — no live curl attestation yet):**
+**Machine-verifiable on `main` (attested 2026-06-15):**
 
 - [x] Admin env verifier: `GET /api/admin/verify-env` + `lib/env/manifest.ts` + `lib/env/verifyEnv.ts` (verify: `app/api/admin/verify-env/route.ts`, PRs #3/#5)
-- [x] `?live=1` retrieves each `STRIPE_PRICE_*` / advisor / attorney price via `stripe.prices.retrieve()` and fails on missing/inactive (verify: `lib/env/verifyEnv.ts`)
+- [x] `?live=1` retrieves each `STRIPE_PRICE_*` / advisor / attorney price via `stripe.prices.retrieve()` and fails on missing/inactive (verify: `lib/env/verifyEnv.ts`, PR #12)
 - [x] Production consumer price throw-guard: `resolveConsumerPriceId` throws when unset in `VERCEL_ENV=production` (verify: `lib/billing/stripePrices.ts:99-110`, PR #4)
-- [x] Silent test-price **runtime seatbelt** (code pair above) — live `?live=1` clean report still required after dashboard fixes below
+- [x] **Live prod attestation:** `GET /api/admin/verify-env?live=1` on `www.mywealthmaps.com` → `missing` empty, `liveness.stripe: LIVE_OK`, **11/11** live prices `active` (6 consumer + 3 advisor + 2 attorney) (attest: Al / 2026-06-15)
 
-**Vercel / Stripe dashboard (ops — still open):**
+**What `verify-env?live=1` proves:** live Stripe key mode, every configured price ID is real, active, and wired in Vercel Production env.
 
-- [ ] Live keys in Vercel Production (`sk_live_` / `pk_live_` / live `whsec_`) (attest: __ / __)
-- [ ] Live catalog: 6 consumer + attorney starter/growth (+ advisor firm seats if billing firms at launch) (attest: __ / __)
-- [ ] Live price IDs in env (`STRIPE_PRICE_*`, `STRIPE_PRICE_ATTORNEY_*`, `STRIPE_PRICE_ADVISOR_*`) populated in Vercel Production (attest: __ / __)
-- [ ] Vercel dashboard fixes: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed; declare `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA`, `EMAIL_FROM`; delete dead vars (`STRIPE_CUSTOMER_PORTAL_URL`, `RESEND_WEBHOOK_SECRET` if present) (attest: __ / __)
-- [ ] Gate-2 pre-check: `GET /api/admin/verify-env?live=1` → `missing: []`, liveness green — **only after dashboard fixes**; record attestation when actually clean (attest: __ / __)
+**What it does not prove:** a customer can complete checkout end-to-end — only a real charge exercises the live webhook path that activates a subscription. That remains the real-card smoke below.
+
+**Ops — still open (human / card-required):**
+
+- [ ] Vercel dashboard housekeeping: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed; declare `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA`, `EMAIL_FROM`; delete dead vars (`STRIPE_CUSTOMER_PORTAL_URL`, `RESEND_WEBHOOK_SECRET` if present) (attest: __ / __)
 - [ ] C-4 manual walkthrough on prod: signup → checkout → active → cancel → deletion schedule — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (attest: __ / __)
-- [ ] One real-card live smoke, smallest tier, refund/cancel after verify (attest: __ / __)
+- [ ] One real-card live smoke, smallest tier, refund/cancel after verify — **only item that proves live billing E2E** (attest: __ / __)
 
 ### B6. Legal / entity (ops-attested, ex-tax)
 
@@ -156,7 +156,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 ### Gate 2 — Go-live day sequence (in order)
 
 1. Verify Bucket B — every checkbox above is checked
-2. **Env pre-check (after B5 dashboard fixes):** `GET /api/admin/verify-env?live=1` with `x-admin-token` → `missing: []`, liveness green — attest only when actually clean
+2. **Env pre-check:** `GET /api/admin/verify-env?live=1` with `x-admin-token` → `missing` empty, `liveness.stripe: LIVE_OK`, all live prices `active` — **attested Al / 2026-06-15**; re-run before flip if env changes
 3. Supabase Auth → confirm email-confirm flow is ON for production project
 4. Verify `/auth/callback` works on production (sign in with existing account)
 5. Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production environment variables
@@ -276,9 +276,9 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 |------|--------|
 | B1 prod smoke optional passes | Set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` (live `whsec_`) in `.env.test.prod`; enable Upstash on Vercel for 429 test |
 | B3 branch protection (`verify` + `e2e-smoke` + `rls-verify`) | Done — [PR #8](https://github.com/Voels2000/estate-planner/pull/8) merged 2026-06-14; staging-only secrets; green on PRs #9–#10 |
-| B5 Vercel Stripe env names | `vercel env ls production` |
+| B5 Vercel Stripe env names | Done — `verify-env?live=1` clean (Al / 2026-06-15); real-card smoke still open |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
-**Still open — attest (Al):** B4 all 5 manual smokes · B5 Vercel dashboard fixes + clean `verify-env?live=1` + C-4/card smoke · B6 counsel/LLC/bank/B&O/email.
+**Still open — attest (Al):** B4 irreducible only (BCC inbox, drip cron 2/3, fresh-prod-signup AT-FLIP) · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel/LLC/bank/B&O/email.
 
 **B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.
