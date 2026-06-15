@@ -31,7 +31,7 @@ export const HOUSEHOLD_SCOPED_TABLES = [
 
 export type HouseholdScopedTable = (typeof HOUSEHOLD_SCOPED_TABLES)[number]
 
-/** Subset exercised on every verify:rls JWT run (high-value PII / strategy paths). */
+/** High-value subset for docs / quick smoke references (verify:rls checks all HOUSEHOLD_SCOPED_TABLES). */
 export const HOUSEHOLD_SCOPED_RLS_SPOT_CHECK: readonly HouseholdScopedTable[] = [
   'gift_history',
   'strategy_line_items',

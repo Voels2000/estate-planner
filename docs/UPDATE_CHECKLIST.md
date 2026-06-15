@@ -518,6 +518,14 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Go-live precheck: enable `RLS_VERIFY_IN_CI` alongside `E2E_SMOKE_IN_CI` ([GO_LIVE_E2E.md](./GO_LIVE_E2E.md))
 - [x] Master docs: COMPETITIVE_SCAN · NEXT_SESSION · UPDATE_CHECKLIST · GO_LIVE_E2E · LAUNCH_CHECKLIST
 
+## Pre-launch FOR ALL RLS leak + negative authz (2026-06-15) — shipped
+
+- [x] Migrations `20260713130000` · `20260713140000` · `20260713150000` — FOR ALL cross-tenant leak on health scores / alerts / beneficiary conflicts; businesses WITH CHECK; share-link RPC; funnel/referral service_role grants
+- [x] `scripts/assert-rls-coverage.sql` + hardfail — structural gate in `verify:rls` (27/27)
+- [x] `docs/NEGATIVE_AUTHZ_TEST_PLAN.md` · `lib/authz/householdScopedTables.ts` · revoked-link E2E · `attorneyClientCap` unit test
+- [x] DECISION_LOG (pre-launch timeline, zero prod exposure) · SCHEMA_CHANGELOG · audits/README · MIGRATION_TEMPLATE
+- [ ] **Ops:** apply three migrations on **production** after PR #21 merge; `npm run verify:rls -- --require-sql` post-deploy
+
 ## L3 RLS post-migration verify (2026-06-07) — shipped
 
 - [x] `scripts/verify-rls-invariants.sql` — 5 SQL invariant checks (0 rows = pass)

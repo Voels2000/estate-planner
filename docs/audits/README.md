@@ -50,6 +50,8 @@ npm run verify:rls
 
 **SQL invariants:** `scripts/verify-rls-invariants.sql` — expect **zero rows** (same loose-policy tables as `verify-loose-rls-policies.sql`).
 
+**Structural coverage gate:** `scripts/assert-rls-coverage.sql` — tenant-scoped tables (any `household_id` / `user_id` / `owner_id` / link column) must not have missing RLS, zero policies, permissive `USING (true)` reachable by JWT roles, or service-role-named policies not granted `TO service_role`. Hard-fail wrapper: `scripts/assert-rls-coverage-hardfail.sql`. Both run via `npm run verify:rls` when `SUPABASE_DB_URL` is set. Expect **27/27** on post-`20260713150000` schema.
+
 ## New migrations
 
 Use [supabase/MIGRATION_TEMPLATE.sql](../../supabase/MIGRATION_TEMPLATE.sql) — explicit `GRANT` + RLS block in every new table migration.

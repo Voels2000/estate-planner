@@ -2,7 +2,7 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import { createClient } from '@supabase/supabase-js'
 import postgres from 'postgres'
-import { HOUSEHOLD_SCOPED_RLS_SPOT_CHECK } from '@/lib/authz/householdScopedTables'
+import { HOUSEHOLD_SCOPED_TABLES } from '@/lib/authz/householdScopedTables'
 import { E2E_IDENTITIES } from '@/scripts/e2e-test-identities'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findUserIdByEmail, initSupabaseEnv } from '@/scripts/seed-e2e-lib'
@@ -10,6 +10,14 @@ import { findUserIdByEmail, initSupabaseEnv } from '@/scripts/seed-e2e-lib'
 export type RlsCheck = { id: string; pass: boolean; detail: string }
 
 const INVARIANTS_SQL_PATH = join(process.cwd(), 'scripts/verify-rls-invariants.sql')
+const COVERAGE_SQL_PATH = join(process.cwd(), 'scripts/assert-rls-coverage.sql')
+
+const BLOCKING_COVERAGE_VIOLATIONS = new Set([
+  'MISSING_RLS',
+  'NO_POLICY',
+  'PERMISSIVE_POLICY',
+  'NAME_ROLE_MISMATCH',
+])
 
 export type RunRlsVerificationOptions = {
   dbUrl?: string
@@ -51,6 +59,51 @@ export async function runSqlRlsInvariants(dbUrl: string): Promise<RlsCheck[]> {
       pass: false,
       detail: details.slice(0, 8).join('; ') + (details.length > 8 ? ` (+${details.length - 8} more)` : ''),
     }))
+  } finally {
+    await db.end({ timeout: 5 })
+  }
+}
+
+type RlsCoverageRow = {
+  table_name: string
+  violation: string
+  policyname: string | null
+  detail: string | null
+}
+
+function formatCoverageRow(row: RlsCoverageRow): string {
+  const policy = row.policyname ? `:${row.policyname}` : ''
+  const extra = row.detail ? ` ${row.detail}` : ''
+  return `${row.table_name}/${row.violation}${policy}${extra}`
+}
+
+export async function runSqlRlsCoverage(dbUrl: string): Promise<RlsCheck[]> {
+  const sql = readFileSync(COVERAGE_SQL_PATH, 'utf8')
+  const db = postgres(dbUrl, { max: 1, idle_timeout: 5, connect_timeout: 15 })
+
+  try {
+    const rows = await db.unsafe<RlsCoverageRow[]>(sql)
+    const blocking = rows.filter((r) => BLOCKING_COVERAGE_VIOLATIONS.has(r.violation))
+
+    if (blocking.length === 0) {
+      return [
+        {
+          id: 'rls_coverage_gate',
+          pass: true,
+          detail: 'Structural RLS coverage gate passed (0 violations)',
+        },
+      ]
+    }
+
+    const preview = blocking.slice(0, 8).map(formatCoverageRow).join('; ')
+    const suffix = blocking.length > 8 ? ` (+${blocking.length - 8} more)` : ''
+    return [
+      {
+        id: 'rls_coverage_gate',
+        pass: false,
+        detail: `${blocking.length} violation(s): ${preview}${suffix}`,
+      },
+    ]
   } finally {
     await db.end({ timeout: 5 })
   }
@@ -183,7 +236,7 @@ export async function runBehavioralRlsChecks(options: {
     (anonViewRows?.length ?? 0) === 0
 
   const householdTableChecks: RlsCheck[] = []
-  for (const table of HOUSEHOLD_SCOPED_RLS_SPOT_CHECK) {
+  for (const table of HOUSEHOLD_SCOPED_TABLES) {
     const { data, error } = await userClient
       .from(table)
       .select('household_id')
@@ -255,17 +308,28 @@ export async function runRlsVerification(
 
   if (dbUrl) {
     checks.push(...(await runSqlRlsInvariants(dbUrl)))
+    checks.push(...(await runSqlRlsCoverage(dbUrl)))
   } else if (requireSql) {
     checks.push({
       id: 'sql_invariants',
       pass: false,
       detail: 'SUPABASE_DB_URL or DATABASE_URL required for SQL RLS invariants',
     })
+    checks.push({
+      id: 'rls_coverage_gate',
+      pass: false,
+      detail: 'SUPABASE_DB_URL or DATABASE_URL required for structural RLS coverage gate',
+    })
   } else {
     checks.push({
       id: 'sql_invariants',
       pass: true,
       detail: 'Skipped — set SUPABASE_DB_URL or DATABASE_URL to run SQL invariants',
+    })
+    checks.push({
+      id: 'rls_coverage_gate',
+      pass: true,
+      detail: 'Skipped — set SUPABASE_DB_URL or DATABASE_URL to run structural RLS coverage gate',
     })
   }
 
