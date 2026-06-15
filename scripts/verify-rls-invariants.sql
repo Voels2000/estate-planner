@@ -77,4 +77,20 @@ WHERE n.nspname = 'public'
       AND p.tablename = c.relname
   )
 
+UNION ALL
+
+-- 6. Public views must not be granted to anon/authenticated (internal aggregation only)
+SELECT 'view_public_api_grant' AS check_id,
+       g.table_name || ' → ' || g.grantee AS detail
+FROM information_schema.role_table_grants g
+WHERE g.table_schema = 'public'
+  AND g.grantee IN ('anon', 'authenticated')
+  AND g.privilege_type = 'SELECT'
+  AND EXISTS (
+    SELECT 1
+    FROM pg_views v
+    WHERE v.schemaname = 'public'
+      AND v.viewname = g.table_name
+  )
+
 ORDER BY check_id, detail;
