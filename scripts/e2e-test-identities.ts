@@ -113,6 +113,7 @@ export const LEGACY_E2E_EMAILS = [
 export function buildEnvTestFileLines(opts: {
   baseUrl: string
   householdId: string
+  advisorClientHouseholdId?: string
   supabaseServiceRoleKey?: string
   supabaseAnonKey?: string
 }): string {
@@ -144,6 +145,12 @@ export function buildEnvTestFileLines(opts: {
     `SEED_ADVISOR_EMAIL=${E2E_IDENTITIES.advisor.email}`,
     `SEED_CLIENT_EMAIL=${E2E_IDENTITIES.advisorClient.email}`,
   ]
+  if (opts.advisorClientHouseholdId) {
+    lines.push(
+      '',
+      `PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID=${opts.advisorClientHouseholdId}`,
+    )
+  }
   if (opts.supabaseAnonKey) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
     if (supabaseUrl) {

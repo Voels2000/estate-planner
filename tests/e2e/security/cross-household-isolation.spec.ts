@@ -9,6 +9,7 @@ import {
   fetchAdvisorClientHouseholdId,
   fetchHouseholdIdByOwnerEmail,
 } from '../helpers/e2e-households'
+import { findUserIdByEmail, initSupabaseEnv } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
 
 const API_TIMEOUT_MS = 30_000
@@ -26,6 +27,8 @@ test.describe.configure({ mode: 'serial' })
 
 let consumerHouseholdId: string
 let advisorClientHouseholdId: string
+let consumerOwnerUserId: string
+let advisorClientOwnerUserId: string
 
 test.beforeAll(async ({}, testInfo) => {
   const canAdminLookup =
@@ -51,6 +54,12 @@ test.beforeAll(async ({}, testInfo) => {
     return
   }
   expect(consumerHouseholdId).not.toBe(advisorClientHouseholdId)
+
+  if (canAdminLookup) {
+    initSupabaseEnv()
+    consumerOwnerUserId = (await findUserIdByEmail(E2E_IDENTITIES.consumer.email)) ?? ''
+    advisorClientOwnerUserId = (await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)) ?? ''
+  }
 })
 
 test.describe('@production', () => {
@@ -113,6 +122,15 @@ test.describe('Advisor isolation', () => {
     )
     expectAccessDenied(res.status())
   })
+
+  test('GET client-export-payload for unlinked consumer owner returns 404', async ({ request }) => {
+    test.skip(!consumerOwnerUserId, 'consumer owner user id unavailable')
+    const res = await request.get(
+      `/api/advisor/client-export-payload?clientId=${consumerOwnerUserId}`,
+      apiOpts(),
+    )
+    expectAccessDenied(res.status())
+  })
 })
 
 test.describe('Advisor access to linked client', () => {
@@ -124,6 +142,29 @@ test.describe('Advisor access to linked client', () => {
       data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
     })
     expect(res.ok(), await res.text()).toBeTruthy()
+  })
+})
+
+test.describe('Advisor-empty isolation (unlinked book)', () => {
+  test.use({ storageState: '.auth/advisor-empty.json' })
+
+  test('GET client-export-payload for linked client owner returns 404', async ({ request }) => {
+    test.skip(!advisorClientOwnerUserId, 'advisor-client owner user id unavailable')
+    const res = await request.get(
+      `/api/advisor/client-export-payload?clientId=${advisorClientOwnerUserId}`,
+      apiOpts(),
+    )
+    expectAccessDenied(res.status())
+  })
+
+  test('POST estate-composition on advisor client household returns 403 or 404', async ({
+    request,
+  }) => {
+    const res = await request.post('/api/estate-composition', {
+      ...apiOpts(),
+      data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
+    })
+    expectAccessDenied(res.status())
   })
 })
 })
