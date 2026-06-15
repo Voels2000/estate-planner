@@ -1,4 +1,8 @@
 import Stripe from 'stripe'
+import {
+  analyzeStripeWebhookEndpoints,
+  type StripeWebhookLiveness,
+} from '@/lib/env/stripeWebhookVerify'
 import { createClient } from '@supabase/supabase-js'
 import {
   ENV_MANIFEST,
@@ -16,7 +20,7 @@ export type VarStatus =
   | 'FORBIDDEN_IN_SCOPE'
   | 'NOT_APPLICABLE'
 
-export type FlagLevel = 'CRITICAL' | 'WARN' | 'REVIEW'
+export type FlagLevel = 'CRITICAL' | 'WARN' | 'REVIEW' | 'INFO'
 
 export interface EnvFlag {
   name: string
@@ -44,7 +48,10 @@ export interface EnvVerifyReport {
       price_id: string
       status: 'active' | 'missing' | 'inactive' | 'error' | 'skipped'
       reason?: string
+      tax_behavior?: 'inclusive' | 'exclusive' | 'unspecified' | null
     }>
+    stripe_webhook?: StripeWebhookLiveness
+    stripe_tax_note?: string
     supabase: 'LIVE_OK' | 'LIVE_FAIL'
     supabase_reason?: string
   }
@@ -267,8 +274,12 @@ async function verifyLiveStripePrices(
   env: EnvSource,
   stripe: Stripe,
   keyMode: ReturnType<typeof inferStripeKeyMode>,
-): Promise<NonNullable<EnvVerifyReport['liveness']>['stripe_prices']> {
+): Promise<{
+  rows: NonNullable<EnvVerifyReport['liveness']>['stripe_prices']
+  taxInfoFlags: EnvFlag[]
+}> {
   const rows: NonNullable<EnvVerifyReport['liveness']>['stripe_prices'] = []
+  const taxInfoFlags: EnvFlag[] = []
 
   if (keyMode !== 'live') {
     for (const envVar of LIVE_STRIPE_PRICE_ENV_VARS) {
@@ -279,7 +290,7 @@ async function verifyLiveStripePrices(
         reason: 'STRIPE_SECRET_KEY is not live mode',
       })
     }
-    return rows
+    return { rows, taxInfoFlags }
   }
 
   for (const envVar of LIVE_STRIPE_PRICE_ENV_VARS) {
@@ -299,15 +310,28 @@ async function verifyLiveStripePrices(
     }
     try {
       const price = await stripe.prices.retrieve(priceId)
+      const taxBehavior = price.tax_behavior ?? null
       if (!price.active) {
         rows.push({
           env_var: envVar,
           price_id: priceId,
           status: 'inactive',
           reason: 'Stripe price exists but is not active',
+          tax_behavior: taxBehavior,
         })
       } else {
-        rows.push({ env_var: envVar, price_id: priceId, status: 'active' })
+        rows.push({
+          env_var: envVar,
+          price_id: priceId,
+          status: 'active',
+          tax_behavior: taxBehavior,
+        })
+        taxInfoFlags.push({
+          name: envVar,
+          level: 'INFO',
+          reason: `tax_behavior=${taxBehavior ?? 'unspecified'} (WA B&O SaaS ruling pending — verifier reports only, does not assert correct collection).`,
+          action: 'Confirm tax setting with tax advisor after B&O ruling; automatic_tax is set at Checkout Session, not on Price.',
+        })
       }
     } catch (err) {
       rows.push({
@@ -319,13 +343,36 @@ async function verifyLiveStripePrices(
     }
   }
 
-  return rows
+  return { rows, taxInfoFlags }
+}
+
+async function verifyLiveStripeWebhook(
+  stripe: Stripe,
+  keyMode: ReturnType<typeof inferStripeKeyMode>,
+): Promise<{
+  webhook?: StripeWebhookLiveness
+  flags: EnvFlag[]
+  liveFailReason?: string
+}> {
+  if (keyMode !== 'live') {
+    return { flags: [] }
+  }
+
+  const listed = await stripe.webhookEndpoints.list({ limit: 100 })
+  const endpoints = listed.data.map((ep) => ({
+    id: ep.id,
+    url: ep.url,
+    status: ep.status,
+    enabled_events: ep.enabled_events,
+  }))
+  return analyzeStripeWebhookEndpoints(endpoints)
 }
 
 async function runLivenessChecks(
   env: EnvSource,
   scope: EnvScope,
-): Promise<EnvVerifyReport['liveness']> {
+): Promise<{ liveness: EnvVerifyReport['liveness']; livenessFlags: EnvFlag[] }> {
+  const livenessFlags: EnvFlag[] = []
   const result: NonNullable<EnvVerifyReport['liveness']> = {
     stripe: 'LIVE_FAIL',
     stripe_key_mode: 'unset',
@@ -347,14 +394,31 @@ async function runLivenessChecks(
         const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' })
         await stripe.balance.retrieve()
         result.stripe = 'LIVE_OK'
-        result.stripe_prices = await verifyLiveStripePrices(env, stripe, keyMode)
-        const priceRows = result.stripe_prices ?? []
-        const badPrice = priceRows.find((p) =>
+
+        const { rows: priceRows, taxInfoFlags } = await verifyLiveStripePrices(env, stripe, keyMode)
+        result.stripe_prices = priceRows
+        livenessFlags.push(...taxInfoFlags)
+        if (keyMode === 'live') {
+          result.stripe_tax_note =
+            'tax_behavior per price is INFO-only; correct collection depends on pending WA B&O ruling. automatic_tax is Checkout Session config, not on Price.'
+        }
+
+        const badPrice = (priceRows ?? []).find((p) =>
           ['missing', 'inactive', 'error'].includes(p.status),
         )
         if (badPrice) {
           result.stripe = 'LIVE_FAIL'
           result.stripe_reason = `Stripe price ${badPrice.env_var}: ${badPrice.reason ?? badPrice.status}`
+        }
+
+        const webhookCheck = await verifyLiveStripeWebhook(stripe, keyMode)
+        if (webhookCheck.webhook) {
+          result.stripe_webhook = webhookCheck.webhook
+        }
+        livenessFlags.push(...webhookCheck.flags)
+        if (webhookCheck.liveFailReason && result.stripe === 'LIVE_OK') {
+          result.stripe = 'LIVE_FAIL'
+          result.stripe_reason = webhookCheck.liveFailReason
         }
       } catch (err) {
         result.stripe_reason =
@@ -383,7 +447,7 @@ async function runLivenessChecks(
       err instanceof Error ? err.message : 'Supabase query failed'
   }
 
-  return result
+  return { liveness: result, livenessFlags }
 }
 
 export async function verifyEnvironment(options?: {
@@ -427,7 +491,10 @@ export async function verifyEnvironment(options?: {
   }
 
   if (options?.live) {
-    report.liveness = await runLivenessChecks(env, scope)
+    const { liveness, livenessFlags } = await runLivenessChecks(env, scope)
+    report.liveness = liveness
+    flags.push(...livenessFlags)
+    report.summary.flags = flags.length
   }
 
   return report
