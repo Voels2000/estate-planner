@@ -15,9 +15,11 @@ import {
 } from '../../lib/estate/waRegime'
 import {
   calculateStateEstateTax,
+  calculateStateEstateTaxProjectionAware,
   computeBypassFundingAmount,
   resolveActiveStateTax,
   resolveStateTaxForDeathPhase,
+  resolveSurvivorGrossAtSecondDeath,
 } from '../../lib/calculations/stateEstateTax'
 import { mapAndResolveStateEstateBrackets } from '../../lib/estate/resolveStateEstateBrackets'
 import {
@@ -200,5 +202,116 @@ test.describe('WA DOR Table W (eff. 2026-07-01)', () => {
     expect(result.taxableEstateWithCST).toBe(6_000_000)
     expect(result.stateTaxWithCST).toBe(910_000)
     expect(result.cstBenefit).toBe(580_000)
+  })
+})
+
+test.describe('WA projection-aware CST (growth between deaths)', () => {
+  const brackets = waRegimeToStateBrackets(WA_REGIME_D)
+  const voelsGrossAtSecondDeath = 9_806_626
+  const grossAtFirstDeath = 8_000_000
+  const growthRate = 0.07
+
+  test('survivor gross compounds CST at asset growth rate when years are known', () => {
+    const { survivorGross, bypassFundingAtFirstDeath, cstValueAtSecondDeath } =
+      resolveSurvivorGrossAtSecondDeath({
+        grossAtFirstDeath,
+        grossAtSecondDeath: voelsGrossAtSecondDeath,
+        exemption: 3_000_000,
+        yearsBetweenDeaths: 10,
+        assetGrowthRate: growthRate,
+      })
+    expect(bypassFundingAtFirstDeath).toBe(3_000_000)
+    expect(cstValueAtSecondDeath).toBeCloseTo(5_901_454, 0)
+    expect(survivorGross).toBeCloseTo(3_905_172, 0)
+  })
+
+  test('Voels-scale projection (10yr @ 7%) — with-CST tax below snapshot, benefit above $544,199', () => {
+    const snapshot = calculateStateEstateTax(voelsGrossAtSecondDeath, 'WA', brackets, true)
+    const projection = calculateStateEstateTaxProjectionAware(
+      voelsGrossAtSecondDeath,
+      'WA',
+      brackets,
+      true,
+      { grossAtFirstDeath, yearsBetweenDeaths: 10, assetGrowthRate: growthRate },
+    )
+
+    expect(snapshot.stateTax).toBe(1_063_259)
+    expect(snapshot.stateTaxWithCST).toBe(519_060)
+    expect(snapshot.cstBenefit).toBe(544_199)
+
+    expect(projection.stateTax).toBe(1_063_259)
+    expect(projection.stateTaxWithCST).toBeLessThan(snapshot.stateTaxWithCST)
+    expect(projection.cstBenefit).toBeGreaterThan(snapshot.cstBenefit)
+    expect(projection.stateTaxWithCST).toBe(90_517)
+    expect(projection.cstBenefit).toBe(972_742)
+    expect(resolveActiveStateTax(projection, true)).toBe(90_517)
+  })
+
+  test('drawdown (G2 < G1) — CST does not shrink; survivor absorbs spend-down', () => {
+    const grossAtSecondDeath = 7_000_000
+    const firstDeath = 9_806_626
+    const { cstValueAtSecondDeath, bypassFundingAtFirstDeath } = resolveSurvivorGrossAtSecondDeath({
+      grossAtFirstDeath: firstDeath,
+      grossAtSecondDeath,
+      exemption: 3_000_000,
+      yearsBetweenDeaths: 15,
+      assetGrowthRate: growthRate,
+    })
+    expect(bypassFundingAtFirstDeath).toBe(3_000_000)
+    expect(cstValueAtSecondDeath).toBeGreaterThanOrEqual(bypassFundingAtFirstDeath)
+    expect(cstValueAtSecondDeath).toBe(7_000_000)
+
+    const projection = calculateStateEstateTaxProjectionAware(
+      grossAtSecondDeath,
+      'WA',
+      brackets,
+      true,
+      { grossAtFirstDeath: firstDeath, yearsBetweenDeaths: 15, assetGrowthRate: growthRate },
+    )
+    expect(projection.stateTax).toBe(550_000)
+    expect(projection.stateTaxWithCST).toBe(0)
+    expect(projection.cstBenefit).toBe(550_000)
+  })
+
+  test('funding cap at G1 then grow — capped $2M funds to $4.52M CST, survivor below exemption', () => {
+    const grossAtFirstDeathCapped = 5_500_000
+    const grossAtSecondDeathCapped = 7_000_000
+    const firstSpouseShare = 2_000_000
+    const snapshot = calculateStateEstateTax(grossAtSecondDeathCapped, 'WA', brackets, true, false, {
+      firstSpouseShare,
+    })
+    const projection = calculateStateEstateTaxProjectionAware(
+      grossAtSecondDeathCapped,
+      'WA',
+      brackets,
+      true,
+      {
+        grossAtFirstDeath: grossAtFirstDeathCapped,
+        yearsBetweenDeaths: 12,
+        assetGrowthRate: growthRate,
+      },
+      { firstSpouseShare },
+    )
+
+    expect(snapshot.bypassFundingAmount).toBe(2_000_000)
+    expect(snapshot.stateTaxWithCST).toBe(240_000)
+
+    expect(projection.bypassFundingAmount).toBe(2_000_000)
+    expect(projection.stateTax).toBe(550_000)
+    expect(projection.stateTaxWithCST).toBe(0)
+    expect(projection.cstBenefit).toBe(550_000)
+    expect(projection.cstBenefit).toBeGreaterThan(snapshot.cstBenefit)
+  })
+
+  test('falls back to snapshot when first-death gross is missing', () => {
+    const snapshot = calculateStateEstateTax(voelsGrossAtSecondDeath, 'WA', brackets, true)
+    const fallback = calculateStateEstateTaxProjectionAware(
+      voelsGrossAtSecondDeath,
+      'WA',
+      brackets,
+      true,
+      { grossAtFirstDeath: 0 },
+    )
+    expect(fallback).toEqual(snapshot)
   })
 })

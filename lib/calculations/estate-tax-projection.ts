@@ -12,6 +12,8 @@
 import type { YearRow } from '@/lib/calculations/projection-complete'
 import {
   calculateStateEstateTax,
+  calculateStateEstateTaxProjectionAware,
+  isMFJFilingStatus,
   resolveActiveStateTax,
 } from '@/lib/calculations/stateEstateTax'
 import {
@@ -75,11 +77,13 @@ export function computeEstateTaxProjection(
   stateCode?: string,
   hasBypassTrust?: boolean,
   federalBrackets: EstateTaxBracket[] = [],
+  assetGrowthRatePct = 7,
 ): {
   s1_first: DeathSequenceOutput
   s2_first: DeathSequenceOutput | null
 } {
-  const isMarried = hasSpouse && filingStatus === 'mfj'
+  const isMarried = hasSpouse && isMFJFilingStatus(filingStatus)
+  const assetGrowthRate = assetGrowthRatePct / 100
   const exemptionIndividual = config.estate_exemption_individual
   const topRate = config.estate_top_rate_pct / 100
   const _stateCode = stateCode ?? ''
@@ -106,6 +110,7 @@ export function computeEstateTaxProjection(
     sequence: 'S1_first',
     federalBrackets,
     filingStatus,
+    assetGrowthRate,
   })
 
   // -- S2 first sequence (person 2 dies first) -- only for married ----------
@@ -124,6 +129,7 @@ export function computeEstateTaxProjection(
           sequence: 'S2_first',
           federalBrackets,
           filingStatus,
+          assetGrowthRate,
         })
       : null
 
@@ -143,6 +149,7 @@ function computeSequence({
   sequence,
   federalBrackets,
   filingStatus,
+  assetGrowthRate,
 }: {
   rows: YearRow[]
   firstDeathYear: number
@@ -156,6 +163,7 @@ function computeSequence({
   sequence: 'S1_first' | 'S2_first' | 'single'
   federalBrackets: EstateTaxBracket[]
   filingStatus: string
+  assetGrowthRate: number
 }): DeathSequenceOutput {
   let dsue_amount = 0
   const outputRows: EstateTaxYearRow[] = []
@@ -214,18 +222,33 @@ function computeSequence({
         federalBrackets,
         filingStatus,
       )
+      const firstDeathGross =
+        rows.find((r) => r.year === firstDeathYear)?.estate_incl_home ?? 0
+      const yearsBetweenDeaths =
+        secondDeathYear != null ? Math.max(0, secondDeathYear - firstDeathYear) : 0
+      const stateResult =
+        isMarried && firstDeathGross > 0
+          ? calculateStateEstateTaxProjectionAware(
+              grossEstate,
+              stateCode,
+              stateBrackets,
+              true,
+              {
+                grossAtFirstDeath: firstDeathGross,
+                yearsBetweenDeaths,
+                assetGrowthRate,
+              },
+            )
+          : calculateStateEstateTax(
+              grossEstate,
+              stateCode,
+              stateBrackets,
+              isMarried,
+              false,
+            )
       estate_tax_state =
         taxable_estate > 0
-          ? resolveActiveStateTax(
-              calculateStateEstateTax(
-                grossEstate,
-                stateCode,
-                stateBrackets,
-                false,
-                false,
-              ),
-              hasBypassTrust,
-            )
+          ? resolveActiveStateTax(stateResult, hasBypassTrust)
           : 0
       exemption_used = Math.min(grossEstate, exemption)
     }

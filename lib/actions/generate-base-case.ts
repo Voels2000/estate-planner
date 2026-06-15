@@ -247,6 +247,7 @@ export async function generateBaseCase(householdId: string): Promise<{
       stateCodeForProjection,
       hasBypassTrustForProjection,
       federalBrackets,
+      household.growth_rate_accumulation ?? 7,
     )
 
     // Build assumption snapshot

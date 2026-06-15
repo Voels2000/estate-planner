@@ -117,6 +117,7 @@ export function buildAdvisorStrategyViewModels(params: {
     stateBrackets: params.stateBrackets,
     federalBrackets: params.federalBrackets,
     lifetimeGiftsUsed,
+    assetGrowthRatePct: Number(params.assumptionSnapshot.growth_rate_accumulation ?? 7) || 7,
     household: {
       state_primary: params.household.state_primary,
       filing_status: params.household.filing_status,
@@ -142,6 +143,7 @@ export function buildAdvisorStrategyViewModels(params: {
     stateBrackets: params.stateBrackets,
     federalBrackets: params.federalBrackets,
     lifetimeGiftsUsed,
+    assetGrowthRatePct: Number(params.assumptionSnapshot.growth_rate_accumulation ?? 7) || 7,
     household: {
       state_primary: params.household.state_primary,
       filing_status: params.household.filing_status,
