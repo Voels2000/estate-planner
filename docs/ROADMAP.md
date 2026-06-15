@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-10 (pricing surfaces alignment + firm seat billing)
+# Last updated: 2026-06-15 (pre-launch: B4 gate, launch tracker, deletion hardening)
 
 ---
 
@@ -18,6 +18,21 @@
 ---
 
 ## Current sprint
+
+### Pre-launch engineering — B4 gate, security IDOR, launch tracker `[x]` **shipped (2026-06-15)**
+
+| Item | Status | Entry point |
+|------|--------|-------------|
+| B4 app-logic E2E (`test:e2e:b4-gate` / `b4-deep`) | `[x]` | PR #12 · stale-score UI |
+| B5 `verify-env?live=1` + webhook event verifier | `[x]` | PR #15 · `lib/env/stripeWebhookVerify.ts` |
+| `lifetime_exemption_summary` IDOR closed | `[x]` | PR #16 · prod migration |
+| Launch tracker v4 + LAUNCH.md sync | `[x]` | `tools/launch-tracker-app.jsx` · `npm run sync:launch-tracker` |
+| `deleteUser` schema drift (loud skip / abort) | `[x]` | `lib/compliance/deleteUserSchema.ts` |
+| E2E advisor-client `asset_beneficiaries` seed + verify | `[x]` | `seedE2eAdvisorClientHousehold()` · `verifyE2eAccounts()` |
+
+**Launch status:** [LAUNCH.md](./LAUNCH.md) — **44 of 55** Bucket B checked. P0: real-card smoke, B&O ruling.
+
+---
 
 ### Sprint — Pricing surfaces alignment + firm seat billing `[x]` **shipped (2026-06-10)**
 

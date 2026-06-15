@@ -621,65 +621,75 @@ export async function seedE2eAdvisorClientHousehold(
   }
 
   await admin.from('assets').delete().eq('owner_id', clientUserId)
-  const { error: assetErr } = await admin.from('assets').insert([
-    {
-      owner_id: clientUserId,
-      owner: 'person1',
-      type: 'traditional_401k',
-      asset_type: 'traditional_401k',
-      name: 'Fidelity 401(k) — Morgan',
-      value: 920_000,
-      account_type: '401k',
-      institution: 'Fidelity',
-      is_taxable: false,
-    },
-    {
-      owner_id: clientUserId,
-      owner: 'person2',
-      type: 'traditional_ira',
-      asset_type: 'traditional_ira',
-      name: 'Vanguard Traditional IRA — Riley',
-      value: 340_000,
-      account_type: 'ira',
-      institution: 'Vanguard',
-      is_taxable: false,
-    },
-    {
-      owner_id: clientUserId,
-      owner: 'person1',
-      type: 'roth_ira',
-      asset_type: 'roth_ira',
-      name: 'Roth IRA — Morgan',
-      value: 185_000,
-      account_type: 'roth_ira',
-      institution: 'Charles Schwab',
-      is_taxable: false,
-    },
-    {
-      owner_id: clientUserId,
-      owner: 'joint',
-      type: 'taxable_brokerage',
-      asset_type: 'taxable_brokerage',
-      name: 'Joint brokerage',
-      value: 410_000,
-      account_type: 'brokerage',
-      institution: 'Morgan Stanley',
-      is_taxable: true,
-    },
-    {
-      owner_id: clientUserId,
-      owner: 'joint',
-      type: 'taxable_brokerage',
-      asset_type: 'taxable_brokerage',
-      name: 'Cash & equivalents',
-      value: 95_000,
-      account_type: 'savings',
-      institution: 'Ally Bank',
-      is_taxable: true,
-    },
-  ])
-  if (assetErr) console.warn('  advisor client assets:', assetErr.message)
-  else console.log('  advisor client assets: seeded 5 rows')
+  const { data: insertedAssets, error: assetErr } = await admin
+    .from('assets')
+    .insert([
+      {
+        owner_id: clientUserId,
+        owner: 'person1',
+        type: 'traditional_401k',
+        asset_type: 'traditional_401k',
+        name: 'Fidelity 401(k) — Morgan',
+        value: 920_000,
+        account_type: '401k',
+        institution: 'Fidelity',
+        is_taxable: false,
+      },
+      {
+        owner_id: clientUserId,
+        owner: 'person2',
+        type: 'traditional_ira',
+        asset_type: 'traditional_ira',
+        name: 'Vanguard Traditional IRA — Riley',
+        value: 340_000,
+        account_type: 'ira',
+        institution: 'Vanguard',
+        is_taxable: false,
+      },
+      {
+        owner_id: clientUserId,
+        owner: 'person1',
+        type: 'roth_ira',
+        asset_type: 'roth_ira',
+        name: 'Roth IRA — Morgan',
+        value: 185_000,
+        account_type: 'roth_ira',
+        institution: 'Charles Schwab',
+        is_taxable: false,
+      },
+      {
+        owner_id: clientUserId,
+        owner: 'joint',
+        type: 'taxable_brokerage',
+        asset_type: 'taxable_brokerage',
+        name: 'Joint brokerage',
+        value: 410_000,
+        account_type: 'brokerage',
+        institution: 'Morgan Stanley',
+        is_taxable: true,
+      },
+      {
+        owner_id: clientUserId,
+        owner: 'joint',
+        type: 'taxable_brokerage',
+        asset_type: 'taxable_brokerage',
+        name: 'Cash & equivalents',
+        value: 95_000,
+        account_type: 'savings',
+        institution: 'Ally Bank',
+        is_taxable: true,
+      },
+    ])
+    .select('id, name, account_type')
+  if (assetErr) throw new Error(`advisor client assets: ${assetErr.message}`)
+  console.log(`  advisor client assets: seeded ${insertedAssets?.length ?? 0} rows`)
+
+  const fourOhOneK = insertedAssets?.find(
+    (a) => a.account_type === '401k' || a.name?.includes('401'),
+  )
+  if (!fourOhOneK?.id) {
+    throw new Error('advisor client assets: 401(k) row missing after insert — cannot seed beneficiaries')
+  }
 
   await admin.from('real_estate').delete().eq('owner_id', clientUserId)
   const { error: reErr } = await admin.from('real_estate').insert({
@@ -699,25 +709,43 @@ export async function seedE2eAdvisorClientHousehold(
   })
   if (reErr) console.warn('  advisor client real_estate:', reErr.message)
 
-  await admin.from('beneficiaries').delete().eq('owner_id', clientUserId)
-  await admin.from('beneficiaries').insert([
-    {
-      owner_id: clientUserId,
-      name: 'Alex Demo',
-      relationship: 'Child',
-      allocation_pct: 50,
-      account_type: '401k',
-      contingent: false,
-    },
-    {
-      owner_id: clientUserId,
-      name: 'Sam Demo',
-      relationship: 'Child',
-      allocation_pct: 50,
-      account_type: '401k',
-      contingent: false,
-    },
-  ])
+  await admin.from('asset_beneficiaries').delete().eq('owner_id', clientUserId)
+  const { data: beneRows, error: beneErr } = await admin
+    .from('asset_beneficiaries')
+    .insert([
+      {
+        owner_id: clientUserId,
+        asset_id: fourOhOneK.id,
+        full_name: 'Alex Demo',
+        relationship: 'Child',
+        allocation_pct: 50,
+        beneficiary_type: 'primary',
+      },
+      {
+        owner_id: clientUserId,
+        asset_id: fourOhOneK.id,
+        full_name: 'Sam Demo',
+        relationship: 'Child',
+        allocation_pct: 50,
+        beneficiary_type: 'primary',
+      },
+      {
+        owner_id: clientUserId,
+        asset_id: fourOhOneK.id,
+        full_name: 'Jordan Demo',
+        relationship: 'Sibling',
+        allocation_pct: 100,
+        beneficiary_type: 'contingent',
+      },
+    ])
+    .select('id')
+  if (beneErr) throw new Error(`advisor client asset_beneficiaries: ${beneErr.message}`)
+  if (!beneRows?.length || beneRows.length < 3) {
+    throw new Error(
+      `advisor client asset_beneficiaries: expected 3 rows, got ${beneRows?.length ?? 0}`,
+    )
+  }
+  console.log(`  advisor client asset_beneficiaries: seeded ${beneRows.length} rows on 401(k)`)
 
   await admin.from('estate_documents').delete().eq('owner_id', clientUserId)
   await admin.from('estate_documents').insert([
@@ -1117,6 +1145,23 @@ export async function verifyE2eAccounts(): Promise<void> {
     }
     if (account.role === 'advisor' && account.subscription_status === null) {
       issues.push(`${account.email}: subscription_status is null`)
+    }
+  }
+
+  const advisorClientId = await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)
+  if (advisorClientId) {
+    const { count, error: beneCountErr } = await admin
+      .from('asset_beneficiaries')
+      .select('*', { count: 'exact', head: true })
+      .eq('owner_id', advisorClientId)
+    if (beneCountErr) {
+      issues.push(
+        `${E2E_IDENTITIES.advisorClient.email}: asset_beneficiaries count failed — ${beneCountErr.message}`,
+      )
+    } else if (!count || count < 2) {
+      issues.push(
+        `${E2E_IDENTITIES.advisorClient.email}: asset_beneficiaries count ${count ?? 0} (expected >= 2)`,
+      )
     }
   }
 
