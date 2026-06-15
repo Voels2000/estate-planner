@@ -14,12 +14,13 @@ const setupTimeout = 120_000
 
 const projects: Project[] = [
   { name: 'advisor-setup', testMatch: /helpers\/advisor\.setup\.ts/, timeout: setupTimeout },
+  { name: 'advisor-empty-setup', testMatch: /helpers\/advisor-empty\.setup\.ts/, timeout: setupTimeout },
   { name: 'consumer-setup', testMatch: /helpers\/consumer\.setup\.ts/, timeout: setupTimeout },
   { name: 'attorney-setup', testMatch: /helpers\/attorney\.setup\.ts/, timeout: setupTimeout },
   { name: 'advisor-client-setup', testMatch: /helpers\/advisor-client\.setup\.ts/, timeout: setupTimeout },
   {
     name: 'security',
-    dependencies: ['consumer-setup', 'advisor-setup'],
+    dependencies: ['consumer-setup', 'advisor-setup', 'advisor-empty-setup'],
     testMatch: /security\/.*\.spec\.ts/,
   },
   {

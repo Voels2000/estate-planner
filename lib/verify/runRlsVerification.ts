@@ -2,6 +2,7 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import { createClient } from '@supabase/supabase-js'
 import postgres from 'postgres'
+import { HOUSEHOLD_SCOPED_RLS_SPOT_CHECK } from '@/lib/authz/householdScopedTables'
 import { E2E_IDENTITIES } from '@/scripts/e2e-test-identities'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findUserIdByEmail, initSupabaseEnv } from '@/scripts/seed-e2e-lib'
@@ -181,6 +182,34 @@ export async function runBehavioralRlsChecks(options: {
     Boolean(anonViewError) ||
     (anonViewRows?.length ?? 0) === 0
 
+  const householdTableChecks: RlsCheck[] = []
+  for (const table of HOUSEHOLD_SCOPED_RLS_SPOT_CHECK) {
+    const { data, error } = await userClient
+      .from(table)
+      .select('household_id')
+      .eq('household_id', foreignHouseholdId)
+      .limit(5)
+
+    if (error) {
+      householdTableChecks.push({
+        id: `behavioral_household_${table}`,
+        pass: true,
+        detail: `Consumer JWT denied on foreign ${table} (${error.message})`,
+      })
+      continue
+    }
+
+    const leakCount = data?.length ?? 0
+    householdTableChecks.push({
+      id: `behavioral_household_${table}`,
+      pass: leakCount === 0,
+      detail:
+        leakCount === 0
+          ? `Consumer JWT: 0 rows on foreign household in ${table}`
+          : `RLS leak: consumer read ${leakCount} row(s) from ${table} on household ${foreignHouseholdId}`,
+    })
+  }
+
   return [
     {
       id: 'behavioral_foreign_assets',
@@ -213,6 +242,7 @@ export async function runBehavioralRlsChecks(options: {
       pass: true,
       detail: `Consumer household ${consumerHouseholdId} configured for isolation baseline`,
     },
+    ...householdTableChecks,
   ]
 }
 

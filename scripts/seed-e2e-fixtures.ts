@@ -32,7 +32,7 @@ import {
   seedE2eAdvisorClientHousehold,
   seedE2eConsumerHousehold,
   seedE2eConsumerEnrichments,
-  findUserIdByEmail,
+  fetchHouseholdIdByOwnerId,
   verifyE2eAccounts,
 } from './seed-e2e-lib'
 
@@ -66,6 +66,7 @@ async function main() {
   let advisorId = ''
   let advisorEmptyId = ''
   let advisorClientUserId = ''
+  let advisorClientHouseholdId = ''
 
   if (run('consumer')) {
     console.log('1. Consumer (estate tier 3)')
@@ -131,6 +132,7 @@ async function main() {
       role: 'consumer',
     })
     await seedE2eAdvisorClientHousehold(advisorClientUserId, advisorId)
+    advisorClientHouseholdId = (await fetchHouseholdIdByOwnerId(advisorClientUserId)) ?? ''
     console.log('')
   }
 
@@ -171,6 +173,7 @@ async function main() {
   const envBlock = buildEnvTestFileLines({
     baseUrl,
     householdId,
+    advisorClientHouseholdId: advisorClientHouseholdId || undefined,
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   })

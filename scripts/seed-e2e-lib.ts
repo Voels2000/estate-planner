@@ -29,6 +29,16 @@ export async function findUserIdByEmail(email: string): Promise<string | null> {
   return match?.id ?? null
 }
 
+export async function fetchHouseholdIdByOwnerId(ownerId: string): Promise<string | null> {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('households')
+    .select('id')
+    .eq('owner_id', ownerId)
+    .maybeSingle()
+  return data?.id ?? null
+}
+
 export async function ensureAuthUser(opts: {
   email: string
   password: string

@@ -93,4 +93,27 @@ WHERE g.table_schema = 'public'
       AND v.viewname = g.table_name
   )
 
+UNION ALL
+
+-- 7. Any table with household_id must have RLS + at least one policy (see lib/authz/householdScopedTables.ts)
+SELECT 'household_id_table_missing_rls' AS check_id, s.table_name AS detail
+FROM (
+  SELECT c.relname AS table_name
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  JOIN pg_attribute a ON a.attrelid = c.oid
+  WHERE n.nspname = 'public'
+    AND c.relkind = 'r'
+    AND a.attname = 'household_id'
+    AND a.attnum > 0
+    AND NOT a.attisdropped
+) s
+JOIN pg_class c ON c.relname = s.table_name AND c.relnamespace = 'public'::regnamespace
+WHERE c.relrowsecurity = false
+   OR (
+     SELECT count(*)::int
+     FROM pg_policies p
+     WHERE p.schemaname = 'public' AND p.tablename = s.table_name
+   ) = 0
+
 ORDER BY check_id, detail;
