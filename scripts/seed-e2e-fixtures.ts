@@ -27,9 +27,11 @@ import {
   ensureAttorneyListingAndPortal,
   ensureAuthUser,
   ensureAdvisorFirmForE2e,
+  ensureAdvisorEmptyForE2e,
   initSupabaseEnv,
   seedE2eAdvisorClientHousehold,
   seedE2eConsumerHousehold,
+  seedE2eConsumerEnrichments,
   findUserIdByEmail,
   verifyE2eAccounts,
 } from './seed-e2e-lib'
@@ -58,17 +60,23 @@ async function main() {
   console.log('=== E2E fixture seed (go-live v2) ===\n')
 
   let householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID ?? ''
+  let consumerUserId = ''
+  let tier1HouseholdId = ''
+  let tier1UserId = ''
+  let advisorId = ''
+  let advisorEmptyId = ''
+  let advisorClientUserId = ''
 
   if (run('consumer')) {
     console.log('1. Consumer (estate tier 3)')
-    const userId = await ensureAuthUser({
+    consumerUserId = await ensureAuthUser({
       email: E2E_IDENTITIES.consumer.email,
       password: E2E_IDENTITIES.consumer.password,
       fullName: E2E_IDENTITIES.consumer.fullName,
       role: 'consumer',
     })
     householdId = await seedE2eConsumerHousehold(
-      userId,
+      consumerUserId,
       E2E_IDENTITIES.consumer.householdName,
       3,
     )
@@ -77,21 +85,20 @@ async function main() {
 
   if (run('tier1')) {
     console.log('2. Consumer tier-1 (upgrade gate tests)')
-    const tier1Id = await ensureAuthUser({
+    tier1UserId = await ensureAuthUser({
       email: E2E_IDENTITIES.consumerTier1.email,
       password: E2E_IDENTITIES.consumerTier1.password,
       fullName: E2E_IDENTITIES.consumerTier1.fullName,
       role: 'consumer',
     })
-    await seedE2eConsumerHousehold(
-      tier1Id,
+    tier1HouseholdId = await seedE2eConsumerHousehold(
+      tier1UserId,
       E2E_IDENTITIES.consumerTier1.householdName,
       1,
     )
     console.log('')
   }
 
-  let advisorId = ''
   if (run('advisor')) {
     console.log('3. Advisor portal + directory listing')
     advisorId = await ensureAuthUser({
@@ -117,18 +124,37 @@ async function main() {
 
   if (run('advisor') && !skipAdvisorClient && advisorId) {
     console.log('4. Advisor linked client (E2E advisor client household)')
-    const clientId = await ensureAuthUser({
+    advisorClientUserId = await ensureAuthUser({
       email: E2E_IDENTITIES.advisorClient.email,
       password: E2E_IDENTITIES.advisorClient.password,
       fullName: E2E_IDENTITIES.advisorClient.fullName,
       role: 'consumer',
     })
-    await seedE2eAdvisorClientHousehold(clientId, advisorId)
+    await seedE2eAdvisorClientHousehold(advisorClientUserId, advisorId)
+    console.log('')
+  }
+
+  if (run('advisor')) {
+    console.log('4b. Advisor empty (zero clients — playbook empty state)')
+    advisorEmptyId = await ensureAdvisorEmptyForE2e()
+    console.log('')
+  }
+
+  if (run('consumer') && householdId && consumerUserId && advisorId) {
+    console.log('5. Consumer enrichments (projections, pending rec, drip, low-score tier1)')
+    await seedE2eConsumerEnrichments({
+      consumerUserId,
+      consumerHouseholdId: householdId,
+      tier1HouseholdId: tier1HouseholdId || undefined,
+      primaryAdvisorId: advisorId || undefined,
+      tier1UserId: tier1UserId || undefined,
+      advisorClientUserId: advisorClientUserId || undefined,
+    })
     console.log('')
   }
 
   if (run('attorney')) {
-    console.log('5. Attorney listing + portal')
+    console.log('6. Attorney listing + portal')
     await ensureAttorneyListingAndPortal()
     console.log('')
   }
@@ -138,7 +164,7 @@ async function main() {
     process.exit(1)
   }
 
-  console.log('6. Verify E2E account state')
+  console.log('7. Verify E2E account state')
   await verifyE2eAccounts()
   console.log('')
 

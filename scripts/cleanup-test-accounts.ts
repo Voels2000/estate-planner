@@ -82,6 +82,7 @@ const CANONICAL_PROTECTED = [
   E2E_IDENTITIES.consumerTier1.email,
   E2E_IDENTITIES.goldenPathStage1.email,
   E2E_IDENTITIES.advisor.email,
+  E2E_IDENTITIES.advisorEmpty.email,
   E2E_IDENTITIES.advisorClient.email,
   E2E_IDENTITIES.attorneyPortal.email,
   E2E_IDENTITIES.advisorListing.email,

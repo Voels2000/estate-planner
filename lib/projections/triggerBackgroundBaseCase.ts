@@ -26,6 +26,7 @@ async function runBaseCaseAndRecompute(householdId: string): Promise<void> {
  */
 export function triggerBackgroundBaseCaseAndRecompute(householdId: string): void {
   if (!householdId) return
+  if (process.env.E2E_SKIP_RECOMPUTE === 'true') return
 
   const schedule = () => {
     const existing = debounceTimers.get(householdId)

@@ -48,6 +48,13 @@ export const E2E_IDENTITIES = {
     fullName: 'E2E Test Advisor',
     firmName: 'MWM E2E Advisory',
   },
+  /** Zero linked clients — playbook empty-state E2E; consumer link for pending recommendations. */
+  advisorEmpty: {
+    email: 'e2e-advisor-empty@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Empty Advisor',
+    firmName: 'MWM E2E Empty Advisory',
+  },
   /** Advisor-linked client — rich household for advisor workspace / RMD / domicile E2E */
   advisorClient: {
     email: 'e2e-advisor-client@mywealthmaps.test',
@@ -121,6 +128,9 @@ export function buildEnvTestFileLines(opts: {
     '',
     `PLAYWRIGHT_ADVISOR_EMAIL=${E2E_IDENTITIES.advisor.email}`,
     `PLAYWRIGHT_ADVISOR_PASSWORD=${E2E_IDENTITIES.advisor.password}`,
+    '',
+    `PLAYWRIGHT_ADVISOR_EMPTY_EMAIL=${E2E_IDENTITIES.advisorEmpty.email}`,
+    `PLAYWRIGHT_ADVISOR_EMPTY_PASSWORD=${E2E_IDENTITIES.advisorEmpty.password}`,
     '',
     `PLAYWRIGHT_ATTORNEY_EMAIL=${E2E_IDENTITIES.attorneyPortal.email}`,
     `PLAYWRIGHT_ATTORNEY_PASSWORD=${E2E_IDENTITIES.attorneyPortal.password}`,

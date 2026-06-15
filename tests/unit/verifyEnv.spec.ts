@@ -133,6 +133,23 @@ test.describe('Stripe liveness key mode', () => {
     expect(stripeKeyScopeMismatch('production', 'live')).toBeUndefined()
     expect(stripeKeyScopeMismatch('preview', 'test')).toBeUndefined()
   })
+
+  test('?live=1 with test Stripe key skips price retrieve (not live mode)', async () => {
+    const report = await verifyEnvironment({
+      live: true,
+      env: {
+        VERCEL_ENV: 'production',
+        STRIPE_SECRET_KEY: 'sk_test_fake_for_unit_test',
+        STRIPE_PRICE_FINANCIAL_MONTHLY: 'price_test_monthly',
+        NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'eyJfake',
+      },
+    })
+
+    expect(report.liveness?.stripe).toBe('LIVE_FAIL')
+    expect(report.liveness?.stripe_reason).toContain('test mode')
+    expect(report.liveness?.stripe_prices).toBeUndefined()
+  })
 })
 
 test.describe('verifier tuning — Supabase formats, canary, platform vars', () => {
