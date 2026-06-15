@@ -112,6 +112,38 @@ export function calcWaEstateTax(
   return calcWaTaxOnTaxableEstate(taxable, regime)
 }
 
+/** Bypass trust funded at first death — min(exemption, first-spouse share). */
+export function waBypassFundingAmount(
+  grossEstate: number,
+  firstSpouseShare?: number,
+  regime: WaRegime = WA_REGIME_D,
+): number {
+  const share = firstSpouseShare ?? grossEstate / 2
+  return Math.min(regime.exemption, Math.max(0, share))
+}
+
+/** Second-death WA tax with bypass/CST — taxable = max(0, (G − X) − exemption). */
+export function calcWaEstateTaxWithBypass(
+  grossEstate: number,
+  firstSpouseShare?: number,
+  regime: WaRegime = WA_REGIME_D,
+): number {
+  const funding = waBypassFundingAmount(grossEstate, firstSpouseShare, regime)
+  const survivorEstate = Math.max(0, grossEstate - funding)
+  return calcWaEstateTax(survivorEstate, 0, regime)
+}
+
+/** Snapshot planning benefit: without bypass minus with bypass (second death). */
+export function calcWaBypassPlanningBenefit(
+  grossEstate: number,
+  firstSpouseShare?: number,
+  regime: WaRegime = WA_REGIME_D,
+): number {
+  const without = calcWaEstateTax(grossEstate, 0, regime)
+  const withBypass = calcWaEstateTaxWithBypass(grossEstate, firstSpouseShare, regime)
+  return Math.max(0, without - withBypass)
+}
+
 export type WaStateEstateTaxRuleRow = {
   state: string
   tax_year: number

@@ -37,8 +37,20 @@ export type StateEstateTaxResult = {
   exemptionUsed: number
   /** Taxable estate in the no-CST calculation */
   taxableEstate: number
+  /** Taxable estate in the with-CST calculation (second death, survivor portion) */
+  taxableEstateWithCST: number
+  /** Amount funded into bypass/CST at first death (capped at min(exemption, first-spouse share)) */
+  bypassFundingAmount: number
   /** Effective rate = stateTax / grossEstate */
   effectiveRate: number
+}
+
+export type StateEstateTaxOptions = {
+  /**
+   * First-to-die spouse's share of combined estate at second death.
+   * WA community-property default: grossEstate / 2.
+   */
+  firstSpouseShare?: number
 }
 
 // ─── Modeled estate-tax states (brackets in `state_estate_tax_rules`) ─────────
@@ -158,12 +170,24 @@ function computeStateTaxForExemption(
   return { tax, nyCliffTriggered, taxableEstate: Math.round(taxableEstate) }
 }
 
+/** Bypass funding at first death — capped by first spouse's share (WA CP default: G/2). */
+export function computeBypassFundingAmount(
+  grossEstate: number,
+  exemption: number,
+  firstSpouseShare?: number,
+): number {
+  if (grossEstate <= 0 || exemption <= 0) return 0
+  const share = firstSpouseShare ?? grossEstate / 2
+  return Math.min(exemption, Math.max(0, share))
+}
+
 export function calculateStateEstateTax(
   grossEstate: number,
   stateCode: string,
   brackets: StateBracket[],
   isMFJ: boolean,
   hasCSTInPlace = false,
+  options?: StateEstateTaxOptions,
 ): StateEstateTaxResult {
   void hasCSTInPlace
 
@@ -178,6 +202,8 @@ export function calculateStateEstateTax(
       nyCliffTriggered: false,
       exemptionUsed: 0,
       taxableEstate: 0,
+      taxableEstateWithCST: 0,
+      bypassFundingAmount: 0,
       effectiveRate: 0,
     }
   }
@@ -188,10 +214,17 @@ export function calculateStateEstateTax(
   const exemptionNoCst = singleExemption
   const noCst = computeStateTaxForExemption(grossEstate, exemptionNoCst, brackets, code)
 
-  const exemptionWithCst = hasPortabilityGap ? singleExemption * 2 : singleExemption
-  const withCst = hasPortabilityGap
-    ? computeStateTaxForExemption(grossEstate, exemptionWithCst, brackets, code)
-    : noCst
+  let withCst = noCst
+  let bypassFundingAmount = 0
+  if (hasPortabilityGap) {
+    bypassFundingAmount = computeBypassFundingAmount(
+      grossEstate,
+      singleExemption,
+      options?.firstSpouseShare,
+    )
+    const survivorEstate = Math.max(0, grossEstate - bypassFundingAmount)
+    withCst = computeStateTaxForExemption(survivorEstate, singleExemption, brackets, code)
+  }
 
   const cstBenefit = Math.max(0, noCst.tax - withCst.tax)
   const effectiveRate = grossEstate > 0 ? noCst.tax / grossEstate : 0
@@ -204,6 +237,8 @@ export function calculateStateEstateTax(
     nyCliffTriggered: noCst.nyCliffTriggered,
     exemptionUsed: exemptionNoCst,
     taxableEstate: noCst.taxableEstate,
+    taxableEstateWithCST: withCst.taxableEstate,
+    bypassFundingAmount,
     effectiveRate,
   }
 }
