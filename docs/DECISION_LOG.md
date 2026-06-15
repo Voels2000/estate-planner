@@ -1,8 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-13 (two-DB steady state + env verifier + credential rule revision)
+# Last updated: 2026-06-15 (post-deploy Voels prod resolve)
 
 ---
+
+---
+
+## Post-deploy Voels verify — prod My Plan fallback (2026-06-15)
+
+**Decision:** `resolveVoelsPostDeployContext()` resolves Voels household at runtime: legacy consumer UUID → `avoels@outlook.com` → **`avoels@comcast.net` My Plan** (prod after go-live cleanup removed outlook). Hardcoded `5ea14f56…` is staging-only.
+
+**Prod steady state:** Post-deploy cron uses advisor household `23c8d2fb…`; PDF narrative check skipped on My Plan (403 without linked client — MC checks still run).
+
+**Override:** `VOELS_POST_DEPLOY_HOUSEHOLD_ID` env var.
 
 ---
 

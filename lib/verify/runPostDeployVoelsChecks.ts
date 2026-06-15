@@ -2,8 +2,13 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { runEstateMonteCarloAsync } from '@/lib/actions/run-estate-monte-carlo-async'
 import { loadScenarioMonteCarlo } from '@/lib/advisor/loadScenarioMonteCarlo'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import {
+  resolveVoelsPostDeployContext,
+  VOELS_CONSUMER_HOUSEHOLD_ID,
+} from '@/lib/verify/resolveVoelsPostDeployContext'
 
-export const VOELS_HOUSEHOLD_ID = '5ea14f56-e880-4992-87bc-0d815a450cdc'
+/** @deprecated Prefer resolveVoelsPostDeployContext — staging consumer household id */
+export const VOELS_HOUSEHOLD_ID = VOELS_CONSUMER_HOUSEHOLD_ID
 export const VOELS_SCENARIO_ID = '1da0c50f-de5f-4975-ae9a-f57242984962'
 export const VOELS_ADVISOR_ID = '854051be-3aac-4d43-8062-df414a7055e1'
 export const VOELS_CONSUMER_ID = 'dbff0d6c-4b8c-46f5-b8fc-5925b8e6bd93'
@@ -135,18 +140,35 @@ export async function runPostDeployVoelsChecks(
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
 
-  const { data: household } = await admin
-    .from('households')
-    .select('id, owner_id, state_primary, base_case_scenario_id, person1_name')
-    .eq('id', VOELS_HOUSEHOLD_ID)
-    .single()
-
-  if (!household) {
-    record('setup', false, 'Voels household not found')
+  const voels = await resolveVoelsPostDeployContext(admin)
+  if (!voels) {
+    record(
+      'setup',
+      false,
+      'Voels household not found (tried legacy id, avoels@outlook.com, avoels@comcast.net My Plan)',
+    )
     return checks
   }
 
-  const scenarioId = household.base_case_scenario_id ?? VOELS_SCENARIO_ID
+  const household = await admin
+    .from('households')
+    .select('id, owner_id, state_primary, base_case_scenario_id, person1_name')
+    .eq('id', voels.householdId)
+    .single()
+    .then((r) => r.data)
+
+  if (!household) {
+    record('setup', false, `Voels household ${voels.householdId} missing after resolve`)
+    return checks
+  }
+
+  record(
+    'setup',
+    true,
+    `household=${household.id} source=${voels.source} owner=${household.owner_id}`,
+  )
+
+  const scenarioId = household.base_case_scenario_id || voels.scenarioId || VOELS_SCENARIO_ID
 
   if (options.remediate) {
     const healed = await ensureVoelsMonteCarloCached(admin, household.id, scenarioId)
@@ -213,12 +235,18 @@ export async function runPostDeployVoelsChecks(
     `first_tax_year_p10=${firstTaxYear ?? 'null'}`,
   )
 
-  if (anonKey) {
+  if (voels.source === 'advisor-my-plan') {
+    record(
+      'pdf-narrative-mc-line',
+      true,
+      'skipped — prod My Plan household (PDF route needs linked client; MC checks above cover narrative data)',
+    )
+  } else if (anonKey) {
     try {
       const session = await createAdvisorSession(admin, url, anonKey)
       const cookie = authCookieHeader(url, session)
       const res = await fetch(
-        `${baseUrl}/api/advisor/meeting-prep-pdf/${VOELS_CONSUMER_ID}?type=report&_=${Date.now()}`,
+        `${baseUrl}/api/advisor/meeting-prep-pdf/${voels.consumerUserId}?type=report&_=${Date.now()}`,
         { headers: { Cookie: cookie } },
       )
       const html = await res.text()
@@ -243,39 +271,47 @@ export async function runPostDeployVoelsChecks(
     record('pdf-narrative-mc-line', false, 'Skipped — no NEXT_PUBLIC_SUPABASE_ANON_KEY')
   }
 
-  const { data: allConnections } = await admin
-    .from('advisor_clients')
-    .select('id, status, accepted_at, advisor_id')
-    .eq('client_id', VOELS_CONSUMER_ID)
-    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
+  if (voels.source === 'advisor-my-plan' && voels.consumerUserId === voels.advisorUserId) {
+    record(
+      'my-advisor-connection',
+      true,
+      'advisor My Plan household (prod — no separate consumer client)',
+    )
+  } else {
+    const { data: allConnections } = await admin
+      .from('advisor_clients')
+      .select('id, status, accepted_at, advisor_id')
+      .eq('client_id', voels.consumerUserId)
+      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
 
-  const { data: pickedConnection } = await admin
-    .from('advisor_clients')
-    .select(`
+    const { data: pickedConnection } = await admin
+      .from('advisor_clients')
+      .select(`
       id,
       advisor_id,
       accepted_at,
       profiles!advisor_clients_advisor_id_fkey ( full_name, email )
     `)
-    .eq('client_id', VOELS_CONSUMER_ID)
-    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
-    .order('accepted_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+      .eq('client_id', voels.consumerUserId)
+      .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
+      .order('accepted_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
-  const profile = pickedConnection?.profiles as { full_name?: string; email?: string } | null
-  const advisorName = profile?.full_name ?? profile?.email ?? ''
-  const multiRowCount = allConnections?.length ?? 0
-  const advisorOk =
-    pickedConnection != null &&
-    pickedConnection.advisor_id === VOELS_ADVISOR_ID &&
-    /voels/i.test(advisorName)
+    const profile = pickedConnection?.profiles as { full_name?: string; email?: string } | null
+    const advisorName = profile?.full_name ?? profile?.email ?? ''
+    const multiRowCount = allConnections?.length ?? 0
+    const advisorOk =
+      pickedConnection != null &&
+      pickedConnection.advisor_id === voels.advisorUserId &&
+      /voels/i.test(advisorName)
 
-  record(
-    'my-advisor-connection',
-    Boolean(advisorOk),
-    `active/accepted rows=${multiRowCount} picked advisor=${advisorName || pickedConnection?.advisor_id}`,
-  )
+    record(
+      'my-advisor-connection',
+      Boolean(advisorOk),
+      `active/accepted rows=${multiRowCount} picked advisor=${advisorName || pickedConnection?.advisor_id}`,
+    )
+  }
 
   const { data: fullHousehold } = await admin
     .from('households')
@@ -290,7 +326,7 @@ export async function runPostDeployVoelsChecks(
     .maybeSingle()
 
   const dashOk =
-    fullHousehold?.id === VOELS_HOUSEHOLD_ID &&
+    fullHousehold?.id === voels.householdId &&
     layoutSlice?.id === fullHousehold?.id &&
     fullHousehold?.state_primary === layoutSlice?.state_primary &&
     fullHousehold?.person1_name != null
