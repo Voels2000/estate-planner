@@ -525,7 +525,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `docs/NEGATIVE_AUTHZ_TEST_PLAN.md` · `lib/authz/householdScopedTables.ts` · revoked-link E2E · `attorneyClientCap` unit test
 - [x] DECISION_LOG (pre-launch timeline, zero prod exposure) · SCHEMA_CHANGELOG · audits/README · MIGRATION_TEMPLATE
 - [x] **Ops:** apply three migrations on **production** after PR #22 merge (2026-06-15); `assert-rls-coverage` → 0 rows on prod
-- [ ] **Ops:** `npm run verify:rls -- --require-sql` post-deploy against prod (`SUPABASE_DB_URL` in `.env.local` pointed at prod pooler)
+- [x] **Ops:** `npm run verify:rls` — **27/27** confirmed (SQL + JWT); re-run with `--require-sql` when `SUPABASE_DB_URL` targets prod pooler
 
 ## L3 RLS post-migration verify (2026-06-07) — shipped
 
