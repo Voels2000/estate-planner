@@ -160,6 +160,27 @@ export async function runBehavioralRlsChecks(options: {
   const leakCount = leakedAssets?.length ?? 0
   const foreignCount = foreignAssetCount ?? 0
 
+  const { data: leakedViewRows, error: viewError } = await userClient
+    .from('lifetime_exemption_summary')
+    .select('household_id')
+    .limit(5)
+
+  const viewDenied =
+    Boolean(viewError) ||
+    (leakedViewRows?.length ?? 0) === 0
+
+  const anonClient = createClient(options.supabaseUrl, options.supabaseAnonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+  const { data: anonViewRows, error: anonViewError } = await anonClient
+    .from('lifetime_exemption_summary')
+    .select('household_id')
+    .limit(5)
+
+  const anonViewDenied =
+    Boolean(anonViewError) ||
+    (anonViewRows?.length ?? 0) === 0
+
   return [
     {
       id: 'behavioral_foreign_assets',
@@ -168,6 +189,24 @@ export async function runBehavioralRlsChecks(options: {
         leakCount === 0
           ? `Consumer JWT cannot read advisor-client assets (foreign rows exist: ${foreignCount})`
           : `RLS leak: consumer read ${leakCount} asset row(s) on foreign household ${foreignHouseholdId}`,
+    },
+    {
+      id: 'behavioral_lifetime_exemption_view_auth',
+      pass: viewDenied,
+      detail: viewError
+        ? `Authenticated client denied on lifetime_exemption_summary (${viewError.message})`
+        : leakedViewRows?.length
+          ? `RLS leak: authenticated read ${leakedViewRows.length} row(s) from lifetime_exemption_summary`
+          : 'Authenticated client cannot read lifetime_exemption_summary (0 rows)',
+    },
+    {
+      id: 'behavioral_lifetime_exemption_view_anon',
+      pass: anonViewDenied,
+      detail: anonViewError
+        ? `Anon client denied on lifetime_exemption_summary (${anonViewError.message})`
+        : anonViewRows?.length
+          ? `RLS leak: anon read ${anonViewRows.length} row(s) from lifetime_exemption_summary`
+          : 'Anon client cannot read lifetime_exemption_summary (0 rows)',
     },
     {
       id: 'behavioral_own_household',
