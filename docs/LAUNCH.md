@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-13 (two-DB steady state; B3 reclassified; B7 prod cleanup done)  
+**Last updated:** 2026-06-14 (B3 E2E/RLS on PRs attested; two-DB steady state)  
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -59,20 +59,20 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 **Still never in GitHub:** production Supabase keys, `SUPABASE_DB_URL`, production Stripe/Resend/cron secrets, `.env.test.prod` contents.
 
-**Now actionable:** restore E2E/RLS workflows from [docs/templates/github-workflows/](./templates/github-workflows/README.md) with **staging-only** repository secrets + `E2E_SMOKE_IN_CI` / `RLS_VERIFY_IN_CI`. Details: [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
+**Now actionable:** E2E/RLS workflows on PRs use **staging-only** repository secrets + `E2E_SMOKE_IN_CI` / `RLS_VERIFY_IN_CI`. Details: [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions).
 
-**Today on GitHub:** `.github/workflows/ci.yml` → **`verify`** (no secrets) + `staging-keepalive.yml` (secret-free health ping). No E2E/RLS workflows yet.
+**Today on GitHub:** `.github/workflows/ci.yml` → **`verify`** (no secrets) · `e2e-smoke.yml` → **`e2e-smoke`** · `rls-verify.yml` → **`rls-verify`** (staging secrets) · `staging-keepalive.yml` (secret-free health ping). Merged [PR #8](https://github.com/Voels2000/estate-planner/pull/8) 2026-06-14.
 
-**Enforcement (automated):** GitHub branch protection on `main` — require status check **`verify`**; require PR before merge.
+**Enforcement (automated):** GitHub branch protection on `main` — require status checks **`verify`** + **`e2e-smoke`** + **`rls-verify`**; require PR before merge.
 
 **Enforcement (manual — mandatory):** See [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when).
 
-- [x] Branch protection on `main`: **`verify` required**; PR required; admins included (attest: Al / 2026-06-13)
+- [x] Branch protection on `main`: **`verify` + `e2e-smoke` + `rls-verify` required**; PR required; admins included (attest: Al / 2026-06-14)
 - [x] Confirm **no production** credentials in GitHub Actions secrets/variables (attest: Al / 2026-06-13)
 - [x] Local release discipline adopted (attest: Al / 2026-06-13)
 - [x] Two-DB split live: Preview → staging; Production → prod (attest: Al / 2026-06-13)
 - [x] Staging keep-alive workflow on `main` and green in Actions (attest: Al / 2026-06-13)
-- [ ] Restore E2E/RLS PR workflows with **staging-only** GitHub secrets (do-now — unblocked by two-DB split)
+- [x] Restore E2E/RLS PR workflows with **staging-only** GitHub secrets — `E2E_SMOKE_IN_CI` + `RLS_VERIFY_IN_CI` true; 8 staging secrets; green on PRs #8–#10 (attest: Al / 2026-06-14)
 
 ### B4. Manual smokes (run before Gate 2; before any **staging** purge if needed)
 
@@ -254,7 +254,7 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 
 ## Prompt 2 sweep scoreboard (2026-06-09)
 
-**Bucket B:** **17 of 38** checked (21 open).
+**Bucket B:** **18 of 38** checked (20 open).
 
 **Checked this sweep:** B1 Vercel redeploy · B1 release:preflight (full green) · B1 go-live-profile (17/17) · B1 security-isolation (10/10) · B1 cross-role · B1 post-deploy (Voels 7/7 + RLS 3/3) · B1 prod smoke (40/42, 2 advisory skips) · B2 TERMS-1 · B6 legal placeholders (prior) · B7 PROTECTED + purge guards · B8 robots/security/deletion/billing/prod harness (prior).
 
@@ -263,10 +263,10 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | Item | Action |
 |------|--------|
 | B1 prod smoke optional passes | Set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` (live `whsec_`) in `.env.test.prod`; enable Upstash on Vercel for 429 test |
-| B3 branch protection (`verify` only) | GitHub → Settings → Branches → `main` → require PR + `verify`; confirm no Action secrets |
+| B3 branch protection (`verify` + `e2e-smoke` + `rls-verify`) | Done — [PR #8](https://github.com/Voels2000/estate-planner/pull/8) merged 2026-06-14; staging-only secrets; green on PRs #9–#10 |
 | B5 Vercel Stripe env names | `vercel env ls production` |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
-**Still open — attest (Al):** B4 all 5 manual smokes · B5 Vercel dashboard fixes + clean `verify-env?live=1` + C-4/card smoke · B6 counsel/LLC/bank/B&O/email · B3 E2E/RLS on PRs (staging secrets).
+**Still open — attest (Al):** B4 all 5 manual smokes · B5 Vercel dashboard fixes + clean `verify-env?live=1` + C-4/card smoke · B6 counsel/LLC/bank/B&O/email.
 
 **B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.
