@@ -29,7 +29,9 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 **Verify:** `npm run verify:rls` · `npm run test:e2e:security-isolation -- --workers=1` · `npx playwright test tests/unit/attorneyClientCap.spec.ts --project=import-unit`
 
-**PR:** #21
+**Prod apply:** 2026-06-15 — all three migrations applied via SQL; `assert-rls-coverage` → 0 rows.
+
+**PR:** #22 (merged)
 
 ---
 
