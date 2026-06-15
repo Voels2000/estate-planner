@@ -1,4 +1,11 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import {
+  classifySchemaDeleteError,
+  formatSchemaDeleteSkips,
+  type SchemaDeleteSkip,
+} from '@/lib/compliance/deleteUserSchema'
+
+export type { SchemaDeleteSkip } from '@/lib/compliance/deleteUserSchema'
 
 export type DeletionReason =
   | 'user_request'
@@ -13,9 +20,15 @@ export type DeletionResult = {
   tablesCleared: string[]
   rowsDeleted: Record<string, number>
   authUserDeleted: boolean
+  schemaSkips?: SchemaDeleteSkip[]
   error?: string
   completedAt: string
 }
+
+/**
+ * Table/column lists below are hand-maintained — drift vs live schema is a compliance risk.
+ * Future: CI invariant that every deleteUser table.column exists in migrations (like RLS check #6).
+ */
 
 /** Household-scoped tables (deleted when household_id is known). Order matters for FKs. */
 const HOUSEHOLD_TABLES = [
@@ -108,26 +121,34 @@ async function deleteByColumn(
   column: string,
   id: string,
   dryRun: boolean,
+  schemaSkips: SchemaDeleteSkip[],
 ): Promise<number> {
-  if (dryRun) {
-    const { count } = await admin
-      .from(table)
-      .select('*', { count: 'exact', head: true })
-      .eq(column, id)
-    return count ?? 0
-  }
-  const { count, error } = await admin
-    .from(table)
-    .delete({ count: 'exact' })
-    .eq(column, id)
-  if (error) {
-    if (error.message.includes("Could not find the table")) {
-      console.warn(`[deleteUser] Skipping missing table ${table}`)
-      return 0
-    }
+  const runQuery = dryRun
+    ? admin.from(table).select('*', { count: 'exact', head: true }).eq(column, id)
+    : admin.from(table).delete({ count: 'exact' }).eq(column, id)
+
+  const { count, error } = await runQuery
+
+  if (!error) return count ?? 0
+
+  const classified = classifySchemaDeleteError(table, column, error.message)
+  if (classified === 'fatal') {
     throw new Error(`${table}: ${error.message}`)
   }
-  return count ?? 0
+
+  schemaSkips.push(classified)
+
+  if (classified.kind === 'missing_table') {
+    console.warn(
+      `[deleteUser] SCHEMA DRIFT (missing table — skipped, 0 rows deleted): ${table} — ${error.message}`,
+    )
+    return 0
+  }
+
+  console.error(
+    `[deleteUser] SCHEMA DRIFT (missing/wrong column — aborting deletion): ${table}.${column} — ${error.message}`,
+  )
+  throw new Error(`schema_drift: ${table}.${column}: ${error.message}`)
 }
 
 async function deleteAuthUserWithFallback(
@@ -170,9 +191,10 @@ async function clearFkReferencesToUser(
   dryRun: boolean,
   rowsDeleted: Record<string, number>,
   tablesCleared: string[],
+  schemaSkips: SchemaDeleteSkip[],
 ): Promise<void> {
   for (const { table, column } of FK_TABLES_TO_USER) {
-    const n = await deleteByColumn(admin, table, column, userId, dryRun)
+    const n = await deleteByColumn(admin, table, column, userId, dryRun, schemaSkips)
     rowsDeleted[table] = (rowsDeleted[table] ?? 0) + n
     if (!tablesCleared.includes(table)) tablesCleared.push(table)
   }
@@ -269,7 +291,16 @@ export async function deleteUserData(params: {
 
   const tablesCleared: string[] = []
   const rowsDeleted: Record<string, number> = {}
+  const schemaSkips: SchemaDeleteSkip[] = []
   const completedAt = new Date().toISOString()
+
+  const auditErrorMessage = (base: string | undefined): string | undefined => {
+    const parts = [
+      schemaSkips.length > 0 ? `schema_skip: ${formatSchemaDeleteSkips(schemaSkips)}` : undefined,
+      base,
+    ].filter(Boolean)
+    return parts.length > 0 ? parts.join('; ') : undefined
+  }
 
   try {
     const { data: profile } = await admin
@@ -280,7 +311,7 @@ export async function deleteUserData(params: {
 
     if (!profile) {
       // No profile — orphaned Auth user. Delete Auth record directly.
-      await clearFkReferencesToUser(admin, userId, email, dryRun, rowsDeleted, tablesCleared)
+      await clearFkReferencesToUser(admin, userId, email, dryRun, rowsDeleted, tablesCleared, schemaSkips)
 
       const authUserDeleted = await deleteAuthUserWithFallback(admin, userId, email, dryRun)
 
@@ -336,7 +367,7 @@ export async function deleteUserData(params: {
     ])
 
     const deleteScoped = async (table: string, column: string, value: string) => {
-      const n = await deleteByColumn(admin, table, column, value, dryRun)
+      const n = await deleteByColumn(admin, table, column, value, dryRun, schemaSkips)
       rowsDeleted[table] = (rowsDeleted[table] ?? 0) + n
       if (!tablesCleared.includes(table)) tablesCleared.push(table)
     }
@@ -404,7 +435,7 @@ export async function deleteUserData(params: {
     }
 
     // After deleting all known tables, clear any remaining direct auth.users FK references.
-    await clearFkReferencesToUser(admin, userId, email, dryRun, rowsDeleted, tablesCleared)
+    await clearFkReferencesToUser(admin, userId, email, dryRun, rowsDeleted, tablesCleared, schemaSkips)
 
     const authUserDeleted = await deleteAuthUserWithFallback(admin, userId, email, dryRun)
 
@@ -422,8 +453,10 @@ export async function deleteUserData(params: {
       auth_deleted: authUserDeleted,
       success: !verificationFailed,
       error_message: verificationFailed
-        ? `verification_failed: ${verificationErrors.join('; ')}`
-        : undefined,
+        ? auditErrorMessage(`verification_failed: ${verificationErrors.join('; ')}`)
+        : auditErrorMessage(
+            schemaSkips.length > 0 ? 'completed with missing-table skips (see schema_skip)' : undefined,
+          ),
       completed_at: completedAt,
     })
 
@@ -447,6 +480,7 @@ export async function deleteUserData(params: {
       tablesCleared,
       rowsDeleted,
       authUserDeleted,
+      schemaSkips: schemaSkips.length > 0 ? schemaSkips : undefined,
       completedAt,
     }
   } catch (err) {
@@ -461,7 +495,7 @@ export async function deleteUserData(params: {
         initiated_by: initiatedBy,
         dry_run: dryRun,
         success: false,
-        error_message: error,
+        error_message: auditErrorMessage(error),
         completed_at: completedAt,
       })
       .then(() => {})
@@ -473,6 +507,7 @@ export async function deleteUserData(params: {
       tablesCleared,
       rowsDeleted,
       authUserDeleted: false,
+      schemaSkips: schemaSkips.length > 0 ? schemaSkips : undefined,
       error,
       completedAt,
     }

@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-15 (post-deploy Voels prod resolve)
+# Last updated: 2026-06-15 (launch tracker v4, deletion schema drift, E2E beneficiary seed, post-deploy Voels prod resolve)
 
 ---
 
@@ -13,6 +13,36 @@
 **Prod steady state:** Post-deploy cron uses advisor household `23c8d2fb…`; PDF narrative check skipped on My Plan (403 without linked client — MC checks still run).
 
 **Override:** `VOELS_POST_DEPLOY_HOUSEHOLD_ID` env var.
+
+---
+
+## deleteUser schema drift — loud skip vs silent success (2026-06-15)
+
+**Decision:** Harden `deleteByColumn` in `lib/compliance/deleteUser.ts` via `lib/compliance/deleteUserSchema.ts`:
+- **Missing table** → warn (`SCHEMA DRIFT (missing table — skipped)`), record in `schemaSkips`, continue (benign evolution).
+- **Missing/wrong column** → error log, **abort** before Auth delete, audit `success=false` with `schema_skip: table.column (missing_column)` — never a silent green when zero rows were deleted.
+
+**Why:** 6/7 purge failures (`beneficiaries` table gone; `asset_beneficiaries.household_id` never existed) showed hand-maintained deletion lists drift from schema. Swallowing column errors is a WCPA violation; missing-table skip is OK.
+
+**Follow-up (not built):** CI invariant that every `deleteUser` table/column exists in migrations — same class as RLS check #6.
+
+**Tests:** `tests/unit/deleteUserSchema.spec.ts`
+
+---
+
+## E2E advisor-client seed — `asset_beneficiaries` not `beneficiaries` (2026-06-15)
+
+**Decision:** `seedE2eAdvisorClientHousehold()` seeds **3** `asset_beneficiaries` rows (401k primary 50/50 + contingent) linked to inserted asset id. `verifyE2eAccounts()` requires `>= 2` rows for `e2e-advisor-client@mywealthmaps.test`. Fail loudly on insert error (no `console.warn` swallow).
+
+**Why:** Dead `beneficiaries` table reference caused silent seed failure — green-but-hollow fixture data.
+
+---
+
+## Launch tracker v4 + LAUNCH.md scoreboard (2026-06-15)
+
+**Decision:** Browser tracker (`tools/launch-tracker-app.jsx`, `localStorage` `mwm-launch-tracker-v4`) reflects B4 automated walkthroughs, B5 machine slice attested, B6 partial ops (LLC/bank/B&O), irreducible B4 manual items. Sync via `npm run sync:launch-tracker` + `tools/launch-tracker-mapping.json`.
+
+**Scoreboard:** [LAUNCH.md](./LAUNCH.md) — **44 of 55** Bucket B checked (11 open). P0 blockers: real-card smoke, WA B&O ruling.
 
 ---
 

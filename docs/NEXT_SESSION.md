@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-12 (audit Sprint C/D + domicile gate + roster alignment)
+# Last updated: 2026-06-15 (launch 44/55, deletion hardening, B4 automated)
 
 ---
 
@@ -12,16 +12,22 @@
 
 ---
 
-## Current focus (2026-06-09)
+## Current focus (2026-06-15)
 
-Engineering sprints through L4, **Admin-A**, **Admin-P1**, **Admin-Redesign**, **WA estate tax SEO**, **State estate tax content system**, **`/learn` discovery & cross-linking**, and **`/assess` dynamic state picker** are **complete**. Remaining pre-launch work is **non-code**: [LAUNCH.md](./LAUNCH.md) Bucket B + A (legal review, Stripe production config, smoke tests).
+Engineering pre-launch gates through **B4 automated walkthroughs**, **B5 machine slice**, **security IDOR fix**, and **launch tracker v4** are **shipped**. [LAUNCH.md](./LAUNCH.md) — **44 of 55** Bucket B checked (**11 open**). Remaining: real-card smoke, C-4 walkthrough, counsel/email aliases, B4 irreducible manual, B&O ruling (Bucket A).
 
 | Area | Status | Canonical doc |
 |------|--------|---------------|
+| B4 app-logic E2E + stale-score UI | ✅ Shipped | PR #12 · `test:e2e:b4-gate` |
+| B5 verify-env live + webhook verifier | ✅ Shipped | PR #15 |
+| Security `lifetime_exemption_summary` IDOR | ✅ Shipped | PR #16 · prod applied |
+| Launch tracker v4 + LAUNCH sync | ✅ Shipped | [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) |
+| deleteUser schema drift hardening | ✅ Shipped | `lib/compliance/deleteUserSchema.ts` |
+| E2E advisor-client beneficiaries seed | ✅ Shipped | `verifyE2eAccounts()` count check |
 | B2B2C billing + seat pricing | ✅ Shipped | [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) |
 | Release routine (local → preview → prod) | ✅ Documented | [LAUNCH.md](./LAUNCH.md) |
 | Environment / CI credential policy | ✅ Documented | [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) |
-| Go-live blockers (legal, Stripe, smoke) | ☐ Blocker | [LAUNCH.md](./LAUNCH.md) |
+| Go-live blockers (real-card, B&O, C-4, counsel) | ☐ Blocker | [LAUNCH.md](./LAUNCH.md) |
 | Admin Ops Home + task engine | ✅ Shipped | `/admin` → Ops Home · `ops_tasks` · `cron_health` |
 | Admin P1 (tax config, user detail, waitlist) | ✅ Shipped | `/admin` → Tax Rules · Users · Waitlist |
 | Admin-Redesign (sidebar, debug/funnel fixes) | ✅ Shipped | `/admin` sidebar nav · `admin-shell.tsx` |
@@ -105,7 +111,7 @@ Do NOT set `PUBLIC_SIGNUP_OPEN=true` until **B&O-READY** per [LAUNCH.md](./LAUNC
 
 > My Wealth Maps — **go-live prep.** Admin sprints + **WA estate tax SEO** + **13-state `/learn`** + **`/learn` discovery** + **`/assess` state picker** + **pricing/billing alignment** are **shipped**. Per-seat advisor checkout on `/pricing` and `/billing`; attorney flat tiers on `/pricing`; consumer checkout is consumer-only. Admin-A (Ops Home), Admin-P1 (tax config, user detail, waitlist), Admin-Redesign (sidebar nav). L1–L4 + B2B2C billing complete. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
 >
-> **Remaining blockers before open signups:** [LAUNCH.md](./LAUNCH.md) **Bucket B** (+ Bucket A when B&O ruling lands) — legal review, Stripe production catalog/config, production smoke (drip, E2E, billing walkthrough). No further engineering sprints required for launch.
+> **Remaining blockers before open signups:** [LAUNCH.md](./LAUNCH.md) **44/55** Bucket B — **P0:** real-card live smoke + WA B&O ruling; **P1:** C-4 walkthrough, counsel ToS §10/§11 + email aliases; **P2:** BCC inbox, drip cron 2/3, optional Vercel housekeeping. Launch tracker: `npm run launch:tracker` → sync via `npm run sync:launch-tracker`.
 >
 > **Go-live day:** Stripe Phase 2 live catalog → [archived LAUNCH.md § Opening signups](./archive/LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) · then `PUBLIC_SIGNUP_OPEN=true`.
 >

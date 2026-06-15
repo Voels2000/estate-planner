@@ -16,13 +16,13 @@ const C = {
 };
 
 const MONO = "ui-monospace, SFMono-Regular, Menlo, monospace";
-const STORAGE_KEY = "mwm-launch-tracker-v3";
+const STORAGE_KEY = "mwm-launch-tracker-v4";
 
 const SECTIONS = [
   {
     id: "done",
     title: "Verified & checked",
-    note: "Shipped on main or attested. Synced from docs/LAUNCH.md (2026-06-14 B3 E2E/RLS CI).",
+    note: "Shipped on main or attested. Synced from docs/LAUNCH.md (2026-06-15 — B4 automated, B5 machine slice, security IDOR fix).",
     accent: C.ready,
     items: [
       { id: "robots", label: "robots.ts + sitemap allow public routes", cmd: "app/robots.ts:5-37", type: "done" },
@@ -39,15 +39,25 @@ const SECTIONS = [
       { id: "b7-prod-cleanup", label: "One-time prod cleanup executed", type: "done", attest: true },
       { id: "b5-verifier", label: "Admin env verifier route + manifest (PRs #3/#5)", cmd: "/api/admin/verify-env", type: "done" },
       { id: "b5-throwguard", label: "Production consumer price throw-guard (PR #4)", cmd: "lib/billing/stripePrices.ts:99-110", type: "done" },
-      { id: "b5-seatbelt", label: "Silent test-price runtime seatbelt (code — live ?live=1 still pending)", type: "done" },
+      { id: "b5-price-retrieve", label: "?live=1 retrieves all 11 Stripe prices (PR #12)", cmd: "lib/env/verifyEnv.ts", type: "done" },
+      { id: "b5-live-attest", label: "Live prod verify-env?live=1 — missing [], LIVE_OK, 11/11 active", cmd: "GET /api/admin/verify-env?live=1", type: "done", attest: true },
+      { id: "b5-webhook-plumbing", label: "Live webhook endpoint + signing secret + 200 on resend", type: "done", attest: true },
+      { id: "b5-webhook-events", label: "?live=1 webhook event subscription check (5 events, PR #15)", cmd: "lib/env/stripeWebhookVerify.ts", type: "done" },
+      { id: "b5-tax-info", label: "?live=1 tax_behavior INFO-only report (PR #15)", type: "done" },
       { id: "b3-branch", label: "Branch protection on main: verify + e2e-smoke + rls-verify + PR", type: "done", attest: true },
       { id: "b3-no-prod-secrets", label: "No production credentials in GitHub Actions", type: "done", attest: true },
       { id: "b3-local", label: "Local release discipline adopted", type: "done", attest: true },
       { id: "b3-twodb", label: "Two-DB split live (Preview→staging, Prod→prod)", type: "done", attest: true },
       { id: "b3-keepalive", label: "Staging keep-alive workflow green in Actions", type: "done", attest: true },
       { id: "b3-e2e-ci", label: "E2E/RLS PR workflows (staging-only GitHub secrets)", cmd: "PR #8 merged; vars + 8 secrets", type: "done", attest: true },
+      { id: "b4-prospect", label: "Prospect + Mobile (automated — b4-gate + mobile specs)", cmd: "test:e2e:b4-gate", type: "done", attest: true },
+      { id: "b4-health", label: "Health Score + Advisor Playbook (automated behaviors)", cmd: "b4-health-score + b4-playbook-activation", type: "done", attest: true },
+      { id: "b4-pdf", label: "PDF narrative engine (preflight b4-deep)", cmd: "b4-pdf-narrative.spec.ts", type: "done", attest: true },
+      { id: "b4-drip-step1", label: "Drip step 1 — email_captures.drip_step_1_sent_at", cmd: "b4-drip-step1.spec.ts", type: "done", attest: true },
       { id: "b8-canary", label: "Prod canary reset tool (seed:prod-canary)", cmd: "scripts/seed-prod-canary.ts", type: "done" },
       { id: "b8-twodb-docs", label: "Two-DB steady-state docs on main (DEPLOYMENT.md, PR #6)", type: "done" },
+      { id: "b8-view-idor", label: "lifetime_exemption_summary IDOR closed — revoke grants + CI #6 (PR #16)", type: "done", attest: true },
+      { id: "b8-stale-banner", label: "Stale estate-readiness banner (isScoreStale, PR #12)", cmd: "EstateReadinessCard.tsx", type: "done" },
       { id: "sec-smoke", label: "Security hardening manual checks 4/4", type: "done" },
       { id: "b8-eng", label: "B8 engineering gates (billing, deletion, prod harness)", type: "done" },
       { id: "b6-placeholders", label: "Legal placeholders wired (/terms, /privacy)", cmd: "lib/legal/company.ts", type: "done" },
@@ -55,30 +65,24 @@ const SECTIONS = [
   },
   {
     id: "b4",
-    title: "B4 · Manual walkthroughs",
-    note: "Human smokes before Gate 2. Fresh-signup may only fully close at flip.",
+    title: "B4 · Irreducible manual + AT-FLIP",
+    note: "Automated walkthroughs shipped (PR #12). Remaining: BCC inbox, drip cron 2/3, fresh prod signup at flip.",
     accent: C.ink,
     items: [
-      { id: "b4-prospect", label: "Prospect + Mobile (19 steps — Track 1 before Track 2)", type: "open", attest: true },
-      { id: "b4-health", label: "Health Score + Advisor Playbook (18 steps)", type: "open", attest: true },
-      { id: "b4-pdf", label: "PDF narrative engine (9 steps)", type: "open", attest: true },
-      { id: "b4-drip", label: "Drip production smoke (assess → step 1 → cron 2/3)", type: "open", attest: true },
-      { id: "b4-signup", label: "Fresh signup on prod URL", type: "open", attest: true, flag: "needs PUBLIC_SIGNUP_OPEN — may complete at flip" },
+      { id: "b4-bcc", label: "Prospect step 10 — BCC inbox (avoels@comcast.net)", type: "open", attest: true },
+      { id: "b4-drip-cron", label: "Drip cron steps 2/3 (day 3 / day 7)", type: "open", attest: true, flag: "or backdated cron run on staging" },
+      { id: "b4-signup", label: "Fresh signup on production URL", type: "open", attest: true, flag: "AT-FLIP only — needs PUBLIC_SIGNUP_OPEN=true" },
     ],
   },
   {
     id: "b5",
-    title: "B5 · Stripe live mode + env audit",
-    note: "Code/guard shipped. Dashboard fixes + clean verify-env?live=1 before Gate 2. No clean attestation until then.",
+    title: "B5 · Stripe ops still open",
+    note: "Machine slice attested 2026-06-15. Launch blockers: real-card smoke (checkout → subscription active) + C-4 walkthrough.",
     accent: C.wait,
     items: [
-      { id: "b5-keys", label: "Live keys in Vercel Prod (sk_live / pk_live / live whsec)", type: "open", attest: true },
-      { id: "b5-catalog", label: "Live catalog: 6 consumer + attorney starter/growth", type: "open", attest: true },
-      { id: "b5-envls", label: "STRIPE_PRICE_* / _ATTORNEY_* / _ADVISOR_* in Vercel Production", cmd: "vercel env ls production", type: "open", attest: true },
-      { id: "b5-dashboard", label: "Vercel dashboard fixes (publishable-key rename, declare flip vars, delete dead vars)", type: "open", attest: true },
-      { id: "b5-verify-live", label: "Gate-2: verify-env?live=1 → missing [] (only after dashboard fixes)", cmd: "GET /api/admin/verify-env?live=1", type: "open", attest: true },
+      { id: "b5-dashboard", label: "Vercel dashboard housekeeping (publishable-key rename, flip vars, delete dead vars)", type: "open", attest: true },
       { id: "b5-c4", label: "C-4 walkthrough on prod (signup→checkout→active→cancel→deletion)", type: "open", attest: true },
-      { id: "b5-card", label: "One real-card live smoke (smallest tier) + refund/cancel", type: "open", attest: true },
+      { id: "b5-card", label: "One real-card live smoke (smallest tier) + refund/cancel", type: "open", attest: true, flag: "P0 launch blocker" },
     ],
   },
   {
@@ -92,6 +96,16 @@ const SECTIONS = [
       { id: "b6-bank", label: "Business bank account open", type: "open", attest: true },
       { id: "b6-dor", label: "B&O / DOR account registered", type: "open", attest: true, flag: "check sequencing w/ accountant — likely OK before ruling" },
       { id: "b6-aliases", label: "Email aliases security@ / legal@ live (privacy@ routed)", type: "open", attest: true },
+    ],
+  },
+  {
+    id: "b8-open",
+    title: "B8 · Spot-check still open",
+    note: "Engineering shipped; verify on prod when convenient.",
+    accent: C.wait,
+    items: [
+      { id: "b8-signup-defaults", label: "handle_new_user + signup defaults on prod (subscription_status=none, tier=1)", type: "open" },
+      { id: "b8-upstash", label: "Optional: Upstash Redis for referral rate limits (prod smoke 429 skip)", type: "open" },
     ],
   },
   {
@@ -288,7 +302,7 @@ function LaunchTracker() {
             <div style={{ fontSize: 13, color: C.ink, lineHeight: 1.45 }}>
               {ready
                 ? "Every actionable item checked. When the B&O ruling lands: resolve Bucket A, then run Bucket C."
-                : "Drive everything below to checked except Bucket A and Bucket C. Sync to LAUNCH.md after each batch."}
+                : "14 Bucket B items still open in LAUNCH.md (41/55). P0 blockers: real-card smoke + WA B&O ruling. Drive open items below to checked, then sync."}
             </div>
           </div>
           <div style={{ marginTop: 12, fontSize: 11.5, color: C.sub, lineHeight: 1.5 }}>

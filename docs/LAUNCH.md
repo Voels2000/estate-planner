@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-14 (B3 E2E/RLS on PRs attested; two-DB steady state)  
+**Last updated:** 2026-06-15 (launch-tracker sync)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -84,9 +84,9 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 - [ ] Prospect step 10 — BCC inbox (`avoels@comcast.net`) (attest: __ / __)
 - [ ] Drip cron steps 2/3 (day 3 / day 7) unless backdated cron run on staging (attest: __ / __)
-- [ ] End-to-end fresh signup on **production URL** — AT-FLIP (`PUBLIC_SIGNUP_OPEN=true`) (attest: __ / __)
+- [ ] End-to-end fresh signup on **production URL** — AT-FLIP only (`PUBLIC_SIGNUP_OPEN=true`) (attest: __ / __)
 
-**Automated walkthroughs (staging seed + specs):**
+**Automated walkthroughs (staging seed + specs — PR #12 `test:e2e:b4-gate` / preflight `b4-deep`):**
 
 - [x] Prospect + Mobile — Track 1 steps 3–9, 11 + PDF header (`b4-prospect-form.spec.ts`); Track 2 steps 13–19 (`consumer-mobile-review.spec.ts`, `test:e2e:mobile`) (attest: CI / PR #12 e2e-smoke 2026-06-14)
 - [x] Health Score + Advisor Playbook — **10 documented behaviors** (not 18 numbered steps in repo): score/context, strategy badge, health-check labels, stale prompt, playbook empty + activation (`b4-health-score.spec.ts`, `b4-playbook-activation.spec.ts`) (attest: CI / PR #12 e2e-smoke 2026-06-14)
@@ -103,6 +103,8 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] **Live prod attestation (keys + prices):** `GET /api/admin/verify-env?live=1` on `www.mywealthmaps.com` → `missing` empty, `liveness.stripe: LIVE_OK`, **11/11** live prices `active` (6 consumer + 3 advisor + 2 attorney) (attest: Al / 2026-06-15)
 - [x] **Live prod attestation (post-webhook secret fix):** re-run `verify-env?live=1` after `STRIPE_WEBHOOK_SECRET` aligned in Vercel Production → still `missing` empty, `LIVE_OK`, 11/11 `active` (attest: Al / 2026-06-15)
 - [x] **Live Stripe webhook plumbing:** endpoint on canonical `www.mywealthmaps.com`, signing secret aligned in Vercel Production, delivery confirmed **200** on resend (e.g. `customer.created`) — prior attestation assumed delivery; this proves it (attest: Al / 2026-06-15)
+- [x] **`?live=1` webhook event subscriptions:** canonical www endpoint subscribed to all 5 handler events; MISSING → `LIVE_FAIL` (verify: `lib/env/stripeWebhookVerify.ts`, PR #15)
+- [x] **`?live=1` price `tax_behavior`:** INFO-only per live price (pending WA B&O ruling — report, do not assert) (verify: `lib/env/verifyEnv.ts`, PR #15)
 
 **What `verify-env?live=1` proves:** live Stripe key mode, every configured price ID is real, active, and wired in Vercel Production env.
 
@@ -120,9 +122,9 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 - [x] Legal placeholders in product (verify: `lib/legal/company.ts` → `/terms`, `/privacy`)
 - [ ] Counsel sign-off ToS §10, §11 (attest: __ / __)
-- [ ] WA LLC UBI / EIN / registered agent confirmed on SOS (attest: __ / __)
-- [ ] Business bank account open (attest: __ / __)
-- [ ] B&O / DOR account registered (attest: __ / __ — confirm w/ accountant OK pre-ruling)
+- [x] WA LLC UBI / EIN / registered agent confirmed on SOS (attest: __ / __)
+- [x] Business bank account open (attest: __ / __)
+- [x] B&O / DOR account registered (attest: __ / __ — confirm w/ accountant OK pre-ruling)
 - [ ] Email aliases `security@`, `legal@` live (`privacy@` routed) (attest: __ / __)
 
 ### B7. Database cleanup (prod one-time done; ongoing purge is staging-only)
@@ -148,6 +150,8 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] Production `@production` smoke harness (`test:e2e:prod:smoke`, canary subset)
 - [x] Prod canary reset: `npm run seed:prod-canary -- --confirm` (verify: `package.json`, `scripts/seed-prod-canary.ts`, `PROD_CANARY` in `scripts/e2e-test-identities.ts:19-23`)
 - [x] Two-DB steady-state docs + scripts on `main` (verify: `docs/DEPLOYMENT.md`, PR #6)
+- [x] **`lifetime_exemption_summary` PostgREST IDOR closed** — revoke `anon`/`authenticated` on SECURITY DEFINER view; CI invariant #6 + isolation attack-sim (PR #16; prod migration applied 2026-06-15)
+- [x] Stale estate-readiness banner shipped (`isScoreStale()` wired in `EstateReadinessCard`; PR #12)
 - [ ] `handle_new_user` + signup defaults migrations applied on prod (verify: fresh signup → `subscription_status = 'none'`, `consumer_tier = 1`)
 - [ ] Optional: Upstash Redis for referral rate limits (falls back to in-memory; prod smoke skips 429 assertion until configured)
 
@@ -268,9 +272,28 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 
 ---
 
-## Prompt 2 sweep scoreboard (2026-06-09)
+## Launch status scoreboard (2026-06-15)
 
-**Bucket B:** **18 of 38** checked (20 open).
+**Bucket B:** **44 of 55** checked (11 open).
+
+**Done since 2026-06-14:** B4 app-logic automated (PR #12) · stale-score UI · B5 live `verify-env?live=1` + webhook delivery + webhook-event verifier (PR #15) · `lifetime_exemption_summary` IDOR closed on staging + prod (PR #16).
+
+**Launch blockers (pre-flip):**
+
+| Priority | Item | Bucket |
+|----------|------|--------|
+| **P0** | One real-card live smoke (checkout → `checkout.session.completed` → subscription active) | B5 |
+| **P0** | WA B&O / DAS ruling | A |
+| **P1** | C-4 billing walkthrough on prod | B5 |
+| **P1** | Counsel ToS §10/§11 + email aliases | B6 |
+| **P2** | BCC inbox, drip cron 2/3, optional Vercel dashboard housekeeping | B4 / B5 |
+| **AT-FLIP** | Fresh prod signup smoke | B4 / C |
+
+---
+
+## Prompt 2 sweep scoreboard (2026-06-09, superseded — see above)
+
+**Bucket B:** **44 of 55** checked (11 open).
 
 **Checked this sweep:** B1 Vercel redeploy · B1 release:preflight (full green) · B1 go-live-profile (17/17) · B1 security-isolation (10/10) · B1 cross-role · B1 post-deploy (Voels 7/7 + RLS 3/3) · B1 prod smoke (40/42, 2 advisory skips) · B2 TERMS-1 · B6 legal placeholders (prior) · B7 PROTECTED + purge guards · B8 robots/security/deletion/billing/prod harness (prior).
 
@@ -279,10 +302,8 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | Item | Action |
 |------|--------|
 | B1 prod smoke optional passes | Set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` (live `whsec_`) in `.env.test.prod`; enable Upstash on Vercel for 429 test |
-| B3 branch protection (`verify` + `e2e-smoke` + `rls-verify`) | Done — [PR #8](https://github.com/Voels2000/estate-planner/pull/8) merged 2026-06-14; staging-only secrets; green on PRs #9–#10 |
-| B5 Stripe machine slice | Done — `verify-env?live=1` re-run post-webhook-secret fix (Al / 2026-06-15); webhook 200 on resend; real-card smoke still open |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
-**Still open — attest (Al):** B4 irreducible only (BCC inbox, drip cron 2/3, fresh-prod-signup AT-FLIP) · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel/LLC/bank/B&O/email. **Launch blockers:** real-card smoke, B&O ruling.
+**Still open — attest (Al):** B4 irreducible (BCC inbox, drip cron 2/3) + AT-FLIP fresh signup · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel + email aliases.
 
 **B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.
