@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { storeIntakeToken } from '@/lib/attorney/intakeTokenSession'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
-import { BETA_SIGNUP_ACCOUNT_SOURCE } from '@/lib/waitlist-mode'
+import { BETA_SIGNUP_ACCESS_PARAM } from '@/lib/waitlist-mode'
+import { inferSignupAdmissionFromClient } from '@/lib/auth/signupAdmission'
+import { signupPasswordMinLength, validateSignupPassword } from '@/lib/auth/signupPolicy'
 
 // FIX: canonical role values — 'advisor' not 'financial_advisor'
 type Role = 'consumer' | 'advisor' | 'attorney'
@@ -15,9 +16,14 @@ type Role = 'consumer' | 'advisor' | 'attorney'
 type SignupFormProps = {
   betaAccessActive?: boolean
   betaLabel?: string | null
+  signupOpen?: boolean
 }
 
-export function SignupForm({ betaAccessActive = false, betaLabel = null }: SignupFormProps) {
+export function SignupForm({
+  betaAccessActive = false,
+  betaLabel = null,
+  signupOpen = false,
+}: SignupFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -31,6 +37,8 @@ export function SignupForm({ betaAccessActive = false, betaLabel = null }: Signu
   const firmInviteToken = searchParams.get('invite_token')?.trim() ?? ''
   const firmIdParam = searchParams.get('firm_id')?.trim() ?? ''
   const hasFirmInvite = firmInviteToken !== '' && firmIdParam !== ''
+  const connectionToken = searchParams.get('connectionToken')?.trim() ?? ''
+  const betaAccessToken = searchParams.get(BETA_SIGNUP_ACCESS_PARAM)?.trim() ?? ''
   const redirectTo = searchParams.get('redirectTo')?.trim() ?? ''
 
   useEffect(() => {
@@ -51,14 +59,40 @@ export function SignupForm({ betaAccessActive = false, betaLabel = null }: Signu
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [termsError, setTermsError] = useState(false)
 
+  const effectiveRole: Role = hasAdvisorInvite ? 'consumer' : role
+  const passwordMin = signupPasswordMinLength(
+    inferSignupAdmissionFromClient({
+      betaAccessActive,
+      betaAccessToken: betaAccessActive ? betaAccessToken : undefined,
+      advisorInviteToken: advisorInviteToken || undefined,
+      firmInviteToken: firmInviteToken || undefined,
+      firmId: firmIdParam || undefined,
+      connectToken: consumerConnectToken || undefined,
+      connectionToken: connectionToken || undefined,
+      signupOpen,
+    }),
+    effectiveRole,
+  )
+
   async function handleSubmit() {
     setError(null)
     if (!fullName.trim() || !email.trim() || !password.trim()) {
       setError('Please fill in all fields.')
       return
     }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
+    const admission = inferSignupAdmissionFromClient({
+      betaAccessActive,
+      betaAccessToken: betaAccessActive ? betaAccessToken : undefined,
+      advisorInviteToken: advisorInviteToken || undefined,
+      firmInviteToken: firmInviteToken || undefined,
+      firmId: firmIdParam || undefined,
+      connectToken: consumerConnectToken || undefined,
+      connectionToken: connectionToken || undefined,
+      signupOpen,
+    })
+    const passwordError = validateSignupPassword(password, admission, effectiveRole)
+    if (passwordError) {
+      setError(passwordError)
       return
     }
     if (!termsAccepted) {
@@ -68,133 +102,8 @@ export function SignupForm({ betaAccessActive = false, betaLabel = null }: Signu
     setIsSubmitting(true)
 
     try {
-      const supabase = createClient()
-      const effectiveRole: Role = hasAdvisorInvite ? 'consumer' : role
       const termsAcceptedAt = new Date().toISOString()
 
-      const callbackUrl =
-        typeof window !== 'undefined'
-          ? (() => {
-              const params = new URLSearchParams()
-              if (hasFirmInvite) {
-                params.set('invite_token', firmInviteToken)
-                params.set('firm_id', firmIdParam)
-              } else if (hasAdvisorInvite) {
-                params.set('next', `/invite/${advisorInviteToken}`)
-              } else if (hasConsumerConnect) {
-                params.set('next', `/advisor/connect/${consumerConnectToken}`)
-              } else if (redirectTo) {
-                params.set('next', redirectTo)
-              }
-              const qs = params.toString()
-              return `${window.location.origin}/auth/callback${qs ? `?${qs}` : ''}`
-            })()
-          : undefined
-
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            role: effectiveRole,
-            terms_accepted_at: termsAcceptedAt,
-          },
-          emailRedirectTo: callbackUrl,
-        },
-      })
-
-      if (signUpError) {
-        console.error('signUp error:', signUpError.message)
-        setError(signUpError.message)
-        setIsSubmitting(false)
-        return
-      }
-
-      if (data.user?.identities && data.user.identities.length === 0) {
-        setError('An account with this email already exists.')
-        setIsSubmitting(false)
-        return
-      }
-
-      const sessionFromSignUp = data.session
-
-      if (sessionFromSignUp) {
-        void fetch('/api/terms/accept', { method: 'POST' }).catch((err) => {
-          console.error('terms accept after signup:', err)
-        })
-      }
-
-      if (sessionFromSignUp && effectiveRole === 'advisor' && data.user && !hasFirmInvite) {
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role, firm_id')
-            .eq('id', data.user.id)
-            .maybeSingle()
-
-          if (profile?.role === 'advisor' && profile.firm_id == null) {
-            const userEmail = data.user.email ?? email
-            const prefix = userEmail.includes('@')
-              ? userEmail.slice(0, userEmail.indexOf('@')).trim()
-              : userEmail.trim() || 'Advisor'
-            const defaultFirmName = `${prefix} Firm`
-
-            const { data: newFirm, error: firmError } = await supabase
-              .from('firms')
-              .insert({
-                name: defaultFirmName,
-                owner_id: data.user.id,
-                tier: 'starter',
-                seat_count: 1,
-                subscription_status: null,
-              })
-              .select('id')
-              .single()
-
-            if (firmError) throw firmError
-            if (!newFirm?.id) throw new Error('firm insert returned no id')
-
-            const { error: memberError } = await supabase.from('firm_members').insert({
-              firm_id: newFirm.id,
-              user_id: data.user.id,
-              firm_role: 'owner',
-              status: 'active',
-              joined_at: new Date().toISOString(),
-            })
-            if (memberError) throw memberError
-
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .update({ firm_id: newFirm.id, firm_role: 'owner' })
-              .eq('id', data.user.id)
-            if (profileError) throw profileError
-          }
-        } catch (err) {
-          console.error('advisor firm bootstrap error:', err)
-        }
-      }
-
-      if (sessionFromSignUp && hasFirmInvite) {
-        void fetch('/api/firm/join', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            invite_token: firmInviteToken,
-            firm_id: firmIdParam,
-          }),
-        })
-          .then(async (res) => {
-            if (!res.ok) {
-              console.error('firm join after signup:', await res.text().catch(() => res.status))
-            }
-          })
-          .catch((err) => {
-            console.error('firm join after signup:', err)
-          })
-      }
-
-      // ── Referral attribution ─────────────────────────────────────────────
       const referralCode =
         typeof window !== 'undefined'
           ? sessionStorage.getItem('mwm_referral_code') ?? undefined
@@ -212,65 +121,39 @@ export function SignupForm({ betaAccessActive = false, betaLabel = null }: Signu
           ? sessionStorage.getItem('mwm_attorney_referral_slug') ?? undefined
           : undefined
 
-      // Fire account_created funnel event with full referral context (no session required)
-      fetch('/api/analytics/funnel', {
+      const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          event_name: 'account_created',
-          event_slug: referralSlug ?? attorneyReferralSlug,
-          referral_code: referralCode ?? attorneyReferralCode,
-          properties: {
-            role: effectiveRole,
-            ...(betaAccessActive
-              ? {
-                  signup_source: BETA_SIGNUP_ACCOUNT_SOURCE,
-                  ...(betaLabel ? { beta_label: betaLabel } : {}),
-                }
-              : {}),
-            ...(referralCode ? { advisor_referral_code: referralCode } : {}),
-            ...(attorneyReferralCode ? { attorney_referral_code: attorneyReferralCode } : {}),
-          },
+          email: email.trim(),
+          password,
+          fullName: fullName.trim(),
+          role: effectiveRole,
+          termsAcceptedAt,
+          admission,
+          referralCode,
+          referralSlug,
+          attorneyReferralCode,
+          attorneyReferralSlug,
+          betaLabel,
+          betaAccessActive,
+          redirectTo: redirectTo || undefined,
         }),
-      }).catch(() => {})
+      })
 
-      // Persist referral codes when signup returned a session (email confirm off in dev/test).
-      if (sessionFromSignUp && data.user && (referralCode || attorneyReferralCode)) {
-        supabase
-          .from('profiles')
-          .update({
-            ...(referralCode ? { referral_code: referralCode } : {}),
-            ...(attorneyReferralCode ? { attorney_referral_code: attorneyReferralCode } : {}),
-          })
-          .eq('id', data.user.id)
-          .then(({ error: attrError }) => {
-            if (attrError) console.error('referral attribution write error:', attrError.message)
-          })
-
-        if (referralCode && effectiveRole === 'consumer') {
-          void fetch('/api/advisor/notify-referral-signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              referralCode,
-              consumerName: fullName.trim(),
-              consumerEmail: email.trim(),
-            }),
-          }).catch(() => {})
-        }
+      const payload = (await res.json().catch(() => ({}))) as {
+        error?: string
+        nextPath?: string
+        session?: boolean
+        needsEmailConfirmation?: boolean
       }
 
-      if (sessionFromSignUp && hasConsumerConnect && data.user) {
-        void fetch('/api/advisor/claim-consumer-invite', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: consumerConnectToken }),
-        }).catch((err) => {
-          console.error('claim consumer invite after signup:', err)
-        })
+      if (!res.ok) {
+        setError(payload.error ?? 'Something went wrong. Please try again.')
+        setIsSubmitting(false)
+        return
       }
 
-      // Clear all referral sessionStorage keys
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('mwm_referral_code')
         sessionStorage.removeItem('mwm_referral_slug')
@@ -278,28 +161,11 @@ export function SignupForm({ betaAccessActive = false, betaLabel = null }: Signu
         sessionStorage.removeItem('mwm_attorney_referral_slug')
       }
 
-      if (sessionFromSignUp && hasAdvisorInvite) {
-        router.push(`/invite/${advisorInviteToken}`)
-        router.refresh()
-        setIsSubmitting(false)
-        return
-      }
+      const nextPath =
+        payload.nextPath ??
+        `/auth/confirm-email?email=${encodeURIComponent(email.trim())}`
 
-      if (sessionFromSignUp && hasConsumerConnect) {
-        router.push(`/advisor/connect/${consumerConnectToken}`)
-        router.refresh()
-        setIsSubmitting(false)
-        return
-      }
-
-      if (sessionFromSignUp && redirectTo) {
-        router.push(redirectTo)
-        router.refresh()
-        setIsSubmitting(false)
-        return
-      }
-
-      router.push(`/auth/confirm-email?email=${encodeURIComponent(email)}`)
+      router.push(nextPath)
       router.refresh()
       setIsSubmitting(false)
     } catch {
@@ -382,11 +248,11 @@ export function SignupForm({ betaAccessActive = false, betaLabel = null }: Signu
               type="password"
               autoComplete="new-password"
               required
-              minLength={6}
+              minLength={passwordMin}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className={formControlClass}
-              placeholder="At least 6 characters"
+              placeholder={`At least ${passwordMin} characters`}
             />
           </div>
 

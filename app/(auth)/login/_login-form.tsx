@@ -58,6 +58,13 @@ export function LoginForm() {
         return
       }
 
+      if (!data.user?.email_confirmed_at) {
+        await supabase.auth.signOut()
+        router.push(`/auth/confirm-email?email=${encodeURIComponent(email)}`)
+        router.refresh()
+        return
+      }
+
       const { data: profile } = await supabase
         .from('profiles')
         .select('role, subscription_status, firm_role, is_superuser')

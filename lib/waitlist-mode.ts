@@ -43,7 +43,7 @@ function isExplicitWaitlistEnabled(): boolean {
 }
 
 /** Go-live flip — the only intentional way to open public signup on production. */
-function isSignupExplicitlyOpen(): boolean {
+export function isSignupExplicitlyOpen(): boolean {
   if (process.env.PUBLIC_SIGNUP_OPEN === 'true') return true
   return process.env.NEXT_PUBLIC_SIGNUP_OPEN === 'true'
 }
@@ -146,16 +146,29 @@ export function getBetaSignupAccessLabel(
   return label || null
 }
 
-/** Invite / token signup flows bypass the waitlist gate. */
-export function shouldBypassWaitlistForSignup(
+/**
+ * Cosmetic hint for rendering /signup while waitlist is on — NOT a security gate.
+ * Account creation is enforced server-side on POST /api/auth/signup.
+ */
+export function hasSignupPageAdmissionHint(
   searchParams: Pick<URLSearchParams, 'get'>,
   options?: { betaAccessCookie?: string | null },
 ): boolean {
   if (isBetaSignupAccessActive(searchParams, options?.betaAccessCookie)) return true
-  if (searchParams.get('invite')) return true
-  if (searchParams.get('invite_token') && searchParams.get('firm_id')) return true
-  if (searchParams.get('connectionToken')) return true
+  if (searchParams.get('invite')?.trim()) return true
+  if (searchParams.get('invite_token')?.trim() && searchParams.get('firm_id')?.trim()) return true
+  if (searchParams.get('connect')?.trim()) return true
+  if (searchParams.get('connectionToken')?.trim()) return true
+  if (searchParams.get('access')?.trim()) return true
   return false
+}
+
+/** @deprecated Use hasSignupPageAdmissionHint — name implied a security bypass. */
+export function shouldBypassWaitlistForSignup(
+  searchParams: Pick<URLSearchParams, 'get'>,
+  options?: { betaAccessCookie?: string | null },
+): boolean {
+  return hasSignupPageAdmissionHint(searchParams, options)
 }
 
 type SignupHrefOptions = WaitlistModeOptions & {

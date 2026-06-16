@@ -6,7 +6,8 @@ import {
 import { createClient } from '@supabase/supabase-js'
 import {
   ENV_MANIFEST,
-  LIVE_STRIPE_PRICE_ENV_VARS,
+  CONSUMER_STRIPE_PRICE_ENV_VARS,
+  STRIPE_PRICE_ENV_VARS,
   MANIFEST_VAR_NAMES,
   type EnvScope,
   type EnvShape,
@@ -154,7 +155,7 @@ function classifyVar(
       status: 'FORBIDDEN_IN_SCOPE',
       flag: {
         name: entry.name,
-        level: 'WARN',
+        level: scope === 'production' ? 'CRITICAL' : 'WARN',
         reason: `${entry.name} must not be set in ${scope} scope.`,
         action: `Remove ${entry.name} from ${scope} scope.`,
       },
@@ -270,10 +271,19 @@ function detectUnknownVars(env: EnvSource): EnvFlag[] {
   return flags
 }
 
-async function verifyLiveStripePrices(
+/** Consumer prices may be unset on preview/local (legacy fallbacks in stripePrices.ts). */
+export function shouldSkipUnsetStripePriceCheck(envVar: string, scope: EnvScope): boolean {
+  return (
+    scope !== 'production' &&
+    (CONSUMER_STRIPE_PRICE_ENV_VARS as readonly string[]).includes(envVar)
+  )
+}
+
+async function verifyStripePrices(
   env: EnvSource,
   stripe: Stripe,
   keyMode: ReturnType<typeof inferStripeKeyMode>,
+  scope: EnvScope,
 ): Promise<{
   rows: NonNullable<EnvVerifyReport['liveness']>['stripe_prices']
   taxInfoFlags: EnvFlag[]
@@ -281,22 +291,34 @@ async function verifyLiveStripePrices(
   const rows: NonNullable<EnvVerifyReport['liveness']>['stripe_prices'] = []
   const taxInfoFlags: EnvFlag[] = []
 
-  if (keyMode !== 'live') {
-    for (const envVar of LIVE_STRIPE_PRICE_ENV_VARS) {
+  if (keyMode !== 'live' && keyMode !== 'test') {
+    for (const envVar of STRIPE_PRICE_ENV_VARS) {
       rows.push({
         env_var: envVar,
         price_id: env[envVar]?.trim() ?? '',
         status: 'skipped',
-        reason: 'STRIPE_SECRET_KEY is not live mode',
+        reason:
+          keyMode === 'unset'
+            ? 'STRIPE_SECRET_KEY unset'
+            : 'STRIPE_SECRET_KEY mode unknown',
       })
     }
     return { rows, taxInfoFlags }
   }
 
-  for (const envVar of LIVE_STRIPE_PRICE_ENV_VARS) {
+  for (const envVar of STRIPE_PRICE_ENV_VARS) {
     const priceId = env[envVar]?.trim() ?? ''
     if (!priceId) {
-      rows.push({ env_var: envVar, price_id: '', status: 'missing', reason: 'env var unset' })
+      if (shouldSkipUnsetStripePriceCheck(envVar, scope)) {
+        rows.push({
+          env_var: envVar,
+          price_id: '',
+          status: 'skipped',
+          reason: 'unset (consumer legacy fallback may apply in preview/local)',
+        })
+      } else {
+        rows.push({ env_var: envVar, price_id: '', status: 'missing', reason: 'env var unset' })
+      }
       continue
     }
     if (!/^price_/.test(priceId)) {
@@ -326,12 +348,15 @@ async function verifyLiveStripePrices(
           status: 'active',
           tax_behavior: taxBehavior,
         })
-        taxInfoFlags.push({
-          name: envVar,
-          level: 'INFO',
-          reason: `tax_behavior=${taxBehavior ?? 'unspecified'} (WA B&O SaaS ruling pending — verifier reports only, does not assert correct collection).`,
-          action: 'Confirm tax setting with tax advisor after B&O ruling; automatic_tax is set at Checkout Session, not on Price.',
-        })
+        if (keyMode === 'live') {
+          taxInfoFlags.push({
+            name: envVar,
+            level: 'INFO',
+            reason: `tax_behavior=${taxBehavior ?? 'unspecified'} (WA B&O SaaS ruling pending — verifier reports only, does not assert correct collection).`,
+            action:
+              'Confirm tax setting with tax advisor after B&O ruling; automatic_tax is set at Checkout Session, not on Price.',
+          })
+        }
       }
     } catch (err) {
       rows.push({
@@ -395,7 +420,12 @@ async function runLivenessChecks(
         await stripe.balance.retrieve()
         result.stripe = 'LIVE_OK'
 
-        const { rows: priceRows, taxInfoFlags } = await verifyLiveStripePrices(env, stripe, keyMode)
+        const { rows: priceRows, taxInfoFlags } = await verifyStripePrices(
+          env,
+          stripe,
+          keyMode,
+          scope,
+        )
         result.stripe_prices = priceRows
         livenessFlags.push(...taxInfoFlags)
         if (keyMode === 'live') {

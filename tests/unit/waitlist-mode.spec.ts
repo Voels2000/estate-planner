@@ -102,7 +102,7 @@ test.describe('private beta signup access', () => {
     return sp
   }
 
-  test('valid access token bypasses waitlist gate', () => {
+  test('valid access token bypasses waitlist page gate', () => {
     const prev = process.env.BETA_SIGNUP_TOKEN
     process.env.BETA_SIGNUP_TOKEN = 'secret-friends-token'
     try {
@@ -111,7 +111,8 @@ test.describe('private beta signup access', () => {
       expect(
         shouldBypassWaitlistForSignup(params('secret-friends-token', 'friends-june')),
       ).toBe(true)
-      expect(shouldBypassWaitlistForSignup(params('wrong'))).toBe(false)
+      // Wrong token still shows signup page (cosmetic hint); server rejects on POST /api/auth/signup
+      expect(shouldBypassWaitlistForSignup(params('wrong'))).toBe(true)
     } finally {
       if (prev === undefined) delete process.env.BETA_SIGNUP_TOKEN
       else process.env.BETA_SIGNUP_TOKEN = prev
@@ -127,8 +128,8 @@ test.describe('private beta signup access', () => {
     ).toBe(false)
   })
 
-  test('invite flows still bypass waitlist', () => {
-    expect(shouldBypassWaitlistForSignup(params('x'))).toBe(false)
+  test('invite query hints allow signup page render (not account creation)', () => {
+    expect(shouldBypassWaitlistForSignup(new URLSearchParams({ access: 'x' }))).toBe(true)
     const invite = new URLSearchParams({ invite: 'abc' })
     expect(shouldBypassWaitlistForSignup(invite)).toBe(true)
   })

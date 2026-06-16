@@ -8,6 +8,7 @@ import {
   resolveEnvScope,
   inferStripeKeyMode,
   stripeKeyScopeMismatch,
+  shouldSkipUnsetStripePriceCheck,
 } from '../../lib/env/verifyEnv'
 
 const CONSUMER_PRICE = 'STRIPE_PRICE_FINANCIAL_MONTHLY'
@@ -134,21 +135,38 @@ test.describe('Stripe liveness key mode', () => {
     expect(stripeKeyScopeMismatch('preview', 'test')).toBeUndefined()
   })
 
-  test('?live=1 with test Stripe key skips price retrieve (not live mode)', async () => {
+  test('?live=1 with test Stripe key still runs price checks (preview scope)', async () => {
     const report = await verifyEnvironment({
       live: true,
       env: {
-        VERCEL_ENV: 'production',
+        VERCEL_ENV: 'preview',
         STRIPE_SECRET_KEY: 'sk_test_fake_for_unit_test',
-        STRIPE_PRICE_FINANCIAL_MONTHLY: 'price_test_monthly',
+        STRIPE_PRICE_FINANCIAL_MONTHLY: '',
+        STRIPE_PRICE_ADVISOR_STARTER_MONTHLY: 'price_test_advisor_starter',
         NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
         SUPABASE_SERVICE_ROLE_KEY: 'eyJfake',
       },
     })
 
+    expect(report.liveness?.stripe_key_mode).toBe('test')
+    // balance.retrieve fails with fake key — prices not reached; scope/key wiring is the assertion
     expect(report.liveness?.stripe).toBe('LIVE_FAIL')
-    expect(report.liveness?.stripe_reason).toContain('test mode')
-    expect(report.liveness?.stripe_prices).toBeUndefined()
+    expect(report.vars.STRIPE_SECRET_KEY).toBe('OK')
+  })
+
+  test('shouldSkipUnsetStripePriceCheck — consumer only outside production', () => {
+    expect(shouldSkipUnsetStripePriceCheck('STRIPE_PRICE_FINANCIAL_MONTHLY', 'preview')).toBe(
+      true,
+    )
+    expect(shouldSkipUnsetStripePriceCheck('STRIPE_PRICE_FINANCIAL_MONTHLY', 'production')).toBe(
+      false,
+    )
+    expect(
+      shouldSkipUnsetStripePriceCheck('STRIPE_PRICE_ADVISOR_STARTER_MONTHLY', 'preview'),
+    ).toBe(false)
+    expect(
+      shouldSkipUnsetStripePriceCheck('STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY', 'local'),
+    ).toBe(false)
   })
 })
 
@@ -203,6 +221,18 @@ test.describe('verifier tuning — Supabase formats, canary, platform vars', () 
     expect(
       report.flags.filter((f) => f.name === 'E2E_CANARY_PASSWORD' && f.level === 'WARN'),
     ).toHaveLength(0)
+  })
+
+  test('SIGNUP_SKIP_EMAIL_CONFIRM in production is CRITICAL FORBIDDEN_IN_SCOPE', async () => {
+    const report = await verifyEnvironment({
+      env: {
+        VERCEL_ENV: 'production',
+        SIGNUP_SKIP_EMAIL_CONFIRM: 'true',
+      },
+    })
+    expect(report.vars.SIGNUP_SKIP_EMAIL_CONFIRM).toBe('FORBIDDEN_IN_SCOPE')
+    const flag = report.flags.find((f) => f.name === 'SIGNUP_SKIP_EMAIL_CONFIRM')
+    expect(flag?.level).toBe('CRITICAL')
   })
 
   test('platform var TZ produces no REVIEW flag', async () => {

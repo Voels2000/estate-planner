@@ -10,8 +10,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 ## A. Hard blockers — broken product or serious exposure if skipped
 
-### Payments
-- ⬜ **Stripe real-card live smoke** — real checkout → `checkout.session.completed` → subscription active → access granted. (P0)
+- ⬜ **Stripe price IDs validated in test mode** — `GET /api/admin/verify-env?live=1` on Preview (`sk_test_`) runs `prices.retrieve` for advisor/attorney `STRIPE_PRICE_*` vars (catches `No such price` before checkout). Consumer unset on preview/local skipped (legacy fallbacks).
 - ⬜ **Webhook failure visibility** — alert when a Stripe webhook fails/times out. Confirm handlers are **idempotent**.
 
 ### Data integrity & isolation (on PROD, not just staging)
@@ -22,6 +21,9 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - ⬜ **PITR / backups confirmed ON before real data exists** — Supabase PITR enabled, retention known, written rollback path for bad prod migration.
 
 ### Signup correctness (on PROD)
+- 🔄 **Waitlist hardening** — prod Supabase public signups disabled (Layer 0). Code shipped: `POST /api/auth/signup` + `lib/auth/signupAdmission.ts` (pre-create validation via `admin.createUser`; client `signUp` removed). **Deploy + disable staging anon signups** per [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md) §10.
+- ⬜ **`verify-env` prod gates** — `GET /api/admin/verify-env?live=1` on production must show **CRITICAL** if `SIGNUP_SKIP_EMAIL_CONFIRM` is set (auto-confirms self-serve signups); `PUBLIC_SIGNUP_OPEN` must be `false` until flip.
+- ⬜ **Open-consumer email confirm** — bright-state signup returns `201` + `needsEmailConfirmation: true` (no session cookie); unconfirmed users cannot reach data routes or `/api/stripe/checkout` (middleware + server `createClient` gate).
 - 🔄 **`handle_new_user` / signup defaults verified on prod** — fresh signup → `subscription_status='none'`, `consumer_tier=1`. (B8)
 - ⬜ **Apply WA estate migrations on prod** — Regime D + CST parity in timestamp order (`20260613120000`, `20260613130000`, `20260613140000`) if not already applied.
 
@@ -85,7 +87,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 1. Apply prod migrations in timestamp order through latest:
    …WA Regime D (20260613120000–140000) → RLS fix (20260713130000) →
    coverage fixes (20260713140000) → service_role grants (20260713150000)
-2. verify-env on prod (live=1): PUBLIC_SIGNUP_OPEN=false, REQUIRE_PRIVILEGED_MFA=true
+2. verify-env on prod (`?live=1`, live key): all `STRIPE_PRICE_*` → `prices.retrieve` active. Preview (`sk_test_`) validates advisor/attorney prices the same way — catches `No such price` before checkout.
 3. npm run release:post-deploy            # Voels + RLS
 4. npm run verify:rls -- --require-sql    # prod: 27/27 + coverage gate PASS
 5. Deploy app (share page uses get_share_link_display_meta RPC)

@@ -8,6 +8,41 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { countDocumentsOnFile, summarizeMissingDocs } from '@/lib/attorney/clientDocHealth'
 import { loadRosterNetWorthByOwner } from '@/lib/roster/rosterNetWorth'
 
+type AttorneyClientRow = {
+  id: string
+  client_id: string
+  status: string
+  granted_at: string | null
+  advisor_pdf_access: boolean | null
+  matter_stage: string | null
+  client_status: string | null
+}
+
+type AttorneyHouseholdRow = {
+  id: string
+  name: string | null
+  person1_first_name: string | null
+  person1_last_name: string | null
+  person2_first_name: string | null
+  person2_last_name: string | null
+  state_primary: string | null
+  estate_complexity_flag: string | null
+  owner_id: string
+}
+
+type OwnerProfileRow = {
+  id: string
+  full_name: string | null
+  email: string | null
+}
+
+type LegalDocumentCountRow = {
+  household_id: string
+  document_type: string
+  is_current: boolean
+  is_deleted: boolean
+}
+
 export default async function AttorneyDashboardPage() {
   const supabase = await createClient()
 
@@ -54,7 +89,8 @@ export default async function AttorneyDashboardPage() {
 
   // 5. Fetch household details for each client
   const tierFeatures = attorneyTierFeatures(profile?.attorney_tier ?? 0)
-  const visibleClients = (clients ?? []).slice(0, tierFeatures.maxClients)
+  const clientRows = (clients ?? []) as AttorneyClientRow[]
+  const visibleClients = clientRows.slice(0, tierFeatures.maxClients)
 
   const householdIds = visibleClients.map((c) => c.client_id).filter(Boolean)
 
@@ -73,17 +109,18 @@ export default async function AttorneyDashboardPage() {
           owner_id
         `)
         .in('id', householdIds)
-    : { data: [] }
+    : { data: [] as AttorneyHouseholdRow[] }
 
   // 6. Fetch owner profiles for each household
-  const ownerIds = (households ?? []).map(h => h.owner_id).filter(Boolean)
+  const householdRows = (households ?? []) as AttorneyHouseholdRow[]
+  const ownerIds = householdRows.map((h) => h.owner_id).filter(Boolean)
 
   const { data: ownerProfiles } = ownerIds.length > 0
     ? await supabase
         .from('profiles')
         .select('id, full_name, email')
         .in('id', ownerIds)
-    : { data: [] }
+    : { data: [] as OwnerProfileRow[] }
 
   const [{ data: docCounts }, netWorthMap] = await Promise.all([
     householdIds.length > 0
@@ -93,14 +130,17 @@ export default async function AttorneyDashboardPage() {
           .in('household_id', householdIds)
           .eq('is_current', true)
           .eq('is_deleted', false)
-      : Promise.resolve({ data: [] as { household_id: string; document_type: string }[] }),
+      : Promise.resolve({ data: [] as LegalDocumentCountRow[] }),
     loadRosterNetWorthByOwner(supabase, ownerIds),
   ])
 
+  const ownerProfileRows = (ownerProfiles ?? []) as OwnerProfileRow[]
+  const docCountRows = (docCounts ?? []) as LegalDocumentCountRow[]
+
   const clientCards = visibleClients.map((client) => {
-    const household = (households ?? []).find((h) => h.id === client.client_id)
-    const owner = (ownerProfiles ?? []).find((p) => p.id === household?.owner_id)
-    const clientDocs = (docCounts ?? []).filter((d) => d.household_id === client.client_id)
+    const household = householdRows.find((h) => h.id === client.client_id)
+    const owner = ownerProfileRows.find((p) => p.id === household?.owner_id)
+    const clientDocs = docCountRows.filter((d) => d.household_id === client.client_id)
     const docHealth = countDocumentsOnFile(clientDocs)
     const ownerId = household?.owner_id
     const rosterNetWorth = ownerId ? (netWorthMap[ownerId] ?? 0) : 0
@@ -109,7 +149,7 @@ export default async function AttorneyDashboardPage() {
       connection_id: client.id,
       household_id: client.client_id,
       granted_at: client.granted_at,
-      advisor_pdf_access: client.advisor_pdf_access,
+      advisor_pdf_access: client.advisor_pdf_access === true,
       full_name: owner?.full_name ?? 'Unknown Client',
       email: owner?.email ?? '',
       household_name: household?.name ?? '',
@@ -135,7 +175,7 @@ export default async function AttorneyDashboardPage() {
       showDocHealth={clientCards.length > 0}
       attorneyTier={profile?.attorney_tier ?? 0}
       clientLimit={tierFeatures.maxClients}
-      totalClients={(clients ?? []).length}
+      totalClients={clientRows.length}
     />
   )
 }

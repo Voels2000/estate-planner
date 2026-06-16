@@ -4,7 +4,8 @@ import { Suspense } from 'react'
 import {
   isLocalDevHost,
   isWaitlistMode,
-  shouldBypassWaitlistForSignup,
+  hasSignupPageAdmissionHint,
+  isSignupExplicitlyOpen,
   BETA_SIGNUP_ACCESS_COOKIE,
   BETA_SIGNUP_ACCESS_LABEL_COOKIE,
   isBetaSignupAccessActive,
@@ -57,7 +58,8 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
   if (
     !isLocalhost &&
     isWaitlistMode({ hostname: hostHeader }) &&
-    !shouldBypassWaitlistForSignup(urlSearchParams, { betaAccessCookie })
+    !isSignupExplicitlyOpen() &&
+    !hasSignupPageAdmissionHint(urlSearchParams, { betaAccessCookie })
   ) {
     redirect('/waitlist')
   }
@@ -68,7 +70,11 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
         betaAccessActive={betaAccessActive}
         betaLabel={betaLabel}
       />
-      <SignupForm betaAccessActive={betaAccessActive} betaLabel={betaLabel} />
+      <SignupForm
+        betaAccessActive={betaAccessActive}
+        betaLabel={betaLabel}
+        signupOpen={isSignupExplicitlyOpen()}
+      />
     </Suspense>
   )
 }

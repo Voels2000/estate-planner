@@ -3,13 +3,17 @@ import { NextResponse, type NextRequest } from 'next/server'
 import {
   isLocalDevHost,
   isWaitlistMode,
-  shouldBypassWaitlistForSignup,
+  hasSignupPageAdmissionHint,
   BETA_SIGNUP_ACCESS_COOKIE,
   BETA_SIGNUP_ACCESS_LABEL_COOKIE,
   BETA_SIGNUP_ACCESS_PARAM,
   BETA_SIGNUP_ACCESS_LABEL_PARAM,
   isValidBetaSignupAccessToken,
 } from '@/lib/waitlist-mode'
+import {
+  isEmailConfirmExemptPath,
+  isEmailConfirmed,
+} from '@/lib/auth/emailConfirmation'
 import {
   isPrivilegedMfaEnforcementEnabled,
   profileRequiresPrivilegedMfa,
@@ -101,7 +105,7 @@ export async function middleware(request: NextRequest) {
     pathname === '/signup' &&
     !isLocalhost &&
     isWaitlistMode({ hostname }) &&
-    !shouldBypassWaitlistForSignup(searchParams, {
+    !hasSignupPageAdmissionHint(searchParams, {
       betaAccessCookie: request.cookies.get(BETA_SIGNUP_ACCESS_COOKIE)?.value,
     })
   ) {
@@ -173,6 +177,18 @@ export async function middleware(request: NextRequest) {
   // to pass through without hitting profile queries
   if (!user) {
     return supabaseResponse
+  }
+
+  // Unconfirmed email — no usable session on protected surfaces (sign out + confirm page)
+  if (!isEmailConfirmed(user) && !isEmailConfirmExemptPath(pathname)) {
+    await supabase.auth.signOut()
+    const confirmUrl = new URL('/auth/confirm-email', request.url)
+    if (user.email) confirmUrl.searchParams.set('email', user.email)
+    const redirect = NextResponse.redirect(confirmUrl)
+    for (const c of supabaseResponse.cookies.getAll()) {
+      redirect.cookies.set(c.name, c.value)
+    }
+    return redirect
   }
 
   // MFA enforcement — if user has enrolled a factor, require AAL2 on every request

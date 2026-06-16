@@ -73,6 +73,21 @@ type HouseholdRow = Record<string, unknown> & {
   has_business_interests: boolean | null
 }
 
+type DashboardAssetRow = { value: number | string | null; type?: string | null }
+type DashboardLiabilityRow = { balance: number | string | null }
+type DashboardExpenseRow = { amount: number | string | null }
+type DashboardRealEstateRow = {
+  current_value: number | string | null
+  mortgage_balance: number | string | null
+  monthly_payment?: number | string | null
+  titling?: string | null
+  situs_state?: string | null
+}
+type DashboardInsuranceRow = {
+  death_benefit?: number | string | null
+  is_ilit?: boolean | null
+}
+
 export async function DashboardBody({
   household,
   userId,
@@ -130,6 +145,12 @@ export async function DashboardBody({
     insurance,
   } = await loadDashboardCoreInputs(supabase, user!.id, bundle)
 
+  const assetRows = (assets ?? []) as DashboardAssetRow[]
+  const liabilityRows = (liabilities ?? []) as DashboardLiabilityRow[]
+  const expenseRows = (expenses ?? []) as DashboardExpenseRow[]
+  const realEstateRows = (realEstate ?? []) as DashboardRealEstateRow[]
+  const insuranceRows = (insurance ?? []) as DashboardInsuranceRow[]
+
   const pendingLifeEvents = bundle.lifeEventsPending as LifeEvent[]
   const loggedLifeEvents = bundle.lifeEventsLogged as LoggedLifeEvent[]
   const advisorConnection = bundle.advisorConnection
@@ -153,7 +174,7 @@ export async function DashboardBody({
       : null
   const hasBusinessInterests =
     (businesses?.length ?? 0) > 0 || (businessInterests?.length ?? 0) > 0
-  const hasRealEstate = (realEstate?.length ?? 0) > 0
+  const hasRealEstate = realEstateRows.length > 0
   const primaryAge =
     household.person1_birth_year != null
       ? new Date().getFullYear() - household.person1_birth_year
@@ -164,17 +185,17 @@ export async function DashboardBody({
   const personaAlerts = buildPersonaDashboardAlerts({
     businesses: businesses ?? [],
     businessInterests: businessInterests ?? [],
-    realEstate: realEstate ?? [],
+    realEstate: realEstateRows,
   })
 
   // ── Financial calculations (legacy fallback path) ────────────────────────
-  const financialAssetsFallback = (assets ?? []).reduce((s, a) => s + Number(a.value), 0)
-  const realEstateEquityFallback = (realEstate ?? []).reduce(
+  const financialAssetsFallback = assetRows.reduce((s, a) => s + Number(a.value), 0)
+  const realEstateEquityFallback = realEstateRows.reduce(
     (s, r) => s + Number(r.current_value) - Number(r.mortgage_balance ?? 0), 0,
   )
   const businessValueFallback = computeBusinessOwnershipValue(businesses ?? [], businessInterests ?? [])
-  const insuranceValueFallback = (insurance ?? [])
-    .filter(p => !p.is_ilit)
+  const insuranceValueFallback = insuranceRows
+    .filter((p) => !p.is_ilit)
     .reduce((s, p) => s + Number(p.death_benefit ?? 0), 0)
 
   const currentYear = new Date().getFullYear()
@@ -187,7 +208,7 @@ export async function DashboardBody({
   const p2SSPia = household?.person2_ss_pia ? Number(household.person2_ss_pia) : null
   const hasSpouse = household?.has_spouse ?? false
 
-  const baseExpenses = (expenses ?? []).reduce((sum, expense) => sum + Number(expense.amount), 0)
+  const baseExpenses = expenseRows.reduce((sum, expense) => sum + Number(expense.amount), 0)
   const {
     totalIncome,
     totalExpenses,
@@ -201,7 +222,7 @@ export async function DashboardBody({
   } = buildIncomeSnapshot({
     currentYear,
     incomeRows: income ?? [],
-    realEstateRows: realEstate ?? [],
+    realEstateRows: realEstateRows as Parameters<typeof buildIncomeSnapshot>[0]['realEstateRows'],
     hasSpouse,
     p1BirthYear,
     p1SSClaimingAge,
@@ -262,7 +283,7 @@ export async function DashboardBody({
   // ── Financial calculations (engine-aligned primary path) ─────────────────
   // Use composition rollups so Dashboard net worth matches estate engine:
   // gross estate at FMV minus total liabilities.
-  const otherLiabilities = (liabilities ?? []).reduce((s, l) => s + Number(l.balance), 0)
+  const otherLiabilities = liabilityRows.reduce((s, l) => s + Number(l.balance), 0)
   const {
     financialAssets,
     realEstateValue: realEstateFMV,
@@ -371,8 +392,8 @@ export async function DashboardBody({
     'roth_ira',
     'roth_401k',
   ])
-  const retirementAccountsTotal = (assets ?? [])
-    .filter((a) => RETIREMENT_ACCOUNT_TYPES.has(String((a as { type?: string }).type ?? '')))
+  const retirementAccountsTotal = assetRows
+    .filter((a) => RETIREMENT_ACCOUNT_TYPES.has(String(a.type ?? '')))
     .reduce((sum, a) => sum + Number(a.value ?? 0), 0)
 
   const retirementSnapshot = buildRetirementSnapshot({
@@ -466,12 +487,10 @@ export async function DashboardBody({
     Date.now() - new Date(accountCreatedAt).getTime() <= 7 * 24 * 60 * 60 * 1000
 
   const onboardingPersona = profile?.onboarding_persona as OnboardingPersona | null | undefined
-  const hasBusinessAssetFromAssets = (assets ?? []).some(
-    (a) => (a as { type?: string }).type === 'business',
-  )
+  const hasBusinessAssetFromAssets = assetRows.some((a) => a.type === 'business')
   const hasBusinessAsset = hasBusinessInterests || hasBusinessAssetFromAssets
-  const hasRealEstateAssetFromAssets = (assets ?? []).some((a) => {
-    const t = String((a as { type?: string }).type ?? '')
+  const hasRealEstateAssetFromAssets = assetRows.some((a) => {
+    const t = String(a.type ?? '')
     return t === 'real_estate' || t.includes('real')
   })
   const hasRealEstateAsset = hasRealEstate || hasRealEstateAssetFromAssets
