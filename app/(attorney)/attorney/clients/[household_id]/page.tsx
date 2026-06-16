@@ -14,6 +14,12 @@ import { getConsumerAppUrl } from '@/lib/consumer/afterHouseholdWrite'
 import { getMissingDocumentAlerts } from '@/lib/attorney/getMissingDocumentAlerts'
 import { attorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
 
+/** Fields read from `real_estate` rows for primary-residence value rollup. */
+type RealEstatePrimaryResidenceRow = {
+  is_primary_residence?: boolean | null
+  current_value?: number | string | null
+}
+
 export default async function AttorneyClientPage({
   params,
 }: {
@@ -151,12 +157,12 @@ export default async function AttorneyClientPage({
   }
 
   const primaryResidenceValue = (() => {
-    const rows = (realEstateRows ?? []).filter(
-      (r) => (r as { is_primary_residence?: boolean }).is_primary_residence === true,
+    const rows = (realEstateRows as RealEstatePrimaryResidenceRow[] | null ?? []).filter(
+      (r) => r.is_primary_residence === true,
     )
     if (rows.length === 0) return null as number | null
     const sum = rows.reduce(
-      (s, r) => s + Number((r as { current_value?: unknown }).current_value ?? 0),
+      (s, r) => s + Number(r.current_value ?? 0),
       0,
     )
     return sum > 0 ? sum : null

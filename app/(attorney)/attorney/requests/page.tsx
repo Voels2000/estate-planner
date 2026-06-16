@@ -2,6 +2,33 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AttorneyRequestsClient } from './_attorney-requests-client'
 
+type IncomingRequestRow = {
+  id: string
+  client_id: string
+  request_message: string | null
+  created_at: string
+}
+
+type RequestHouseholdRow = {
+  id: string
+  owner_id: string
+  state_primary: string | null
+}
+
+type RequestOwnerRow = {
+  id: string
+  full_name: string | null
+  email: string | null
+}
+
+type IntakeRequestRow = {
+  id: string
+  client_email: string
+  client_name: string | null
+  status: string
+  sent_at: string
+}
+
 export default async function AttorneyRequestsPage({
   searchParams,
 }: {
@@ -39,24 +66,27 @@ export default async function AttorneyRequestsPage({
     .eq('status', 'consumer_requested')
     .order('created_at', { ascending: false })
 
-  const householdIds = (incomingRows ?? []).map((r) => r.client_id).filter(Boolean)
+  const incomingRequestRows = (incomingRows ?? []) as IncomingRequestRow[]
+  const householdIds = incomingRequestRows.map((r) => r.client_id).filter(Boolean)
   const { data: households } =
     householdIds.length > 0
       ? await supabase
           .from('households')
           .select('id, owner_id, state_primary')
           .in('id', householdIds)
-      : { data: [] }
+      : { data: [] as RequestHouseholdRow[] }
 
-  const ownerIds = (households ?? []).map((h) => h.owner_id).filter(Boolean)
+  const householdRows = (households ?? []) as RequestHouseholdRow[]
+  const ownerIds = householdRows.map((h) => h.owner_id).filter(Boolean)
   const { data: owners } =
     ownerIds.length > 0
       ? await supabase.from('profiles').select('id, full_name, email').in('id', ownerIds)
-      : { data: [] }
+      : { data: [] as RequestOwnerRow[] }
 
-  const incomingRequests = (incomingRows ?? []).map((row) => {
-    const household = (households ?? []).find((h) => h.id === row.client_id)
-    const owner = (owners ?? []).find((p) => p.id === household?.owner_id)
+  const ownerRows = (owners ?? []) as RequestOwnerRow[]
+  const incomingRequests = incomingRequestRows.map((row) => {
+    const household = householdRows.find((h) => h.id === row.client_id)
+    const owner = ownerRows.find((p) => p.id === household?.owner_id)
     return {
       id: row.id,
       household_id: row.client_id,
@@ -75,10 +105,12 @@ export default async function AttorneyRequestsPage({
     .in('status', ['sent', 'opened'])
     .order('sent_at', { ascending: false })
 
+  const intakeRequestRows = (intakeRows ?? []) as IntakeRequestRow[]
+
   return (
     <AttorneyRequestsClient
       incomingRequests={incomingRequests}
-      intakeRequests={(intakeRows ?? []).map((r) => ({
+      intakeRequests={intakeRequestRows.map((r) => ({
         id: r.id,
         client_email: r.client_email,
         client_name: r.client_name,

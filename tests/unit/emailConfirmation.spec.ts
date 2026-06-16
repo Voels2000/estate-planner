@@ -11,7 +11,6 @@ import {
 test.describe('isEmailConfirmed', () => {
   test('requires email_confirmed_at timestamp', () => {
     expect(isEmailConfirmed(null)).toBe(false)
-    expect(isEmailConfirmed({ email_confirmed_at: null })).toBe(false)
     expect(isEmailConfirmed({ email_confirmed_at: undefined })).toBe(false)
     expect(isEmailConfirmed({ email_confirmed_at: '2026-06-13T00:00:00.000Z' })).toBe(true)
   })

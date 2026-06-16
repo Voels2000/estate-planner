@@ -103,7 +103,15 @@ export default async function DomicileAnalysisPage() {
       .eq('advisor_id', user.id)
       .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
 
-    clients = (advisorClients ?? []).map((ac) => {
+    type AdvisorClientWithProfile = {
+      client_id: string
+      profiles:
+        | { id: string; full_name: string | null; email: string | null }
+        | { id: string; full_name: string | null; email: string | null }[]
+        | null
+    }
+
+    clients = ((advisorClients ?? []) as AdvisorClientWithProfile[]).map((ac) => {
       const raw = ac.profiles as
         | { id: string; full_name: string | null; email: string | null }
         | { id: string; full_name: string | null; email: string | null }[]

@@ -1,4 +1,5 @@
-import { createServerClient, type SupabaseClient } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
+import type { SupabaseClient, UserResponse } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { isEmailConfirmed } from '@/lib/auth/emailConfirmation'
 
@@ -8,21 +9,23 @@ function applyEmailConfirmGate(client: SupabaseClient): SupabaseClient {
   const getUser = auth.getUser.bind(auth)
   const getSession = auth.getSession.bind(auth)
 
-  auth.getUser = async (...args: Parameters<typeof getUser>) => {
+  auth.getUser = (async (...args: Parameters<typeof getUser>) => {
     const result = await getUser(...args)
     if (result.data.user && !isEmailConfirmed(result.data.user)) {
-      return { data: { user: null }, error: result.error }
+      return { data: { user: null }, error: null } as unknown as UserResponse
     }
     return result
-  }
+  }) as typeof getUser
 
-  auth.getSession = async (...args: Parameters<typeof getSession>) => {
+  auth.getSession = (async (...args: Parameters<typeof getSession>) => {
     const result = await getSession(...args)
     if (result.data.session?.user && !isEmailConfirmed(result.data.session.user)) {
-      return { data: { session: null }, error: result.error }
+      return { data: { session: null }, error: null } as unknown as Awaited<
+        ReturnType<typeof getSession>
+      >
     }
     return result
-  }
+  }) as typeof getSession
 
   return client
 }

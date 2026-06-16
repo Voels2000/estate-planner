@@ -130,6 +130,7 @@ test.describe('inferSignupAdmissionFromClient', () => {
 
     expect(
       inferSignupAdmissionFromClient({
+        betaAccessActive: false,
         advisorInviteToken: 'inv',
         signupOpen: false,
       }).type,
@@ -137,6 +138,7 @@ test.describe('inferSignupAdmissionFromClient', () => {
 
     expect(
       inferSignupAdmissionFromClient({
+        betaAccessActive: false,
         signupOpen: true,
       }).type,
     ).toBe('open_consumer')

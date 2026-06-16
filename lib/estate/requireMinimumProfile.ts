@@ -32,10 +32,10 @@ export function requireHouseholdRecord(
 }
 
 /** Redirect to profile when household lacks minimum fields for estate planning pages. */
-export function requireMinimumViableProfile(
-  household: ProfileGateHousehold | null | undefined,
+export function requireMinimumViableProfile<H extends ProfileGateHousehold>(
+  household: H | null | undefined,
   fromPath: string,
-): asserts household is ProfileGateHousehold {
+): asserts household is H {
   if (!household) {
     redirect(profileRequiredUrl(fromPath, ALL_MISSING))
   }
