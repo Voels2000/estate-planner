@@ -32,6 +32,8 @@ export interface EnvFlag {
 
 export interface EnvVerifyReport {
   scope: EnvScope
+  /** Non-secret identity of what this deployment booted with (tiebreaker for env confusion). */
+  boot: BootIdentity
   summary: {
     ok: number
     missing: number
@@ -99,6 +101,48 @@ const EXPOSED_SECRET_PATTERNS: { re: RegExp; label: string }[] = [
 const SUPABASE_ANON_PUBLIC_KEY = 'NEXT_PUBLIC_SUPABASE_ANON_KEY'
 
 export type EnvSource = Record<string, string | undefined>
+
+export interface BootIdentity {
+  scope: EnvScope
+  vercel_env: string | undefined
+  supabase_project_ref: string | null
+  app_url_hostname: string | null
+  service_role_present: boolean
+}
+
+/** Parse `cmzyxpxfyvdvbsykjvsg` from `https://cmzyxpxfyvdvbsykjvsg.supabase.co`. */
+export function parseSupabaseProjectRef(url: string | undefined): string | null {
+  const trimmed = url?.trim()
+  if (!trimmed) return null
+  try {
+    const host = new URL(trimmed).hostname
+    const ref = host.split('.')[0]
+    return ref && ref !== 'localhost' ? ref : null
+  } catch {
+    return null
+  }
+}
+
+export function parseAppUrlHostname(url: string | undefined): string | null {
+  const trimmed = url?.trim()
+  if (!trimmed) return null
+  try {
+    return new URL(trimmed).hostname
+  } catch {
+    return null
+  }
+}
+
+export function buildBootIdentity(env: EnvSource = process.env): BootIdentity {
+  const scope = resolveEnvScope(env)
+  return {
+    scope,
+    vercel_env: env.VERCEL_ENV,
+    supabase_project_ref: parseSupabaseProjectRef(env.NEXT_PUBLIC_SUPABASE_URL),
+    app_url_hostname: parseAppUrlHostname(env.NEXT_PUBLIC_APP_URL),
+    service_role_present: Boolean(env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
+  }
+}
 
 export function resolveEnvScope(env: EnvSource = process.env): EnvScope {
   const vercelEnv = env.VERCEL_ENV
@@ -510,6 +554,7 @@ export async function verifyEnvironment(options?: {
 
   const report: EnvVerifyReport = {
     scope,
+    boot: buildBootIdentity(env),
     summary: {
       ok,
       missing,

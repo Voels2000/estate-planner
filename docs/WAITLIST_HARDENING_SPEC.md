@@ -2,7 +2,7 @@
 
 **Status:** Implemented (server-gated signup) — **§10 hosted Probe 1 parked** until staging Vercel project exists (launch plan Move 1)  
 **Priority:** P0 — prod is not safe while dark without this + Supabase toggle  
-**Related:** Launch plan Move 1 (staging Vercel project) · Move 3 (prod safe while dark) · `lib/waitlist-mode.ts` · `app/(auth)/signup/_signup-form.tsx`
+**Related:** Launch plan Move 1 (staging Vercel project) · [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md) · Move 3 (prod safe while dark) · `lib/waitlist-mode.ts` · `app/(auth)/signup/_signup-form.tsx`
 
 ---
 
@@ -263,7 +263,7 @@ Extract from `_signup-form.tsx` into `lib/auth/completeSignup.ts` (or similar) s
 
 **Passed elsewhere (not parked):** Full §10 HTTP matrix on **local dev (`npm run dev`) + staging Supabase** — including Probe 1 bright-state — all green before hosted runs.
 
-**Resume checklist (when staging Vercel project exists):**
+**Resume checklist (when staging Vercel project exists):** follow [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md) Phases 1–5. Summary:
 
 1. Staging project env: staging Supabase trio + `PUBLIC_SIGNUP_OPEN=true` + staging `NEXT_PUBLIC_APP_URL` (staging hostname, not gules/www) + test Stripe + staging webhook secret — all on **one project**, not Preview scope on `estate-planner`.
 2. Disable anon signups on staging Supabase (`cmzyxpxfyvdvbsykjvsg`).

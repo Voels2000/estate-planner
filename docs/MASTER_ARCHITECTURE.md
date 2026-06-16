@@ -25,7 +25,7 @@ It documents both:
 | **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local `.env.local`, Vercel **Preview** (interim), **future dedicated staging Vercel project** (launch plan Move 1) |
 | **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **Production** (`www.mywealthmaps.com` + `estate-planner-gules.vercel.app` — same deployment), prod canary smoke (`.env.test.prod`) |
 
-**Vercel vs Supabase vocabulary (2026-06-16):** Staging **database** exists (`mwm-staging`). A staging **Vercel project** does not yet — branch Preview deployments on `estate-planner` are used as an interim test surface. Preview is per-branch and per-deploy; env vars live on Vercel **scopes** (Development / Preview / Production), not on a stable project boundary. **`estate-planner-gules.vercel.app` is Production**, not staging. Hosted §10 Probe 1 is **parked** until Move 1 — see [WAITLIST_HARDENING_SPEC.md §10 parked state](./WAITLIST_HARDENING_SPEC.md#10-parked-state-2026-06-16).
+**Vercel vs Supabase vocabulary (2026-06-16):** Staging **database** exists (`mwm-staging`). A staging **Vercel project** does not yet — branch Preview deployments on `estate-planner` are used as an interim test surface. Preview is per-branch and per-deploy; env vars live on Vercel **scopes** (Development / Preview / Production), not on a stable project boundary. **`estate-planner-gules.vercel.app` is Production**, not staging. Hosted §10 Probe 1 is **parked** until Move 1 — see [WAITLIST_HARDENING_SPEC.md §10 parked state](./WAITLIST_HARDENING_SPEC.md#10-parked-state-2026-06-16). **Setup runbook:** [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md).
 
 Data does **not** promote between projects. Schema parity: `bash scripts/two-db-schema-parity.sh`.
 
@@ -36,7 +36,7 @@ local dev (staging DB) → PR → Vercel Preview (staging DB, interim) → merge
                               ↘ GitHub verify (no secrets)
                               ↘ staging-keepalive (cron, no secrets)
 
-Target (Move 1): dedicated staging Vercel project (stable env) replaces Preview-as-staging for §10 matrix + billing smoke.
+Target (Move 1): dedicated staging Vercel project (stable env) replaces Preview-as-staging for §10 matrix + billing smoke — [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md).
 ```
 
 Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Go-live checklist: [LAUNCH.md](./LAUNCH.md) · manual attestations: [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) (`npm run launch:tracker`).
@@ -45,7 +45,7 @@ Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TEST
 
 `lib/env/manifest.ts` — expected variables per scope (`local` / `preview` / `production`), shape regexes, forbidden test vars, consumer price hard-require in production.
 
-**Verifier:** `GET /api/admin/verify-env` (`app/api/admin/verify-env/route.ts`) — `x-admin-token` → `ADMIN_VERIFY_TOKEN`; returns 404 when unauthorized. Optional `?live=1` for Stripe/Supabase liveness + `stripe_key_mode` cross-check.
+**Verifier:** `GET /api/admin/verify-env` (`app/api/admin/verify-env/route.ts`) — `x-admin-token` → `ADMIN_VERIFY_TOKEN`; returns 404 when unauthorized. Optional `?live=1` for Stripe/Supabase liveness + `stripe_key_mode` cross-check. Response includes non-secret **`boot`** block (`supabase_project_ref`, `app_url_hostname`, `service_role_present`) — use on staging project first boot per [STAGING_PROJECT_RUNBOOK.md § Phase 4](./STAGING_PROJECT_RUNBOOK.md#phase-4--make-verify-env-the-tiebreaker).
 
 **Gate-2:** Before `PUBLIC_SIGNUP_OPEN=true`, run `verify-env?live=1` — record attestation only when `missing: []` after dashboard fixes.
 
