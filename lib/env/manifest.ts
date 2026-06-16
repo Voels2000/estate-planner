@@ -218,6 +218,12 @@ export const ENV_MANIFEST: EnvVarEntry[] = [
     secret: false,
     shape: { production: 'false' },
   }),
+  entry('SIGNUP_SKIP_EMAIL_CONFIRM', {
+    scopes: ['preview', 'local'],
+    requiredInScopes: [],
+    secret: false,
+    forbiddenInScopes: ['production'],
+  }),
 
   // --- Optional config (validated when present) ---
   entry('NEXT_PUBLIC_SITE_URL', {

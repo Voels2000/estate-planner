@@ -21,6 +21,9 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - ⬜ **PITR / backups confirmed ON before real data exists** — Supabase PITR enabled, retention known, written rollback path for bad prod migration.
 
 ### Signup correctness (on PROD)
+- 🔄 **Waitlist hardening** — prod Supabase public signups disabled (Layer 0). Code shipped: `POST /api/auth/signup` + `lib/auth/signupAdmission.ts` (pre-create validation via `admin.createUser`; client `signUp` removed). **Deploy + disable staging anon signups** per [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md) §10.
+- ⬜ **`verify-env` prod gates** — `GET /api/admin/verify-env?live=1` on production must show **CRITICAL** if `SIGNUP_SKIP_EMAIL_CONFIRM` is set (auto-confirms self-serve signups); `PUBLIC_SIGNUP_OPEN` must be `false` until flip.
+- ⬜ **Open-consumer email confirm** — bright-state signup returns `201` + `needsEmailConfirmation: true` (no session cookie); unconfirmed users cannot reach data routes or `/api/stripe/checkout` (middleware + server `createClient` gate).
 - 🔄 **`handle_new_user` / signup defaults verified on prod** — fresh signup → `subscription_status='none'`, `consumer_tier=1`. (B8)
 - ⬜ **Apply WA estate migrations on prod** — Regime D + CST parity in timestamp order (`20260613120000`, `20260613130000`, `20260613140000`) if not already applied.
 

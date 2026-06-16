@@ -155,7 +155,7 @@ function classifyVar(
       status: 'FORBIDDEN_IN_SCOPE',
       flag: {
         name: entry.name,
-        level: 'WARN',
+        level: scope === 'production' ? 'CRITICAL' : 'WARN',
         reason: `${entry.name} must not be set in ${scope} scope.`,
         action: `Remove ${entry.name} from ${scope} scope.`,
       },

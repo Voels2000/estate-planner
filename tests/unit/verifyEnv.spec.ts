@@ -223,6 +223,18 @@ test.describe('verifier tuning — Supabase formats, canary, platform vars', () 
     ).toHaveLength(0)
   })
 
+  test('SIGNUP_SKIP_EMAIL_CONFIRM in production is CRITICAL FORBIDDEN_IN_SCOPE', async () => {
+    const report = await verifyEnvironment({
+      env: {
+        VERCEL_ENV: 'production',
+        SIGNUP_SKIP_EMAIL_CONFIRM: 'true',
+      },
+    })
+    expect(report.vars.SIGNUP_SKIP_EMAIL_CONFIRM).toBe('FORBIDDEN_IN_SCOPE')
+    const flag = report.flags.find((f) => f.name === 'SIGNUP_SKIP_EMAIL_CONFIRM')
+    expect(flag?.level).toBe('CRITICAL')
+  })
+
   test('platform var TZ produces no REVIEW flag', async () => {
     const report = await verifyEnvironment({
       env: { VERCEL_ENV: 'production', TZ: 'UTC' },
