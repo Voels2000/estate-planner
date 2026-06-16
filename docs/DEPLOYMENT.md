@@ -8,7 +8,7 @@
 
 | Database | Supabase project | Used by |
 |----------|------------------|---------|
-| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local dev (`.env.local`), Vercel **Preview** |
+| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local dev (`.env.local`), Vercel **`estate-planner-staging`**, CI E2E/RLS |
 | **Production** | existing prod (`fnzvlmrqwcqwiqueevux`) | Vercel **Production**, manual prod smoke |
 
 Code promotes via git → Vercel. **Data never promotes** between projects.

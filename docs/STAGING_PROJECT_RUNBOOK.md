@@ -2,7 +2,9 @@
 
 **Goal:** a **dedicated staging Vercel project** with a stable URL and its own variable set, so Preview-scope / Development-scope confusion structurally disappears and Probe 1 closes on a surface you'll keep.
 
-**Related:** [WAITLIST_HARDENING_SPEC.md §10 parked state](./WAITLIST_HARDENING_SPEC.md#10-parked-state-2026-06-16) · [MASTER_ARCHITECTURE.md § Infrastructure](./MASTER_ARCHITECTURE.md#infrastructure-and-environments-2026-06-13) · [DEPLOYMENT.md](./DEPLOYMENT.md) · `lib/env/manifest.ts`
+**Related:** [WAITLIST_HARDENING_SPEC.md §10 attestation](./WAITLIST_HARDENING_SPEC.md#10-attestation--closed-2026-06-16) · [MASTER_ARCHITECTURE.md § Infrastructure](./MASTER_ARCHITECTURE.md#infrastructure-and-environments-2026-06-13) · [DEPLOYMENT.md](./DEPLOYMENT.md) · `lib/env/manifest.ts`
+
+**Status (2026-06-16):** Move 1 complete · §10 matrix **6/6 PASS** on `https://estate-planner-staging.vercel.app`
 
 ---
 

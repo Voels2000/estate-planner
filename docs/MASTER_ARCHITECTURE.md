@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-16 (waitlist hardening parked state, server-gated signup, staging Vercel Move 1)
+# Last updated: 2026-06-16 (staging Vercel live, §10 closed, server-gated signup)
 
 ---
 
@@ -22,21 +22,19 @@ It documents both:
 
 | Database | Project | Consumers |
 |----------|---------|-----------|
-| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local `.env.local`, Vercel **Preview** (interim), **future dedicated staging Vercel project** (launch plan Move 1) |
-| **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **Production** (`www.mywealthmaps.com` + `estate-planner-gules.vercel.app` — same deployment), prod canary smoke (`.env.test.prod`) |
+| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local `.env.local`, Vercel **`estate-planner-staging`** (`estate-planner-staging.vercel.app`), CI E2E/RLS |
+| **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **`estate-planner`** Production (`www.mywealthmaps.com` + `estate-planner-gules.vercel.app` — same deployment), prod canary smoke (`.env.test.prod`) |
 
-**Vercel vs Supabase vocabulary (2026-06-16):** Staging **database** exists (`mwm-staging`). A staging **Vercel project** does not yet — branch Preview deployments on `estate-planner` are used as an interim test surface. Preview is per-branch and per-deploy; env vars live on Vercel **scopes** (Development / Preview / Production), not on a stable project boundary. **`estate-planner-gules.vercel.app` is Production**, not staging. Hosted §10 Probe 1 is **parked** until Move 1 — see [WAITLIST_HARDENING_SPEC.md §10 parked state](./WAITLIST_HARDENING_SPEC.md#10-parked-state-2026-06-16). **Setup runbook:** [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md).
+**Vercel vs Supabase vocabulary (2026-06-16):** Staging **database** (`mwm-staging`) and staging **Vercel project** (`estate-planner-staging`) both exist. Staging project env lives on that project's **Production** scope (test keys + `PUBLIC_SIGNUP_OPEN=true`). **`estate-planner-gules.vercel.app` is Production**, not staging. §10 signup-hardening matrix **closed** on staging (2026-06-16) — [WAITLIST_HARDENING_SPEC.md §10 attestation](./WAITLIST_HARDENING_SPEC.md#10-attestation--closed-2026-06-16). **Setup runbook:** [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md).
 
 Data does **not** promote between projects. Schema parity: `bash scripts/two-db-schema-parity.sh`.
 
 ### Deploy flow
 
 ```text
-local dev (staging DB) → PR → Vercel Preview (staging DB, interim) → merge main → Vercel Production (prod DB)
-                              ↘ GitHub verify (no secrets)
+local dev (staging DB) → estate-planner-staging (staging DB, test Stripe) → merge main → estate-planner Production (prod DB)
+                              ↘ GitHub verify + e2e-smoke + rls-verify (staging secrets)
                               ↘ staging-keepalive (cron, no secrets)
-
-Target (Move 1): dedicated staging Vercel project (stable env) replaces Preview-as-staging for §10 matrix + billing smoke — [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md).
 ```
 
 Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Go-live checklist: [LAUNCH.md](./LAUNCH.md) · manual attestations: [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) (`npm run launch:tracker`).
@@ -744,9 +742,7 @@ Two layers — do not conflate them:
 | **0 — Supabase** | Disable anon/public signups on prod (`fnzvlmrqwcqwiqueevux`) | Attested (prod safe while dark) |
 | **1 — Server route** | `signupAdmission` + `createUser`; open_consumer requires `PUBLIC_SIGNUP_OPEN` | Shipped on `main` |
 | **2 — Email confirm** | Bright consumer: `email_confirm: false` → `201` + `needsEmailConfirmation`, no session cookie | Unit + local/staging-DB matrix pass |
-| **§10 hosted Probe 1** | Bright signup on **staging Vercel URL** (not Preview interim) | **Parked** until Move 1 — [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md) |
-
-**Prod go-live blockers (unaffected by Probe 1 park):** real-card Stripe smoke · PITR/backups · error monitoring · live webhook events — [PRE_FLIP_CHECKLIST.md §A](./PRE_FLIP_CHECKLIST.md) · [LAUNCH.md](./LAUNCH.md) Bucket B.
+| **§10 hosted matrix** | Probes 1/2/4/5/7/8 on staging URL | **Closed** 2026-06-16 — [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md) |
 
 **Test account seed scripts (staging / local, not Vercel env):**
 
@@ -1461,7 +1457,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Upgrade copy (Sprint 12):** `getEventUpgradeValueProp()` in `lib/events/upgradeContext.ts` always uses personalized `EVENT_UPGRADE_COPY` (24 slugs × tier 2/3). Verify: `scripts/verify-event-upgrade-copy.ts`.
 - **Assessment (Sprint 12):** `/assess` always shows scores to logged-out users; full gap report gated behind signup (`_assess-client.tsx`). Pre-launch A/B flags removed from `app_config`.
 - **Signup attribution (Sprint 9):** `mwm_referral_*` and `mwm_attorney_referral_*` in sessionStorage → `profiles.referral_code` / `profiles.attorney_referral_code` + `account_created` funnel (`properties.advisor_referral_code`, `properties.attorney_referral_code`); keys cleared after signup.
-- **Waitlist mode (Sprint 15):** `lib/waitlist-mode.ts` — default on for `VERCEL_ENV=production`; flip with `PUBLIC_SIGNUP_OPEN=true` at go-live. `middleware.ts` runtime redirect (`3ceb125`, renamed from `proxy.ts`). **Private beta signup (2026-06):** `BETA_SIGNUP_TOKEN` + `/signup?access=&label=`; cookies `mwm_beta_signup` / `mwm_beta_signup_label`; admin Funnel cohort table. **Server-gated signup (PR #25):** `POST /api/auth/signup` + `lib/auth/signupAdmission.ts`; §10 hosted Probe 1 parked until staging Vercel project (Move 1) — [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md).
+- **Waitlist mode (Sprint 15):** `lib/waitlist-mode.ts` — default on for `VERCEL_ENV=production`; flip with `PUBLIC_SIGNUP_OPEN=true` at go-live. **Server-gated signup (PR #25):** `POST /api/auth/signup` + `lib/auth/signupAdmission.ts`; §10 **closed** on `estate-planner-staging` (2026-06-16) — [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md).
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 
