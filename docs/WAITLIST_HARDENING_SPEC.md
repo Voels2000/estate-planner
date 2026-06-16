@@ -1,8 +1,8 @@
 # Waitlist hardening spec — server-gated signup
 
-**Status:** Implemented (server-gated signup) — deploy after staging matrix §10  
+**Status:** Implemented (server-gated signup) — **§10 hosted Probe 1 parked** until staging Vercel project exists (launch plan Move 1)  
 **Priority:** P0 — prod is not safe while dark without this + Supabase toggle  
-**Related:** Launch plan Move 3 (prod safe while dark) · `lib/waitlist-mode.ts` · `app/(auth)/signup/_signup-form.tsx`
+**Related:** Launch plan Move 1 (staging Vercel project) · Move 3 (prod safe while dark) · `lib/waitlist-mode.ts` · `app/(auth)/signup/_signup-form.tsx`
 
 ---
 
@@ -238,6 +238,42 @@ Extract from `_signup-form.tsx` into `lib/auth/completeSignup.ts` (or similar) s
 ---
 
 ## 10. Testing matrix (staging project)
+
+### §10 parked state (2026-06-16)
+
+**Decision:** Park **hosted Probe 1**; resume when a **dedicated staging Vercel project** exists (launch plan Move 1). Until then, Preview-as-staging is a per-branch, per-deploy surface — env vars do not live on a stable project boundary, so hosted bright-state verification keeps fighting scope/redeploy confusion instead of testing code.
+
+**Why this does not block prod safety today:** Layer 0 (prod Supabase anon signups off) is attested. Local + staging-DB matrix passed. Probe 7 (anon bypass) closed on staging Supabase.
+
+| Probe | Surface | Expected | Last result | Gate |
+|-------|---------|----------|-------------|------|
+| **7** | `POST cmzyxpxfyvdvbsykjvsg.supabase.co/auth/v1/signup` (anon key) | **422** `signup_disabled` | **PASS** (repeated) | **Closed** |
+| **1** | `POST <staging>/api/auth/signup` bright `open_consumer` | **201** + `needsEmailConfirmation: true`, no `Set-Cookie` | **FAIL** on Preview URL — see trace below | **Parked** |
+
+**Probe 1 trace (Preview URL `estate-planner-git-feat-waitlist-hardening-…vercel.app`, PR #25):**
+
+| Attempt | Deploy / trigger | HTTP | Body / log | Read |
+|---------|------------------|------|------------|------|
+| 1 | `68e42ad` (first build) | **403** | `Public signup is not open` | `PUBLIC_SIGNUP_OPEN=true` not baked — redeploy needed, not a route bug |
+| 2 | `83e333d` (empty redeploy) | **500** | `Failed to create account` | Bright admission active; Vercel log: `Invalid API key` (401) on `admin.createUser` |
+| 3 | After dashboard key edit, `68e50da` | **500** | empty | Vercel log: `Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY` |
+| 4+ | Service role added to Preview scope + redeploys | **500** | empty | `SUPABASE_SERVICE_ROLE_KEY` had been **Development + Production only** (not Preview); `NEXT_PUBLIC_APP_URL` on Preview still pointed at `estate-planner-gules.vercel.app` (production alias) |
+
+**Confirmed not the issue:** Probe host lands on Preview (`environment: preview`), not `mywealthmaps.com`. Signup route uses relative `POST /api/auth/signup` — not mis-routed via `NEXT_PUBLIC_APP_URL`.
+
+**Passed elsewhere (not parked):** Full §10 HTTP matrix on **local dev (`npm run dev`) + staging Supabase** — including Probe 1 bright-state — all green before hosted runs.
+
+**Resume checklist (when staging Vercel project exists):**
+
+1. Staging project env: staging Supabase trio + `PUBLIC_SIGNUP_OPEN=true` + staging `NEXT_PUBLIC_APP_URL` (staging hostname, not gules/www) + test Stripe + staging webhook secret — all on **one project**, not Preview scope on `estate-planner`.
+2. Disable anon signups on staging Supabase (`cmzyxpxfyvdvbsykjvsg`).
+3. Redeploy staging project; run `GET /api/admin/verify-env` on staging URL — confirm `scope`, staging Supabase ref, staging app URL.
+4. Re-run Probe 7 (422) + Probe 1 (201, no cookie) on **staging project URL**.
+5. Merge waitlist hardening → deploy prod (Layer 0 already off).
+
+**Unaffected (prod-side hard blockers — separate track):** real-card Stripe smoke · PITR/backups · error monitoring · live webhook event delivery — see [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) §A and [LAUNCH.md](./LAUNCH.md) Bucket B.
+
+---
 
 **Prerequisite:** Disable anon signups on **staging** Supabase **before** running this matrix (mirror prod Layer 0). Otherwise you cannot prove the server route is the only creation path.
 
