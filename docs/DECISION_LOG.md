@@ -126,9 +126,23 @@
 
 ---
 
+## CI hardening + staging branch flow (2026-06-17)
+
+**Decision:** Harden PR gates and adopt a long-lived **`staging`** integration branch before production merges.
+
+**Shipped:** [PR #27](https://github.com/Voels2000/estate-planner/pull/27) — `ci.yml`: ESLint + **`npx tsc --noEmit`** + unit on all PRs; full build/audits on PR → `main` only; PR triggers include **`staging`**. `rls-verify.yml`: `npm run verify:rls -- --require-sql` with staging **`SUPABASE_DB_URL`** from GitHub secrets (session pooler, `cmzyxpxfyvdvbsykjvsg` only). Branch protection: **`staging-pr-gate`** on `staging` (requires **`verify`**); **`main-no-direct-push`** unchanged ( **`verify`** + **`e2e-smoke`** + **`rls-verify`** ).
+
+**Git flow:** `feature/*` → PR → **`staging`** (`estate-planner-staging.vercel.app`) → PR → **`main`** (`www.mywealthmaps.com`).
+
+**Credential revision:** Staging **`SUPABASE_DB_URL`** may live in GitHub secrets for RLS structural coverage in CI. **Production** `SUPABASE_DB_URL` still never in GitHub or Vercel.
+
+**Reasoning:** Catch type errors and RLS schema drift before merge; lightweight gate on staging PRs; full E2E/RLS only on path to production.
+
+---
+
 ## E2E/RLS on PRs — staging-only GitHub secrets (2026-06-14)
 
-**Decision:** Restore E2E smoke + RLS verify workflows on every PR to `main`, using **staging** Supabase credentials only. Production keys and `SUPABASE_DB_URL` remain forbidden in GitHub.
+**Decision:** Restore E2E smoke + RLS verify workflows on every PR to `main`, using **staging** Supabase credentials only. Production keys remain forbidden in GitHub; staging **`SUPABASE_DB_URL`** added in PR #27 for `--require-sql` coverage.
 
 **Shipped:** [PR #8](https://github.com/Voels2000/estate-planner/pull/8) — `.github/workflows/e2e-smoke.yml`, `rls-verify.yml`, `scripts/write-ci-staging-env.sh`. Repo variables `E2E_SMOKE_IN_CI=true`, `RLS_VERIFY_IN_CI=true`. Eight staging repository secrets. Branch protection requires **`verify`** + **`e2e-smoke`** + **`rls-verify`**.
 

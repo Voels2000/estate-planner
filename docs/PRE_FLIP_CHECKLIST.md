@@ -15,6 +15,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 ### Data integrity & isolation (on PROD, not just staging)
 - ✅ **Structural RLS gate** — `scripts/assert-rls-coverage.sql` wired into `npm run verify:rls`; tenancy-column scope (not 21-table list); `PERMISSIVE_POLICY`, `MISSING_RLS`, `NO_POLICY`, and `NAME_ROLE_MISMATCH` all blocking.
+- ✅ **Structural RLS gate in CI** — `rls-verify` on PR → `main` runs `npm run verify:rls -- --require-sql` against staging DB ([PR #27](https://github.com/Voels2000/estate-planner/pull/27)).
 - ✅ **FOR ALL-to-public write leaks closed** — `estate_health_scores`, `household_alerts`, `beneficiary_conflicts` (integrity + availability, not read-only). Pre-launch; zero production customer rows affected ([DECISION_LOG](./DECISION_LOG.md)).
 - ✅ **Apply RLS migrations on prod** (2026-06-15) — in order: `20260713130000` → `20260713140000` → `20260713150000`. `assert-rls-coverage` → **0 rows** on prod.
 - ✅ **`verify:rls` on prod** — **27/27** (2 SQL + 25 JWT): `sql_invariants` + `rls_coverage_gate` PASS; full 21-table household JWT matrix PASS. Re-run after any policy migration: `npm run verify:rls -- --require-sql`.

@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-15 (deletion schema drift, launch tracker v4, LAUNCH scoreboard)
+# Last updated: 2026-06-17 (staging branch flow, CI hardening PR #27)
 
 ---
 
@@ -22,18 +22,26 @@ It documents both:
 
 | Database | Project | Consumers |
 |----------|---------|-----------|
-| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local `.env.local`, Vercel **Preview**, future CI E2E |
-| **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **Production**, prod canary smoke (`.env.test.prod`) |
+| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local `.env.local`, Vercel **`estate-planner-staging`**, CI E2E/RLS |
+| **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **`estate-planner`** Production (`www.mywealthmaps.com`), prod canary (`.env.test.prod`) |
 
 Data does **not** promote between projects. Schema parity: `bash scripts/two-db-schema-parity.sh`.
 
-### Deploy flow
+### Deploy flow (2026-06-17)
 
 ```text
-local dev (staging DB) → PR → Vercel Preview (staging DB) → merge main → Vercel Production (prod DB)
-                              ↘ GitHub verify (no secrets)
-                              ↘ staging-keepalive (cron, no secrets)
+feature/* → PR → staging branch → estate-planner-staging.vercel.app (staging DB)
+                      ↘ GitHub verify (lint + tsc + unit)
+                 PR → main → www.mywealthmaps.com (prod DB)
+                      ↘ GitHub verify (full) + e2e-smoke + rls-verify
+                      ↘ staging-keepalive (cron, no secrets)
 ```
+
+**Vercel projects:** `estate-planner-staging` (Production branch = `staging`) · `estate-planner` (Production branch = `main`). Prod-project Preview deploys mirror live config (live Stripe keys OK with `PUBLIC_SIGNUP_OPEN=false`).
+
+**GitHub branch protection:** `main` — ruleset **`main-no-direct-push`**: **`verify`** + **`e2e-smoke`** + **`rls-verify`**. `staging` — ruleset **`staging-pr-gate`**: **`verify`** (lint + tsc + unit on PRs to staging).
+
+**CI `verify` job (PR #27):** ESLint · `npx tsc --noEmit` · unit tests on every PR to `main` and `staging`; full build + audits only on PR → `main` and push → `main`. **`rls-verify`** runs `npm run verify:rls -- --require-sql` (JWT + `assert-rls-coverage.sql`) using staging `SUPABASE_DB_URL` from GitHub secrets.
 
 Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Go-live checklist: [LAUNCH.md](./LAUNCH.md) · manual attestations: [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) (`npm run launch:tracker`).
 
