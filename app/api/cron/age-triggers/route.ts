@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isValidLifeEventType } from '@/lib/events/lifeEventSlugs'
 import { recordCronHealth } from '@/lib/cron/recordCronHealth'
+import { requireCronAuth } from '@/lib/api/internalApiAuth'
 import { NextResponse } from 'next/server'
 
 /**
@@ -20,10 +21,8 @@ const AGE_MILESTONES: { age: number; event_type: string }[] = [
 ]
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const denied = requireCronAuth(request)
+  if (denied) return denied
 
   const supabase = createAdminClient()
   const currentYear = new Date().getFullYear()

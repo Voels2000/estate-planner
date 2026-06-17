@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { sendNotificationEmail } from '@/lib/emails/send-notification-email'
 import { recordCronHealth } from '@/lib/cron/recordCronHealth'
+import { requireCronAuth } from '@/lib/api/internalApiAuth'
 import { resend } from '@/lib/resend'
 import { NextResponse } from 'next/server'
 
@@ -14,10 +15,8 @@ type AuthInfo = {
 }
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const denied = requireCronAuth(request)
+  if (denied) return denied
 
   try {
   const supabase = createAdminClient()

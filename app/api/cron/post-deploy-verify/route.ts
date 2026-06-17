@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { runPostDeployVoelsChecks } from '@/lib/verify/runPostDeployVoelsChecks'
 import { recordCronHealth } from '@/lib/cron/recordCronHealth'
+import { requireCronAuth } from '@/lib/api/internalApiAuth'
 import { sendPostDeployFailureEmail } from '@/lib/email/postDeployFailureEmail'
 
 export const dynamic = 'force-dynamic'
@@ -11,10 +12,8 @@ export const maxDuration = 120
  * Self-heals missing Voels MC cache, then verifies. Auth: Bearer CRON_SECRET.
  */
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const denied = requireCronAuth(request)
+  if (denied) return denied
 
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ??
