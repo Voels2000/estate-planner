@@ -127,6 +127,8 @@ feature/* ──PR (verify: lint+tsc+unit)──► staging ──PR (verify+e2e
 
 After merging CI changes to `main`, merge **`main` → `staging`** so branch workflows stay in sync — avoids “branch out of date” on the next staging → main PR.
 
+**Vercel cron secrets (2026-06-17):** `CRON_SECRET` and `INTERNAL_API_KEY` are **load-bearing** — auth is fail-closed (missing secret → 500). Set on **both** `estate-planner` (prod) and **`estate-planner-staging`** Production scopes before relying on crons. Manifest: `lib/env/manifest.ts` (`requiredInScopes: ALL_DEPLOYED`).
+
 ---
 
 ## 8. Release discipline (summary)

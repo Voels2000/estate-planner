@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-17 (staging branch flow, CI hardening PR #27)
+# Last updated: 2026-06-17 (staging branch flow, CI hardening PR #27, security fixes PR #28)
 
 ---
 
@@ -1152,7 +1152,7 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 - `lib/prospect/calculateProspectSummary.ts` — prospect federal + state tax; uses `calculateStateEstateTax` (not household RPC)
 - `components/shared/HealthScoreBadge.tsx` — canonical score display (hero/card/badge); labels from `lib/estate-health-score.ts`
 - `lib/estate-health-score.ts` — `computeEstateHealthScore`, `scoreLabel`, `scoreContextSentence`, `isScoreStale`
-- `lib/api/internalApiAuth.ts` — `INTERNAL_API_KEY` / `CRON_SECRET` gate for server-only routes
+- `lib/api/internalApiAuth.ts` — `requireCronAuth` / `requireCronOrInternal` / `requireInternalApi` — fail-closed + constant-time compare when `CRON_SECRET` or `INTERNAL_API_KEY` unset
 - `lib/supabase/routeAuth.ts` — `getRouteAuth()` for App Router handlers (`getSession()` not `getUser()`)
 - `app/api/health/route.ts` — liveness probe `{ ok: true }`; target for uptime monitoring
 - `scripts/verify-app-route-slugs.ts` — CI guard against conflicting App Router dynamic segments (`.github/workflows/ci.yml`)
@@ -1358,13 +1358,13 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Ops tasks (Admin-A):** `ops_tasks` table — calendar obligations seeded from `COMPLIANCE_CALENDAR.md` + `LAUNCH_GATE.md` Gate 3. Admin **Ops Home** → mark complete; `compliance-reminders` emails on due/overdue tasks.
 
-**Auth:** `Authorization: Bearer ${CRON_SECRET}` on every cron request.
+**Auth:** `requireCronAuth()` — `Authorization: Bearer ${CRON_SECRET}`; **fail-closed** (500 if secret unset). Email sub-routes accept cron bearer or `x-internal-key: INTERNAL_API_KEY` via `requireCronOrInternal()`. Node.js runtime (no edge routes in repo — `crypto.timingSafeEqual` safe).
 
 **Manual cron tests:** Use `https://www.mywealthmaps.com/...` — `https://mywealthmaps.com` (apex) 307-redirects to www and curl does not resend `Authorization` → false 401.
 
 **Implementation:** `app/api/cron/notifications/route.ts` — uses `createAdminClient()`; creates in-app + email notifications via `create_notification` RPC for: stale plan (30d), estate milestones ($1M / $5M / $13.61M), MFA reminder, profile completion nudge, subscription renewal (7d). **Email drips:** consumer assess captures (steps 2–3); advisor activation (steps 2–3 via `/api/email/advisor-drip`); **attorney activation (steps 2–3 via `/api/email/attorney-drip`)** after step 1 sent.
 
-**GitHub Actions:** `.github/workflows/ci.yml` only (`verify` job). Cron is Vercel-scheduled (`/api/cron/notifications`). Archived manual cron template: `docs/templates/github-workflows/cron-notifications.yml`.
+**GitHub Actions:** `verify` on PR → `main`/`staging`; `e2e-smoke` + `rls-verify` on PR → `main`. Cron is Vercel-scheduled only.
 
 **Removed:** `.github/workflows/daily-notifications-cron.yml` (duplicate workflow hitting a rotating Vercel preview URL).
 

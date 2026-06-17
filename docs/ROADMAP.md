@@ -928,6 +928,7 @@ See [SPRINT_FRICTION_REDUCTION.md](./archive/sprints/SPRINT_FRICTION_REDUCTION.m
 | Env verifier + prod price throw-guard | `[x]` PRs #3–#5 — `verify-env`, manifest, `resolveConsumerPriceId` |
 | E2E/RLS on PRs (staging-only GitHub secrets) | `[x]` PR #8 + PR #27 — `tsc`, `--require-sql`, staging branch gate |
 | Staging branch + `staging-pr-gate` | `[x]` PR #27 — `feature/*` → `staging` → `main` |
+| Pre-launch security fixes (5 blockers) | `[x]` PR #28 — token logging, cron fail-closed, admin MFA, introduce, email-capture |
 | Manual RLS isolation smoke | `[ ]` |
 | LAUNCH_GATE counsel handoff | `[ ]` |
 | Stripe Phase 1 — test mode: 6 prices + preview env + webhook | `[ ]` |
