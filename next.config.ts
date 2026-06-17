@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: "/sentry-example-page",
+        destination: "/dashboard",
+        permanent: false,
+      },
+      {
         source: "/incapacity",
         destination: "/incapacity-planning",
         permanent: true,
@@ -76,7 +81,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self'",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.resend.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.resend.com https://*.sentry.io https://*.ingest.us.sentry.io",
               "frame-src https://js.stripe.com",
               "object-src 'none'",
               "base-uri 'self'",
@@ -109,7 +114,8 @@ export default withSentryConfig(nextConfig, {
   // This can increase your server load as well as your hosting bill.
   // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
   // side errors will fail.
-  tunnelRoute: '/monitoring',
+  // Tunnel only on Vercel — local dev posts directly to Sentry (avoids proxy ETIMEDOUT + login redirect loops).
+  tunnelRoute: process.env.VERCEL ? "/monitoring" : undefined,
 
   webpack: {
     treeshake: {

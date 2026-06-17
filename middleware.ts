@@ -27,8 +27,12 @@ const INFRA_BYPASS_PATHS = [
   '/favicon.ico',
   '/robots.txt',
   '/sitemap.xml',
-  '/monitoring', // Sentry tunnel (tunnelRoute in next.config) — must stay public for logged-out clients
 ] as const
+
+/** Sentry tunnel (tunnelRoute in next.config) — exact path + query variants; must stay public. */
+function isSentryTunnelPath(pathname: string): boolean {
+  return pathname === '/monitoring' || pathname.startsWith('/monitoring/')
+}
 
 const PUBLIC_PATHS = [
   '/login',
@@ -59,6 +63,7 @@ const PUBLIC_PATHS = [
 ]
 
 function isInfraBypassPath(pathname: string): boolean {
+  if (isSentryTunnelPath(pathname)) return true
   return INFRA_BYPASS_PATHS.some((p) =>
     p.endsWith('/') ? pathname.startsWith(p) : pathname === p
   )
@@ -275,9 +280,9 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Skip middleware for API route handlers, static assets, and crawlable infra.
+     * Skip middleware for API routes, static assets, crawlable infra, and Sentry tunnel.
      * API routes must not enter Edge middleware — auth is enforced per route handler.
      */
-    '/((?!_next/|api/|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/|api/|monitoring|favicon\\.ico|robots\\.txt|sitemap\\.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }
