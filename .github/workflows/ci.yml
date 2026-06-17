@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, staging]
 
 jobs:
   verify:
@@ -22,7 +22,14 @@ jobs:
       - name: ESLint
         run: npm run lint
 
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit tests (import-unit project)
+        run: npm run test:unit
+
       - name: Production build
+        if: github.event_name == 'push' || github.event.pull_request.base.ref == 'main'
         run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
@@ -32,19 +39,21 @@ jobs:
           STRIPE_SECRET_KEY: sk_test_placeholder_ci_build_only
 
       - name: Security audit script
+        if: github.event_name == 'push' || github.event.pull_request.base.ref == 'main'
         run: bash scripts/security-audit.sh
 
       - name: UX language audit
+        if: github.event_name == 'push' || github.event.pull_request.base.ref == 'main'
         run: bash scripts/audit-ux-language.sh
 
       - name: Event upgrade copy verify
+        if: github.event_name == 'push' || github.event.pull_request.base.ref == 'main'
         run: npx tsx scripts/verify-event-upgrade-copy.ts
 
       - name: App route slug validation
+        if: github.event_name == 'push' || github.event.pull_request.base.ref == 'main'
         run: npx tsx scripts/verify-app-route-slugs.ts
 
       - name: Consumer OpenAPI contract
+        if: github.event_name == 'push' || github.event.pull_request.base.ref == 'main'
         run: npm run verify:consumer-openapi
-
-      - name: Unit tests (import-unit project)
-        run: npm run test:unit
