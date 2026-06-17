@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-15 (deletion schema drift, launch tracker v4, LAUNCH scoreboard)
+# Last updated: 2026-06-17 (staging branch flow, CI hardening PR #27, security fixes PR #28)
 
 ---
 
@@ -22,18 +22,26 @@ It documents both:
 
 | Database | Project | Consumers |
 |----------|---------|-----------|
-| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local `.env.local`, Vercel **Preview**, future CI E2E |
-| **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **Production**, prod canary smoke (`.env.test.prod`) |
+| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local `.env.local`, Vercel **`estate-planner-staging`**, CI E2E/RLS |
+| **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **`estate-planner`** Production (`www.mywealthmaps.com`), prod canary (`.env.test.prod`) |
 
 Data does **not** promote between projects. Schema parity: `bash scripts/two-db-schema-parity.sh`.
 
-### Deploy flow
+### Deploy flow (2026-06-17)
 
 ```text
-local dev (staging DB) → PR → Vercel Preview (staging DB) → merge main → Vercel Production (prod DB)
-                              ↘ GitHub verify (no secrets)
-                              ↘ staging-keepalive (cron, no secrets)
+feature/* → PR → staging branch → estate-planner-staging.vercel.app (staging DB)
+                      ↘ GitHub verify (lint + tsc + unit)
+                 PR → main → www.mywealthmaps.com (prod DB)
+                      ↘ GitHub verify (full) + e2e-smoke + rls-verify
+                      ↘ staging-keepalive (cron, no secrets)
 ```
+
+**Vercel projects:** `estate-planner-staging` (Production branch = `staging`) · `estate-planner` (Production branch = `main`). Prod-project Preview deploys mirror live config (live Stripe keys OK with `PUBLIC_SIGNUP_OPEN=false`).
+
+**GitHub branch protection:** `main` — ruleset **`main-no-direct-push`**: **`verify`** + **`e2e-smoke`** + **`rls-verify`**. `staging` — ruleset **`staging-pr-gate`**: **`verify`** (lint + tsc + unit on PRs to staging).
+
+**CI `verify` job (PR #27):** ESLint · `npx tsc --noEmit` · unit tests on every PR to `main` and `staging`; full build + audits only on PR → `main` and push → `main`. **`rls-verify`** runs `npm run verify:rls -- --require-sql` (JWT + `assert-rls-coverage.sql`) using staging `SUPABASE_DB_URL` from GitHub secrets.
 
 Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Go-live checklist: [LAUNCH.md](./LAUNCH.md) · manual attestations: [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) (`npm run launch:tracker`).
 
@@ -1144,7 +1152,7 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 - `lib/prospect/calculateProspectSummary.ts` — prospect federal + state tax; uses `calculateStateEstateTax` (not household RPC)
 - `components/shared/HealthScoreBadge.tsx` — canonical score display (hero/card/badge); labels from `lib/estate-health-score.ts`
 - `lib/estate-health-score.ts` — `computeEstateHealthScore`, `scoreLabel`, `scoreContextSentence`, `isScoreStale`
-- `lib/api/internalApiAuth.ts` — `INTERNAL_API_KEY` / `CRON_SECRET` gate for server-only routes
+- `lib/api/internalApiAuth.ts` — `requireCronAuth` / `requireCronOrInternal` / `requireInternalApi` — fail-closed + constant-time compare when `CRON_SECRET` or `INTERNAL_API_KEY` unset
 - `lib/supabase/routeAuth.ts` — `getRouteAuth()` for App Router handlers (`getSession()` not `getUser()`)
 - `app/api/health/route.ts` — liveness probe `{ ok: true }`; target for uptime monitoring
 - `scripts/verify-app-route-slugs.ts` — CI guard against conflicting App Router dynamic segments (`.github/workflows/ci.yml`)
@@ -1350,13 +1358,13 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Ops tasks (Admin-A):** `ops_tasks` table — calendar obligations seeded from `COMPLIANCE_CALENDAR.md` + `LAUNCH_GATE.md` Gate 3. Admin **Ops Home** → mark complete; `compliance-reminders` emails on due/overdue tasks.
 
-**Auth:** `Authorization: Bearer ${CRON_SECRET}` on every cron request.
+**Auth:** `requireCronAuth()` — `Authorization: Bearer ${CRON_SECRET}`; **fail-closed** (500 if secret unset). Email sub-routes accept cron bearer or `x-internal-key: INTERNAL_API_KEY` via `requireCronOrInternal()`. Node.js runtime (no edge routes in repo — `crypto.timingSafeEqual` safe).
 
 **Manual cron tests:** Use `https://www.mywealthmaps.com/...` — `https://mywealthmaps.com` (apex) 307-redirects to www and curl does not resend `Authorization` → false 401.
 
 **Implementation:** `app/api/cron/notifications/route.ts` — uses `createAdminClient()`; creates in-app + email notifications via `create_notification` RPC for: stale plan (30d), estate milestones ($1M / $5M / $13.61M), MFA reminder, profile completion nudge, subscription renewal (7d). **Email drips:** consumer assess captures (steps 2–3); advisor activation (steps 2–3 via `/api/email/advisor-drip`); **attorney activation (steps 2–3 via `/api/email/attorney-drip`)** after step 1 sent.
 
-**GitHub Actions:** `.github/workflows/ci.yml` only (`verify` job). Cron is Vercel-scheduled (`/api/cron/notifications`). Archived manual cron template: `docs/templates/github-workflows/cron-notifications.yml`.
+**GitHub Actions:** `verify` on PR → `main`/`staging`; `e2e-smoke` + `rls-verify` on PR → `main`. Cron is Vercel-scheduled only.
 
 **Removed:** `.github/workflows/daily-notifications-cron.yml` (duplicate workflow hitting a rotating Vercel preview URL).
 

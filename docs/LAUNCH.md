@@ -57,13 +57,13 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 **Revised rule (2026-06-13):** The original “no secrets in GitHub” rule applied while **production and CI shared one Supabase project**. That condition no longer holds — local + Preview use **staging** (`cmzyxpxfyvdvbsykjvsg`); Production uses **prod** (`fnzvlmrqwcqwiqueevux`). See [DEPLOYMENT.md](./DEPLOYMENT.md).
 
-**Still never in GitHub:** production Supabase keys, `SUPABASE_DB_URL`, production Stripe/Resend/cron secrets, `.env.test.prod` contents.
+**Still never in GitHub:** production Supabase keys, **production** `SUPABASE_DB_URL`, production Stripe/Resend/cron secrets, `.env.test.prod` contents.
 
-**Now actionable:** E2E/RLS workflows on PRs use **staging-only** repository secrets + `E2E_SMOKE_IN_CI` / `RLS_VERIFY_IN_CI`. Details: [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions).
+**Now actionable:** E2E/RLS workflows on PRs to `main` use **staging-only** repository secrets + `E2E_SMOKE_IN_CI` / `RLS_VERIFY_IN_CI`. Staging **`SUPABASE_DB_URL`** (session pooler) enables `rls-verify --require-sql` in CI. Details: [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions).
 
-**Today on GitHub:** `.github/workflows/ci.yml` → **`verify`** (no secrets) · `e2e-smoke.yml` → **`e2e-smoke`** · `rls-verify.yml` → **`rls-verify`** (staging secrets) · `staging-keepalive.yml` (secret-free health ping). Merged [PR #8](https://github.com/Voels2000/estate-planner/pull/8) 2026-06-14.
+**Today on GitHub:** `.github/workflows/ci.yml` → **`verify`** (lint + **`tsc --noEmit`** + unit; full build on PR → `main`) · `e2e-smoke.yml` · `rls-verify.yml` (`--require-sql`) · `staging-keepalive.yml`. Merged [PR #8](https://github.com/Voels2000/estate-planner/pull/8) 2026-06-14; hardened [PR #27](https://github.com/Voels2000/estate-planner/pull/27) 2026-06-17.
 
-**Enforcement (automated):** GitHub branch protection on `main` — require status checks **`verify`** + **`e2e-smoke`** + **`rls-verify`**; require PR before merge.
+**Enforcement (automated):** GitHub branch protection — `main`: **`verify`** + **`e2e-smoke`** + **`rls-verify`**; `staging`: **`verify`** only (`staging-pr-gate`). Require PR before merge on both.
 
 **Enforcement (manual — mandatory):** See [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when).
 
@@ -73,6 +73,8 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] Two-DB split live: Preview → staging; Production → prod (attest: Al / 2026-06-13)
 - [x] Staging keep-alive workflow on `main` and green in Actions (attest: Al / 2026-06-13)
 - [x] Restore E2E/RLS PR workflows with **staging-only** GitHub secrets — `E2E_SMOKE_IN_CI` + `RLS_VERIFY_IN_CI` true; 8 staging secrets; green on PRs #8–#10 (attest: Al / 2026-06-14)
+- [x] CI hardening + staging branch — `tsc --noEmit`, `rls-verify --require-sql`, `staging-pr-gate` (attest: Al / 2026-06-17 · PR #27)
+- [x] Pre-launch security fixes — token logging, cron fail-closed, admin MFA routes, introduce hardening, email-capture rate limit (attest: Al / 2026-06-17 · PR #28; E2E security-smoke 5/5 + isolation 20/20)
 
 ### B4. Manual smokes — automated on staging where noted
 

@@ -153,7 +153,7 @@ export async function deleteGrant(
 
 // Email helper
 async function sendGrantInviteEmail(grant: BeneficiaryAccessGrant): Promise<void> {
-  console.log('sendGrantInviteEmail called for:', grant.grantee_email, 'token:', grant.token)
+  console.log('sendGrantInviteEmail called', { grantId: grant.id })
   const viewUrl = `${APP_URL}/beneficiary/${grant.token}`
 
   try {

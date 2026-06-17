@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getDripSequence, buildDripEmailHtml } from '@/lib/emails/drip-templates'
 import { buildUnsubscribeUrl } from '@/lib/email/unsubscribeToken'
+import { requireCronOrInternal } from '@/lib/api/internalApiAuth'
 
 const BASE_URL = 'https://mywealthmaps.com'
 
@@ -22,13 +23,8 @@ const DRIP_SENT_COLUMNS = {
  */
 export async function POST(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization')
-    const isCron = authHeader === `Bearer ${process.env.CRON_SECRET}`
-    const isInternal = req.headers.get('x-internal-key') === process.env.INTERNAL_API_KEY
-
-    if (!isCron && !isInternal) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const denied = requireCronOrInternal(req)
+    if (denied) return denied
 
     if (!process.env.RESEND_API_KEY) {
       return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 503 })

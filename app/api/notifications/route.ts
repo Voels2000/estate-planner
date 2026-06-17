@@ -1,12 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { requireCronAuth } from "@/lib/api/internalApiAuth"
 import { NextResponse } from "next/server"
 
 export async function POST(request: Request) {
-  const authHeader = request.headers.get("authorization")
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const denied = requireCronAuth(request)
+  if (denied) return denied
 
   const body = await request.json()
   const { user_id, type, title, body: notifBody, metadata } = body

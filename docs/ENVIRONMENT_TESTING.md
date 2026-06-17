@@ -1,4 +1,4 @@
-# Environment testing — local → preview → production
+# Environment testing — local → staging → production
 
 **Canonical guide** for where code runs, where credentials live, what to test at each stage, and **what to run before merging or deploying**.
 
@@ -16,7 +16,7 @@
 
 | Never in GitHub | Why |
 |-----------------|-----|
-| `SUPABASE_DB_URL` | Full Postgres access |
+| Production `SUPABASE_DB_URL` | Full Postgres access to live data |
 | Production `SUPABASE_SERVICE_ROLE_KEY` / prod `NEXT_PUBLIC_SUPABASE_*` | Live user data |
 | Production Stripe / Resend / cron secrets | Ops blast radius |
 | `.env.test.prod` contents | Prod canary credentials |
@@ -24,17 +24,17 @@
 
 ### Staging-only secrets OK in GitHub (now actionable)
 
-After two-DB split, **staging** URL/keys + `PLAYWRIGHT_*` are in GitHub repository secrets; E2E/RLS workflows run on every PR to `main`. See [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions). Set `E2E_SMOKE_IN_CI` / `RLS_VERIFY_IN_CI` = `true` (done 2026-06-14).
+After two-DB split, **staging** URL/keys + **`SUPABASE_DB_URL`** (staging session pooler only) + `PLAYWRIGHT_*` are in GitHub repository secrets; E2E/RLS workflows run on every PR to `main`. See [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions). Set `E2E_SMOKE_IN_CI` / `RLS_VERIFY_IN_CI` = `true` (done 2026-06-14).
 
-**Still never in GitHub:** production keys, `SUPABASE_DB_URL`, prod Stripe, `.env.test.prod`.
+**Still never in GitHub:** production keys, **production** `SUPABASE_DB_URL`, prod Stripe, `.env.test.prod`.
 
 ### What runs in GitHub today
 
 | Workflow | Secrets |
 |----------|---------|
-| `ci.yml` → **`verify`** | None — compile placeholders only |
+| `ci.yml` → **`verify`** | None — lint + **`tsc --noEmit`** + unit on all PRs; compile placeholders on build (PR → `main` only) |
 | `e2e-smoke.yml` → **`e2e-smoke`** | Staging Supabase + `PLAYWRIGHT_*` (gated: `E2E_SMOKE_IN_CI=true`) |
-| `rls-verify.yml` → **`rls-verify`** | Staging Supabase + consumer login (gated: `RLS_VERIFY_IN_CI=true`) |
+| `rls-verify.yml` → **`rls-verify`** | Staging Supabase + **`SUPABASE_DB_URL`** + consumer login (gated: `RLS_VERIFY_IN_CI=true`) |
 | `staging-keepalive.yml` | None — public health ping |
 
 **Allowed in `verify` build:** placeholder `NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `RESEND_API_KEY` (not real credentials).
@@ -47,15 +47,16 @@ While production and CI shared **one** Supabase project, **no** repository secre
 
 ## Release discipline — what to run when
 
-Vercel deploys **Production from `main`**. GitHub auto-runs **`verify`** + **`e2e-smoke`** + **`rls-verify`** on PRs (staging secrets). **You** still run heavier local checks before merge and post-deploy on prod.
+Vercel deploys **Production from `main`**; **`estate-planner-staging`** deploys from **`staging`**. GitHub auto-runs **`verify`** + **`e2e-smoke`** + **`rls-verify`** on PRs to `main`; PRs to **`staging`** require **`verify`** only (lint + tsc + unit). **You** still run heavier local checks before merge and post-deploy on prod.
 
 ### Enforcement — how this is forced
 
 | Layer | Mechanism | What it blocks |
 |-------|-----------|----------------|
-| **GitHub** | Branch protection on `main`: require PR, require **`verify`** + **`e2e-smoke`** + **`rls-verify`**, include administrators | Broken lint/build/E2E/RLS reaching `main` |
+| **GitHub** | Branch protection on `main`: require PR, require **`verify`** + **`e2e-smoke`** + **`rls-verify`**, include administrators | Broken lint/tsc/build/E2E/RLS reaching `main` |
+| **GitHub** | Branch protection on `staging`: ruleset **`staging-pr-gate`** — require PR, require **`verify`** (lint + tsc + unit) | Broken lint/types/unit reaching integration branch |
 | **GitHub** | Staging-only secrets in Actions; **no production** secrets | Prod keys cannot reach CI |
-| **Vercel** | Production branch = `main` (default) | Only merged code deploys to `mywealthmaps.com` |
+| **Vercel** | `estate-planner` Production branch = `main`; `estate-planner-staging` Production branch = `staging` | Only merged code deploys to prod / staging surfaces |
 | **Local (you)** | Commands below before merge / after deploy | Auth, RLS, billing, estate math regressions |
 
 **GitHub branch protection setup (one time):**
@@ -112,7 +113,7 @@ npm run test:e2e:prod:smoke -- --workers=1
 
 | Layer | What it is | Examples |
 |-------|------------|----------|
-| **App host** | Next.js deployment | `localhost:3000`, `*.vercel.app` (Preview), `mywealthmaps.com` (Production) |
+| **App host** | Next.js deployment | `localhost:3000`, `estate-planner-staging.vercel.app`, `*.vercel.app` (Preview), `mywealthmaps.com` (Production) |
 | **Database** | Supabase project | **Staging** (CI + preview), **Production** (live users) |
 | **CI** | GitHub Actions | **`verify`** + **`e2e-smoke`** + **`rls-verify`** (staging secrets) + **`staging-keepalive`** |
 
@@ -128,14 +129,14 @@ Preview Vercel deployments and CI both talk to **staging Supabase**. Production 
 |--------|-------|--------|----------------|-------------------|
 | Staging Supabase keys | `.env.local` (staging) | Staging-only (E2E/RLS CI) | Staging | — |
 | Prod Supabase keys | `.env.projects.local` / `.env.test.prod` | **Never** | — | Prod |
-| `SUPABASE_DB_URL` | `.env.local` / `.env.projects.local` | **Never** | **Never** | **Never** |
+| `SUPABASE_DB_URL` | `.env.local` / `.env.projects.local` | **Staging pooler only** (RLS CI) | **Never** | **Never** |
 | `PLAYWRIGHT_*` | `.env.test` (staging) / `.env.test.prod` (canary) | Staging-only (E2E CI) | — | — |
 | Stripe / Resend / CRON | `.env.local` | **Never** (prod keys) | Test | Live |
 
 **Rules**
 
 1. **Production credentials never in GitHub** — see [Credential policy](#credential-policy--two-database-steady-state).
-2. **`SUPABASE_DB_URL` never goes to GitHub or Vercel** — SQL RLS checks run locally after prod deploys.
+2. **`SUPABASE_DB_URL` in GitHub is staging session pooler only** — never production; never Vercel. Post-deploy prod SQL RLS checks run locally.
 3. **Purge (`cleanup:purge`) targets staging only** — `.env.local` must point at staging. Prod cleanup uses `bash scripts/run-cleanup-prod.sh` only.
 
 ---
@@ -154,7 +155,7 @@ Realistic paths to credential exposure:
 
 **Not a realistic solo risk:** random attackers probing your CI (private repo, no public fork secrets).
 
-**`SUPABASE_DB_URL` in GitHub** is mainly a **future collaborator / team** concern. For solo + tight access: **keep it local-only**; SQL invariants are a 30-second post-deploy command.
+**`SUPABASE_DB_URL` in GitHub** is permitted for **staging session pooler only** (RLS structural coverage in CI). Production `SUPABASE_DB_URL` remains local-only. For solo + tight access: post-deploy prod SQL invariants are still a local command after production deploys.
 
 **You do not need (solo):** read-only Postgres roles for CI, scheduled credential rotation, separate GitHub org, branch-protection theater.
 
@@ -162,36 +163,43 @@ Realistic paths to credential exposure:
 
 ---
 
-## Current setup (2026-06-14)
+## Current setup (2026-06-17)
 
 | Piece | Status |
 |-------|--------|
-| **Preview app** | Vercel Preview → **staging** Supabase |
+| **Staging app** | Vercel **`estate-planner-staging`** → **staging** Supabase (branch `staging`) |
+| **Preview app** | Vercel **`estate-planner`** Preview → **staging** Supabase (branch previews) |
 | **Production app** | `mywealthmaps.com` → **prod** Supabase |
-| **Staging DB** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) — local dev, Preview, CI E2E/RLS |
+| **Staging DB** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) — local dev, staging deploy, CI E2E/RLS |
 | **Production DB** | `fnzvlmrqwcqwiqueevux` — three protected auth users + canary |
-| **CI** | `verify` + `e2e-smoke` + `rls-verify` + `staging-keepalive` — staging secrets only; no production secrets |
+| **CI** | `verify` (lint + tsc + unit; full build on PR → `main`) + `e2e-smoke` + `rls-verify` (`--require-sql`) + `staging-keepalive` — staging secrets only |
 | **E2E split** | Full suite on staging (`npm run test:e2e:complete`); prod canary smoke (`npm run test:e2e:prod:smoke`) |
 
 E2E staging cast uses `@mywealthmaps.test`. Prod smoke uses `canary-consumer@mywealthmaps.com`. Run `verify:estate --preset e2e` locally against staging; `verify:post-deploy-voels` on **production** after deploy.
 
+### Git branch flow
+
+```text
+feature/* ──PR (verify)──► staging ──PR (verify+e2e-smoke+rls-verify)──► main
+```
+
 ### GitHub Actions — current
 
-- **`verify`** on every PR (automatic, no secrets)
-- **`e2e-smoke`** on every PR when `E2E_SMOKE_IN_CI=true` (localhost + staging Supabase)
-- **`rls-verify`** on every PR when `RLS_VERIFY_IN_CI=true` (staging JWT isolation)
+- **`verify`** on every PR to `main` and `staging` (lint + **`tsc --noEmit`** + unit; full build on PR → `main` only)
+- **`e2e-smoke`** on every PR to `main` when `E2E_SMOKE_IN_CI=true`
+- **`rls-verify`** on every PR to `main` when `RLS_VERIFY_IN_CI=true` — JWT + **`assert-rls-coverage.sql`** via staging `SUPABASE_DB_URL`
 - **`staging-keepalive`** every 3 days + manual `workflow_dispatch`
-- Branch protection requires all three checks on `main` (attested 2026-06-14; [PR #8](https://github.com/Voels2000/estate-planner/pull/8))
+- Branch protection: `main` — **`verify`** + **`e2e-smoke`** + **`rls-verify`**; `staging` — **`verify`** only ([PR #27](https://github.com/Voels2000/estate-planner/pull/27), 2026-06-17)
 
 ### GitHub Actions — maintenance (staging)
 
 When re-seeding staging or refreshing the project: update `PLAYWRIGHT_HOUSEHOLD_ID` in GitHub secrets after `npm run seed:e2e`. Copy tax reference data from prod when staging is rebuilt. See [DEPLOYMENT.md §9](./DEPLOYMENT.md#9-refreshing--maintaining-staging).
 
-**Still never add:** `SUPABASE_DB_URL`, production service role, production Stripe keys.
+**Still never add:** production `SUPABASE_DB_URL`, production service role, production Stripe keys.
 
 ---
 
-## Flow: local → preview → production
+## Flow: local → staging → production
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
@@ -200,17 +208,17 @@ When re-seeding staging or refreshing the project: update `PLAYWRIGHT_HOUSEHOLD_
 │  npm run release:local  — before every PR                          │
 │  npm run release:preflight  — before merge (sensitive paths)       │
 └────────────────────────────┬────────────────────────────────────┘
-                             │ git push branch → open PR
+                             │ git push branch → open PR → staging
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  PREVIEW (Vercel branch deploy)                                  │
-│  Optional spot-check: auth callback, billing if touched          │
+│  STAGING (estate-planner-staging.vercel.app)                     │
+│  GitHub verify: lint + tsc + unit                                │
 └────────────────────────────┬────────────────────────────────────┘
-                             │ merge to main (verify must be green)
+                             │ PR staging → main (all checks green)
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  CI (GitHub — automatic, no secrets)                             │
-│  ci.yml → verify only (see .github/workflows/README.md)          │
+│  CI (GitHub — automatic on PR → main)                           │
+│  verify (full) + e2e-smoke + rls-verify (--require-sql)          │
 └────────────────────────────┬────────────────────────────────────┘
                              │ Vercel Production deploy
                              ▼
@@ -225,24 +233,26 @@ When re-seeding staging or refreshing the project: update `PLAYWRIGHT_HOUSEHOLD_
 
 ## What runs where (quick reference)
 
-| Check | Local | CI (GitHub) | Preview | Production |
-|-------|-------|-------------|---------|--------------|
-| `npm run lint` / `build` | ✓ | ✓ `ci.yml` | Vercel build | Vercel build |
-| `verify:consumer-openapi` | ✓ | ✓ | — | — |
+| Check | Local | CI (GitHub) | Staging deploy | Production |
+|-------|-------|-------------|----------------|------------|
+| `npm run lint` | ✓ | ✓ `verify` | Vercel build | Vercel build |
+| `npx tsc --noEmit` | ✓ | ✓ `verify` | — | — |
+| Unit tests | ✓ | ✓ `verify` | — | — |
+| `verify:consumer-openapi` | ✓ | ✓ PR → `main` | — | — |
 | `test:e2e:go-live-profile` | ✓ | — (local preflight) | Optional | prod smoke |
 | `test:e2e:security-smoke` | ✓ | — | — | `release:preflight` / prod smoke |
 | `test:e2e:security-smoke:prod` | — | — | Manual | Post-deploy prod API |
-| `verify:rls` (JWT only) | ✓ preflight | — (disabled solo) | — | — |
-| `verify:rls --require-sql` | ✓ **you** | **Never** | — | **After prod deploy** |
+| `verify:rls` (JWT only) | ✓ preflight | ✓ `rls-verify` PR → `main` | — | — |
+| `verify:rls --require-sql` | ✓ **you** (prod) | ✓ **`rls-verify`** (staging DB) | — | **After prod deploy** |
 | `verify:post-deploy-voels` | ✓ | — | — | **After prod deploy** |
 | `npm run seed:e2e` | Staging setup | — | — | Prod only if intentional |
 | Daily cron / Voels self-heal | — | — | — | Vercel prod |
 
 ---
 
-## GitHub Actions — `verify` job only (solo)
+## GitHub Actions — `verify` job
 
-The **`verify`** job in `.github/workflows/ci.yml` uses **compile-only placeholders** on `npm run build` so Next.js can import API routes that initialize Stripe/Resend at module load. These are **not secrets** and are **not** deployed to Vercel.
+The **`verify`** job in `.github/workflows/ci.yml` runs ESLint, **`npx tsc --noEmit`**, and unit tests on every PR to `main` and `staging`. On PR → `main` (and push → `main`), it also runs full build with **compile-only placeholders** so Next.js can import API routes that initialize Stripe/Resend at module load. These are **not secrets** and are **not** deployed to Vercel.
 
 | Variable | CI value | Real values live in |
 |----------|----------|---------------------|
@@ -251,7 +261,7 @@ The **`verify`** job in `.github/workflows/ci.yml` uses **compile-only placehold
 | `SUPABASE_SERVICE_ROLE_KEY` | `placeholder-service-role-key` | Vercel + `.env.local` |
 | `NEXT_PUBLIC_SUPABASE_*` | placeholder URLs/keys | Vercel + `.env.local` |
 
-E2E/RLS workflows (`.github/workflows/e2e-smoke.yml`, `rls-verify.yml`) use **staging-only** GitHub secrets — never production. See [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions).
+E2E/RLS workflows (`.github/workflows/e2e-smoke.yml`, `rls-verify.yml`) use **staging-only** GitHub secrets — including staging **`SUPABASE_DB_URL`** for structural RLS coverage — never production. See [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions).
 
 ---
 
@@ -271,14 +281,15 @@ npm run release:preflight
 npm run release:post-deploy
 ```
 
-Store production `SUPABASE_DB_URL` only in `.env.local` (gitignored). Supabase → **Connect** → **Session pooler** → **Copy** the full URI.
+Store production `SUPABASE_DB_URL` only in `.env.local` (gitignored). Staging session pooler URI may be stored as GitHub secret **`SUPABASE_DB_URL`** for CI RLS coverage only. Supabase → **Connect** → **Session pooler** → **Copy** the full URI.
 
 **Format pitfalls (common):**
 
 - Must be `SUPABASE_DB_URL=postgresql://...` — a bare URL line without the key name is ignored by dotenv.
 - Do not hand-edit `[region]` or wrap the password in brackets; use the dashboard copy as-is.
 - Region in the hostname must match your project (e.g. `aws-0-us-west-2`, not a placeholder from docs).
-- Never commit this value or add it to GitHub/Vercel.
+- Never commit production `SUPABASE_DB_URL` or add it to Vercel.
+- Staging pooler URI in GitHub: secret name **`SUPABASE_DB_URL`** only — project `cmzyxpxfyvdvbsykjvsg`.
 
 ---
 
@@ -298,7 +309,7 @@ See [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) — preview `*.vercel.app` may hang
 
 Revisit:
 
-- **`SUPABASE_DB_URL` local-only** or team vault (1Password) — never GitHub
+- **`SUPABASE_DB_URL`** — production stays local-only or team vault (1Password); staging pooler OK in GitHub for CI
 - **Second Supabase** — done (2026-06-13); staging-only GitHub secrets permitted for CI E2E
 - Require 2FA for all org members on GitHub and Vercel
 
@@ -306,7 +317,9 @@ Revisit:
 
 ## Decision log
 
-**2026-06-13 — Two-DB steady state:** Preview + local → staging; Production → prod. Production secrets never in GitHub; staging-only secrets OK for future CI E2E. Matrix: [DEPLOYMENT.md](./DEPLOYMENT.md). Purge is staging-only.
+**2026-06-17 — CI hardening + staging branch:** [PR #27](https://github.com/Voels2000/estate-planner/pull/27) — `tsc --noEmit` in `verify`; `rls-verify --require-sql` with staging `SUPABASE_DB_URL`; long-lived **`staging`** branch + `staging-pr-gate` ruleset; `estate-planner-staging` Vercel project.
+
+**2026-06-13 — Two-DB steady state:** Preview + local → staging; Production → prod. Production secrets never in GitHub; staging-only secrets OK for CI E2E/RLS. Matrix: [DEPLOYMENT.md](./DEPLOYMENT.md). Purge is staging-only.
 
 **2026-06-09 — Hard rule (solo, production half still applies):** No **production** keys in GitHub while one project served prod. Revised 2026-06-13 when staging split landed. Local `release:preflight` + `release:post-deploy` remain mandatory.
 

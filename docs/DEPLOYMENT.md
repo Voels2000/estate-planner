@@ -8,8 +8,8 @@
 
 | Database | Supabase project | Used by |
 |----------|------------------|---------|
-| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local dev (`.env.local`), Vercel **Preview** |
-| **Production** | existing prod (`fnzvlmrqwcqwiqueevux`) | Vercel **Production**, manual prod smoke |
+| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local dev (`.env.local`), Vercel **`estate-planner-staging`** (branch `staging`), CI E2E/RLS |
+| **Production** | existing prod (`fnzvlmrqwcqwiqueevux`) | Vercel **`estate-planner`** Production (`main`), manual prod smoke |
 
 Code promotes via git → Vercel. **Data never promotes** between projects.
 
@@ -44,7 +44,7 @@ Sync staging Supabase into `.env.local` after vault edits:
 bash scripts/sync-env-from-projects.sh staging
 ```
 
-**Never commit** gitignored env files. **`SUPABASE_DB_URL` never goes to Vercel or GitHub** (local scripts only).
+**Never commit** gitignored env files. **`SUPABASE_DB_URL` never goes to Vercel or production GitHub secrets** — staging session pooler URI only, in GitHub for `rls-verify` CI (see §7).
 
 Quote passwords in `.env.test.prod` if they contain `#` or `$` (escape `$` as `\$`).
 
@@ -98,16 +98,36 @@ Verifier shape rules: `lib/env/manifest.ts` (`SUPABASE_ANON_KEY` / `SUPABASE_SER
 
 ## 7. GitHub Actions
 
-| Workflow | Purpose |
-|----------|---------|
-| `ci.yml` → **`verify`** | Lint, build (placeholders), audits, unit tests — **no secrets** |
-| `e2e-smoke.yml` → **`e2e-smoke`** | PR smoke — localhost + **staging** Supabase (gated: `E2E_SMOKE_IN_CI=true`) |
-| `rls-verify.yml` → **`rls-verify`** | PR RLS SQL checks on **staging** (gated: `RLS_VERIFY_IN_CI=true`) |
-| `staging-keepalive.yml` | Ping staging Supabase every 3 days (prevents free-tier pause) |
+| Workflow | Job / check name | Triggers | What it runs |
+|----------|------------------|----------|--------------|
+| `ci.yml` → **`verify`** | PR → `main`, `staging`; push → `main` | ESLint · **`npx tsc --noEmit`** · unit tests on all PRs; full build + audits on PR → `main` only — **no secrets** |
+| `e2e-smoke.yml` → **`e2e-smoke`** | PR → `main` | Localhost + **staging** Supabase (gated: `E2E_SMOKE_IN_CI=true`) |
+| `rls-verify.yml` → **`rls-verify`** | PR → `main` | `npm run verify:rls -- --require-sql` — JWT + **`assert-rls-coverage.sql`** (gated: `RLS_VERIFY_IN_CI=true`) |
+| `staging-keepalive.yml` | Cron | Ping staging Supabase every 3 days |
 
-**GitHub secrets (staging only):** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `PLAYWRIGHT_HOUSEHOLD_ID`, `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_ADVISOR_EMAIL`, `PLAYWRIGHT_ADVISOR_PASSWORD`. Never production keys. See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
+**GitHub secrets (staging only):** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, **`SUPABASE_DB_URL`** (staging session pooler — `cmzyxpxfyvdvbsykjvsg` only), `PLAYWRIGHT_HOUSEHOLD_ID`, `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_ADVISOR_EMAIL`, `PLAYWRIGHT_ADVISOR_PASSWORD`. Never production keys. See [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md).
 
-Branch protection on `main`: require PR + **`verify`** + **`e2e-smoke`** + **`rls-verify`**. Direct pushes are blocked (ruleset **`main-no-direct-push`**: `pull_request` + `required_status_checks` + `non_fast_forward`; empty bypass list). Personal repos cannot use classic “restrict who can push” — the ruleset achieves the same outcome without blocking PR merges (the initial `update`-only ruleset did block merges; do not re-enable that alone). All changes go branch → PR → green checks → merge. Admin enforcement on; force-push and deletion blocked. Enabled **2026-06-15**. Required approvals stay at **0** (solo — do not bump to 1 without a second reviewer).
+**Branch protection**
+
+| Branch | Ruleset | Required checks |
+|--------|---------|-----------------|
+| **`main`** | **`main-no-direct-push`** | PR required · **`verify`** + **`e2e-smoke`** + **`rls-verify`** · strict up-to-date · no force-push |
+| **`staging`** | **`staging-pr-gate`** | PR required · **`verify`** (lint + tsc + unit) · strict up-to-date · no force-push |
+
+Direct pushes blocked on both. Admin enforcement on `main`. Required approvals **0** (solo). Enabled **2026-06-15** (`main`), **2026-06-17** (`staging`).
+
+### Git branch flow (2026-06-17)
+
+```text
+feature/* ──PR (verify: lint+tsc+unit)──► staging ──PR (verify+e2e-smoke+rls-verify)──► main
+                                              │                                              │
+                                              ▼                                              ▼
+                              estate-planner-staging.vercel.app              www.mywealthmaps.com
+```
+
+After merging CI changes to `main`, merge **`main` → `staging`** so branch workflows stay in sync — avoids “branch out of date” on the next staging → main PR.
+
+**Vercel cron secrets (2026-06-17):** `CRON_SECRET` and `INTERNAL_API_KEY` are **load-bearing** — auth is fail-closed (missing secret → 500). Set on **both** `estate-planner` (prod) and **`estate-planner-staging`** Production scopes before relying on crons. Manifest: `lib/env/manifest.ts` (`requiredInScopes: ALL_DEPLOYED`).
 
 ---
 

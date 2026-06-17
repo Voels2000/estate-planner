@@ -22,9 +22,12 @@ Repo variables (must be `true` for gated jobs): **`E2E_SMOKE_IN_CI`**, **`RLS_VE
 
 Check name stays **`verify`** on all PRs (branch protection unchanged).
 
-## Branch protection (`main`)
+## Branch protection
 
-Ruleset **`main-no-direct-push`** requires: **`verify`**, **`e2e-smoke`**, **`rls-verify`**.
+| Branch | Ruleset | Required checks |
+|--------|---------|-----------------|
+| **`main`** | **`main-no-direct-push`** | **`verify`**, **`e2e-smoke`**, **`rls-verify`** |
+| **`staging`** | **`staging-pr-gate`** | **`verify`** (lint + tsc + unit) |
 
 Before **`rls-verify`** can pass with `--require-sql`, add repository secret **`SUPABASE_DB_URL`** (staging session pooler only — `cmzyxpxfyvdvbsykjvsg`). Never production.
 

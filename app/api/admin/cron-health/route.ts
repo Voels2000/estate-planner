@@ -2,13 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
 import { recordCronHealth, type CronHealthStatus } from '@/lib/cron/recordCronHealth'
-
-function isCronOrInternalAuth(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader === `Bearer ${process.env.CRON_SECRET}`) return true
-  const internal = request.headers.get('x-internal-key')
-  return !!internal && internal === process.env.INTERNAL_API_KEY
-}
+import { requireCronOrInternal } from '@/lib/api/internalApiAuth'
 
 export async function GET() {
   const auth = await requireAdminApi()
@@ -25,7 +19,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isCronOrInternalAuth(request)) {
+  const cronDenied = requireCronOrInternal(request)
+  if (cronDenied !== null) {
     const auth = await requireAdminApi()
     if (auth instanceof NextResponse) return auth
   }

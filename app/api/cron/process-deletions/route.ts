@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { deleteUserData } from '@/lib/compliance/deleteUser'
 import { getCancelScheduledDeletionReason } from '@/lib/compliance/deletionGuards'
 import { recordCronHealth } from '@/lib/cron/recordCronHealth'
+import { requireCronAuth } from '@/lib/api/internalApiAuth'
 import {
   nextDeletionRetryAt,
   sendDeletionRetryAlertEmail,
@@ -12,10 +13,8 @@ import {
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const denied = requireCronAuth(request)
+  if (denied) return denied
 
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)

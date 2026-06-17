@@ -13,8 +13,18 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - ⬜ **Stripe price IDs validated in test mode** — `GET /api/admin/verify-env?live=1` on Preview (`sk_test_`) runs `prices.retrieve` for advisor/attorney `STRIPE_PRICE_*` vars (catches `No such price` before checkout). Consumer unset on preview/local skipped (legacy fallbacks).
 - ⬜ **Webhook failure visibility** — alert when a Stripe webhook fails/times out. Confirm handlers are **idempotent**.
 
+### Pre-launch security (2026-06-17 · PR #28)
+- ✅ **Beneficiary grant tokens** — capability tokens never logged (`beneficiary-grant-actions.ts`).
+- ✅ **Cron/internal auth fail-closed** — `requireCronAuth` / `requireCronOrInternal` in `lib/api/internalApiAuth.ts`; missing `CRON_SECRET` → 500 (not `Bearer undefined` bypass).
+- ✅ **Admin API MFA** — directory admin, referrals admin, terms update use `requireAdminApi()`.
+- ✅ **Introduction emails** — session-bound sender; HTML escaped; advisor id/email validated.
+- ✅ **Email capture** — 10/min/IP rate limit; raw email removed from logs.
+- ⬜ **`CRON_SECRET` on `estate-planner-staging`** — required before staging crons run (fail-closed).
+- ⬜ **`UPSTASH_REDIS_*` in prod** — recommended for durable email-capture rate limits across instances.
+
 ### Data integrity & isolation (on PROD, not just staging)
 - ✅ **Structural RLS gate** — `scripts/assert-rls-coverage.sql` wired into `npm run verify:rls`; tenancy-column scope (not 21-table list); `PERMISSIVE_POLICY`, `MISSING_RLS`, `NO_POLICY`, and `NAME_ROLE_MISMATCH` all blocking.
+- ✅ **Structural RLS gate in CI** — `rls-verify` on PR → `main` runs `npm run verify:rls -- --require-sql` against staging DB ([PR #27](https://github.com/Voels2000/estate-planner/pull/27)).
 - ✅ **FOR ALL-to-public write leaks closed** — `estate_health_scores`, `household_alerts`, `beneficiary_conflicts` (integrity + availability, not read-only). Pre-launch; zero production customer rows affected ([DECISION_LOG](./DECISION_LOG.md)).
 - ✅ **Apply RLS migrations on prod** (2026-06-15) — in order: `20260713130000` → `20260713140000` → `20260713150000`. `assert-rls-coverage` → **0 rows** on prod.
 - ✅ **`verify:rls` on prod** — **27/27** (2 SQL + 25 JWT): `sql_invariants` + `rls_coverage_gate` PASS; full 21-table household JWT matrix PASS. Re-run after any policy migration: `npm run verify:rls -- --require-sql`.

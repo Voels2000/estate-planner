@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendAdvisorDripStep } from '@/lib/advisor/sendAdvisorDripStep'
+import { requireCronOrInternal } from '@/lib/api/internalApiAuth'
 
 /**
  * POST /api/email/advisor-drip
@@ -9,13 +10,8 @@ import { sendAdvisorDripStep } from '@/lib/advisor/sendAdvisorDripStep'
  * Auth: CRON_SECRET or INTERNAL_API_KEY
  */
 export async function POST(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  const isCron = authHeader === `Bearer ${process.env.CRON_SECRET}`
-  const isInternal = req.headers.get('x-internal-key') === process.env.INTERNAL_API_KEY
-
-  if (!isCron && !isInternal) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const denied = requireCronOrInternal(req)
+  if (denied) return denied
 
   if (!process.env.RESEND_API_KEY) {
     return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 503 })

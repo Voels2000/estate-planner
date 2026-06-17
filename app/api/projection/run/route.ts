@@ -12,6 +12,7 @@ import { createHash } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isInternalApiRequest } from '@/lib/api/internalApiAuth'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
 const RATE_WINDOW_MS = 60 * 60 * 1000
@@ -158,9 +159,7 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient()
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    const isInternalService =
-      !!process.env.INTERNAL_API_KEY &&
-      req.headers.get('x-internal-key') === process.env.INTERNAL_API_KEY
+    const isInternalService = isInternalApiRequest(req)
     const isServiceToken = isInternalService && !!serviceKey && token === serviceKey
 
     let userId: string | null = null
