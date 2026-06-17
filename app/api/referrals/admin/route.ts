@@ -2,20 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
 import { fireReferralStatusUpdateNotification } from '@/lib/server-notifications'
 
 const VALID_STATUSES = ['pending', 'contacted', 'converted', 'closed'] as const
 type ReferralStatus = (typeof VALID_STATUSES)[number]
 
 export async function PATCH(req: NextRequest) {
-  const { user, isAdmin } = await getAccessContext()
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
+  const { user } = await getAccessContext()
 
   const supabase = await createClient()
 

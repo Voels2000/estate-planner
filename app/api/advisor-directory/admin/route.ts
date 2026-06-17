@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
 
 export async function PATCH(req: Request) {
   try {
-    const { isAdmin, isSuperuser, user } = await getAccessContext()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
+    const auth = await requireAdminApi()
+    if (auth instanceof NextResponse) return auth
+    const { isSuperuser, user } = await getAccessContext()
     const supabase = await createClient()
     const { id, field, value } = await req.json()
     if (!id || !field) {
@@ -41,10 +41,9 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const { isAdmin, isSuperuser, user } = await getAccessContext()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-
+    const auth = await requireAdminApi()
+    if (auth instanceof NextResponse) return auth
+    const { isSuperuser, user } = await getAccessContext()
     const { id } = await req.json()
     if (!id) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 })

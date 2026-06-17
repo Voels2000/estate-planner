@@ -1,13 +1,14 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
 import { resend } from '@/lib/resend'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
   try {
-    const { isAdmin, isSuperuser, user } = await getAccessContext()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const auth = await requireAdminApi()
+    if (auth instanceof NextResponse) return auth
+    const { isSuperuser, user } = await getAccessContext()
 
     const { listing_id, action } = await req.json()
     if (!listing_id || !['approve', 'reject'].includes(action)) {
