@@ -27,6 +27,7 @@ const INFRA_BYPASS_PATHS = [
   '/favicon.ico',
   '/robots.txt',
   '/sitemap.xml',
+  '/monitoring', // Sentry tunnel (tunnelRoute in next.config) — must stay public for logged-out clients
 ] as const
 
 const PUBLIC_PATHS = [

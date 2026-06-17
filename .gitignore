@@ -61,3 +61,6 @@ audit-results.txt
 audit-summary.txt
 security-audit-results.txt
 tools/launch-tracker-state.json
+
+# Sentry Config File
+.env.sentry-build-plugin

@@ -126,6 +126,14 @@
 
 ---
 
+## Sentry error monitoring (2026-06-17)
+
+**Decision:** Add Sentry (`@sentry/nextjs`) **error-only** — no tracing, replay, or logs. US data region. `sendDefaultPii: false` in all init files. Browser events tunnel via `/monitoring` (public middleware bypass; no collision with admin/ops routes). Per-DSN rate limit in Sentry dashboard (~150–170/day). `SENTRY_AUTH_TOKEN` in Vercel Production + Preview for source maps.
+
+**Reasoning:** Close PRE_FLIP observability gap without draining free tier or leaking household PII into error reports.
+
+---
+
 ## Pre-launch security fixes (2026-06-17)
 
 **Beneficiary grant tokens:** Removed capability token and email from `sendGrantInviteEmail` server logs — log grant id only.
