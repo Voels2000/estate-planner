@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await requireAdminApi()
     if (auth instanceof NextResponse) return auth
-    const { isSuperuser, user } = await getAccessContext()
+    const { isSuperuser } = await getAccessContext()
 
     const { listing_id, action } = await req.json()
     if (!listing_id || !['approve', 'reject'].includes(action)) {
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
       if (isSuperuser) {
         await admin.from('superuser_action_log').insert({
-          user_id: user.id,
+          user_id: auth.userId,
           endpoint: '/api/advisor-directory/admin-action',
           target_id: listing_id,
           action: 'approve',
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
 
       if (isSuperuser) {
         await admin.from('superuser_action_log').insert({
-          user_id: user.id,
+          user_id: auth.userId,
           endpoint: '/api/advisor-directory/admin-action',
           target_id: listing_id,
           action: 'reject',

@@ -8,7 +8,7 @@ import { getAppUrl } from '@/lib/app-url'
 export async function POST(req: NextRequest) {
   const auth = await requireAdminApi()
   if (auth instanceof NextResponse) return auth
-  const { isSuperuser, user } = await getAccessContext()
+  const { isSuperuser } = await getAccessContext()
 
   const admin = createAdminClient()
 
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
 
     if (isSuperuser) {
       await admin.from('superuser_action_log').insert({
-        user_id: user.id,
+        user_id: auth.userId,
         endpoint: '/api/attorney-directory/admin-action',
         target_id: listing_id,
         action: 'approve',
@@ -212,7 +212,7 @@ export async function POST(req: NextRequest) {
 
     if (isSuperuser) {
       await admin.from('superuser_action_log').insert({
-        user_id: user.id,
+        user_id: auth.userId,
         endpoint: '/api/attorney-directory/admin-action',
         target_id: listing_id,
         action: 'reject',

@@ -126,6 +126,20 @@
 
 ---
 
+## Pre-launch security fixes (2026-06-17)
+
+**Beneficiary grant tokens:** Removed capability token and email from `sendGrantInviteEmail` server logs — log grant id only.
+
+**Cron/internal auth:** Centralized `requireCronAuth` / `requireCronOrInternal` in `lib/api/internalApiAuth.ts` — fail closed when `CRON_SECRET` or `INTERNAL_API_KEY` unset; constant-time compare.
+
+**Admin API MFA:** Directory admin, referrals admin, and terms update routes now use `requireAdminApi()` (privileged MFA when `REQUIRE_PRIVILEGED_MFA=true`).
+
+**Introduction emails:** `POST /api/advisor-directory/introduce` binds sender identity to session profile; HTML-escapes user note; validates advisor id/email match.
+
+**Email capture:** Rate-limited (10/min/IP); raw email removed from logs; drip trigger uses `internalApiHeaders()`.
+
+---
+
 ## CI hardening + staging branch flow (2026-06-17)
 
 **Decision:** Harden PR gates and adopt a long-lived **`staging`** integration branch before production merges.

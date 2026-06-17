@@ -8,7 +8,7 @@ export async function PATCH(req: Request) {
   try {
     const auth = await requireAdminApi()
     if (auth instanceof NextResponse) return auth
-    const { isSuperuser, user } = await getAccessContext()
+    const { isSuperuser } = await getAccessContext()
 
     const supabase = await createClient()
     const { id, field, value } = await req.json()
@@ -27,7 +27,7 @@ export async function PATCH(req: Request) {
     if (isSuperuser) {
       const admin = createAdminClient()
       await admin.from('superuser_action_log').insert({
-        user_id: user.id,
+        user_id: auth.userId,
         endpoint: '/api/attorney-directory/admin',
         target_id: id,
         action: 'update',
@@ -44,7 +44,7 @@ export async function DELETE(req: Request) {
   try {
     const auth = await requireAdminApi()
     if (auth instanceof NextResponse) return auth
-    const { isSuperuser, user } = await getAccessContext()
+    const { isSuperuser } = await getAccessContext()
 
     const { id } = await req.json()
     if (!id) {
@@ -58,7 +58,7 @@ export async function DELETE(req: Request) {
     if (error) throw error
     if (isSuperuser) {
       await admin.from('superuser_action_log').insert({
-        user_id: user.id,
+        user_id: auth.userId,
         endpoint: '/api/attorney-directory/admin',
         target_id: id,
         action: 'delete',
