@@ -1,0 +1,14 @@
+---
+description: Sentry SDK conventions for @sentry/nextjs (error-only, PII off)
+globs: ["instrumentation*.ts", "sentry*.ts", "app/global-error.tsx", "next.config.ts"]
+alwaysApply: false
+---
+
+# Sentry — My Wealth Maps
+
+- **Scope:** Error monitoring only. No tracing, session replay, or log ingestion unless explicitly requested.
+- **PII:** `sendDefaultPii: false` in all three init files (`instrumentation-client.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`). Never attach emails, estate values, or household identifiers via `Sentry.setUser` / `setContext` — use Supabase user id only if needed.
+- **Sampling:** `tracesSampleRate: 0`. No `replaysSessionSampleRate`, `replaysOnErrorSampleRate`, or `enableLogs`.
+- **Tunnel:** `tunnelRoute: '/monitoring'` in `next.config.ts`. Path is listed in `middleware.ts` `INFRA_BYPASS_PATHS` (public, not auth-gated). Do not rename without updating both files.
+- **Secrets:** DSN in committed config is OK. `SENTRY_AUTH_TOKEN` / `.env.sentry-build-plugin` must stay gitignored.
+- **SDK:** Use `@sentry/nextjs` APIs (`captureException`, `captureRequestError`). Do not add `onRouterTransitionStart` / performance spans.
