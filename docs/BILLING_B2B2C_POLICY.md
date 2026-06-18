@@ -54,7 +54,7 @@ Set in Vercel Production (and `.env.local` for local testing):
 | `B2B2C_ADVISOR_MANAGED_TIER` | `3` | Estate tier when advisor handoff ON |
 | `B2B2C_ATTORNEY_MANAGED_TIER` | `2` | Retirement tier when attorney handoff ON (lighter than advisor — adjust to `3` if you bundle Estate) |
 
-**Code paths:** `lib/billing/b2b2cBillingPolicy.ts` · `lib/billing/managedConsumerBilling.ts`
+**Code paths:** `lib/billing/b2b2cBillingPolicy.ts` · `lib/billing/managedConsumerBilling.ts` · **`consumerCheckoutBlockReason()`** + **`processConsumerCheckout`** — shared UI/API gate on `POST /api/stripe/checkout` (PR #36; blocks managed, delinquent, active/trialing/canceling, connected advisor client). Prod promotion smoke: **block paths only** (403/409); live eligible-consumer charge → real-card test ([PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md)).
 
 **Connection hooks:**
 

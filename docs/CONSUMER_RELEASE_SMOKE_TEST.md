@@ -8,6 +8,8 @@ Use this after a production or staging deploy when consumer write paths, estate 
 
 **Who:** A real test account (not a paying client). Estate tier recommended so all sections apply.
 
+**Staging → main promotion:** For the pre-launch hardening batch (#28–#38), use [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) — passive recompute/cron log checks and checkout **403/409 block paths** only. **This checklist** remains the full manual pass; **live Stripe charge** (eligible consumer → checkout) belongs in the dedicated real-card / C-4 walkthrough, not ad hoc on promote.
+
 ---
 
 ## Sprint 14 Manual Smoke Sign-off

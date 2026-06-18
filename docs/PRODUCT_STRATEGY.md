@@ -153,4 +153,5 @@ Never duplicate information across documents. Use cross-references instead. This
 | What does the database look like? | DATABASE_SCHEMA_REFERENCE.md |
 | What changed in which session? | SCHEMA_CHANGELOG.md |
 | How do we verify a release? | CONSUMER_RELEASE_SMOKE_TEST.md |
+| How do we promote staging → main? | PROMOTION_STAGING_TO_MAIN.md |
 | What needs updating before a merge? | UPDATE_CHECKLIST.md |

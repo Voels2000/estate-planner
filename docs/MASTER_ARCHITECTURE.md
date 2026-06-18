@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-17 (staging branch flow, CI hardening PR #27, security fixes PR #28)
+# Last updated: 2026-06-18 (pre-launch hardening batch PRs #28–#38 on staging; promotion runbook)
 
 ---
 
@@ -12,7 +12,7 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [DEPLOYMENT.md](./DEPLOYMENT.md) (two-DB steady state) · [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (session handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [LAUNCH.md](./LAUNCH.md) (go-live checklist) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) · [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [DEPLOYMENT.md](./DEPLOYMENT.md) (two-DB steady state) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) (staging→main batch promote) · [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (session handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [LAUNCH.md](./LAUNCH.md) (go-live checklist) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) · [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
 
 ---
 
@@ -43,7 +43,7 @@ feature/* → PR → staging branch → estate-planner-staging.vercel.app (stagi
 
 **CI `verify` job (PR #27):** ESLint · `npx tsc --noEmit` · unit tests on every PR to `main` and `staging`; full build + audits only on PR → `main` and push → `main`. **`e2e-smoke`** runs `test:e2e:b4-gate` + **`test:e2e:security-isolation`** (20 cross-household tests on staging; PR #30). **`rls-verify`** runs `npm run verify:rls -- --require-sql` (JWT + `assert-rls-coverage.sql`) using staging `SUPABASE_DB_URL` from GitHub secrets.
 
-Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Go-live checklist: [LAUNCH.md](./LAUNCH.md) · manual attestations: [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) (`npm run launch:tracker`).
+Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Staging→main promotion: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md). Go-live checklist: [LAUNCH.md](./LAUNCH.md) · manual attestations: [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) (`npm run launch:tracker`).
 
 ### Environment manifest (SSOT for vars)
 
@@ -1156,7 +1156,7 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 - `lib/prospect/calculateProspectSummary.ts` — prospect federal + state tax; uses `calculateStateEstateTax` (not household RPC)
 - `components/shared/HealthScoreBadge.tsx` — canonical score display (hero/card/badge); labels from `lib/estate-health-score.ts`
 - `lib/estate-health-score.ts` — `computeEstateHealthScore`, `scoreLabel`, `scoreContextSentence`, `isScoreStale`
-- `lib/api/internalApiAuth.ts` — `requireCronAuth` / `requireCronOrInternal` / `requireInternalApi` — fail-closed + constant-time compare when `CRON_SECRET` or `INTERNAL_API_KEY` unset
+- `lib/api/internalApiAuth.ts` — `requireCronAuth` / `requireCronOrInternal` / `requireInternalApi` / `requireRecomputeAuth` — fail-closed + constant-time compare when `CRON_SECRET`, `INTERNAL_API_KEY`, or `RECOMPUTE_SECRET` unset (PR #28, #35)
 - `lib/supabase/routeAuth.ts` — `getRouteAuth()` for App Router handlers (`getSession()` not `getUser()`)
 - `app/api/health/route.ts` — liveness probe `{ ok: true }`; target for uptime monitoring
 - Sentry (`@sentry/nextjs`) — error-only monitoring (`sendDefaultPii: false`); browser tunnel `/monitoring`; source maps via `SENTRY_AUTH_TOKEN` on Vercel (PRE_FLIP attest 2026-06-17 · PR #29)

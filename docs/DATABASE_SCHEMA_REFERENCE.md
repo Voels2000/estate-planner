@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # MyWealthMaps / Estate Planner — Database Schema Guide
-# Last updated: May 26, 2026 (UX-2 — advisor_gap_statuses table for gap workflow tracking)
+# Last updated: 2026-06-18 (attorney drip unsubscribe column; promotion runbook)
 
 **Session history:** [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · **Consumer journeys:** [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md)
 
@@ -51,6 +51,7 @@ This is a developer reference, not a full SQL DDL dump.
 - **Onboarding wizard (Sprint OB-1):** `onboarding_wizard_completed_at` — set when consumer finishes `/onboarding/wizard` (also sets invite-advisor timestamp via `POST /api/consumer/onboarding-wizard-complete`).
 - **Signup trigger:** `on_auth_user_created` → `handle_new_user()` inserts a `profiles` row (`role` from metadata; consumer defaults: `consumer_tier=1`, `subscription_status=none`). Estate trial (`trialing`) is set only by Stripe webhook after checkout.
 - **Attorney weekly digest (2026-06-07):** `attorney_digest_sent_at` — last weekly digest send; cron §10 cooldown (6 days). Migration `20260703120000`.
+- **Attorney drip unsubscribe (2026-06-18):** `attorney_drip_unsubscribed_at` — set by `GET /api/email/unsubscribe?type=attorney`; future drip sender must skip when non-null (mirrors `advisor_drip_unsubscribed_at`). Migration `20260718120000`.
 
 ### `households`
 
@@ -496,6 +497,7 @@ After each schema-affecting session:
 - `20260701120000_restore_atg_in_calculate_estate_composition.sql` — ATG add-back in `calculate_estate_composition` RPC
 - `20260702120000_attorney_collaboration_workflow.sql` — `attorney_clients` workflow columns; `attorney_notes`; `attorney_document_requests`
 - `20260703120000_attorney_digest_sent_at.sql` — `profiles.attorney_digest_sent_at` (weekly digest cooldown for cron §10)
+- `20260718120000_attorney_drip_unsubscribed_at.sql` — `profiles.attorney_drip_unsubscribed_at` (unsubscribe route; drip sender filter TBD)
 - `20260708120000_cleanup_legacy_tax_tables.sql` — purge tax years 2023–2025 from rollover tables; drop `state_income_tax_rates`; backfill `federal_estate_tax_brackets.tax_year`
 - `20260708130000_seed_state_inheritance_tax_rules_2026.sql` — 24 inheritance rows for 2026 (6 states × 4 beneficiary classes)
 - `20260610120000_admin_ops_tasks.sql` — `ops_tasks`, `cron_health` (Admin-A)

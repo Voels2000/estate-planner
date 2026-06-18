@@ -127,6 +127,8 @@ feature/* ──PR (verify: lint+tsc+unit)──► staging ──PR (verify+e2e
                               estate-planner-staging.vercel.app              www.mywealthmaps.com
 ```
 
+**Promotion checklist:** [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) — use for staging→`main` PRs that ship migrations or fail-closed auth (#28–#38 batch).
+
 After merging CI changes to `main`, merge **`main` → `staging`** so branch workflows stay in sync — avoids “branch out of date” on the next staging → main PR.
 
 **Vercel cron secrets (2026-06-17):** `CRON_SECRET` and `INTERNAL_API_KEY` are **load-bearing** — auth is fail-closed (missing secret → 500). Set on **both** `estate-planner` (prod) and **`estate-planner-staging`** Production scopes before relying on crons. Manifest: `lib/env/manifest.ts` (`requiredInScopes: ALL_DEPLOYED`).
@@ -141,6 +143,7 @@ After merging CI changes to `main`, merge **`main` → `staging`** so branch wor
 | Before merge (API/auth/billing/math) | `npm run release:preflight -- --workers=1` |
 | After production deploy | `npm run release:post-deploy` |
 | After production deploy (optional) | `npm run test:e2e:prod:smoke -- --workers=1` |
+| **Staging → main promotion** (accumulated batch) | [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) — prod secrets pre-check, pending migrations, passive log smoke + checkout **block paths** only (defer live Stripe charge to real-card test) |
 
 Full matrix: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when).
 
