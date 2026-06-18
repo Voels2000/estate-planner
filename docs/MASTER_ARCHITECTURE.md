@@ -1087,6 +1087,8 @@ Eliminates three raw-Supabase admin dependencies before billing goes live.
 
 **Stripe sync:** `lib/billing/syncConsumerStripeSubscription.ts` — same field updates as `customer.subscription.updated` webhook (`profiles.stripe_customer_id` confirmed).
 
+**Stripe webhook (`app/api/stripe/webhook/route.ts`):** Checkout/subscription lifecycle sync; `tier_upgraded` funnel event only after **successful** consumer profile write on `checkout.session.completed` (2026-06-18 · PR #34). Post-launch idempotency/retry: [WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md](./WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md).
+
 **Audit logs (`app_config`):**
 
 | Key | Cap | Actions |
@@ -1451,7 +1453,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 - **Vercel Analytics:** `@vercel/analytics` — `<Analytics />` in `app/layout.tsx` (automatic page views).
 - **Custom funnel:** table `funnel_events`; `POST /api/analytics/funnel`; `lib/analytics/useFunnelEvent.ts` (fire-and-forget).
-- **Instrumented events:** `event_page_view`, `event_assess_start`, `event_assess_complete`, `email_captured`, `account_created`, `beta_signup_link_viewed`, `tier_upgraded`, `advisor_connected`.
+- **Instrumented events:** `event_page_view`, `event_assess_start`, `event_assess_complete`, `email_captured`, `account_created`, `beta_signup_link_viewed`, `tier_upgraded`, `advisor_connected`. **`tier_upgraded` (webhook):** inserted via `trackTierUpgrade` only when checkout profile write succeeds — not on failed Supabase update (PR #34).
 - **Upgrade copy (Sprint 12):** `getEventUpgradeValueProp()` in `lib/events/upgradeContext.ts` always uses personalized `EVENT_UPGRADE_COPY` (24 slugs × tier 2/3). Verify: `scripts/verify-event-upgrade-copy.ts`.
 - **Assessment (Sprint 12):** `/assess` always shows scores to logged-out users; full gap report gated behind signup (`_assess-client.tsx`). Pre-launch A/B flags removed from `app_config`.
 - **Signup attribution (Sprint 9):** `mwm_referral_*` and `mwm_attorney_referral_*` in sessionStorage → `profiles.referral_code` / `profiles.attorney_referral_code` + `account_created` funnel (`properties.advisor_referral_code`, `properties.attorney_referral_code`); keys cleared after signup.
