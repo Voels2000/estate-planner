@@ -52,7 +52,7 @@ Status key: `[ ]` not started · `[~]` in progress · `[x]` done
 |---|------|--------|-------------|
 | H1 | [Attorney FK alignment](#h1-attorney-fk-alignment-vault--invite-flows) | `[x]` wired — run `npm run repair:attorney-fks:dry-run` on prod if needed | Fix before attorney GTM scale |
 | H2 | [Account linking / import friction](#h2-account-linking--import-friction-plaid--custodian-csv) | `[x]` Phase A — custodian guides + header aliases | Biggest consumer/advisor gap vs PC/eMoney |
-| H3 | [CI Playwright smoke on PR](#h3-ci-playwright-smoke-on-pr) | `[x]` workflow added — enable `E2E_SMOKE_IN_CI=true` | Match how mature fintech ships |
+| H3 | [CI Playwright smoke on PR](#h3-ci-playwright-smoke-on-pr) | `[x]` enabled — `E2E_SMOKE_IN_CI` + `RLS_VERIFY_IN_CI` true (2026-06-14); isolation suite in `e2e-smoke` (PR #30) | Match how mature fintech ships |
 | H4 | [Mandatory MFA for privileged roles](#h4-mandatory-mfa-for-privileged-roles) | `[x]` wired — **`REQUIRE_PRIVILEGED_MFA=false` until go-live** | Banking-grade baseline |
 
 ### Medium impact (differentiation depth)
@@ -208,7 +208,7 @@ You have invested heavily in E2E; without CI, regressions ship silently — espe
 
 **Effort:** Tier 1 ~1 day; Tier 2 ~2 days (flake tuning, secrets, staging DB).
 
-**Shipped (2026-06-07):** `.github/workflows/e2e-smoke.yml` — off until `E2E_SMOKE_IN_CI=true`. Pre-launch enable steps: [archived LAUNCH.md § GitHub Actions E2E smoke](./archive/LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live).
+**Shipped (2026-06-07):** `.github/workflows/e2e-smoke.yml` — off until `E2E_SMOKE_IN_CI=true`. **Enabled (2026-06-14):** repo variables + staging secrets; attested in [LAUNCH.md § B3](./LAUNCH.md). **Isolation in CI (2026-06-17):** `test:e2e:security-isolation` in `e2e-smoke` — [PR #30](https://github.com/Voels2000/estate-planner/pull/30).
 
 **M3 cron (2026-06-07):** `/api/cron/post-deploy-verify` daily 9:00 UTC — `ensureVoelsMonteCarloCached()` then 7 checks. Manual: `npm run verify:post-deploy-voels`; immediate: `npm run smoke:mc-voels`.
 
