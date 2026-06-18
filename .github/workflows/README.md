@@ -6,7 +6,7 @@
 |----------|------------------|----------|---------|
 | **`ci.yml`** | **`verify`** | PR → `main`, `staging`; push → `main` | None (build uses placeholders) |
 | **`rls-verify.yml`** | **`rls-verify`** | PR → `main`; `workflow_dispatch` | Staging Supabase + `SUPABASE_DB_URL` (pooler) |
-| **`e2e-smoke.yml`** | **`e2e-smoke`** | PR → `main`; `workflow_dispatch` | Staging Supabase + Playwright users |
+| **`e2e-smoke.yml`** | **`e2e-smoke`** | PR → `main`; `workflow_dispatch` | Staging Supabase + Playwright users; runs go-live-profile, security-smoke, B4 gate, **cross-household isolation** (20 tests) |
 | **`staging-keepalive.yml`** | **`ping`** | Cron (every 3 days) | None |
 
 Repo variables (must be `true` for gated jobs): **`E2E_SMOKE_IN_CI`**, **`RLS_VERIFY_IN_CI`**.
