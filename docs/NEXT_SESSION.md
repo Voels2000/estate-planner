@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-17 (pre-launch security fixes PR #28, CI/staging flow PR #27)
+# Last updated: 2026-06-18 (staging hardening batch #28–#39; promotion runbook)
 
 ---
 
@@ -12,13 +12,15 @@
 
 ---
 
-## Current focus (2026-06-17)
+## Current focus (2026-06-18)
+
+**Next ops:** Promote **`staging` → `main`** — pre-launch hardening batch (PRs #28–#39). Runbook: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md). Pre-check prod `RECOMPUTE_SECRET`, `CRON_SECRET`, `INTERNAL_API_KEY`; verify migration `20260718120000` on prod; post-deploy passive log smoke + checkout block paths only.
 
 Engineering pre-launch gates through **B4 automated walkthroughs**, **B5 machine slice**, **security IDOR fix**, and **launch tracker v4** are **shipped**. [LAUNCH.md](./LAUNCH.md) — **44 of 55** Bucket B checked (**11 open**). Remaining: real-card smoke, C-4 walkthrough, counsel/email aliases, B4 irreducible manual, B&O ruling (Bucket A).
 
-**CI / deploy flow (2026-06-17):** `feature/*` → PR → **`staging`** (`verify`: lint + tsc + unit) → PR → **`main`** (`verify` full + `e2e-smoke` + `rls-verify`). Vercel: **`estate-planner-staging`** (branch `staging`) · **`estate-planner`** Production (`main`). See [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions) · [PR #27](https://github.com/Voels2000/estate-planner/pull/27) · [PR #28](https://github.com/Voels2000/estate-planner/pull/28).
+**CI / deploy flow:** `feature/*` → PR → **`staging`** (`verify`: lint + tsc + unit) → PR → **`main`** (`verify` full + `e2e-smoke` + `rls-verify`). Vercel: **`estate-planner-staging`** (branch `staging`) · **`estate-planner`** Production (`main`). See [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
 
-**Pre-launch security (2026-06-17, PR #28):** Grant token logging removed · cron/internal auth fail-closed (`requireCronAuth`) · `requireAdminApi` on directory/referrals/terms admin routes · introduce sender session-bound + HTML escaped · email-capture rate-limited. E2E: security-smoke 5/5 + isolation 20/20 locally.
+**Staging batch (2026-06-18, PRs #28–#39 on `staging`):** Security fail-closed (#28) · Sentry (#29) · isolation CI (#30) · webhook alerting (#32, #34) · recompute auth (#35) · checkout API guards (#36) · attorney unsubscribe (#37) · notification hygiene (#38) · promotion runbook doc sync (#39).
 
 | Area | Status | Canonical doc |
 |------|--------|---------------|
@@ -32,6 +34,8 @@ Engineering pre-launch gates through **B4 automated walkthroughs**, **B5 machine
 | Release routine (local → preview → prod) | ✅ Documented | [LAUNCH.md](./LAUNCH.md) |
 | Environment / CI credential policy | ✅ Documented + hardened | [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · PR #27 |
 | Pre-launch security fixes (5 blockers) | ✅ Shipped | PR #28 · [DECISION_LOG § Pre-launch security](./DECISION_LOG.md) |
+| Staging hardening batch (#29–#39) | ✅ On staging | Recompute (#35) · checkout guards (#36) · attorney unsubscribe (#37) · promotion runbook (#39) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) |
+| Promote staging → main | ☐ Next | [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) |
 | Go-live blockers (real-card, B&O, C-4, counsel) | ☐ Blocker | [LAUNCH.md](./LAUNCH.md) |
 | Admin Ops Home + task engine | ✅ Shipped | `/admin` → Ops Home · `ops_tasks` · `cron_health` |
 | Admin P1 (tax config, user detail, waitlist) | ✅ Shipped | `/admin` → Tax Rules · Users · Waitlist |

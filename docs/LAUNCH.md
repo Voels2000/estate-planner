@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-15 (launch-tracker sync)
+**Last updated:** 2026-06-18 (staging→main promotion runbook; hardening batch on staging)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -17,7 +17,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 (B&O-blocked)   wait for WA SaaS/DAS ruling
 ```
 
-**Related (not absorbed):** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md)
+**Related (not absorbed):** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md)
 
 **Working tracker (manual attestations):** [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) — browser UI at `tools/launch-tracker.html` (`npm run launch:tracker`); sync to this file via `npm run sync:launch-tracker`.
 
@@ -76,6 +76,15 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] CI hardening + staging branch — `tsc --noEmit`, `rls-verify --require-sql`, `staging-pr-gate` (attest: Al / 2026-06-17 · PR #27)
 - [x] Pre-launch security fixes — token logging, cron fail-closed, admin MFA routes, introduce hardening, email-capture rate limit (attest: Al / 2026-06-17 · PR #28; E2E security-smoke 5/5 + isolation 20/20)
 - [x] Cross-household isolation in **`e2e-smoke`** CI — `test:e2e:security-isolation` (20 tests); gate-validated break/revert on `requireHouseholdAccess` (attest: Al / 2026-06-17 · PR #30)
+
+### B3b. Staging → main promotion (pre-launch hardening — not the flip)
+
+Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** open prod signups or retire flip blockers. Canonical runbook: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
+
+- [ ] Prod secrets confirmed — `RECOMPUTE_SECRET`, `CRON_SECRET`, `INTERNAL_API_KEY` on `estate-planner` (attest: __ / __)
+- [ ] Prod migration verified — `20260718120000_attorney_drip_unsubscribed_at.sql` present (`supabase migration list` or `information_schema`) (attest: __ / __)
+- [ ] Staging→`main` PR merged on green CI (`verify` + `e2e-smoke` + `rls-verify`) (attest: __ / __)
+- [ ] Prod deploy green; post-deploy passive smoke — recompute/cron logs OK; checkout **block paths** 403/409 (defer live Stripe charge to real-card test) (attest: __ / __)
 
 ### B4. Manual smokes — automated on staging where noted
 

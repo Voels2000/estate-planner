@@ -1,6 +1,44 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-18 (migration per-environment gate)
+# Last updated: 2026-06-18 (staging→main promotion runbook; hardening batch #28–#39 on staging)
+
+---
+
+## Staging → main promotion runbook (2026-06-18)
+
+**Decision:** Canonical checklist for promoting accumulated pre-launch hardening from **`staging`** to **`main`**: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md). Covers PRs #28–#39 (40 commits), one additive migration (`20260718120000_attorney_drip_unsubscribed_at.sql`), prod secret pre-checks (`RECOMPUTE_SECRET`, `CRON_SECRET`, `INTERNAL_API_KEY`), and **passive** post-deploy smoke (recompute/cron from logs; checkout **403/409 block paths only** — defer eligible-consumer live Stripe charge to dedicated real-card test). **#39** is docs-only (runbook + master-doc cross-links); no change to migration or env surface.
+
+**Reasoning:** Hardening deploy to pre-launch prod does not open signups or retire flip blockers. Unit tests cover #36 happy-path logic; live charge validates Stripe e2e, not this PR. Recompute/cron confirm from logs without forcing writes or charges.
+
+**After clean prod promote:** DECISION_LOG note on `unsubscribeToken.ts` HMAC secret rotation invalidating links; follow-ups for `RECOMPUTE_SECRET` in CI E2E and attorney drip sender honoring `attorney_drip_unsubscribed_at`.
+
+---
+
+## Recompute route fail-closed auth (2026-06-18 · PR #35)
+
+**Decision:** `/api/recompute-estate-health` uses `requireRecomputeAuth` — header `x-recompute-secret` must match `RECOMPUTE_SECRET`. Unset env → **500** (not open route). Constant-time compare via `safeCompareSecrets`.
+
+**Callers:** `triggerEstateHealthRecompute` only (server-side from `afterHouseholdWrite`); not Vercel cron.
+
+**Tests:** `tests/unit/internalApiAuth.spec.ts`; `tests/e2e/public/recompute-estate-health.spec.ts` (skips without secret in CI).
+
+---
+
+## Consumer checkout API eligibility guards (2026-06-18 · PR #36)
+
+**Decision:** `consumerCheckoutBlockReason()` in `lib/billing/b2b2cBillingPolicy.ts` — shared by billing page and `POST /api/stripe/checkout` via `processConsumerCheckout`. Blocks: advisor/attorney-managed, `past_due`/`unpaid`, active/trialing/canceling, connected advisor client. Returns `{ error, code }` with 403/409.
+
+**Reasoning:** UI already blocked; API was permissive — managed users could reach Stripe session creation.
+
+**Live prod smoke:** block paths only (403/409, no charge). Happy-path live charge deferred to real-card smoke test.
+
+---
+
+## Attorney drip unsubscribe column + routing (2026-06-18 · PR #37)
+
+**Decision:** `GET /api/email/unsubscribe?type=attorney` writes `profiles.attorney_drip_unsubscribed_at` (not `email_captures`). Migration `20260718120000_attorney_drip_unsubscribed_at.sql`. `lib/email/applyEmailUnsubscribe.ts` centralizes routing; unknown `type` → 400; DB failure → 500.
+
+**Follow-up:** Attorney drip *sender* (not built) must filter `.is('attorney_drip_unsubscribed_at', null)` before send.
 
 ---
 

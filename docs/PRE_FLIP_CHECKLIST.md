@@ -4,7 +4,7 @@ Status key: ✅ done · 🔄 partial / verify · ⬜ open · 🌐 external depen
 
 The flip action is a single env change (`PUBLIC_SIGNUP_OPEN=true`). Everything below is what should be true *before* that change.
 
-Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISION_LOG.md](./DECISION_LOG.md) (pre-launch FOR ALL RLS timeline) · [NEGATIVE_AUTHZ_TEST_PLAN.md](./NEGATIVE_AUTHZ_TEST_PLAN.md).
+Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISION_LOG.md](./DECISION_LOG.md) (pre-launch FOR ALL RLS timeline) · [NEGATIVE_AUTHZ_TEST_PLAN.md](./NEGATIVE_AUTHZ_TEST_PLAN.md) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) (staging→main hardening batch).
 
 ---
 
