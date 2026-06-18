@@ -15,7 +15,7 @@ export type AttorneyDripSequence = {
   email3: AttorneyDripEmail
 }
 
-/** Attorney onboarding drip — columns: attorney_drip_step_1_sent_at … _3_sent_at on profiles. */
+/** Attorney onboarding drip — profiles.attorney_drip_step_*_sent_at; unsubscribe → attorney_drip_unsubscribed_at. */
 export function getAttorneyDripSequence(): AttorneyDripSequence {
   const baseUrl = getAppUrl()
 
