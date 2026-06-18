@@ -237,9 +237,7 @@ export async function POST(req: NextRequest) {
           if (error) {
             console.error('Supabase update error:', error.message)
             captureStripeWebhookSupabaseFailure('consumer checkout profile update', error, event)
-          }
-
-          if (consumerTier && consumerTier > previousTier) {
+          } else if (consumerTier && consumerTier > previousTier) {
             void trackTierUpgrade({
               userId,
               tier: consumerTier,
