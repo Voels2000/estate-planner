@@ -1,6 +1,58 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-15 (pre-launch FOR ALL RLS leak, structural coverage gate, WA Regime D)
+# Last updated: 2026-06-18 (staging→main promotion runbook; hardening batch #28–#39 on staging)
+
+---
+
+## Staging → main promotion runbook (2026-06-18)
+
+**Decision:** Canonical checklist for promoting accumulated pre-launch hardening from **`staging`** to **`main`**: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md). Covers PRs #28–#39 (40 commits), one additive migration (`20260718120000_attorney_drip_unsubscribed_at.sql`), prod secret pre-checks (`RECOMPUTE_SECRET`, `CRON_SECRET`, `INTERNAL_API_KEY`), and **passive** post-deploy smoke (recompute/cron from logs; checkout **403/409 block paths only** — defer eligible-consumer live Stripe charge to dedicated real-card test). **#39** is docs-only (runbook + master-doc cross-links); no change to migration or env surface.
+
+**Reasoning:** Hardening deploy to pre-launch prod does not open signups or retire flip blockers. Unit tests cover #36 happy-path logic; live charge validates Stripe e2e, not this PR. Recompute/cron confirm from logs without forcing writes or charges.
+
+**After clean prod promote:** DECISION_LOG note on `unsubscribeToken.ts` HMAC secret rotation invalidating links; follow-ups for `RECOMPUTE_SECRET` in CI E2E and attorney drip sender honoring `attorney_drip_unsubscribed_at`.
+
+---
+
+## Recompute route fail-closed auth (2026-06-18 · PR #35)
+
+**Decision:** `/api/recompute-estate-health` uses `requireRecomputeAuth` — header `x-recompute-secret` must match `RECOMPUTE_SECRET`. Unset env → **500** (not open route). Constant-time compare via `safeCompareSecrets`.
+
+**Callers:** `triggerEstateHealthRecompute` only (server-side from `afterHouseholdWrite`); not Vercel cron.
+
+**Tests:** `tests/unit/internalApiAuth.spec.ts`; `tests/e2e/public/recompute-estate-health.spec.ts` (skips without secret in CI).
+
+---
+
+## Consumer checkout API eligibility guards (2026-06-18 · PR #36)
+
+**Decision:** `consumerCheckoutBlockReason()` in `lib/billing/b2b2cBillingPolicy.ts` — shared by billing page and `POST /api/stripe/checkout` via `processConsumerCheckout`. Blocks: advisor/attorney-managed, `past_due`/`unpaid`, active/trialing/canceling, connected advisor client. Returns `{ error, code }` with 403/409.
+
+**Reasoning:** UI already blocked; API was permissive — managed users could reach Stripe session creation.
+
+**Live prod smoke:** block paths only (403/409, no charge). Happy-path live charge deferred to real-card smoke test.
+
+---
+
+## Attorney drip unsubscribe column + routing (2026-06-18 · PR #37)
+
+**Decision:** `GET /api/email/unsubscribe?type=attorney` writes `profiles.attorney_drip_unsubscribed_at` (not `email_captures`). Migration `20260718120000_attorney_drip_unsubscribed_at.sql`. `lib/email/applyEmailUnsubscribe.ts` centralizes routing; unknown `type` → 400; DB failure → 500.
+
+**Follow-up:** Attorney drip *sender* (not built) must filter `.is('attorney_drip_unsubscribed_at', null)` before send.
+
+---
+
+## Migration apply order — per environment, not both at once (2026-06-18)
+
+**Decision:** Schema migrations pair with the **deploy in the same environment**. Apply on staging before staging merge/deploy; apply on production at **staging→main promotion** (merge → prod apply → verify → prod deploy). Do **not** apply production migrations while code is still staging-only.
+
+**Reasoning:** Additive nullable columns tolerate schema-ahead-of-code, but the habit generalizes badly — rename/drop/NOT NULL migrations break production when schema leads code. One rule for all migration types. “Apply both early so nothing is missed” inverts safe ordering.
+
+**Until pipeline apply exists:** `bash scripts/apply-migration.sh staging|production <file>`; staging→`main` PR lists **pending production migrations**; verify with `supabase migration list` on prod before/after apply.
+
+**Follow-up:** Wire migration apply into deploy pipeline (structural fix — not launch gate).
+
+**Runbook:** [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift)
 
 ---
 
@@ -126,9 +178,67 @@
 
 ---
 
+## Sentry error monitoring (2026-06-17)
+
+**Decision:** Add Sentry (`@sentry/nextjs`) **error-only** — no tracing, replay, or logs. US data region. `sendDefaultPii: false` in all init files. Browser events tunnel via `/monitoring` (public middleware bypass; no collision with admin/ops routes). Per-DSN rate limit in Sentry dashboard (~150–170/day). `SENTRY_AUTH_TOKEN` in Vercel Production + Preview for source maps.
+
+**Reasoning:** Close PRE_FLIP observability gap without draining free tier or leaking household PII into error reports.
+
+**Attested (Al / 2026-06-17):** Preview deploy event captured end-to-end; `SENTRY_AUTH_TOKEN` on both Vercel projects (all scopes); per-DSN rate limit 150/12h; test issue resolved; [PR #29](https://github.com/Voels2000/estate-planner/pull/29) merged to `staging`. First Production-environment event confirms on first prod deploy after merge to `main`.
+
+---
+
+## Webhook `tier_upgraded` analytics integrity (2026-06-18)
+
+**Finding:** On `checkout.session.completed`, `trackTierUpgrade` ran even when the consumer `profiles` Supabase update failed — `funnel_events` could record `tier_upgraded` while the profile never updated (analytics vs billing state mismatch).
+
+**Fix:** [PR #34](https://github.com/Voels2000/estate-planner/pull/34) — call `trackTierUpgrade` only in the `else` branch after a successful profile write. No dedup table; no HTTP status change.
+
+**Reasoning:** Live data-integrity defect, independent of post-launch idempotency/retry work ([WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md](./WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md)).
+
+---
+
+## Pre-launch security fixes (2026-06-17)
+
+**Beneficiary grant tokens:** Removed capability token and email from `sendGrantInviteEmail` server logs — log grant id only.
+
+**Cron/internal auth:** Centralized `requireCronAuth` / `requireCronOrInternal` in `lib/api/internalApiAuth.ts` — fail closed when `CRON_SECRET` or `INTERNAL_API_KEY` unset; constant-time compare.
+
+**Admin API MFA:** Directory admin, referrals admin, and terms update routes now use `requireAdminApi()` (privileged MFA when `REQUIRE_PRIVILEGED_MFA=true`).
+
+**Introduction emails:** `POST /api/advisor-directory/introduce` binds sender identity to session profile; HTML-escapes user note; validates advisor id/email match.
+
+**Email capture:** Rate-limited (10/min/IP); raw email removed from logs; drip trigger uses `internalApiHeaders()`.
+
+---
+
+## Cross-household isolation in `e2e-smoke` CI (2026-06-17)
+
+**Decision:** Run `test:e2e:security-isolation` (20 tests) inside the existing **`e2e-smoke`** workflow on every PR to `main` when `E2E_SMOKE_IN_CI=true` — staging Supabase + localhost app; optional `PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID` passthrough.
+
+**Shipped:** [PR #30](https://github.com/Voels2000/estate-planner/pull/30) (`chore/ci-security-isolation`, `52536a5`). Gate-validated: commented out `requireHouseholdAccess` in `app/api/gifting-summary/route.ts` → suite failed on `Consumer isolation › POST gifting-summary on foreign household returns 403 or 404` → reverted → 20/20 green (break not committed).
+
+**Reasoning:** Post-launch hardening item #3 — cross-tenant isolation as a merge blocker without a separate workflow.
+
+---
+
+## CI hardening + staging branch flow (2026-06-17)
+
+**Decision:** Harden PR gates and adopt a long-lived **`staging`** integration branch before production merges.
+
+**Shipped:** [PR #27](https://github.com/Voels2000/estate-planner/pull/27) — `ci.yml`: ESLint + **`npx tsc --noEmit`** + unit on all PRs; full build/audits on PR → `main` only; PR triggers include **`staging`**. `rls-verify.yml`: `npm run verify:rls -- --require-sql` with staging **`SUPABASE_DB_URL`** from GitHub secrets (session pooler, `cmzyxpxfyvdvbsykjvsg` only). Branch protection: **`staging-pr-gate`** on `staging` (requires **`verify`**); **`main-no-direct-push`** unchanged ( **`verify`** + **`e2e-smoke`** + **`rls-verify`** ).
+
+**Git flow:** `feature/*` → PR → **`staging`** (`estate-planner-staging.vercel.app`) → PR → **`main`** (`www.mywealthmaps.com`).
+
+**Credential revision:** Staging **`SUPABASE_DB_URL`** may live in GitHub secrets for RLS structural coverage in CI. **Production** `SUPABASE_DB_URL` still never in GitHub or Vercel.
+
+**Reasoning:** Catch type errors and RLS schema drift before merge; lightweight gate on staging PRs; full E2E/RLS only on path to production.
+
+---
+
 ## E2E/RLS on PRs — staging-only GitHub secrets (2026-06-14)
 
-**Decision:** Restore E2E smoke + RLS verify workflows on every PR to `main`, using **staging** Supabase credentials only. Production keys and `SUPABASE_DB_URL` remain forbidden in GitHub.
+**Decision:** Restore E2E smoke + RLS verify workflows on every PR to `main`, using **staging** Supabase credentials only. Production keys remain forbidden in GitHub; staging **`SUPABASE_DB_URL`** added in PR #27 for `--require-sql` coverage.
 
 **Shipped:** [PR #8](https://github.com/Voels2000/estate-planner/pull/8) — `.github/workflows/e2e-smoke.yml`, `rls-verify.yml`, `scripts/write-ci-staging-env.sh`. Repo variables `E2E_SMOKE_IN_CI=true`, `RLS_VERIFY_IN_CI=true`. Eight staging repository secrets. Branch protection requires **`verify`** + **`e2e-smoke`** + **`rls-verify`**.
 
@@ -369,7 +479,9 @@
 | H3 CI E2E smoke | `.github/workflows/e2e-smoke.yml`; **`E2E_SMOKE_IN_CI=false` until pre-go-live checklist** |
 | H4 Privileged MFA | `REQUIRE_PRIVILEGED_MFA=false` until go-live; flip with `PUBLIC_SIGNUP_OPEN` |
 
-**Pre-launch ops:** Enable GitHub E2E (`E2E_SMOKE_IN_CI=true` + secrets) **before** open signups — [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live).
+**Update (2026-06-14 / 2026-06-17):** `E2E_SMOKE_IN_CI` + `RLS_VERIFY_IN_CI` enabled with staging secrets — [LAUNCH.md § B3](./LAUNCH.md). Cross-household isolation added to `e2e-smoke` — [PR #30](https://github.com/Voels2000/estate-planner/pull/30).
+
+**Pre-launch ops:** Enable GitHub E2E (`E2E_SMOKE_IN_CI=true` + secrets) **before** open signups — canonical status [LAUNCH.md § B3](./LAUNCH.md) (done 2026-06-14); archived steps in [LAUNCH_CHECKLIST](./archive/LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live).
 
 **Files:** `lib/security/privilegedMfaPolicy.ts`, `middleware.ts`, `lib/attorney/resolveAttorneyProfileId.ts`, `lib/import/custodianImportGuides.ts`, `.github/workflows/e2e-smoke.yml`, `docs/COMPETITIVE_SCAN.md`
 

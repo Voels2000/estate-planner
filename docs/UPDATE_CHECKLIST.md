@@ -21,6 +21,8 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) | **Go-live E2E user reset** — `npm run seed:e2e`, legacy cleanup |
 | [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) | **Complete Playwright suite** — commands, env, seeds |
 | [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) | **Local → preview → production** flow, credential placement, CI vs post-deploy checks |
+| [NOTIFICATION_HYGIENE.md](./NOTIFICATION_HYGIENE.md) | **CI/deploy email noise** — GitHub / Vercel / Sentry dashboard toggles; keep-list for failure alerts |
+| [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) | **Staging → main promotion** — PRs #28–#39 batch, migration gate, prod secrets, post-deploy smoke (passive logs + checkout block paths) |
 | [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) | **Pre-flip automated gate** — profile + inline prompt commands |
 | [.env.test.example](../.env.test.example) | Template after `seed:e2e` |
 | [E2E_RELEASE_TEST_PLAN.md](./E2E_RELEASE_TEST_PLAN.md) | Playwright vs manual smoke map |
@@ -30,6 +32,29 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | WCPA deletion SOP, C-6/C-7 automated checks, privacy request SOP |
 
 ## New table migrations (mandatory — every PR with `supabase/migrations/*.sql`)
+
+### Staging merge (PR → `staging`)
+
+- [ ] Migration applied on **staging** (`cmzyxpxfyvdvbsykjvsg`) **before** merge/deploy
+- [ ] Verified on staging (`information_schema` or dashboard)
+- [ ] Code merged to `staging` after staging apply
+
+```bash
+bash scripts/apply-migration.sh staging supabase/migrations/<file>.sql
+```
+
+### Production promotion (PR → `main`)
+
+- [ ] **Pending production migrations** named in staging→`main` PR description
+- [ ] PR merged to `main`
+- [ ] Same migration(s) applied on **production** (`fnzvlmrqwcqwiqueevux`) **after** merge, **before** relying on prod deploy
+- [ ] Verified on production; PR note updated / checklist cleared
+
+```bash
+bash scripts/apply-migration.sh production supabase/migrations/<file>.sql
+```
+
+Runbook: [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift)
 
 Before merge, confirm the migration file includes:
 
@@ -60,8 +85,24 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Sprint item completed or new product decision → `docs/ROADMAP.md` and/or `docs/DECISION_LOG.md` (new entry)
 - End of UI sprint session → update `docs/NEXT_SESSION.md` (completed tasks, remaining work, discovered file paths)
 - Launch / go-live work (robots, Search Console, domain cutover, production email, **Vercel Production env vars**, **waitlist disable**) → update `docs/LAUNCH.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
+- **Staging → main promotion** (accumulated hardening batch) → [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md); sync `NEXT_SESSION.md`, `DECISION_LOG.md`, `ROADMAP.md`
 - Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
+
+## Pre-launch hardening batch (PRs #28–#39) — on staging (2026-06-18)
+
+- [x] **#28** — fail-closed cron/internal auth; admin MFA routes; introduce + email-capture hardening
+- [x] **#29** — Sentry error monitoring (error-only, PII off)
+- [x] **#30** — cross-household isolation in `e2e-smoke` CI (20 tests)
+- [x] **#31** — doc reconciliation (Sentry/CI status markers)
+- [x] **#32** — Stripe webhook failure → Sentry
+- [x] **#34** — `trackTierUpgrade` only after successful profile write
+- [x] **#35** — `requireRecomputeAuth` fail-closed (`RECOMPUTE_SECRET`); unit + E2E auth specs
+- [x] **#36** — `consumerCheckoutBlockReason` + `processConsumerCheckout`; API/UI parity; 38 unit tests
+- [x] **#37** — `applyEmailUnsubscribe` attorney routing; migration `20260718120000_attorney_drip_unsubscribed_at.sql`; per-env migration gate in DEPLOYMENT
+- [x] **#38** — [NOTIFICATION_HYGIENE.md](./NOTIFICATION_HYGIENE.md)
+- [x] **#39** — [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) + master-doc cross-links (15 files)
+- [ ] **Prod promote** — open staging→`main` PR; follow promotion runbook (secrets, migration verify, passive post-deploy smoke)
 
 ## Homepage CI lint fix (2026-06-12) — shipped
 

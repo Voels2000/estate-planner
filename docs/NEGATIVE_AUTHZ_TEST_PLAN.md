@@ -92,3 +92,5 @@ npm run test:e2e:security-isolation -- --workers=1
 npm run test:e2e:prod:smoke -- --grep @authz --workers=1
 npm run release:preflight   # includes verify:rls
 ```
+
+**CI:** When `E2E_SMOKE_IN_CI=true`, the `e2e-smoke` workflow runs `test:e2e:security-isolation` on every PR to `main` (20 tests, staging Supabase + localhost app).

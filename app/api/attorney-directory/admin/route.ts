@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
 
 export async function PATCH(req: Request) {
   try {
-    const { isAdmin, isSuperuser, user } = await getAccessContext()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const auth = await requireAdminApi()
+    if (auth instanceof NextResponse) return auth
+    const { isSuperuser } = await getAccessContext()
 
     const supabase = await createClient()
     const { id, field, value } = await req.json()
@@ -26,7 +27,7 @@ export async function PATCH(req: Request) {
     if (isSuperuser) {
       const admin = createAdminClient()
       await admin.from('superuser_action_log').insert({
-        user_id: user.id,
+        user_id: auth.userId,
         endpoint: '/api/attorney-directory/admin',
         target_id: id,
         action: 'update',
@@ -41,9 +42,9 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const { isAdmin, isSuperuser, user } = await getAccessContext()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const auth = await requireAdminApi()
+    if (auth instanceof NextResponse) return auth
+    const { isSuperuser } = await getAccessContext()
 
     const { id } = await req.json()
     if (!id) {
@@ -57,7 +58,7 @@ export async function DELETE(req: Request) {
     if (error) throw error
     if (isSuperuser) {
       await admin.from('superuser_action_log').insert({
-        user_id: user.id,
+        user_id: auth.userId,
         endpoint: '/api/attorney-directory/admin',
         target_id: id,
         action: 'delete',

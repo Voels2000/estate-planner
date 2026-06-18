@@ -8,7 +8,23 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-# Last updated: 2026-06-15 (pre-launch FOR ALL RLS leak fix, structural coverage gate, negative authz tests)
+# Last updated: 2026-06-18 (attorney drip unsubscribe; recompute fail-closed; checkout API guards)
+
+---
+
+## Attorney drip unsubscribe + recompute/checkout hardening (2026-06-18)
+
+**Migration:** `20260718120000_attorney_drip_unsubscribed_at.sql` — nullable `profiles.attorney_drip_unsubscribed_at`; `GET /api/email/unsubscribe?type=attorney` (PR #37).
+
+**App (code only):**
+- `lib/api/internalApiAuth.ts` — `requireRecomputeAuth` fail-closed (`RECOMPUTE_SECRET`; header `x-recompute-secret`) — PR #35
+- `lib/billing/processConsumerCheckout.ts` + `consumerCheckoutBlockReason()` — API/UI checkout eligibility parity — PR #36
+- `lib/email/applyEmailUnsubscribe.ts` — attorney/advisor/capture routing — PR #37
+- Sentry webhook capture (#32), `trackTierUpgrade` ordering (#34), isolation CI (#30), notification hygiene doc (#38), promotion runbook doc sync (#39)
+
+**Verify:** `npx playwright test tests/unit/internalApiAuth.spec.ts tests/unit/consumerCheckoutBlockReason.spec.ts tests/unit/processConsumerCheckout.spec.ts tests/unit/applyEmailUnsubscribe.spec.ts --project=import-unit`
+
+**Status:** Code on **`staging`** (PRs #28–#39). Prod Vercel deploy pending staging→`main` promotion — see [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md). Migration column already on prod DB; route code follows deploy.
 
 ---
 

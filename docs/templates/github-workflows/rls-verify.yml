@@ -1,11 +1,9 @@
 name: RLS verify
 
-# TEMPLATE ONLY — restore to .github/workflows/ after dedicated staging Supabase exists.
+# TEMPLATE — mirrors .github/workflows/rls-verify.yml (staging Supabase only).
 # See docs/templates/github-workflows/README.md
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -20,6 +18,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
       PLAYWRIGHT_CONSUMER_EMAIL: ${{ secrets.PLAYWRIGHT_CONSUMER_EMAIL }}
       PLAYWRIGHT_CONSUMER_PASSWORD: ${{ secrets.PLAYWRIGHT_CONSUMER_PASSWORD }}
 
@@ -33,5 +32,8 @@ jobs:
 
       - run: npm ci
 
-      - name: RLS JWT isolation verify (staging)
-        run: npm run verify:rls
+      - name: Prepare staging env files
+        run: bash scripts/write-ci-staging-env.sh
+
+      - name: RLS verify (JWT isolation + structural coverage gate)
+        run: npm run verify:rls -- --require-sql

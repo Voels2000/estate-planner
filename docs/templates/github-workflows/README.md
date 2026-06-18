@@ -12,7 +12,7 @@ Then restore desired workflows, set `E2E_SMOKE_IN_CI` / `RLS_VERIFY_IN_CI` to `t
 
 | Template | Purpose |
 |----------|---------|
-| `e2e-smoke.yml` | Playwright go-live-profile + security-smoke on localhost + staging DB |
+| `e2e-smoke.yml` | Playwright go-live-profile + security-smoke + B4 gate + cross-household isolation on localhost + staging DB |
 | `rls-verify.yml` | JWT RLS isolation on staging |
 | `ux-language-audit.yml` | Path-filtered UX audit (redundant — `ci.yml` already runs this) |
 | `cron-notifications.yml` | Manual cron trigger (redundant — Vercel cron handles schedule) |

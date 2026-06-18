@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getAccessContext } from '@/lib/access/getAccessContext'
+import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
 import { fireReferralStatusUpdateNotification } from '@/lib/server-notifications'
 
 const VALID_STATUSES = ['pending', 'contacted', 'converted', 'closed'] as const
 type ReferralStatus = (typeof VALID_STATUSES)[number]
 
 export async function PATCH(req: NextRequest) {
-  const { user, isAdmin } = await getAccessContext()
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
 
   const supabase = await createClient()
 
@@ -45,7 +39,7 @@ export async function PATCH(req: NextRequest) {
       status,
       notes: notes ?? null,
       status_updated_at: new Date().toISOString(),
-      status_updated_by: user.id,
+      status_updated_by: auth.userId,
       updated_at: new Date().toISOString(),
     })
     .eq('id', referral_id)
@@ -61,7 +55,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Referral not found' }, { status: 404 })
   }
 
-  fireReferralStatusUpdateNotification(referral_id, status, user.id)
+  fireReferralStatusUpdateNotification(referral_id, status, auth.userId)
 
   return NextResponse.json({ success: true })
 }

@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-15 (launch-tracker sync)
+**Last updated:** 2026-06-18 (staging→main promotion runbook; hardening batch on staging)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -17,11 +17,11 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 (B&O-blocked)   wait for WA SaaS/DAS ruling
 ```
 
-**Related (not absorbed):** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md)
+**Related (not absorbed):** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md)
 
 **Working tracker (manual attestations):** [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) — browser UI at `tools/launch-tracker.html` (`npm run launch:tracker`); sync to this file via `npm run sync:launch-tracker`.
 
-**Migrations before flip:** run `npx supabase db push` / dashboard compare before flip — count not pinned in doc.
+**Migrations before flip:** per-environment pairing — apply on staging before staging deploy, on production before/at production deploy (not both at staging-merge time). See [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift) and `bash scripts/apply-migration.sh staging|production …`. Vercel does not run migrations.
 
 **Canonical seed:** `npm run seed:e2e` only (legacy `seed-test-*.ts` scripts removed).
 
@@ -57,13 +57,13 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 **Revised rule (2026-06-13):** The original “no secrets in GitHub” rule applied while **production and CI shared one Supabase project**. That condition no longer holds — local + Preview use **staging** (`cmzyxpxfyvdvbsykjvsg`); Production uses **prod** (`fnzvlmrqwcqwiqueevux`). See [DEPLOYMENT.md](./DEPLOYMENT.md).
 
-**Still never in GitHub:** production Supabase keys, `SUPABASE_DB_URL`, production Stripe/Resend/cron secrets, `.env.test.prod` contents.
+**Still never in GitHub:** production Supabase keys, **production** `SUPABASE_DB_URL`, production Stripe/Resend/cron secrets, `.env.test.prod` contents.
 
-**Now actionable:** E2E/RLS workflows on PRs use **staging-only** repository secrets + `E2E_SMOKE_IN_CI` / `RLS_VERIFY_IN_CI`. Details: [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions).
+**Now actionable:** E2E/RLS workflows on PRs to `main` use **staging-only** repository secrets + `E2E_SMOKE_IN_CI` / `RLS_VERIFY_IN_CI`. Staging **`SUPABASE_DB_URL`** (session pooler) enables `rls-verify --require-sql` in CI. Details: [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions).
 
-**Today on GitHub:** `.github/workflows/ci.yml` → **`verify`** (no secrets) · `e2e-smoke.yml` → **`e2e-smoke`** · `rls-verify.yml` → **`rls-verify`** (staging secrets) · `staging-keepalive.yml` (secret-free health ping). Merged [PR #8](https://github.com/Voels2000/estate-planner/pull/8) 2026-06-14.
+**Today on GitHub:** `.github/workflows/ci.yml` → **`verify`** (lint + **`tsc --noEmit`** + unit; full build on PR → `main`) · `e2e-smoke.yml` · `rls-verify.yml` (`--require-sql`) · `staging-keepalive.yml`. Merged [PR #8](https://github.com/Voels2000/estate-planner/pull/8) 2026-06-14; hardened [PR #27](https://github.com/Voels2000/estate-planner/pull/27) 2026-06-17.
 
-**Enforcement (automated):** GitHub branch protection on `main` — require status checks **`verify`** + **`e2e-smoke`** + **`rls-verify`**; require PR before merge.
+**Enforcement (automated):** GitHub branch protection — `main`: **`verify`** + **`e2e-smoke`** + **`rls-verify`**; `staging`: **`verify`** only (`staging-pr-gate`). Require PR before merge on both.
 
 **Enforcement (manual — mandatory):** See [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when).
 
@@ -73,10 +73,22 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] Two-DB split live: Preview → staging; Production → prod (attest: Al / 2026-06-13)
 - [x] Staging keep-alive workflow on `main` and green in Actions (attest: Al / 2026-06-13)
 - [x] Restore E2E/RLS PR workflows with **staging-only** GitHub secrets — `E2E_SMOKE_IN_CI` + `RLS_VERIFY_IN_CI` true; 8 staging secrets; green on PRs #8–#10 (attest: Al / 2026-06-14)
+- [x] CI hardening + staging branch — `tsc --noEmit`, `rls-verify --require-sql`, `staging-pr-gate` (attest: Al / 2026-06-17 · PR #27)
+- [x] Pre-launch security fixes — token logging, cron fail-closed, admin MFA routes, introduce hardening, email-capture rate limit (attest: Al / 2026-06-17 · PR #28; E2E security-smoke 5/5 + isolation 20/20)
+- [x] Cross-household isolation in **`e2e-smoke`** CI — `test:e2e:security-isolation` (20 tests); gate-validated break/revert on `requireHouseholdAccess` (attest: Al / 2026-06-17 · PR #30)
+
+### B3b. Staging → main promotion (pre-launch hardening — not the flip)
+
+Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** open prod signups or retire flip blockers. Canonical runbook: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
+
+- [ ] Prod secrets confirmed — `RECOMPUTE_SECRET`, `CRON_SECRET`, `INTERNAL_API_KEY` on `estate-planner` (attest: __ / __)
+- [ ] Prod migration verified — `20260718120000_attorney_drip_unsubscribed_at.sql` present (`supabase migration list` or `information_schema`) (attest: __ / __)
+- [ ] Staging→`main` PR merged on green CI (`verify` + `e2e-smoke` + `rls-verify`) (attest: __ / __)
+- [ ] Prod deploy green; post-deploy passive smoke — recompute/cron logs OK; checkout **block paths** 403/409 (defer live Stripe charge to real-card test) (attest: __ / __)
 
 ### B4. Manual smokes — automated on staging where noted
 
-**PR gate (`e2e-smoke`):** `test:e2e:b4-gate` — prospect form logic, health-score behaviors, playbook empty/activation, drip step-1 DB assert.
+**PR gate (`e2e-smoke`):** `test:e2e:b4-gate` + `test:e2e:security-isolation` (20 cross-household tests) — prospect form logic, health-score behaviors, playbook empty/activation, drip step-1 DB assert.
 
 **Preflight only (`release:preflight`):** `test:e2e:b4-deep` — full PDF narrative HTML (slow).
 

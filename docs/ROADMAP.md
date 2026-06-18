@@ -926,7 +926,11 @@ See [SPRINT_FRICTION_REDUCTION.md](./archive/sprints/SPRINT_FRICTION_REDUCTION.m
 | Two-DB split (staging + prod) | `[x]` PR #6 — `DEPLOYMENT.md`, keep-alive, canary protected |
 | Staging keep-alive workflow | `[x]` `staging-keepalive.yml` on `main`, green in Actions |
 | Env verifier + prod price throw-guard | `[x]` PRs #3–#5 — `verify-env`, manifest, `resolveConsumerPriceId` |
-| E2E/RLS on PRs (staging-only GitHub secrets) | `[ ]` **Near-term** — unblocked; templates in `docs/templates/github-workflows/` |
+| E2E/RLS on PRs (staging-only GitHub secrets) | `[x]` PR #8 + PR #27 — `tsc`, `--require-sql`, staging branch gate |
+| Staging branch + `staging-pr-gate` | `[x]` PR #27 — `feature/*` → `staging` → `main` |
+| Pre-launch security fixes (5 blockers) | `[x]` PR #28 — token logging, cron fail-closed, admin MFA, introduce, email-capture |
+| Staging hardening batch (#29–#39) | `[x]` on `staging` — Sentry, isolation CI, webhook fixes, recompute auth (#35), checkout guards (#36), attorney unsubscribe (#37), promotion runbook (#39) |
+| Promote staging → main | `[ ]` [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) |
 | Manual RLS isolation smoke | `[ ]` |
 | LAUNCH_GATE counsel handoff | `[ ]` |
 | Stripe Phase 1 — test mode: 6 prices + preview env + webhook | `[ ]` |

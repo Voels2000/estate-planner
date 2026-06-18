@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-16 (staging Vercel live, §10 closed, server-gated signup)
+# Last updated: 2026-06-18 (pre-launch hardening batch PRs #28–#39 on staging; promotion runbook; staging Vercel §10 closed)
 
 ---
 
@@ -12,7 +12,7 @@ It documents both:
 - **Current implementation** (as built)
 - **Target architecture** (where migration is still in progress)
 
-**Related docs:** [DEPLOYMENT.md](./DEPLOYMENT.md) (two-DB steady state) · [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (session handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [LAUNCH.md](./LAUNCH.md) (go-live checklist) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) · [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
+**Related docs:** [DEPLOYMENT.md](./DEPLOYMENT.md) (two-DB steady state) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) (staging→main batch promote) · [PRODUCT_STRATEGY.md](./PRODUCT_STRATEGY.md) (why/segment) · [ROADMAP.md](./ROADMAP.md) (sprints) · [NEXT_SESSION.md](./NEXT_SESSION.md) (session handoff) · [DECISION_LOG.md](./DECISION_LOG.md) (settled decisions) · [LAUNCH.md](./LAUNCH.md) (go-live checklist) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) (credential placement) · [PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) · [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [BILLING_B2B2C_POLICY.md](./BILLING_B2B2C_POLICY.md) · [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) · [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) (session history)
 
 ---
 
@@ -23,21 +23,29 @@ It documents both:
 | Database | Project | Consumers |
 |----------|---------|-----------|
 | **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local `.env.local`, Vercel **`estate-planner-staging`** (`estate-planner-staging.vercel.app`), CI E2E/RLS |
-| **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **`estate-planner`** Production (`www.mywealthmaps.com` + `estate-planner-gules.vercel.app` — same deployment), prod canary smoke (`.env.test.prod`) |
+| **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **`estate-planner`** Production (`www.mywealthmaps.com` + `estate-planner-gules.vercel.app` — same deployment), prod canary (`.env.test.prod`) |
 
 **Vercel vs Supabase vocabulary (2026-06-16):** Staging **database** (`mwm-staging`) and staging **Vercel project** (`estate-planner-staging`) both exist. Staging project env lives on that project's **Production** scope (test keys + `PUBLIC_SIGNUP_OPEN=true`). **`estate-planner-gules.vercel.app` is Production**, not staging. §10 signup-hardening matrix **closed** on staging (2026-06-16) — [WAITLIST_HARDENING_SPEC.md §10 attestation](./WAITLIST_HARDENING_SPEC.md#10-attestation--closed-2026-06-16). **Setup runbook:** [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md).
 
 Data does **not** promote between projects. Schema parity: `bash scripts/two-db-schema-parity.sh`.
 
-### Deploy flow
+### Deploy flow (2026-06-17)
 
 ```text
-local dev (staging DB) → estate-planner-staging (staging DB, test Stripe) → merge main → estate-planner Production (prod DB)
-                              ↘ GitHub verify + e2e-smoke + rls-verify (staging secrets)
-                              ↘ staging-keepalive (cron, no secrets)
+feature/* → PR → staging branch → estate-planner-staging.vercel.app (staging DB)
+                      ↘ GitHub verify (lint + tsc + unit)
+                 PR → main → www.mywealthmaps.com (prod DB)
+                      ↘ GitHub verify (full) + e2e-smoke + rls-verify
+                      ↘ staging-keepalive (cron, no secrets)
 ```
 
-Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Go-live checklist: [LAUNCH.md](./LAUNCH.md) · manual attestations: [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) (`npm run launch:tracker`).
+**Vercel projects:** `estate-planner-staging` (Production branch = `staging`) · `estate-planner` (Production branch = `main`). Prod-project Preview deploys mirror live config (live Stripe keys OK with `PUBLIC_SIGNUP_OPEN=false`).
+
+**GitHub branch protection:** `main` — ruleset **`main-no-direct-push`**: **`verify`** + **`e2e-smoke`** + **`rls-verify`**. `staging` — ruleset **`staging-pr-gate`**: **`verify`** (lint + tsc + unit on PRs to staging).
+
+**CI `verify` job (PR #27):** ESLint · `npx tsc --noEmit` · unit tests on every PR to `main` and `staging`; full build + audits only on PR → `main` and push → `main`. **`e2e-smoke`** runs `test:e2e:b4-gate` + **`test:e2e:security-isolation`** (20 cross-household tests on staging; PR #30). **`rls-verify`** runs `npm run verify:rls -- --require-sql` (JWT + `assert-rls-coverage.sql`) using staging `SUPABASE_DB_URL` from GitHub secrets.
+
+Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Staging→main promotion: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md). Go-live checklist: [LAUNCH.md](./LAUNCH.md) · manual attestations: [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) (`npm run launch:tracker`).
 
 ### Environment manifest (SSOT for vars)
 
@@ -731,6 +739,8 @@ Two layers — do not conflate them:
 
 **New migrations (mandatory):** Copy [supabase/MIGRATION_TEMPLATE.sql](../supabase/MIGRATION_TEMPLATE.sql) — every `CREATE TABLE` includes explicit `GRANT` (PostgREST roles) and scoped RLS policies in the same file. Supabase is tightening defaults from **Oct 30, 2026**; future tables must not rely on implicit grants.
 
+**Dual-database rule (mandatory):** Staging and production are separate projects; Vercel never runs migrations. Apply **per environment** when promoting code there — staging migration before staging deploy; production migration at main promotion (not at staging-merge time). Helper: `bash scripts/apply-migration.sh staging|production …`. See [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift) and [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) staging vs production boxes.
+
 **Checklist:** [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) → “New table migrations (mandatory)”.
 
 **Waitlist mode (pre-launch):** Default on when `VERCEL_ENV=production`. `middleware.ts` redirects `/signup` → `/waitlist` (renamed from `proxy.ts` in `3ceb125`). Invite query params bypass. **Private beta signup:** `/signup?access=TOKEN&label=cohort` bypasses waitlist when `BETA_SIGNUP_TOKEN` matches; sets HttpOnly cookies; funnel events `beta_signup_link_viewed` + `account_created` with `signup_source: beta_access_link`. Admin **Funnel** tab → **Private Beta Signup Links**.
@@ -1090,6 +1100,8 @@ Eliminates three raw-Supabase admin dependencies before billing goes live.
 
 **Stripe sync:** `lib/billing/syncConsumerStripeSubscription.ts` — same field updates as `customer.subscription.updated` webhook (`profiles.stripe_customer_id` confirmed).
 
+**Stripe webhook (`app/api/stripe/webhook/route.ts`):** Checkout/subscription lifecycle sync; `tier_upgraded` funnel event only after **successful** consumer profile write on `checkout.session.completed` (2026-06-18 · PR #34). Post-launch idempotency/retry: [WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md](./WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md).
+
 **Audit logs (`app_config`):**
 
 | Key | Cap | Actions |
@@ -1155,9 +1167,10 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 - `lib/prospect/calculateProspectSummary.ts` — prospect federal + state tax; uses `calculateStateEstateTax` (not household RPC)
 - `components/shared/HealthScoreBadge.tsx` — canonical score display (hero/card/badge); labels from `lib/estate-health-score.ts`
 - `lib/estate-health-score.ts` — `computeEstateHealthScore`, `scoreLabel`, `scoreContextSentence`, `isScoreStale`
-- `lib/api/internalApiAuth.ts` — `INTERNAL_API_KEY` / `CRON_SECRET` gate for server-only routes
+- `lib/api/internalApiAuth.ts` — `requireCronAuth` / `requireCronOrInternal` / `requireInternalApi` / `requireRecomputeAuth` — fail-closed + constant-time compare when `CRON_SECRET`, `INTERNAL_API_KEY`, or `RECOMPUTE_SECRET` unset (PR #28, #35)
 - `lib/supabase/routeAuth.ts` — `getRouteAuth()` for App Router handlers (`getSession()` not `getUser()`)
 - `app/api/health/route.ts` — liveness probe `{ ok: true }`; target for uptime monitoring
+- Sentry (`@sentry/nextjs`) — error-only monitoring (`sendDefaultPii: false`); browser tunnel `/monitoring`; source maps via `SENTRY_AUTH_TOKEN` on Vercel (PRE_FLIP attest 2026-06-17 · PR #29)
 - `scripts/verify-app-route-slugs.ts` — CI guard against conflicting App Router dynamic segments (`.github/workflows/ci.yml`)
 - `lib/api/assertHouseholdAccess.ts` — owner or connected-advisor check before household RPC reads (API routes)
 - `lib/api/simpleRateLimit.ts` — IP-based rate limit helper for public POST endpoints
@@ -1361,13 +1374,13 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Ops tasks (Admin-A):** `ops_tasks` table — calendar obligations seeded from `COMPLIANCE_CALENDAR.md` + `LAUNCH_GATE.md` Gate 3. Admin **Ops Home** → mark complete; `compliance-reminders` emails on due/overdue tasks.
 
-**Auth:** `Authorization: Bearer ${CRON_SECRET}` on every cron request.
+**Auth:** `requireCronAuth()` — `Authorization: Bearer ${CRON_SECRET}`; **fail-closed** (500 if secret unset). Email sub-routes accept cron bearer or `x-internal-key: INTERNAL_API_KEY` via `requireCronOrInternal()`. Node.js runtime (no edge routes in repo — `crypto.timingSafeEqual` safe).
 
 **Manual cron tests:** Use `https://www.mywealthmaps.com/...` — `https://mywealthmaps.com` (apex) 307-redirects to www and curl does not resend `Authorization` → false 401.
 
 **Implementation:** `app/api/cron/notifications/route.ts` — uses `createAdminClient()`; creates in-app + email notifications via `create_notification` RPC for: stale plan (30d), estate milestones ($1M / $5M / $13.61M), MFA reminder, profile completion nudge, subscription renewal (7d). **Email drips:** consumer assess captures (steps 2–3); advisor activation (steps 2–3 via `/api/email/advisor-drip`); **attorney activation (steps 2–3 via `/api/email/attorney-drip`)** after step 1 sent.
 
-**GitHub Actions:** `.github/workflows/ci.yml` only (`verify` job). Cron is Vercel-scheduled (`/api/cron/notifications`). Archived manual cron template: `docs/templates/github-workflows/cron-notifications.yml`.
+**GitHub Actions:** `verify` on PR → `main`/`staging`; `e2e-smoke` + `rls-verify` on PR → `main`. Cron is Vercel-scheduled only.
 
 **Removed:** `.github/workflows/daily-notifications-cron.yml` (duplicate workflow hitting a rotating Vercel preview URL).
 
@@ -1453,7 +1466,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 - **Vercel Analytics:** `@vercel/analytics` — `<Analytics />` in `app/layout.tsx` (automatic page views).
 - **Custom funnel:** table `funnel_events`; `POST /api/analytics/funnel`; `lib/analytics/useFunnelEvent.ts` (fire-and-forget).
-- **Instrumented events:** `event_page_view`, `event_assess_start`, `event_assess_complete`, `email_captured`, `account_created`, `beta_signup_link_viewed`, `tier_upgraded`, `advisor_connected`.
+- **Instrumented events:** `event_page_view`, `event_assess_start`, `event_assess_complete`, `email_captured`, `account_created`, `beta_signup_link_viewed`, `tier_upgraded`, `advisor_connected`. **`tier_upgraded` (webhook):** inserted via `trackTierUpgrade` only when checkout profile write succeeds — not on failed Supabase update (PR #34).
 - **Upgrade copy (Sprint 12):** `getEventUpgradeValueProp()` in `lib/events/upgradeContext.ts` always uses personalized `EVENT_UPGRADE_COPY` (24 slugs × tier 2/3). Verify: `scripts/verify-event-upgrade-copy.ts`.
 - **Assessment (Sprint 12):** `/assess` always shows scores to logged-out users; full gap report gated behind signup (`_assess-client.tsx`). Pre-launch A/B flags removed from `app_config`.
 - **Signup attribution (Sprint 9):** `mwm_referral_*` and `mwm_attorney_referral_*` in sessionStorage → `profiles.referral_code` / `profiles.attorney_referral_code` + `account_created` funnel (`properties.advisor_referral_code`, `properties.attorney_referral_code`); keys cleared after signup.

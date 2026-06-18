@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  applyEmailUnsubscribe,
+  parseEmailUnsubscribeType,
+} from '@/lib/email/applyEmailUnsubscribe'
 import { verifyUnsubscribeToken } from '@/lib/email/unsubscribeToken'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mywealthmaps.com'
@@ -7,33 +11,30 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mywealthmaps.com'
 export async function GET(req: NextRequest) {
   const email = req.nextUrl.searchParams.get('email')
   const token = req.nextUrl.searchParams.get('token')
-  const type = req.nextUrl.searchParams.get('type') as 'advisor' | 'attorney' | null
+  const typeParam = req.nextUrl.searchParams.get('type')
 
   if (!email) {
     return new NextResponse('Invalid unsubscribe link', { status: 400 })
   }
 
-  if (!verifyUnsubscribeToken(email, token, type)) {
+  const parsedType = parseEmailUnsubscribeType(typeParam)
+  if (parsedType === 'invalid') {
+    return new NextResponse('Invalid unsubscribe link', { status: 400 })
+  }
+
+  const verifyType =
+    parsedType === 'capture' ? null : parsedType
+
+  if (!verifyUnsubscribeToken(email, token, verifyType)) {
     return new NextResponse('Invalid or expired unsubscribe link', { status: 403 })
   }
 
-  try {
-    const admin = createAdminClient()
-    const normalized = email.trim().toLowerCase()
+  const admin = createAdminClient()
+  const result = await applyEmailUnsubscribe(admin, parsedType, email)
 
-    if (type === 'advisor') {
-      await admin
-        .from('profiles')
-        .update({ advisor_drip_unsubscribed_at: new Date().toISOString() })
-        .eq('email', normalized)
-    } else {
-      await admin
-        .from('email_captures')
-        .update({ unsubscribed_at: new Date().toISOString() })
-        .eq('email', normalized)
-    }
-  } catch {
-    // fail silently
+  if (!result.ok) {
+    console.error('email unsubscribe write failed:', result.error)
+    return new NextResponse('Unable to process unsubscribe request', { status: 500 })
   }
 
   return new NextResponse(

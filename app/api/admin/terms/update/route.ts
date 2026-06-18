@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getAccessContext } from '@/lib/access/getAccessContext'
+import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
 
 export async function POST(req: NextRequest) {
-  const { user, isAdmin } = await getAccessContext()
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  if (!isAdmin) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await requireAdminApi()
+  if (auth instanceof NextResponse) return auth
 
   const supabase = await createClient()
 
