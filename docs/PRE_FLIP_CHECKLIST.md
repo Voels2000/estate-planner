@@ -38,7 +38,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - ⬜ **Apply WA estate migrations on prod** — Regime D + CST parity in timestamp order (`20260613120000`, `20260613130000`, `20260613140000`) if not already applied.
 
 ### Observability
-- 🔄 **Error monitoring live** (Sentry) — error-only, `sendDefaultPii: false`, tunnel `/monitoring`; confirm event in dashboard + `SENTRY_AUTH_TOKEN` on both Vercel projects.
+- ✅ **Error monitoring live** (Sentry) — error-only, `sendDefaultPii: false`, tunnel `/monitoring`; preview event confirmed in Sentry dashboard; `SENTRY_AUTH_TOKEN` on both Vercel projects; per-DSN rate limit 150/12h (attest: Al / 2026-06-17 · [PR #29](https://github.com/Voels2000/estate-planner/pull/29) merged to staging).
 
 ### Legal / disclaimers (confirm with counsel)
 - ✅ **WA estate-tax disclaimers** — consumer page, advisor panel, PDF (date-stamped, no-portability, snapshot caveat).

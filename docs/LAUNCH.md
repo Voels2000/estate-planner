@@ -75,10 +75,11 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] Restore E2E/RLS PR workflows with **staging-only** GitHub secrets — `E2E_SMOKE_IN_CI` + `RLS_VERIFY_IN_CI` true; 8 staging secrets; green on PRs #8–#10 (attest: Al / 2026-06-14)
 - [x] CI hardening + staging branch — `tsc --noEmit`, `rls-verify --require-sql`, `staging-pr-gate` (attest: Al / 2026-06-17 · PR #27)
 - [x] Pre-launch security fixes — token logging, cron fail-closed, admin MFA routes, introduce hardening, email-capture rate limit (attest: Al / 2026-06-17 · PR #28; E2E security-smoke 5/5 + isolation 20/20)
+- [x] Cross-household isolation in **`e2e-smoke`** CI — `test:e2e:security-isolation` (20 tests); gate-validated break/revert on `requireHouseholdAccess` (attest: Al / 2026-06-17 · PR #30)
 
 ### B4. Manual smokes — automated on staging where noted
 
-**PR gate (`e2e-smoke`):** `test:e2e:b4-gate` — prospect form logic, health-score behaviors, playbook empty/activation, drip step-1 DB assert.
+**PR gate (`e2e-smoke`):** `test:e2e:b4-gate` + `test:e2e:security-isolation` (20 cross-household tests) — prospect form logic, health-score behaviors, playbook empty/activation, drip step-1 DB assert.
 
 **Preflight only (`release:preflight`):** `test:e2e:b4-deep` — full PDF narrative HTML (slow).
 
