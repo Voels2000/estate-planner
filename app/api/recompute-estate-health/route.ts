@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireRecomputeAuth } from '@/lib/api/internalApiAuth'
 import { computeEstateHealthScore } from '@/lib/estate-health-score'
 import { detectConflicts } from '@/lib/conflict-detector'
 import { classifyEstateAssets } from '@/lib/estate/classifyEstateAssets'
@@ -6,10 +7,8 @@ import { upsertCompositionCache } from '@/lib/estate/getCachedComposition'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
-  const secret = request.headers.get('x-recompute-secret')
-  if (secret !== process.env.RECOMPUTE_SECRET) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const authFailure = requireRecomputeAuth(request)
+  if (authFailure) return authFailure
 
   try {
     const { householdId } = await request.json()
