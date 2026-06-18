@@ -12,10 +12,10 @@ test.describe('Tier-1 consumer billing checkout', () => {
       data: { priceId: financial.priceId, period: 'monthly' },
     })
 
-    if (res.status() === 400) {
+    if (res.status() === 409) {
       const body = await res.json()
       test.skip(
-        body.error?.includes('already have an active subscription'),
+        body.code === 'already_subscribed',
         'Tier-1 account has active subscription — duplicate guard',
       )
       return
