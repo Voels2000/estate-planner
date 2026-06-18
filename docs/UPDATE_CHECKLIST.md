@@ -31,6 +31,16 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 
 ## New table migrations (mandatory — every PR with `supabase/migrations/*.sql`)
 
+### Apply on both databases (before merge)
+
+- [ ] Migration applied on **staging** (`cmzyxpxfyvdvbsykjvsg`)
+- [ ] Migration applied on **production** (`fnzvlmrqwcqwiqueevux`)
+- [ ] Verified on both (dashboard or `information_schema`) — not just “I ran the script”
+- [ ] Code that reads/writes new schema merges **after** both applies (or ships in same PR with applies done first)
+
+Helper: `bash scripts/apply-migration-both-dbs.sh supabase/migrations/<file>.sql`  
+Runbook: [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift)
+
 Before merge, confirm the migration file includes:
 
 - [ ] `ALTER TABLE … ENABLE ROW LEVEL SECURITY`

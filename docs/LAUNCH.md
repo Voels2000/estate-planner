@@ -21,7 +21,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 **Working tracker (manual attestations):** [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) — browser UI at `tools/launch-tracker.html` (`npm run launch:tracker`); sync to this file via `npm run sync:launch-tracker`.
 
-**Migrations before flip:** run `npx supabase db push` / dashboard compare before flip — count not pinned in doc.
+**Migrations before flip:** apply on **both** staging and production before merging code that depends on them — see [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift) and `bash scripts/apply-migration-both-dbs.sh`. Vercel does not run migrations.
 
 **Canonical seed:** `npm run seed:e2e` only (legacy `seed-test-*.ts` scripts removed).
 

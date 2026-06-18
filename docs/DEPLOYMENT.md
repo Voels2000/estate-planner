@@ -162,7 +162,32 @@ Staging (`cmzyxpxfyvdvbsykjvsg`) is disposable test infrastructure — not a cop
 
 ### 1. Apply migrations (ongoing — prevents schema drift)
 
-Whenever you ship a migration, push it to **staging before or with** production. Staging was initially created via schema clone (`two-db-schema-parity.sh`), which copies shape but **not** `supabase_migrations` history — `db push` is the ongoing source of truth.
+**Migration gate (both databases) — mandatory for every `supabase/migrations/*.sql` PR**
+
+Vercel deploy does **not** run migrations. Staging and production are **separate** Supabase projects — applying on one does nothing on the other.
+
+| Step | When | Action |
+|------|------|--------|
+| 1 | **Before merge** (or before deploy if code ships later) | Apply migration on **staging** (`cmzyxpxfyvdvbsykjvsg`) **and** **production** (`fnzvlmrqwcqwiqueevux`) |
+| 2 | Same session | Verify column/table exists on **both** (SQL Editor or `information_schema`) |
+| 3 | After step 1–2 | Merge/deploy code that depends on the new schema |
+
+**Helper script** (uses `STAGING_SUPABASE_DB_URL` + `PROD_SUPABASE_DB_URL` from `.env.projects.local`):
+
+```bash
+bash scripts/apply-migration-both-dbs.sh supabase/migrations/<timestamp>_name.sql
+```
+
+**Manual** (when history drift blocks `db push` — prefer `apply-migration-both-dbs.sh`; requires `psql`):
+
+```bash
+# Both at once (recommended)
+bash scripts/apply-migration-both-dbs.sh supabase/migrations/<file>.sql
+```
+
+**PR checklist:** [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) → “New table migrations” includes dual-apply boxes. Do not merge schema-dependent code until both DBs are updated.
+
+**History note:** Staging was initially created via schema clone (`two-db-schema-parity.sh`), which copies shape but **not** `supabase_migrations` history — full `db push` may fail until history is repaired. When history is healthy, use targeted apply above or:
 
 ```bash
 # Staging (CI + local dev target)
@@ -170,6 +195,7 @@ npx supabase db push --project-ref cmzyxpxfyvdvbsykjvsg
 
 # Production (before/at deploy)
 npx supabase db push --project-ref fnzvlmrqwcqwiqueevux
+```
 ```
 
 If a migration changes the Monte Carlo edge function, redeploy on staging too:
