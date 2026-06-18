@@ -436,8 +436,8 @@ for ops (also in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md#production-en
 | `PUBLIC_SIGNUP_OPEN` | Opens public signup at go-live | **Pending** — legal review + C-4 manual verify + Stripe production |
 | `BETA_SIGNUP_TOKEN` | Private `/signup?access=` links while waitlist on | Optional — set before sharing friend links; rotate to revoke |
 | `REQUIRE_PRIVILEGED_MFA` | Mandatory TOTP for admin/advisor/attorney | **Pending** — flip `true` with `PUBLIC_SIGNUP_OPEN` on go-live; keep **false** in test/CI |
-| `E2E_SMOKE_IN_CI` | GitHub Actions repo variable — PR/push E2E smoke | **Pending** — set `true` [pre-go-live](#github-actions-e2e-smoke-pre-go-live); keep privileged MFA off in workflow |
-| `RLS_VERIFY_IN_CI` | GitHub Actions — JWT RLS isolation on **staging** (no DB URL in GitHub) | **Pending** — [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) |
+| `E2E_SMOKE_IN_CI` | GitHub Actions repo variable — PR/push E2E smoke | **Pending** — set `true` [pre-go-live](#github-actions-e2e-smoke-pre-go-live); keep privileged MFA off in workflow *(SUPERSEDED — see [LAUNCH.md § B3](../LAUNCH.md); restored/attested 2026-06-14 / 2026-06-17)* |
+| `RLS_VERIFY_IN_CI` | GitHub Actions — JWT RLS isolation on **staging** (no DB URL in GitHub) | **Pending** — [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) *(SUPERSEDED — see [LAUNCH.md § B3](../LAUNCH.md); restored/attested 2026-06-14 / 2026-06-17)* |
 | `COMPLIANCE_EMAIL` | `/api/cron/compliance-reminders` ops alerts (overdue deletions, WCPA SLAs) | ✅ `avoels@comcast.net` (2026-05-25) |
 
 **Checklist (Production environment only):**
