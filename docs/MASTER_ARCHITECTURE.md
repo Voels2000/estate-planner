@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # MyWealthMaps / Estate Planner — Full Architecture Reference
-# Last updated: 2026-06-18 (pre-launch hardening batch PRs #28–#38 on staging; promotion runbook)
+# Last updated: 2026-06-18 (pre-launch hardening batch PRs #28–#39 on staging; promotion runbook; staging Vercel §10 closed)
 
 ---
 
@@ -22,8 +22,10 @@ It documents both:
 
 | Database | Project | Consumers |
 |----------|---------|-----------|
-| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local `.env.local`, Vercel **`estate-planner-staging`**, CI E2E/RLS |
-| **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **`estate-planner`** Production (`www.mywealthmaps.com`), prod canary (`.env.test.prod`) |
+| **Staging** | `mwm-staging` (`cmzyxpxfyvdvbsykjvsg`) | Local `.env.local`, Vercel **`estate-planner-staging`** (`estate-planner-staging.vercel.app`), CI E2E/RLS |
+| **Production** | `fnzvlmrqwcqwiqueevux` | Vercel **`estate-planner`** Production (`www.mywealthmaps.com` + `estate-planner-gules.vercel.app` — same deployment), prod canary (`.env.test.prod`) |
+
+**Vercel vs Supabase vocabulary (2026-06-16):** Staging **database** (`mwm-staging`) and staging **Vercel project** (`estate-planner-staging`) both exist. Staging project env lives on that project's **Production** scope (test keys + `PUBLIC_SIGNUP_OPEN=true`). **`estate-planner-gules.vercel.app` is Production**, not staging. §10 signup-hardening matrix **closed** on staging (2026-06-16) — [WAITLIST_HARDENING_SPEC.md §10 attestation](./WAITLIST_HARDENING_SPEC.md#10-attestation--closed-2026-06-16). **Setup runbook:** [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md).
 
 Data does **not** promote between projects. Schema parity: `bash scripts/two-db-schema-parity.sh`.
 
@@ -49,7 +51,7 @@ Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TEST
 
 `lib/env/manifest.ts` — expected variables per scope (`local` / `preview` / `production`), shape regexes, forbidden test vars, consumer price hard-require in production.
 
-**Verifier:** `GET /api/admin/verify-env` (`app/api/admin/verify-env/route.ts`) — `x-admin-token` → `ADMIN_VERIFY_TOKEN`; returns 404 when unauthorized. Optional `?live=1` for Stripe/Supabase liveness + `stripe_key_mode` cross-check.
+**Verifier:** `GET /api/admin/verify-env` (`app/api/admin/verify-env/route.ts`) — `x-admin-token` → `ADMIN_VERIFY_TOKEN`; returns 404 when unauthorized. Optional `?live=1` for Stripe/Supabase liveness + `stripe_key_mode` cross-check. Response includes non-secret **`boot`** block (`supabase_project_ref`, `app_url_hostname`, `service_role_present`) — use on staging project first boot per [STAGING_PROJECT_RUNBOOK.md § Phase 4](./STAGING_PROJECT_RUNBOOK.md#phase-4--make-verify-env-the-tiebreaker).
 
 **Gate-2:** Before `PUBLIC_SIGNUP_OPEN=true`, run `verify-env?live=1` — record attestation only when `missing: []` after dashboard fixes.
 
@@ -742,6 +744,15 @@ Two layers — do not conflate them:
 **Checklist:** [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) → “New table migrations (mandatory)”.
 
 **Waitlist mode (pre-launch):** Default on when `VERCEL_ENV=production`. `middleware.ts` redirects `/signup` → `/waitlist` (renamed from `proxy.ts` in `3ceb125`). Invite query params bypass. **Private beta signup:** `/signup?access=TOKEN&label=cohort` bypasses waitlist when `BETA_SIGNUP_TOKEN` matches; sets HttpOnly cookies; funnel events `beta_signup_link_viewed` + `account_created` with `signup_source: beta_access_link`. Admin **Funnel** tab → **Private Beta Signup Links**.
+
+**Server-gated signup (2026-06, PR #25):** Client `supabase.auth.signUp()` removed. All account creation flows through `POST /api/auth/signup` with admission validated in `lib/auth/signupAdmission.ts` **before** `admin.auth.admin.createUser()` (`lib/auth/completeSignup.ts` for side effects). Checkout routes remain auth-only — they do not check `PUBLIC_SIGNUP_OPEN`; blocking anon signup at Supabase + server admission is the containment model.
+
+| Layer | Mechanism | Status |
+|-------|-----------|--------|
+| **0 — Supabase** | Disable anon/public signups on prod (`fnzvlmrqwcqwiqueevux`) | Attested (prod safe while dark) |
+| **1 — Server route** | `signupAdmission` + `createUser`; open_consumer requires `PUBLIC_SIGNUP_OPEN` | Shipped on `main` |
+| **2 — Email confirm** | Bright consumer: `email_confirm: false` → `201` + `needsEmailConfirmation`, no session cookie | Unit + local/staging-DB matrix pass |
+| **§10 hosted matrix** | Probes 1/2/4/5/7/8 on staging URL | **Closed** 2026-06-16 — [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md) |
 
 **Test account seed scripts (staging / local, not Vercel env):**
 
@@ -1459,7 +1470,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Upgrade copy (Sprint 12):** `getEventUpgradeValueProp()` in `lib/events/upgradeContext.ts` always uses personalized `EVENT_UPGRADE_COPY` (24 slugs × tier 2/3). Verify: `scripts/verify-event-upgrade-copy.ts`.
 - **Assessment (Sprint 12):** `/assess` always shows scores to logged-out users; full gap report gated behind signup (`_assess-client.tsx`). Pre-launch A/B flags removed from `app_config`.
 - **Signup attribution (Sprint 9):** `mwm_referral_*` and `mwm_attorney_referral_*` in sessionStorage → `profiles.referral_code` / `profiles.attorney_referral_code` + `account_created` funnel (`properties.advisor_referral_code`, `properties.attorney_referral_code`); keys cleared after signup.
-- **Waitlist mode (Sprint 15):** `lib/waitlist-mode.ts` — default on for `VERCEL_ENV=production`; flip with `PUBLIC_SIGNUP_OPEN=true` at go-live. `middleware.ts` runtime redirect (`3ceb125`, renamed from `proxy.ts`). **Private beta signup (2026-06):** `BETA_SIGNUP_TOKEN` + `/signup?access=&label=`; cookies `mwm_beta_signup` / `mwm_beta_signup_label`; admin Funnel cohort table.
+- **Waitlist mode (Sprint 15):** `lib/waitlist-mode.ts` — default on for `VERCEL_ENV=production`; flip with `PUBLIC_SIGNUP_OPEN=true` at go-live. **Server-gated signup (PR #25):** `POST /api/auth/signup` + `lib/auth/signupAdmission.ts`; §10 **closed** on `estate-planner-staging` (2026-06-16) — [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md).
 
 **Email drip (Sprint 6–9):** Custom `EVENT_SEQUENCES` for all **24** event slugs (`DripEventSlug` union complete); `DEFAULT_SEQUENCE` only for unknown/null slugs. Steps 1–3 via capture + notifications cron.
 
