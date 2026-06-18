@@ -12,7 +12,7 @@ jobs:
   e2e-smoke:
     if: vars.E2E_SMOKE_IN_CI == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     env:
       REQUIRE_PRIVILEGED_MFA: 'false'
@@ -25,6 +25,7 @@ jobs:
       PLAYWRIGHT_CONSUMER_PASSWORD: ${{ secrets.PLAYWRIGHT_CONSUMER_PASSWORD }}
       PLAYWRIGHT_ADVISOR_EMAIL: ${{ secrets.PLAYWRIGHT_ADVISOR_EMAIL }}
       PLAYWRIGHT_ADVISOR_PASSWORD: ${{ secrets.PLAYWRIGHT_ADVISOR_PASSWORD }}
+      PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID: ${{ secrets.PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID }}
 
     steps:
       - uses: actions/checkout@v5
@@ -57,3 +58,6 @@ jobs:
 
       - name: E2E B4 gate (prospect, health-score, playbook, drip)
         run: npm run test:e2e:b4-gate -- --workers=1
+
+      - name: E2E cross-household isolation (IDOR matrix)
+        run: npm run test:e2e:security-isolation -- --workers=1
