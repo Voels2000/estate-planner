@@ -13,6 +13,8 @@
 
 Code promotes via git → Vercel. **Data never promotes** between projects.
 
+**Pipeline notification routing:** [NOTIFICATION_HYGIENE.md](./NOTIFICATION_HYGIENE.md) — failures notify, successes don't; dashboard toggles for GitHub / Vercel / Sentry (no workflow YAML changes needed today).
+
 ---
 
 ## 2. Production residents (exactly three auth users)
