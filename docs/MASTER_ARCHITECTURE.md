@@ -737,7 +737,7 @@ Two layers — do not conflate them:
 
 **New migrations (mandatory):** Copy [supabase/MIGRATION_TEMPLATE.sql](../supabase/MIGRATION_TEMPLATE.sql) — every `CREATE TABLE` includes explicit `GRANT` (PostgREST roles) and scoped RLS policies in the same file. Supabase is tightening defaults from **Oct 30, 2026**; future tables must not rely on implicit grants.
 
-**Dual-database apply (mandatory):** Staging and production are separate Supabase projects; Vercel never runs migrations. Every migration PR: apply on **both** before merge (`bash scripts/apply-migration-both-dbs.sh` or manual `psql` / `supabase db query`). See [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift) and [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) dual-apply boxes.
+**Dual-database rule (mandatory):** Staging and production are separate projects; Vercel never runs migrations. Apply **per environment** when promoting code there — staging migration before staging deploy; production migration at main promotion (not at staging-merge time). Helper: `bash scripts/apply-migration.sh staging|production …`. See [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift) and [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) staging vs production boxes.
 
 **Checklist:** [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) → “New table migrations (mandatory)”.
 

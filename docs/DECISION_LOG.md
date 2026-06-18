@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-18 (webhook tier_upgraded analytics integrity)
+# Last updated: 2026-06-18 (migration per-environment gate)
+
+---
+
+## Migration apply order — per environment, not both at once (2026-06-18)
+
+**Decision:** Schema migrations pair with the **deploy in the same environment**. Apply on staging before staging merge/deploy; apply on production at **staging→main promotion** (merge → prod apply → verify → prod deploy). Do **not** apply production migrations while code is still staging-only.
+
+**Reasoning:** Additive nullable columns tolerate schema-ahead-of-code, but the habit generalizes badly — rename/drop/NOT NULL migrations break production when schema leads code. One rule for all migration types. “Apply both early so nothing is missed” inverts safe ordering.
+
+**Until pipeline apply exists:** `bash scripts/apply-migration.sh staging|production <file>`; staging→`main` PR lists **pending production migrations**; verify with `supabase migration list` on prod before/after apply.
+
+**Follow-up:** Wire migration apply into deploy pipeline (structural fix — not launch gate).
+
+**Runbook:** [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift)
 
 ---
 

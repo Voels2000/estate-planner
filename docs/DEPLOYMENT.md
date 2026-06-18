@@ -162,42 +162,65 @@ Staging (`cmzyxpxfyvdvbsykjvsg`) is disposable test infrastructure — not a cop
 
 ### 1. Apply migrations (ongoing — prevents schema drift)
 
-**Migration gate (both databases) — mandatory for every `supabase/migrations/*.sql` PR**
+**Migration gate (per environment) — mandatory for every `supabase/migrations/*.sql` PR**
 
-Vercel deploy does **not** run migrations. Staging and production are **separate** Supabase projects — applying on one does nothing on the other.
+Vercel deploy does **not** run migrations. Staging and production are **separate** Supabase projects. A migration and the code that depends on it are a **pair in each environment**: apply the schema change **just before** the deploy that needs it — **in that environment only**. Do not apply production migrations while the code is still staging-only (schema-ahead-of-code breaks the next rename/drop/NOT NULL migration and is the wrong habit even for additive columns).
 
-| Step | When | Action |
-|------|------|--------|
-| 1 | **Before merge** (or before deploy if code ships later) | Apply migration on **staging** (`cmzyxpxfyvdvbsykjvsg`) **and** **production** (`fnzvlmrqwcqwiqueevux`) |
-| 2 | Same session | Verify column/table exists on **both** (SQL Editor or `information_schema`) |
-| 3 | After step 1–2 | Merge/deploy code that depends on the new schema |
+#### Staging (`staging` branch → Vercel Preview)
 
-**Helper script** (uses `STAGING_SUPABASE_DB_URL` + `PROD_SUPABASE_DB_URL` from `.env.projects.local`):
-
-```bash
-bash scripts/apply-migration-both-dbs.sh supabase/migrations/<timestamp>_name.sql
-```
-
-**Manual** (when history drift blocks `db push` — prefer `apply-migration-both-dbs.sh`; requires `psql`):
+| Step | Action |
+|------|--------|
+| 1 | Apply migration on **staging** (`cmzyxpxfyvdvbsykjvsg`) |
+| 2 | Verify (dashboard, `information_schema`, or `supabase migration list` when history is healthy) |
+| 3 | Merge PR to `staging` → deploy |
 
 ```bash
-# Both at once (recommended)
-bash scripts/apply-migration-both-dbs.sh supabase/migrations/<file>.sql
+bash scripts/apply-migration.sh staging supabase/migrations/<timestamp>_name.sql
 ```
 
-**PR checklist:** [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) → “New table migrations” includes dual-apply boxes. Do not merge schema-dependent code until both DBs are updated.
+#### Production (`main` branch → Vercel Production)
 
-**History note:** Staging was initially created via schema clone (`two-db-schema-parity.sh`), which copies shape but **not** `supabase_migrations` history — full `db push` may fail until history is repaired. When history is healthy, use targeted apply above or:
+| Step | Action |
+|------|--------|
+| 1 | Open **staging → `main`** promotion PR; list **pending production migrations** in the PR body |
+| 2 | Merge to `main` |
+| 3 | Apply the **same** migration on **production** (`fnzvlmrqwcqwiqueevux`) |
+| 4 | Verify on production |
+| 5 | Production deploy (or confirm Vercel auto-deploy completed after step 3) |
 
 ```bash
-# Staging (CI + local dev target)
-npx supabase db push --project-ref cmzyxpxfyvdvbsykjvsg
-
-# Production (before/at deploy)
-npx supabase db push --project-ref fnzvlmrqwcqwiqueevux
-```
+bash scripts/apply-migration.sh production supabase/migrations/<timestamp>_name.sql
 ```
 
+**Do not skip production** — staging apply alone does nothing on prod. **Do not apply production early** — wait until promotion.
+
+#### Verify nothing was missed
+
+When migration history is healthy:
+
+```bash
+npx supabase migration list --project-ref cmzyxpxfyvdvbsykjvsg   # staging
+npx supabase migration list --project-ref fnzvlmrqwcqwiqueevux   # production
+```
+
+Run against production immediately before and after the prod apply; the diff is your proof.
+
+#### Destructive migrations (drop / rename / NOT NULL)
+
+Additive nullable columns (most PRs): schema-then-code in each env, as above. Destructive changes use **expand → migrate → contract** (often two releases): ship code that no longer depends on the old shape first, then migrate. Same per-environment rule; different order inside the pair.
+
+#### Checklists and follow-ups
+
+- **PR to `staging`:** [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) → staging migration boxes
+- **PR to `main`:** note pending prod migration in description; clear after apply
+- **Structural fix (follow-up):** wire migration apply into deploy pipeline so “missed migration” is not human-dependent — see [DECISION_LOG.md](./DECISION_LOG.md) when scheduled
+
+**History note:** Staging was created via schema clone (`two-db-schema-parity.sh`) without full `supabase_migrations` history — full `db push` may fail until history is repaired. Use `apply-migration.sh` / `psql -f` for additive `IF NOT EXISTS` migrations. When history is healthy:
+
+```bash
+npx supabase db push --project-ref cmzyxpxfyvdvbsykjvsg   # staging only, at staging promote time
+npx supabase db push --project-ref fnzvlmrqwcqwiqueevux   # production only, at main promote time
+```
 If a migration changes the Monte Carlo edge function, redeploy on staging too:
 
 ```bash

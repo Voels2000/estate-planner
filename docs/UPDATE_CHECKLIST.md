@@ -31,14 +31,27 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 
 ## New table migrations (mandatory — every PR with `supabase/migrations/*.sql`)
 
-### Apply on both databases (before merge)
+### Staging merge (PR → `staging`)
 
-- [ ] Migration applied on **staging** (`cmzyxpxfyvdvbsykjvsg`)
-- [ ] Migration applied on **production** (`fnzvlmrqwcqwiqueevux`)
-- [ ] Verified on both (dashboard or `information_schema`) — not just “I ran the script”
-- [ ] Code that reads/writes new schema merges **after** both applies (or ships in same PR with applies done first)
+- [ ] Migration applied on **staging** (`cmzyxpxfyvdvbsykjvsg`) **before** merge/deploy
+- [ ] Verified on staging (`information_schema` or dashboard)
+- [ ] Code merged to `staging` after staging apply
 
-Helper: `bash scripts/apply-migration-both-dbs.sh supabase/migrations/<file>.sql`  
+```bash
+bash scripts/apply-migration.sh staging supabase/migrations/<file>.sql
+```
+
+### Production promotion (PR → `main`)
+
+- [ ] **Pending production migrations** named in staging→`main` PR description
+- [ ] PR merged to `main`
+- [ ] Same migration(s) applied on **production** (`fnzvlmrqwcqwiqueevux`) **after** merge, **before** relying on prod deploy
+- [ ] Verified on production; PR note updated / checklist cleared
+
+```bash
+bash scripts/apply-migration.sh production supabase/migrations/<file>.sql
+```
+
 Runbook: [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift)
 
 Before merge, confirm the migration file includes:
