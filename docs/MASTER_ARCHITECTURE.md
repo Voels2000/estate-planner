@@ -737,6 +737,8 @@ Two layers — do not conflate them:
 
 **New migrations (mandatory):** Copy [supabase/MIGRATION_TEMPLATE.sql](../supabase/MIGRATION_TEMPLATE.sql) — every `CREATE TABLE` includes explicit `GRANT` (PostgREST roles) and scoped RLS policies in the same file. Supabase is tightening defaults from **Oct 30, 2026**; future tables must not rely on implicit grants.
 
+**Dual-database rule (mandatory):** Staging and production are separate projects; Vercel never runs migrations. Apply **per environment** when promoting code there — staging migration before staging deploy; production migration at main promotion (not at staging-merge time). Helper: `bash scripts/apply-migration.sh staging|production …`. See [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift) and [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) staging vs production boxes.
+
 **Checklist:** [UPDATE_CHECKLIST.md](./UPDATE_CHECKLIST.md) → “New table migrations (mandatory)”.
 
 **Waitlist mode (pre-launch):** Default on when `VERCEL_ENV=production`. `middleware.ts` redirects `/signup` → `/waitlist` (renamed from `proxy.ts` in `3ceb125`). Invite query params bypass. **Private beta signup:** `/signup?access=TOKEN&label=cohort` bypasses waitlist when `BETA_SIGNUP_TOKEN` matches; sets HttpOnly cookies; funnel events `beta_signup_link_viewed` + `account_created` with `signup_source: beta_access_link`. Admin **Funnel** tab → **Private Beta Signup Links**.

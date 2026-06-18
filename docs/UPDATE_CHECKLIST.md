@@ -32,6 +32,29 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 
 ## New table migrations (mandatory — every PR with `supabase/migrations/*.sql`)
 
+### Staging merge (PR → `staging`)
+
+- [ ] Migration applied on **staging** (`cmzyxpxfyvdvbsykjvsg`) **before** merge/deploy
+- [ ] Verified on staging (`information_schema` or dashboard)
+- [ ] Code merged to `staging` after staging apply
+
+```bash
+bash scripts/apply-migration.sh staging supabase/migrations/<file>.sql
+```
+
+### Production promotion (PR → `main`)
+
+- [ ] **Pending production migrations** named in staging→`main` PR description
+- [ ] PR merged to `main`
+- [ ] Same migration(s) applied on **production** (`fnzvlmrqwcqwiqueevux`) **after** merge, **before** relying on prod deploy
+- [ ] Verified on production; PR note updated / checklist cleared
+
+```bash
+bash scripts/apply-migration.sh production supabase/migrations/<file>.sql
+```
+
+Runbook: [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift)
+
 Before merge, confirm the migration file includes:
 
 - [ ] `ALTER TABLE … ENABLE ROW LEVEL SECURITY`
