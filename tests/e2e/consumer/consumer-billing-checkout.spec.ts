@@ -21,8 +21,9 @@ test.describe('Consumer billing checkout API', () => {
     const res = await request.post('/api/stripe/checkout', {
       data: { tier: 1, period: 'monthly' },
     })
-    expect(res.status()).toBe(400)
+    expect(res.status()).toBe(409)
     const body = await res.json()
+    expect(body.code).toBe('already_subscribed')
     expect(body.error).toMatch(/already have an active subscription/i)
   })
 

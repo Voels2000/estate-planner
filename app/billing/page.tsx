@@ -12,6 +12,8 @@ import {
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
 import { getSubscribedBillingPeriod } from '@/lib/billing/subscribedBillingPeriod'
+import { consumerCheckoutBlockReason } from '@/lib/billing/b2b2cBillingPolicy'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
 export default async function BillingPage({
   searchParams,
@@ -110,11 +112,21 @@ export default async function BillingPage({
     .eq('id', access.user.id)
     .single()
 
-  const isAdvisorManaged =
-    profile?.subscription_status === 'advisor_managed' ||
-    profile?.subscription_plan === 'advisor_managed'
+  const { data: clientRow } = await supabase
+    .from('advisor_clients')
+    .select('id')
+    .eq('client_id', access.user.id)
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
+    .maybeSingle()
+  const isAdvisorClient = !!clientRow
 
-  if (isAdvisorManaged) {
+  const checkoutBlock = consumerCheckoutBlockReason({
+    subscription_status: profile?.subscription_status,
+    subscription_plan: profile?.subscription_plan,
+    isAdvisorClient,
+  })
+
+  if (checkoutBlock?.code === 'advisor_managed') {
     return (
       <div className="mx-auto mt-16 max-w-2xl px-6">
         <Card className="border-blue-200 bg-blue-50 px-6 py-5">
@@ -130,11 +142,7 @@ export default async function BillingPage({
     )
   }
 
-  const isAttorneyManaged =
-    profile?.subscription_status === 'attorney_managed' ||
-    profile?.subscription_plan === 'attorney_managed'
-
-  if (isAttorneyManaged) {
+  if (checkoutBlock?.code === 'attorney_managed') {
     return (
       <div className="mx-auto mt-16 max-w-2xl px-6">
         <Card className="border-blue-200 bg-blue-50 px-6 py-5">
@@ -151,21 +159,13 @@ export default async function BillingPage({
     )
   }
 
-  const { data: clientRow } = await supabase
-    .from('advisor_clients')
-    .select('id')
-    .eq('client_id', access.user.id)
-    .in('status', ['active', 'accepted'])
-    .maybeSingle()
-  const isAdvisorClient = !!clientRow
-
   return (
     <BillingClient
       currentPlan={profile?.subscription_plan ?? null}
       subscriptionStatus={profile?.subscription_status ?? null}
       subscriptionPeriodEnd={profile?.subscription_period_end ?? null}
       subscribedPeriod={getSubscribedBillingPeriod(profile?.subscription_plan ?? null)}
-      isAdvisorClient={isAdvisorClient}
+      isAdvisorClient={checkoutBlock?.code === 'advisor_client'}
       annualBillingAvailable={isAnnualBillingConfigured()}
       recommendedPlanId={recommendedPlanId}
     />
