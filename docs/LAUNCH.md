@@ -79,7 +79,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 ### B3b. Staging → main promotion (pre-launch hardening — not the flip)
 
-Accumulated security/correctness on **`staging`** (PRs #28–#38). Does **not** open prod signups or retire flip blockers. Canonical runbook: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
+Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** open prod signups or retire flip blockers. Canonical runbook: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
 
 - [ ] Prod secrets confirmed — `RECOMPUTE_SECRET`, `CRON_SECRET`, `INTERNAL_API_KEY` on `estate-planner` (attest: __ / __)
 - [ ] Prod migration verified — `20260718120000_attorney_drip_unsubscribed_at.sql` present (`supabase migration list` or `information_schema`) (attest: __ / __)

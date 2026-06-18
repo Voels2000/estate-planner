@@ -1,12 +1,12 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-18 (staging→main promotion runbook; hardening batch #28–#38)
+# Last updated: 2026-06-18 (staging→main promotion runbook; hardening batch #28–#39 on staging)
 
 ---
 
 ## Staging → main promotion runbook (2026-06-18)
 
-**Decision:** Canonical checklist for promoting accumulated pre-launch hardening from **`staging`** to **`main`**: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md). Covers PRs #28–#38 (39 commits), one additive migration (`20260718120000_attorney_drip_unsubscribed_at.sql`), prod secret pre-checks (`RECOMPUTE_SECRET`, `CRON_SECRET`, `INTERNAL_API_KEY`), and **passive** post-deploy smoke (recompute/cron from logs; checkout **403/409 block paths only** — defer eligible-consumer live Stripe charge to dedicated real-card test).
+**Decision:** Canonical checklist for promoting accumulated pre-launch hardening from **`staging`** to **`main`**: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md). Covers PRs #28–#39 (40 commits), one additive migration (`20260718120000_attorney_drip_unsubscribed_at.sql`), prod secret pre-checks (`RECOMPUTE_SECRET`, `CRON_SECRET`, `INTERNAL_API_KEY`), and **passive** post-deploy smoke (recompute/cron from logs; checkout **403/409 block paths only** — defer eligible-consumer live Stripe charge to dedicated real-card test). **#39** is docs-only (runbook + master-doc cross-links); no change to migration or env surface.
 
 **Reasoning:** Hardening deploy to pre-launch prod does not open signups or retire flip blockers. Unit tests cover #36 happy-path logic; live charge validates Stripe e2e, not this PR. Recompute/cron confirm from logs without forcing writes or charges.
 

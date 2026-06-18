@@ -4,7 +4,7 @@ Promotes the accumulated security/correctness work on `staging` to production.
 **This is a hardening deploy to a pre-launch production — it does not open prod to
 real users and does not retire any flip blocker.**
 
-39 commits / PRs #28–#38. Prod-side dependency surface is small: one already-applied
+40 commits / PRs #28–#39. Prod-side dependency surface is small: one already-applied
 additive migration and three secrets that must be set on prod (below). No env-manifest
 drift, no inter-migration ordering, no destructive schema changes. Code surfaces are
 disjoint, so anything that surfaces post-deploy is traceable to a specific PR.
@@ -23,6 +23,7 @@ disjoint, so anything that surfaces post-deploy is traceable to a specific PR.
 | #36 | Checkout API eligibility guards |
 | #37 | Attorney unsubscribe routes to `profiles` (+ migration) |
 | #38 | Notification hygiene runbook (docs) |
+| #39 | Promotion runbook + master-doc sync (15 files; docs-only) |
 
 ## Migration
 
