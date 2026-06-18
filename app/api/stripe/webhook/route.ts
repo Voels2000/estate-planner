@@ -185,9 +185,7 @@ export async function POST(req: NextRequest) {
             .eq('id', userId)
           if (error) {
             console.error('Supabase update error:', error.message)
-          }
-
-          if (consumerTier && consumerTier > previousTier) {
+          } else if (consumerTier && consumerTier > previousTier) {
             void trackTierUpgrade({
               userId,
               tier: consumerTier,
