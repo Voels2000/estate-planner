@@ -1,8 +1,8 @@
 # Waitlist hardening spec — server-gated signup
 
-**Status:** Implemented (server-gated signup) — deploy after staging matrix §10  
-**Priority:** P0 — prod is not safe while dark without this + Supabase toggle  
-**Related:** Launch plan Move 3 (prod safe while dark) · `lib/waitlist-mode.ts` · `app/(auth)/signup/_signup-form.tsx`
+**Status:** Implemented — **§10 matrix closed** on `estate-planner-staging` (2026-06-16). Prod deploy + Layer 0 already attested; flip still blocked on prod-side launch board.  
+**Priority:** P0 — prod is not safe while dark without Layer 0 + server route (both in place)  
+**Related:** [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md) · Move 3 (prod safe while dark) · `lib/waitlist-mode.ts` · `app/(auth)/signup/_signup-form.tsx`
 
 ---
 
@@ -238,6 +238,34 @@ Extract from `_signup-form.tsx` into `lib/auth/completeSignup.ts` (or similar) s
 ---
 
 ## 10. Testing matrix (staging project)
+
+### §10 attestation — closed (2026-06-16)
+
+**Surface:** `https://estate-planner-staging.vercel.app` · staging Supabase `cmzyxpxfyvdvbsykjvsg` · Vercel project `estate-planner-staging` (Move 1 complete).
+
+| Probe | Scenario | Expected | Result (2026-06-16) |
+|-------|----------|----------|----------------------|
+| **7** | Anon `POST …/auth/v1/signup` | **422** `signup_disabled` | **PASS** |
+| **1** | Bright `open_consumer` (`delivered@resend.dev`) | **201** + `needsEmailConfirmation: true`, no cookie | **PASS** |
+| **2** | Invalid beta token | **403** | **PASS** |
+| **4** | Valid beta token | **201** + session cookie | **PASS** |
+| **5** | Short password | **400** | **PASS** |
+| **8** | Checkout without session | **401** | **PASS** |
+
+**Gate:** signup-hardening §10 **closed** on deployed staging artifact (`PUBLIC_SIGNUP_OPEN=true`, anon signups off, service role + Resend working).
+
+**Remaining before flip:** prod-side blockers unchanged — real-card Stripe · PITR · error monitoring · live webhook events — [PRE_FLIP_CHECKLIST.md §A](./PRE_FLIP_CHECKLIST.md) · [LAUNCH.md](./LAUNCH.md) Bucket B.
+
+**Notes:** `delivered@resend.dev` row exists on staging (re-probe needs fresh email). `staging.mywealthmaps.com` CNAME not wired yet — use `estate-planner-staging.vercel.app`.
+
+<details>
+<summary>§10 parked history (Preview-as-staging, 2026-06-16 earlier)</summary>
+
+Parked **hosted Probe 1** while `estate-planner` Preview scope fought env confusion (`NEXT_PUBLIC_SUPABASE_ANON` typo, missing `SUPABASE_SERVICE_ROLE_KEY` on Preview). Resolved by dedicated staging Vercel project per [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md).
+
+</details>
+
+---
 
 **Prerequisite:** Disable anon signups on **staging** Supabase **before** running this matrix (mirror prod Layer 0). Otherwise you cannot prove the server route is the only creation path.
 

@@ -1,6 +1,6 @@
 # Deployment — two-database steady state
 
-**Effective:** 2026-06-13 (two-DB migration complete). Archived runbook: [docs/archive/TWO_DB_MIGRATION.md](./archive/TWO_DB_MIGRATION.md).
+**Effective:** 2026-06-13 (two-DB migration complete). Archived runbook: [docs/archive/TWO_DB_MIGRATION.md](./archive/TWO_DB_MIGRATION.md). **Staging Vercel project (Move 1):** [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md).
 
 ---
 

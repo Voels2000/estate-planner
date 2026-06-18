@@ -9,6 +9,9 @@ import {
   inferStripeKeyMode,
   stripeKeyScopeMismatch,
   shouldSkipUnsetStripePriceCheck,
+  parseSupabaseProjectRef,
+  parseAppUrlHostname,
+  buildBootIdentity,
 } from '../../lib/env/verifyEnv'
 
 const CONSUMER_PRICE = 'STRIPE_PRICE_FINANCIAL_MONTHLY'
@@ -257,5 +260,50 @@ test.describe('verifier tuning — Supabase formats, canary, platform vars', () 
     expect(
       critical.some((f) => /sb_secret_|Supabase secret/.test(f.reason)),
     ).toBe(true)
+  })
+})
+
+test.describe('boot identity', () => {
+  test('parseSupabaseProjectRef extracts ref from project URL', () => {
+    expect(parseSupabaseProjectRef('https://cmzyxpxfyvdvbsykjvsg.supabase.co')).toBe(
+      'cmzyxpxfyvdvbsykjvsg',
+    )
+    expect(parseSupabaseProjectRef('')).toBeNull()
+  })
+
+  test('parseAppUrlHostname extracts hostname', () => {
+    expect(parseAppUrlHostname('https://staging.mywealthmaps.com/path')).toBe(
+      'staging.mywealthmaps.com',
+    )
+    expect(parseAppUrlHostname('not-a-url')).toBeNull()
+  })
+
+  test('buildBootIdentity reports non-secret deployment facts', () => {
+    const boot = buildBootIdentity({
+      VERCEL_ENV: 'production',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://cmzyxpxfyvdvbsykjvsg.supabase.co',
+      NEXT_PUBLIC_APP_URL: 'https://staging.mywealthmaps.com',
+      SUPABASE_SERVICE_ROLE_KEY: 'eyJ-test',
+    })
+    expect(boot).toEqual({
+      scope: 'production',
+      vercel_env: 'production',
+      supabase_project_ref: 'cmzyxpxfyvdvbsykjvsg',
+      app_url_hostname: 'staging.mywealthmaps.com',
+      service_role_present: true,
+    })
+  })
+
+  test('verifyEnvironment includes boot block', async () => {
+    const report = await verifyEnvironment({
+      env: {
+        VERCEL_ENV: 'preview',
+        NEXT_PUBLIC_SUPABASE_URL: 'https://cmzyxpxfyvdvbsykjvsg.supabase.co',
+        NEXT_PUBLIC_APP_URL: 'https://estate-planner-git-feat-x.vercel.app',
+      },
+    })
+    expect(report.boot.scope).toBe('preview')
+    expect(report.boot.supabase_project_ref).toBe('cmzyxpxfyvdvbsykjvsg')
+    expect(report.boot.service_role_present).toBe(false)
   })
 })
