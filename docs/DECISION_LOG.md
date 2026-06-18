@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-17 (Sentry PRE_FLIP attest, cross-household isolation CI gate)
+# Last updated: 2026-06-18 (webhook tier_upgraded analytics integrity)
 
 ---
 
@@ -133,6 +133,16 @@
 **Reasoning:** Close PRE_FLIP observability gap without draining free tier or leaking household PII into error reports.
 
 **Attested (Al / 2026-06-17):** Preview deploy event captured end-to-end; `SENTRY_AUTH_TOKEN` on both Vercel projects (all scopes); per-DSN rate limit 150/12h; test issue resolved; [PR #29](https://github.com/Voels2000/estate-planner/pull/29) merged to `staging`. First Production-environment event confirms on first prod deploy after merge to `main`.
+
+---
+
+## Webhook `tier_upgraded` analytics integrity (2026-06-18)
+
+**Finding:** On `checkout.session.completed`, `trackTierUpgrade` ran even when the consumer `profiles` Supabase update failed — `funnel_events` could record `tier_upgraded` while the profile never updated (analytics vs billing state mismatch).
+
+**Fix:** [PR #34](https://github.com/Voels2000/estate-planner/pull/34) — call `trackTierUpgrade` only in the `else` branch after a successful profile write. No dedup table; no HTTP status change.
+
+**Reasoning:** Live data-integrity defect, independent of post-launch idempotency/retry work ([WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md](./WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md)).
 
 ---
 
