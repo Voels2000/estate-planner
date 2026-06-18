@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
 import { sendRenewalReminderEmail } from '@/lib/email/renewalReminderEmail'
 import Stripe from 'stripe'
+import type { PostgrestError } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTierFromPriceId } from '@/lib/billing/stripePrices'
 import { FIRM_PRICE_ID_TO_TIER, getAttorneyTierFromPriceId } from '@/lib/tiers'
@@ -9,6 +11,46 @@ import {
   cancelPendingDeletionOnReactivation,
   scheduleDeletionOnSubscriptionCancelled,
 } from '@/lib/compliance/scheduleDeletionOnCancel'
+
+type WebhookCaptureStage = 'signature' | 'handler' | 'processing'
+
+function captureStripeWebhookFailure(
+  err: Error,
+  opts: {
+    stage: WebhookCaptureStage
+    event?: Stripe.Event
+    level?: 'warning' | 'error'
+    extra?: Record<string, string>
+  },
+) {
+  const level =
+    opts.level ?? (opts.stage === 'signature' ? 'warning' : 'error')
+  Sentry.captureException(err, {
+    level,
+    tags: {
+      area: 'stripe_webhook',
+      stage: opts.stage,
+      ...(opts.event ? { stripe_event_type: opts.event.type } : {}),
+    },
+    extra: {
+      ...(opts.event ? { stripe_event_id: opts.event.id } : {}),
+      ...opts.extra,
+    },
+  })
+}
+
+/** Postgrest `details`/`hint`/`message` may echo row values — attach pg_code only. */
+function captureStripeWebhookSupabaseFailure(
+  context: string,
+  dbError: Pick<PostgrestError, 'code'>,
+  event: Stripe.Event,
+) {
+  captureStripeWebhookFailure(new Error(`Supabase ${context} failed`), {
+    stage: 'processing',
+    event,
+    ...(dbError.code ? { extra: { pg_code: dbError.code } } : {}),
+  })
+}
 
 function formatUsdCents(amountCents: number) {
   return new Intl.NumberFormat('en-US', {
@@ -92,6 +134,9 @@ export async function POST(req: NextRequest) {
     )
   } catch (err) {
     console.error('Webhook signature verification failed:', err)
+    captureStripeWebhookFailure(new Error('Webhook signature verification failed'), {
+      stage: 'signature',
+    })
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
   try {
@@ -130,6 +175,7 @@ export async function POST(req: NextRequest) {
               .select()
             if (error) {
               console.error('Firm Supabase update error:', error.message)
+              captureStripeWebhookSupabaseFailure('firm checkout update', error, event)
             }
             const ownerId = data?.[0]?.owner_id as string | undefined
             if (ownerId) {
@@ -141,6 +187,11 @@ export async function POST(req: NextRequest) {
                 console.error(
                   'Failed to update firm owner profile subscription_status:',
                   profileError
+                )
+                captureStripeWebhookSupabaseFailure(
+                  'firm owner profile checkout update',
+                  profileError,
+                  event,
                 )
               }
             }
@@ -185,6 +236,7 @@ export async function POST(req: NextRequest) {
             .eq('id', userId)
           if (error) {
             console.error('Supabase update error:', error.message)
+            captureStripeWebhookSupabaseFailure('consumer checkout profile update', error, event)
           } else if (consumerTier && consumerTier > previousTier) {
             void trackTierUpgrade({
               userId,
@@ -217,6 +269,11 @@ export async function POST(req: NextRequest) {
               console.error(
                 'Failed to update firm owner profile subscription_status:',
                 profileError
+              )
+              captureStripeWebhookSupabaseFailure(
+                'firm owner profile subscription deleted',
+                profileError,
+                event,
               )
             }
           }
@@ -290,6 +347,11 @@ export async function POST(req: NextRequest) {
                 'Failed to update firm owner profile subscription_status:',
                 profileError
               )
+              captureStripeWebhookSupabaseFailure(
+                'firm owner profile subscription updated',
+                profileError,
+                event,
+              )
             }
           }
           break
@@ -339,6 +401,10 @@ export async function POST(req: NextRequest) {
             firmId = sub.metadata?.firm_id ?? null
           } catch (e) {
             console.error('invoice.payment_failed: failed to retrieve subscription for firm_id fallback', e)
+            captureStripeWebhookFailure(
+              new Error('invoice.payment_failed subscription retrieve failed'),
+              { stage: 'processing', event },
+            )
           }
         }
         if (firmId) {
@@ -400,12 +466,21 @@ export async function POST(req: NextRequest) {
             'invoice.upcoming — renewal reminder failed:',
             err instanceof Error ? err.message : err,
           )
+          captureStripeWebhookFailure(new Error('invoice.upcoming renewal reminder failed'), {
+            stage: 'processing',
+            event,
+            level: 'warning',
+          })
         }
         break
       }
     }
   } catch (err) {
     console.error('Webhook error:', err instanceof Error ? err.message : err)
+    captureStripeWebhookFailure(new Error('Webhook handler failed'), {
+      stage: 'handler',
+      event,
+    })
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
   }
   return NextResponse.json({ received: true })
