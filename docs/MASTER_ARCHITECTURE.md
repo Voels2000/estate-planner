@@ -41,7 +41,7 @@ feature/* → PR → staging branch → estate-planner-staging.vercel.app (stagi
 
 **GitHub branch protection:** `main` — ruleset **`main-no-direct-push`**: **`verify`** + **`e2e-smoke`** + **`rls-verify`**. `staging` — ruleset **`staging-pr-gate`**: **`verify`** (lint + tsc + unit on PRs to staging).
 
-**CI `verify` job (PR #27):** ESLint · `npx tsc --noEmit` · unit tests on every PR to `main` and `staging`; full build + audits only on PR → `main` and push → `main`. **`rls-verify`** runs `npm run verify:rls -- --require-sql` (JWT + `assert-rls-coverage.sql`) using staging `SUPABASE_DB_URL` from GitHub secrets.
+**CI `verify` job (PR #27):** ESLint · `npx tsc --noEmit` · unit tests on every PR to `main` and `staging`; full build + audits only on PR → `main` and push → `main`. **`e2e-smoke`** runs `test:e2e:b4-gate` + **`test:e2e:security-isolation`** (20 cross-household tests on staging; PR #30). **`rls-verify`** runs `npm run verify:rls -- --require-sql` (JWT + `assert-rls-coverage.sql`) using staging `SUPABASE_DB_URL` from GitHub secrets.
 
 Release gates: [ENVIRONMENT_TESTING.md § Release discipline](./ENVIRONMENT_TESTING.md#release-discipline--what-to-run-when). Go-live checklist: [LAUNCH.md](./LAUNCH.md) · manual attestations: [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) (`npm run launch:tracker`).
 
@@ -1155,6 +1155,7 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 - `lib/api/internalApiAuth.ts` — `requireCronAuth` / `requireCronOrInternal` / `requireInternalApi` — fail-closed + constant-time compare when `CRON_SECRET` or `INTERNAL_API_KEY` unset
 - `lib/supabase/routeAuth.ts` — `getRouteAuth()` for App Router handlers (`getSession()` not `getUser()`)
 - `app/api/health/route.ts` — liveness probe `{ ok: true }`; target for uptime monitoring
+- Sentry (`@sentry/nextjs`) — error-only monitoring (`sendDefaultPii: false`); browser tunnel `/monitoring`; source maps via `SENTRY_AUTH_TOKEN` on Vercel (PRE_FLIP attest 2026-06-17 · PR #29)
 - `scripts/verify-app-route-slugs.ts` — CI guard against conflicting App Router dynamic segments (`.github/workflows/ci.yml`)
 - `lib/api/assertHouseholdAccess.ts` — owner or connected-advisor check before household RPC reads (API routes)
 - `lib/api/simpleRateLimit.ts` — IP-based rate limit helper for public POST endpoints

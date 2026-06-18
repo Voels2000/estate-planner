@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-15 (pre-launch FOR ALL RLS leak, structural coverage gate, WA Regime D)
+# Last updated: 2026-06-17 (Sentry PRE_FLIP attest, cross-household isolation CI gate)
 
 ---
 
@@ -132,6 +132,8 @@
 
 **Reasoning:** Close PRE_FLIP observability gap without draining free tier or leaking household PII into error reports.
 
+**Attested (Al / 2026-06-17):** Preview deploy event captured end-to-end; `SENTRY_AUTH_TOKEN` on both Vercel projects (all scopes); per-DSN rate limit 150/12h; test issue resolved; [PR #29](https://github.com/Voels2000/estate-planner/pull/29) merged to `staging`. First Production-environment event confirms on first prod deploy after merge to `main`.
+
 ---
 
 ## Pre-launch security fixes (2026-06-17)
@@ -145,6 +147,16 @@
 **Introduction emails:** `POST /api/advisor-directory/introduce` binds sender identity to session profile; HTML-escapes user note; validates advisor id/email match.
 
 **Email capture:** Rate-limited (10/min/IP); raw email removed from logs; drip trigger uses `internalApiHeaders()`.
+
+---
+
+## Cross-household isolation in `e2e-smoke` CI (2026-06-17)
+
+**Decision:** Run `test:e2e:security-isolation` (20 tests) inside the existing **`e2e-smoke`** workflow on every PR to `main` when `E2E_SMOKE_IN_CI=true` — staging Supabase + localhost app; optional `PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID` passthrough.
+
+**Shipped:** [PR #30](https://github.com/Voels2000/estate-planner/pull/30) (`chore/ci-security-isolation`, `52536a5`). Gate-validated: commented out `requireHouseholdAccess` in `app/api/gifting-summary/route.ts` → suite failed on `Consumer isolation › POST gifting-summary on foreign household returns 403 or 404` → reverted → 20/20 green (break not committed).
+
+**Reasoning:** Post-launch hardening item #3 — cross-tenant isolation as a merge blocker without a separate workflow.
 
 ---
 
@@ -405,7 +417,9 @@
 | H3 CI E2E smoke | `.github/workflows/e2e-smoke.yml`; **`E2E_SMOKE_IN_CI=false` until pre-go-live checklist** |
 | H4 Privileged MFA | `REQUIRE_PRIVILEGED_MFA=false` until go-live; flip with `PUBLIC_SIGNUP_OPEN` |
 
-**Pre-launch ops:** Enable GitHub E2E (`E2E_SMOKE_IN_CI=true` + secrets) **before** open signups — [LAUNCH_CHECKLIST](./LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live).
+**Update (2026-06-14 / 2026-06-17):** `E2E_SMOKE_IN_CI` + `RLS_VERIFY_IN_CI` enabled with staging secrets — [LAUNCH.md § B3](./LAUNCH.md). Cross-household isolation added to `e2e-smoke` — [PR #30](https://github.com/Voels2000/estate-planner/pull/30).
+
+**Pre-launch ops:** Enable GitHub E2E (`E2E_SMOKE_IN_CI=true` + secrets) **before** open signups — canonical status [LAUNCH.md § B3](./LAUNCH.md) (done 2026-06-14); archived steps in [LAUNCH_CHECKLIST](./archive/LAUNCH_CHECKLIST.md#github-actions-e2e-smoke-pre-go-live).
 
 **Files:** `lib/security/privilegedMfaPolicy.ts`, `middleware.ts`, `lib/attorney/resolveAttorneyProfileId.ts`, `lib/import/custodianImportGuides.ts`, `.github/workflows/e2e-smoke.yml`, `docs/COMPETITIVE_SCAN.md`
 
