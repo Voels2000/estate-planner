@@ -69,7 +69,10 @@
     "release:preflight": "bash scripts/release-local-gate.sh --preflight",
     "release:post-deploy": "bash scripts/release-post-deploy.sh",
     "launch:tracker": "node scripts/launch-tracker-server.mjs",
-    "sync:launch-tracker": "npx tsx scripts/sync-launch-tracker.ts"
+    "sync:launch-tracker": "npx tsx scripts/sync-launch-tracker.ts",
+    "knip": "knip",
+    "knip:production": "knip --production --strict",
+    "analyze": "cross-env ANALYZE=true next build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -100,17 +103,20 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
+    "@next/bundle-analyzer": "^16.2.9",
     "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.4.1",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "eslint-plugin-jsx-a11y": "^6.10.2",
+    "knip": "^6.17.1",
     "postgres": "^3.4.9",
     "tailwindcss": "^4",
     "typescript": "^5"
