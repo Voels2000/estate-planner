@@ -19,6 +19,11 @@ import {
   profileRequiresPrivilegedMfa,
   userHasVerifiedTotpFactor,
 } from '@/lib/security/privilegedMfaPolicy'
+import {
+  getRequestCountry,
+  isBlockedNonUsCountry,
+  isGeoExemptPath,
+} from '@/lib/geo/usOnlyAccess'
 
 /** Crawlable SEO + static infra — never auth-gated or redirected. */
 const INFRA_BYPASS_PATHS = [
@@ -60,6 +65,7 @@ const PUBLIC_PATHS = [
   '/education',
   '/learn',
   '/intake',
+  '/not-available',
 ]
 
 function isInfraBypassPath(pathname: string): boolean {
@@ -102,6 +108,14 @@ function redirectPreservingCookies(
 
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
+
+  // US-only page gate — APIs excluded by matcher; null country allowed (local dev / unknown).
+  if (!isGeoExemptPath(pathname)) {
+    const country = getRequestCountry(request)
+    if (isBlockedNonUsCountry(country)) {
+      return NextResponse.redirect(new URL('/not-available', request.url))
+    }
+  }
 
   // Runtime waitlist gate — local dev hosts never redirect (env inlining in Edge is unreliable)
   const hostname = request.nextUrl.hostname
