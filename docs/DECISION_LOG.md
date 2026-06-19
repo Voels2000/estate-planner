@@ -1,6 +1,14 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-18 (staging→main promotion runbook; hardening batch #28–#39 on staging)
+# Last updated: 2026-06-19 (Sprint E household alerts — GRAT/Roth port; dead-code parity principle)
+
+---
+
+## Sprint E — domain-logic parity before delete (2026-06-19)
+
+**Decision:** When knip flags unimported domain logic that has a “live counterpart,” require a **rule-by-rule parity diff** before deletion — “a live version exists” ≠ “complete replacement.” Unwired specs can document product gaps (silent non-firing).
+
+**Sprint E finding:** Sprint 70 `strategyAlertRules.ts` was never wired; Sprint 81 `evaluateEstateAlerts` shipped a different rule set. GRAT/Roth household alerts were **ported** into `lib/alerts/estateHouseholdAlerts.ts` (PR 6d). Roth trigger uses pre-tax balance > $500k only (no asserted “low-income year” without reliable income signal). Copy is fact/opportunity framing with professional redirect — **flagged for counsel review** alongside privacy-policy pass.
 
 ---
 
