@@ -97,7 +97,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **#31** — doc reconciliation (Sentry/CI status markers)
 - [x] **#32** — Stripe webhook failure → Sentry
 - [ ] **Webhook alerting remainder** — `captureStripeWebhookSupabaseFailure` on `subscription.deleted` / `subscription.updated` / `invoice.payment_failed` silent writes (pre-flip Tier 1 #4)
-- [ ] **Post-launch:** cron drip correctness — notifications cron false-success / step-3 window / step-3-without-step-2 ([DECISION_LOG § Post-launch cron drip](./DECISION_LOG.md))
+- [ ] **Post-launch:** cron drip correctness — **pre-flip PR** `fix/cron-drip-correctness` (launch-critical; was logged deferred)
 - [x] **#34** — `trackTierUpgrade` only after successful profile write
 - [x] **#35** — `requireRecomputeAuth` fail-closed (`RECOMPUTE_SECRET`); unit + E2E auth specs
 - [x] **#36** — `consumerCheckoutBlockReason` + `processConsumerCheckout`; API/UI parity; 38 unit tests
@@ -122,7 +122,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] E2E fixes: spouse grid selectors, attorney aref `waitForFunction`, health-check dashboard assertion
 - [x] PLAYWRIGHT_E2E · DECISION_LOG · MASTER_ARCHITECTURE · NEXT_SESSION synced
 
-## Sprint E dead-code sweep (2026-06-19) — staging `3222746`
+## Sprint E dead-code sweep (2026-06-19) — staging closeout
 
 **Tooling (shipped):** knip + bundle-analyzer — `ddd17a2` (PR #42), doc note `1007af3` (PR #43). Run `npm run knip` / `npm run knip:production`; `npm run analyze` for bundles.
 
@@ -136,14 +136,15 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 | #45 | `cb2fbe9` | waitlist test migration off `shouldBypassWaitlistForSignup` |
 | #46 | `b613e39` | delete wrapper; un-export `hasBetaSignupAccessCookie` |
 | #47 | `3222746` | orphan email templates + `@react-email/render` (6a) |
+| #48 | merged | orphan components (6b) |
+| #49 | merged | `lib/routes.ts` delete (6c) |
+| #50 | merged | MC assumptions spec + delete (6e) |
+| #51 | merged | GRAT/Roth household alerts (6d, **copy gated on counsel**) |
+| #53 | merged | validation schemas delete (6f) |
 
-**In flight:** #48 orphan components (6b) · #49 `lib/routes.ts` (6c) · #50 MC assumptions spec + delete (6e) · #51 GRAT/Roth household alerts (6d, **copy gated on counsel**).
+**Deferred:** knip in CI after baseline clean; `mammoth`/`pdf-parse` (roadmap sign-off).
 
-**Deferred:** 6f validation schemas (architecture decision); knip in CI after baseline clean; `mammoth`/`pdf-parse` (roadmap sign-off).
-
-**knip unused files:** 12 at sweep start → **10** on `3222746`; projected **7** after #48+#49.
-
-**Closeout:** PRs #44–#47 merged without per-PR doc SHA notes; this section is the catch-up sync ([DECISION_LOG § Sprint E](./DECISION_LOG.md)).
+**Closeout:** PRs #44–#53 merged; this section is the catch-up sync ([DECISION_LOG § Sprint E](./DECISION_LOG.md)).
 
 **Checklist:**
 
@@ -153,12 +154,14 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Waitlist test migration — `cb2fbe9` (PR #45)
 - [x] Waitlist wrapper removal — `b613e39` (PR #46)
 - [x] Orphan email templates — `3222746` (PR #47)
-- [ ] Orphan components — PR #48
-- [ ] `lib/routes.ts` — PR #49
-- [ ] MC assumptions spec + delete — PR #50
-- [ ] GRAT/Roth household alerts — PR #51 (**counsel copy review before consumer launch**)
-- [ ] 6f validation schemas — KEEP; architecture decision deferred
+- [x] Orphan components — PR #48
+- [x] `lib/routes.ts` — PR #49
+- [x] MC assumptions spec + delete — PR #50
+- [x] GRAT/Roth household alerts — PR #51 (**counsel copy review before consumer launch**)
+- [x] 6f validation schemas — deleted (#53); post-launch fresh validation map logged
 - [ ] knip in CI — after Sprint E baseline clean
+- [ ] **Post-launch:** estate-data input validation — ref tables + flat-column shapes; atomic PR per route ([DECISION_LOG § Sprint E 6f](./DECISION_LOG.md))
+- [ ] **Optional pre-launch:** non-blocking Sentry shape logging on write paths (observability only) — separate PR if pursued
 
 ## Code audit Sprint C — safe performance (2026-06-12) — shipped
 
