@@ -73,7 +73,7 @@ These are `.update().eq(...)` profile/firm field syncs — re-applying the same 
 - Firm/consumer subscription deleted/updated (~258–390)
 - `invoice.payment_failed` past_due marks (~413–446)
 
-**Gap today:** several paths **do not check** Supabase `error` (e.g. consumer `subscription.deleted` ~290–296, consumer `subscription.updated` ~381–390, parts of `invoice.payment_failed`). Option A captures only where `console.error` already existed. Phase 2 must add error checks before throwing.
+**Gap today:** ~~several paths **do not check** Supabase `error`~~ **Pre-flip (2026-06-19):** alerting extended to all writes in `subscription.deleted`, `subscription.updated`, and `invoice.payment_failed` handlers. Phase 2 must still add error checks before throwing 500 for retry.
 
 ---
 
