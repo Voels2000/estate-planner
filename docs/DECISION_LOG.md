@@ -23,7 +23,7 @@
 2. **Fragile 1-day window** (email-capture step 3) — fires only when `step1At >= eightDaysAgo && step1At < sevenDaysAgo`; missed cron day skips step 3 permanently. Fix: `step1At <= sevenDaysAgo` (advisor pattern) or "≥N days & not sent".
 3. **Step 3 without step 2** (advisor/attorney) — step 3 checks only `!step3At && step1At <= sevenDaysAgo`, no `step2At` requirement. Fix: require `step2At` before step 3.
 
-**Schedule:** Weeks 1–2 post-launch — **unless** email drip is launch-day-critical user acquisition (then fix before campaigns run).
+**Schedule:** Weeks 1–2 post-launch — **unless** email drip is launch-day-critical user acquisition (then fix before campaigns run). **Pre-flip fix:** PR `fix/cron-drip-correctness` (launch-critical) — step-3 ordering, §7 window, honest counters, §9 unsubscribe filter.
 
 ---
 
