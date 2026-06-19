@@ -240,8 +240,7 @@ export function BillingClient({
           const isCurrentPlan =
             currentTier !== null && plan.tier === currentTier
           const showCheckout = !(isCurrentPlan && isActive)
-          const isEstate = plan.tier === 3
-          const highlighted = isEstate
+          const highlighted = plan.highlighted
 
           const isRecommended = recommendedPlanId === plan.id
 
@@ -251,7 +250,7 @@ export function BillingClient({
               hover={!highlighted}
               className={`relative rounded-2xl p-8 shadow-md ring-1 ${
                 highlighted
-                  ? 'border-[color:var(--mwm-navy)] bg-[color:var(--mwm-navy)] ring-[color:var(--mwm-navy)]'
+                  ? '!border-[var(--mwm-navy)] !bg-[var(--mwm-navy)] ring-[color:var(--mwm-navy)]'
                   : 'ring-neutral-200'
               } ${isRecommended ? 'ring-2 ring-[color:var(--mwm-gold)] ring-offset-2' : ''}`}
             >
@@ -260,7 +259,7 @@ export function BillingClient({
                   className={`absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${
                     highlighted
                       ? 'bg-[var(--mwm-gold)] text-[color:var(--mwm-navy)]'
-                      : 'bg-[color:var(--mwm-navy)] text-white'
+                      : 'bg-[var(--mwm-navy)] text-white'
                   }`}
                 >
                   {plan.badge}
@@ -277,7 +276,7 @@ export function BillingClient({
                 {plan.name}
               </h2>
               <p
-                className={`mt-1 text-sm ${highlighted ? 'text-neutral-300' : 'text-neutral-500'}`}
+                className={`mt-1 text-sm ${highlighted ? 'text-neutral-200' : 'text-neutral-500'}`}
               >
                 {plan.description}
               </p>
@@ -289,7 +288,7 @@ export function BillingClient({
                 </span>
                 {sub && (
                   <span
-                    className={`text-sm ${highlighted ? 'text-neutral-400' : 'text-neutral-500'}`}
+                    className={`text-sm ${highlighted ? 'text-neutral-300' : 'text-neutral-500'}`}
                   >
                     {sub}
                   </span>
@@ -297,7 +296,7 @@ export function BillingClient({
               </div>
               {period === 'annual' && plan.annualTotal && (
                 <p
-                  className={`mt-1 text-xs ${highlighted ? 'text-neutral-400' : 'text-neutral-500'}`}
+                  className={`mt-1 text-xs ${highlighted ? 'text-neutral-300' : 'text-neutral-500'}`}
                 >
                   Billed ${plan.annualTotal.toLocaleString()} annually
                 </p>
@@ -306,11 +305,11 @@ export function BillingClient({
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2 text-sm">
                     <span
-                      className={`text-lg leading-none ${highlighted ? 'text-[var(--mwm-gold)]' : 'text-[color:var(--mwm-navy)]'}`}
+                      className={`text-lg leading-none ${highlighted ? 'text-[color:var(--mwm-gold-light)]' : 'text-[color:var(--mwm-navy)]'}`}
                     >
                       ✓
                     </span>
-                    <span className={highlighted ? 'text-neutral-200' : 'text-neutral-600'}>
+                    <span className={highlighted ? 'text-neutral-100' : 'text-neutral-600'}>
                       {feature}
                     </span>
                   </li>
