@@ -46,10 +46,10 @@ export default async function LearnIndexPage() {
           written for families, financial advisors, and estate planning attorneys.
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-2">
-          <ButtonLink href="/education" variant="secondary">
+          <ButtonLink href="/education" variant="outline">
             Interactive modules →
           </ButtonLink>
-          <ButtonLink href="/assess" variant="secondary">
+          <ButtonLink href="/assess" variant="outline">
             Planning assessment →
           </ButtonLink>
         </div>

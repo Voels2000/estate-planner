@@ -34,7 +34,7 @@ export function TrialBanner({ expiryTimestamp }: { expiryTimestamp: number }) {
       </span>
       <ButtonLink
         href="/billing?plan=estate"
-        variant="secondary"
+        variant="outline"
         size="sm"
         className={`rounded-full border-transparent px-3 py-1 text-xs font-semibold shadow-sm ${
           isUrgent

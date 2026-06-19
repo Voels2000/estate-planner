@@ -26,10 +26,10 @@ export default async function EducationGuidePage() {
           <ButtonLink href="/education/decision-tree" className="education-primary-btn border-transparent">
             Take the Decision Tree
           </ButtonLink>
-          <ButtonLink href="/education/glossary" variant="secondary">
+          <ButtonLink href="/education/glossary" variant="outline">
             Browse Glossary
           </ButtonLink>
-          <ButtonLink href="/education/prep-sheet" variant="secondary">
+          <ButtonLink href="/education/prep-sheet" variant="outline">
             Advisor Prep Sheet
           </ButtonLink>
         </div>

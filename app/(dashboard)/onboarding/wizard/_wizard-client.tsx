@@ -497,7 +497,7 @@ export function OnboardingWizardClient({
                     <div className="absolute inset-x-0 top-1/2 border-t border-[var(--mwm-border)]" />
                   </div>
                   <Button
-                    variant="secondary"
+                    variant="outline"
                     className="w-full"
                     onClick={() => {
                       captureFunnelEvent({

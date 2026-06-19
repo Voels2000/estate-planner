@@ -36,7 +36,7 @@ export default function ModuleProgressToggle({ slug }: { slug: string }) {
       type="button"
       onClick={toggle}
       disabled={saving}
-      variant="secondary"
+      variant="outline"
       size="sm"
       className={
         done

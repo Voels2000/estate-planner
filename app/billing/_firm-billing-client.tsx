@@ -210,12 +210,12 @@ export function FirmBillingClient({
                 type="button"
                 onClick={() => void handleManageBilling()}
                 disabled={loadingPortal}
-                variant="dark"
+                variant="primary"
                 className="rounded-lg px-4 py-2.5 text-sm"
               >
                 {loadingPortal ? 'Loading…' : 'Manage firm billing'}
               </Button>
-              <ButtonLink href="/advisor/firm" variant="secondary" className="rounded-lg px-4 py-2.5 text-sm">
+              <ButtonLink href="/advisor/firm" variant="outline" className="rounded-lg px-4 py-2.5 text-sm">
                 Manage firm roster
               </ButtonLink>
             </>
@@ -256,7 +256,7 @@ export function FirmBillingClient({
               type="button"
               onClick={handleFirmCheckout}
               disabled={loadingSubscribe}
-              variant="secondary"
+              variant="outline"
               className="rounded-lg px-4 py-2.5 text-sm"
             >
               {loadingSubscribe ? 'Redirecting…' : 'Subscribe Now'}
