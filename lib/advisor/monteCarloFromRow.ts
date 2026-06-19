@@ -17,12 +17,22 @@ type AssumptionRow = {
 export function monteCarloAssumptionsFromRow(row: AssumptionRow | null): MonteCarloAssumptions {
   if (!row) return { ...MONTE_CARLO_SYSTEM_DEFAULTS }
   return {
-    returnMeanPct: row.return_mean_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.returnMeanPct,
-    volatilityPct: row.volatility_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.volatilityPct,
-    withdrawalRatePct: row.withdrawal_rate_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.withdrawalRatePct,
-    successThreshold: row.success_threshold ?? MONTE_CARLO_SYSTEM_DEFAULTS.successThreshold,
-    simulationCount: row.simulation_count ?? MONTE_CARLO_SYSTEM_DEFAULTS.simulationCount,
-    planningHorizonYr: row.planning_horizon_yr ?? MONTE_CARLO_SYSTEM_DEFAULTS.planningHorizonYr,
-    inflationRatePct: row.inflation_rate_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.inflationRatePct,
+    returnMeanPct: Number(row.return_mean_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.returnMeanPct),
+    volatilityPct: Number(row.volatility_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.volatilityPct),
+    withdrawalRatePct: Number(
+      row.withdrawal_rate_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.withdrawalRatePct,
+    ),
+    successThreshold: Number(
+      row.success_threshold ?? MONTE_CARLO_SYSTEM_DEFAULTS.successThreshold,
+    ),
+    simulationCount: Number(
+      row.simulation_count ?? MONTE_CARLO_SYSTEM_DEFAULTS.simulationCount,
+    ),
+    planningHorizonYr: Number(
+      row.planning_horizon_yr ?? MONTE_CARLO_SYSTEM_DEFAULTS.planningHorizonYr,
+    ),
+    inflationRatePct: Number(
+      row.inflation_rate_pct ?? MONTE_CARLO_SYSTEM_DEFAULTS.inflationRatePct,
+    ),
   }
 }
