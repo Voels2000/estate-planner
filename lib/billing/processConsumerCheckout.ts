@@ -89,6 +89,7 @@ export async function processConsumerCheckout(
     payment_method_types: ['card'],
     customer: stripeCustomerId,
     line_items: [{ price: input.priceId, quantity: 1 }],
+    billing_address_collection: 'required',
     success_url: successUrl,
     cancel_url: input.returnTo
       ? `${input.baseUrl}/billing?canceled=true&returnTo=${encodeURIComponent(input.returnTo)}`

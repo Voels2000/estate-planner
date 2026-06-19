@@ -11,6 +11,7 @@ import {
   cancelPendingDeletionOnReactivation,
   scheduleDeletionOnSubscriptionCancelled,
 } from '@/lib/compliance/scheduleDeletionOnCancel'
+import { rejectNonUsBillingCheckout } from '@/lib/billing/rejectNonUsBillingCheckout'
 
 type WebhookCaptureStage = 'signature' | 'handler' | 'processing'
 
@@ -145,6 +146,21 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
+
+        const rejectedNonUsBilling = await rejectNonUsBillingCheckout(
+          stripe,
+          session,
+          (err) => {
+            captureStripeWebhookFailure(
+              err instanceof Error ? err : new Error('non-US billing cancel failed'),
+              { stage: 'processing', event },
+            )
+          },
+        )
+        if (rejectedNonUsBilling) {
+          break
+        }
+
         const firmId = session.metadata?.firm_id
         if (firmId) {
           const subscriptionId = session.subscription as string | null
