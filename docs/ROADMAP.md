@@ -34,9 +34,24 @@
 
 ---
 
-### Post-launch — cron drip correctness `[~]` **pre-flip fix in flight (launch-critical)**
+### Post-launch — estate-data input validation `[ ]` **scoped (Sprint E 6f, 2026-06-19)**
 
-Was deferred post-launch; **drip is launch-day-critical** → `fix/cron-drip-correctness` PR. [DECISION_LOG § Post-launch cron drip](./DECISION_LOG.md).
+Orphan `lib/validations/*` **deleted** (PR #53) — drifted from live tables/routes; wiring would have rejected valid input. **This deletion does not close the validation gap.** Live paths still use presence-checks only on data feeding WA tax, Monte Carlo, and composition calcs.
+
+**Why post-launch:** Validation guards new writes (no migration risk); better sized after real user input variety is visible. Definite hardening work — not conditional on incidents. Full map: [DECISION_LOG § Sprint E 6f](./DECISION_LOG.md).
+
+| Entity | Write path | Validate against |
+|--------|-----------|------------------|
+| Assets | `/api/consumer/assets` | Flat columns (not `details` jsonb); `asset_types` + `ref_liquidity_types` + `ref_titling_types` |
+| Income | `buildIncomeRow` | `income_types` ref; `GROWABLE_INCOME_SOURCES`, `employment`, month/growth fields |
+| Expenses | `buildExpenseRow` | `expense_types` ref (incl. `living`); month/owner fields |
+| Household | `profile` + `growth-assumptions` | `validateProfileSavePayload` / `buildHouseholdRow`; filing `mfj`/`mfs`/`hoh`/`qw` |
+
+Enums must come from **ref tables**, not hardcoded lists. Optional pre-launch: non-blocking Sentry shape logging (separate PR) to measure gap before enforcement.
+
+### Post-launch — cron drip correctness `[x]` **shipped pre-flip (#55)**
+
+Was deferred post-launch; **drip is launch-day-critical** → fixed in `fix/cron-drip-correctness` (#55). [DECISION_LOG § Edge-systems Tier 1 cron drip](./DECISION_LOG.md).
 
 ---
 

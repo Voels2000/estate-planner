@@ -128,7 +128,10 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Removed deprecated export aliases: `LIVE_STRIPE_PRICE_ENV_VARS`, `WA_ESTATE_TAX_ESTIMATE_DISCLAIMER` (+ `waRegime` re-export)
 - [x] Removed deprecated `SectionHeader.right` prop (call sites use `action`)
 - [ ] **Sprint E continued:** Button variant rename (3a/3b), waitlist wrapper pair (4→5), unused-file triage (PR 6+); `mammoth`/`pdf-parse` pending roadmap sign-off
+- [x] **6f validation schemas** — deleted drifted orphans (`lib/validations/*`); wire-vs-delete resolved as delete + post-launch fresh validation ([DECISION_LOG § Sprint E 6f](./DECISION_LOG.md))
 - [ ] **Deferred:** non-blocking knip in CI — after Sprint E baseline clean
+- [ ] **Post-launch:** estate-data input validation — ref tables + flat-column shapes; atomic PR per route; enums from DB refs not hardcoded ([DECISION_LOG § Sprint E 6f](./DECISION_LOG.md))
+- [ ] **Optional pre-launch:** non-blocking Sentry shape logging on write paths (observability only) — separate PR if pursued
 
 ## Code audit Sprint C — safe performance (2026-06-12) — shipped
 
