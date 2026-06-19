@@ -337,7 +337,7 @@ export function BillingClient({
                 type="button"
                 onClick={() => void handleSubscribe(plan)}
                 disabled={loadingPriceId === plan.priceId || (isCurrentPlan && isActive)}
-                variant={highlighted ? 'primary' : 'dark'}
+                variant="primary"
                 className="mt-4 w-full rounded-lg py-2.5 text-sm font-medium"
               >
                 {isCurrentPlan && isActive
