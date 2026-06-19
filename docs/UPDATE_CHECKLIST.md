@@ -120,13 +120,43 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] E2E fixes: spouse grid selectors, attorney aref `waitForFunction`, health-check dashboard assertion
 - [x] PLAYWRIGHT_E2E · DECISION_LOG · MASTER_ARCHITECTURE · NEXT_SESSION synced
 
-## Sprint E batch 1 + knip tooling (2026-06-19) — shipped `ddd17a2`
+## Sprint E dead-code sweep (2026-06-19) — staging `3222746`
 
-- [x] **knip + bundle-analyzer** on staging — merge `ddd17a2` (PR #42); run `npm run knip` / `npm run knip:production` for dead-code sweeps (prefer over hand-grep alone); `npm run analyze` for bundle treemaps (`ANALYZE=true`)
-- [x] Removed deprecated export aliases: `LIVE_STRIPE_PRICE_ENV_VARS`, `WA_ESTATE_TAX_ESTIMATE_DISCLAIMER` (+ `waRegime` re-export)
-- [x] Removed deprecated `SectionHeader.right` prop (call sites use `action`)
-- [ ] **Sprint E continued:** Button variant rename (3a/3b), waitlist wrapper pair (4→5), unused-file triage (PR 6+); `mammoth`/`pdf-parse` pending roadmap sign-off
-- [ ] **Deferred:** non-blocking knip in CI — after Sprint E baseline clean
+**Tooling (shipped):** knip + bundle-analyzer — `ddd17a2` (PR #42), doc note `1007af3` (PR #43). Run `npm run knip` / `npm run knip:production`; `npm run analyze` for bundles.
+
+**Mechanical tier (shipped on staging):**
+
+| PR | Merge SHA | Work |
+|----|-----------|------|
+| #42 | `ddd17a2` | knip + bundle-analyzer; stripe/WA alias deletes; SectionHeader `right` |
+| #43 | `1007af3` | doc note (knip availability) |
+| #44 | `654fa50` | Button variant rename (3a) + legacy removal (3b) |
+| #45 | `cb2fbe9` | waitlist test migration off `shouldBypassWaitlistForSignup` |
+| #46 | `b613e39` | delete wrapper; un-export `hasBetaSignupAccessCookie` |
+| #47 | `3222746` | orphan email templates + `@react-email/render` (6a) |
+
+**In flight:** #48 orphan components (6b) · #49 `lib/routes.ts` (6c) · #50 MC assumptions spec + delete (6e) · #51 GRAT/Roth household alerts (6d, **copy gated on counsel**).
+
+**Deferred:** 6f validation schemas (architecture decision); knip in CI after baseline clean; `mammoth`/`pdf-parse` (roadmap sign-off).
+
+**knip unused files:** 12 at sweep start → **10** on `3222746`; projected **7** after #48+#49.
+
+**Closeout:** PRs #44–#47 merged without per-PR doc SHA notes; this section is the catch-up sync ([DECISION_LOG § Sprint E](./DECISION_LOG.md)).
+
+**Checklist:**
+
+- [x] knip + bundle-analyzer — `ddd17a2` (PR #42); `npm run knip` / `npm run knip:production`; `npm run analyze`
+- [x] Export aliases + SectionHeader `right` — `ddd17a2` (PR #42)
+- [x] Button variants 3a/3b — `654fa50` (PR #44)
+- [x] Waitlist test migration — `cb2fbe9` (PR #45)
+- [x] Waitlist wrapper removal — `b613e39` (PR #46)
+- [x] Orphan email templates — `3222746` (PR #47)
+- [ ] Orphan components — PR #48
+- [ ] `lib/routes.ts` — PR #49
+- [ ] MC assumptions spec + delete — PR #50
+- [ ] GRAT/Roth household alerts — PR #51 (**counsel copy review before consumer launch**)
+- [ ] 6f validation schemas — KEEP; architecture decision deferred
+- [ ] knip in CI — after Sprint E baseline clean
 
 ## Code audit Sprint C — safe performance (2026-06-12) — shipped
 

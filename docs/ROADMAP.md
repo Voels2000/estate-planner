@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-15 (pre-launch: B4 gate, launch tracker, deletion hardening)
+# Last updated: 2026-06-19 (Sprint E dead-code sweep)
 
 ---
 
@@ -18,6 +18,25 @@
 ---
 
 ## Current sprint
+
+### Sprint E — Dead-code sweep (2026-06-19) `[~]` **closing out**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| knip + bundle-analyzer tooling | `[x]` | MERGED #42 `ddd17a2` · doc #43 `1007af3` |
+| Mechanical tier (aliases, SectionHeader, Button, waitlist, emails) | `[x]` | MERGED #42–#47 · staging `3222746` |
+| Orphan components (6b) | `[ ]` | PENDING #48 |
+| `lib/routes.ts` delete (6c) | `[ ]` | PENDING #49 |
+| MC assumptions spec + delete (6e) | `[ ]` | PENDING #50 — fixes string-coercion bug |
+| GRAT/Roth household alerts (6d) | `[ ]` | PENDING #51 — copy → counsel before launch |
+| Validation schemas (6f) | `[-]` | KEEP — wire-Zod architecture decision deferred |
+| knip in CI | `[ ]` | After Sprint E baseline clean |
+| Bundle splitting (Sprint G) | `[ ]` | Treemap-driven; not started |
+| Query narrowing (Sprint H) | `[ ]` | Post-launch |
+
+**knip unused files:** 12 at start → **10** on `3222746`; projected **7** after #48+#49.
+
+---
 
 ### Pre-launch engineering — B4 gate, security IDOR, launch tracker `[x]` **shipped (2026-06-15)**
 
