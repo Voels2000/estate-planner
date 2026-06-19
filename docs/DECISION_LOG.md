@@ -6,9 +6,15 @@
 
 ## Sprint E — domain-logic parity before delete (2026-06-19)
 
-**Decision:** When knip flags unimported domain logic that has a “live counterpart,” require a **rule-by-rule parity diff** before deletion — “a live version exists” ≠ “complete replacement.” Unwired specs can document product gaps (silent non-firing).
+**Decision:** When knip flags unimported domain logic that has a “live counterpart,” require a **rule-by-rule parity diff** before deletion — “a live version exists” ≠ “complete replacement.” Unwired specs can document product gaps (silent non-firing). Treat knip “unused” as a question, not an answer.
 
-**Sprint E finding:** Sprint 70 `strategyAlertRules.ts` was never wired; Sprint 81 `evaluateEstateAlerts` shipped a different rule set. GRAT/Roth household alerts were **ported** into `lib/alerts/estateHouseholdAlerts.ts` (PR 6d). Roth trigger uses pre-tax balance > $500k only (no asserted “low-income year” without reliable income signal). Copy is fact/opportunity framing with professional redirect — **flagged for counsel review** alongside privacy-policy pass.
+**Sprint E findings (verify-before-delete paid off twice):**
+1. **MC assumptions (6e):** Orphan `mergeAssumptions` used `Number()`; live `monteCarloAssumptionsFromRow` did not — string DB values (e.g. `"7.5"`) passed through to MC math. Fixed live helper, spec’d, then deleted orphan.
+2. **Household alerts (6d):** Sprint 70 `strategyAlertRules.ts` was never wired; Sprint 81 `evaluateEstateAlerts` shipped a different rule set. GRAT/Roth **ported** into `lib/alerts/estateHouseholdAlerts.ts`. Roth fires on pre-tax balance > $500k only (no “low-income year” trigger without reliable income data).
+
+**Copy / compliance:** All **six** consumer household alerts (`estate_ilit_gap`, `estate_gifting_gap`, `estate_grat_opportunity`, `estate_roth_window`, `estate_large_no_trust`, `estate_no_base_case`) normalized to fact-not-advice voice (state fact → name structure → redirect to professional). **Counsel review required before consumer launch** — code may merge to staging; do not treat “tests green” as copy cleared. See [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) · [LAUNCH.md](./LAUNCH.md) Bucket B legal.
+
+**6f (validations):** Parked — separate architecture decision (wire Zod on estate-data write paths vs accept ad-hoc checks).
 
 ---
 

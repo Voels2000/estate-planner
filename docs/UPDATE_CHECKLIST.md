@@ -120,13 +120,31 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] E2E fixes: spouse grid selectors, attorney aref `waitForFunction`, health-check dashboard assertion
 - [x] PLAYWRIGHT_E2E · DECISION_LOG · MASTER_ARCHITECTURE · NEXT_SESSION synced
 
+## Sprint E dead-code sweep (2026-06-19)
+
+**Tooling:** knip + bundle-analyzer on staging — `ddd17a2` (PR #42). Run `npm run knip` / `npm run knip:production`; `npm run analyze` for bundles.
+
+**Mechanical tier (closed):**
+- [x] Deprecated export aliases + `SectionHeader.right` — `ddd17a2`
+- [x] Button variants 3a/3b — PR #44
+- [x] Waitlist wrapper pair 4→5 — PRs #45, #46
+
+**PR 6+ triage (knip unused files):**
+- [ ] **6a–6c** — orphan emails, components, `lib/routes.ts` — PRs #47–#49 (merge on green)
+- [ ] **6e** — MC assumptions spec + delete orphan — PR #50 (merge on green)
+- [ ] **6d** — GRAT/Roth household alerts — PR #51 (**merge to staging**; **counsel copy review before prod/flip** — see PRE_FLIP_CHECKLIST legal)
+- [ ] **6f** — `lib/validations/*` — **KEEP** pending architecture decision (wire Zod vs ad-hoc API checks); not a sweep delete
+- [ ] `mammoth` / `pdf-parse` — roadmap sign-off before remove
+
+**Sprint E retro (one line):** Parity/coercion checks found a latent MC string-coercion bug and two never-shipped planning alerts — both hidden behind knip “unused” labels.
+
+- [ ] **Deferred:** non-blocking knip in CI — after Sprint E baseline clean
+
 ## Sprint E batch 1 + knip tooling (2026-06-19) — shipped `ddd17a2`
 
 - [x] **knip + bundle-analyzer** on staging — merge `ddd17a2` (PR #42); run `npm run knip` / `npm run knip:production` for dead-code sweeps (prefer over hand-grep alone); `npm run analyze` for bundle treemaps (`ANALYZE=true`)
 - [x] Removed deprecated export aliases: `LIVE_STRIPE_PRICE_ENV_VARS`, `WA_ESTATE_TAX_ESTIMATE_DISCLAIMER` (+ `waRegime` re-export)
 - [x] Removed deprecated `SectionHeader.right` prop (call sites use `action`)
-- [ ] **Sprint E continued:** Button variant rename (3a/3b), waitlist wrapper pair (4→5), unused-file triage (PR 6+); `mammoth`/`pdf-parse` pending roadmap sign-off
-- [ ] **Deferred:** non-blocking knip in CI — after Sprint E baseline clean
 
 ## Code audit Sprint C — safe performance (2026-06-12) — shipped
 
