@@ -1,6 +1,24 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-19 (Sprint E dead-code sweep closeout; edge-systems Tier 1 sync)
+# Last updated: 2026-06-19 (US-only enforcement; Sprint E dead-code sweep closeout)
+
+---
+
+## US-only access policy (2026-06-19)
+
+**Decision:** Restrict the service to US residents (18+). Launch with existing ToS §3 representation; **defer dedicated residency attestation pending counsel.**
+
+| Layer | Status |
+|-------|--------|
+| ToS eligibility (18+/US resident, §3 v2026-06-02) | **Live** — represented + accepted at signup |
+| Dedicated residency attestation (checkbox + `us_residency_attested_at`) | **PENDING COUNSEL — not built.** Launching on embedded §3 representation per [Al] decision; add if counsel requests. Do not build until counsel confirms standard/wording. |
+| IP geo-gate (Layer 1) | **Implemented** — middleware page-gate + signup API; `/api` excluded by matcher (webhooks/crons untouched); null country → allow; `/not-available` with recourse |
+| Stripe US-billing validation (Layer 2) | **Implemented** — `billing_address_collection: required` on consumer/firm/attorney checkout; non-US billing rejected in `checkout.session.completed` (cancel subscription, do not provision) |
+| State-level restriction | **None found at launch** — country-level gate; revisit if a state-specific UPL/licensing issue surfaces |
+
+**Standard adopted:** country/residency representation (ToS §3) + IP perimeter + billing-country at checkout. "US person" / stronger verification not adopted pending counsel ruling.
+
+**Implementation:** `lib/geo/usOnlyAccess.ts`, `lib/billing/rejectNonUsBillingCheckout.ts`, `middleware.ts`, `app/api/auth/signup/route.ts`, `app/not-available/page.tsx`, checkout session creates, `app/api/stripe/webhook/route.ts`.
 
 ---
 
