@@ -122,15 +122,45 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] E2E fixes: spouse grid selectors, attorney aref `waitForFunction`, health-check dashboard assertion
 - [x] PLAYWRIGHT_E2E · DECISION_LOG · MASTER_ARCHITECTURE · NEXT_SESSION synced
 
-## Sprint E batch 1 + knip tooling (2026-06-19) — shipped `ddd17a2`
+## Sprint E dead-code sweep (2026-06-19) — staging closeout
 
-- [x] **knip + bundle-analyzer** on staging — merge `ddd17a2` (PR #42); run `npm run knip` / `npm run knip:production` for dead-code sweeps (prefer over hand-grep alone); `npm run analyze` for bundle treemaps (`ANALYZE=true`)
-- [x] Removed deprecated export aliases: `LIVE_STRIPE_PRICE_ENV_VARS`, `WA_ESTATE_TAX_ESTIMATE_DISCLAIMER` (+ `waRegime` re-export)
-- [x] Removed deprecated `SectionHeader.right` prop (call sites use `action`)
-- [ ] **Sprint E continued:** Button variant rename (3a/3b), waitlist wrapper pair (4→5), unused-file triage (PR 6+); `mammoth`/`pdf-parse` pending roadmap sign-off
-- [x] **6f validation schemas** — deleted drifted orphans (`lib/validations/*`); wire-vs-delete resolved as delete + post-launch fresh validation ([DECISION_LOG § Sprint E 6f](./DECISION_LOG.md))
-- [ ] **Deferred:** non-blocking knip in CI — after Sprint E baseline clean
-- [ ] **Post-launch:** estate-data input validation — ref tables + flat-column shapes; atomic PR per route; enums from DB refs not hardcoded ([DECISION_LOG § Sprint E 6f](./DECISION_LOG.md))
+**Tooling (shipped):** knip + bundle-analyzer — `ddd17a2` (PR #42), doc note `1007af3` (PR #43). Run `npm run knip` / `npm run knip:production`; `npm run analyze` for bundles.
+
+**Mechanical tier (shipped on staging):**
+
+| PR | Merge SHA | Work |
+|----|-----------|------|
+| #42 | `ddd17a2` | knip + bundle-analyzer; stripe/WA alias deletes; SectionHeader `right` |
+| #43 | `1007af3` | doc note (knip availability) |
+| #44 | `654fa50` | Button variant rename (3a) + legacy removal (3b) |
+| #45 | `cb2fbe9` | waitlist test migration off `shouldBypassWaitlistForSignup` |
+| #46 | `b613e39` | delete wrapper; un-export `hasBetaSignupAccessCookie` |
+| #47 | `3222746` | orphan email templates + `@react-email/render` (6a) |
+| #48 | merged | orphan components (6b) |
+| #49 | merged | `lib/routes.ts` delete (6c) |
+| #50 | merged | MC assumptions spec + delete (6e) |
+| #51 | merged | GRAT/Roth household alerts (6d, **copy gated on counsel**) |
+| #53 | merged | validation schemas delete (6f) |
+
+**Deferred:** knip in CI after baseline clean; `mammoth`/`pdf-parse` (roadmap sign-off).
+
+**Closeout:** PRs #44–#53 merged; this section is the catch-up sync ([DECISION_LOG § Sprint E](./DECISION_LOG.md)).
+
+**Checklist:**
+
+- [x] knip + bundle-analyzer — `ddd17a2` (PR #42); `npm run knip` / `npm run knip:production`; `npm run analyze`
+- [x] Export aliases + SectionHeader `right` — `ddd17a2` (PR #42)
+- [x] Button variants 3a/3b — `654fa50` (PR #44)
+- [x] Waitlist test migration — `cb2fbe9` (PR #45)
+- [x] Waitlist wrapper removal — `b613e39` (PR #46)
+- [x] Orphan email templates — `3222746` (PR #47)
+- [x] Orphan components — PR #48
+- [x] `lib/routes.ts` — PR #49
+- [x] MC assumptions spec + delete — PR #50
+- [x] GRAT/Roth household alerts — PR #51 (**counsel copy review before consumer launch**)
+- [x] 6f validation schemas — deleted (#53); post-launch fresh validation map logged
+- [ ] knip in CI — after Sprint E baseline clean
+- [ ] **Post-launch:** estate-data input validation — ref tables + flat-column shapes; atomic PR per route ([DECISION_LOG § Sprint E 6f](./DECISION_LOG.md))
 - [ ] **Optional pre-launch:** non-blocking Sentry shape logging on write paths (observability only) — separate PR if pursued
 
 ## Code audit Sprint C — safe performance (2026-06-12) — shipped

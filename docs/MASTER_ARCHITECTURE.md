@@ -697,6 +697,12 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 
 **Testing & credential placement (local / preview / CI / prod):** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · **Two-DB deploy matrix:** [DEPLOYMENT.md](./DEPLOYMENT.md) · **Release gates:** [LAUNCH.md § Release routine](./LAUNCH.md#bucket-d--post-go-live--ongoing).
 
+**Dead-code / bundle tooling (MERGED #42 `ddd17a2`):** [knip](https://knip.dev) config at repo root (`knip.ts`); `npm run knip` (full) and `npm run knip:production` (production-only survivors). `@next/bundle-analyzer` via `npm run analyze` (`ANALYZE=true`). Entry config covers app router, `middleware.ts`, `scripts/**`, `tools/**`, Supabase functions, Sentry boundaries, and Playwright unit specs so live tooling is not flagged.
+
+**In flight (pending merge — do not state as live architecture until SHAs land):**
+- **#50:** `monteCarloAssumptionsFromRow` — add `Number()` coercion + unit spec; delete orphan `lib/calculations/monteCarloAssumptions.ts`.
+- **#51:** Consumer household-alert module (`lib/alerts/estateHouseholdAlerts.ts`); `evaluateAlerts` will load `businesses`, `business_interests`, and active `strategy_line_items` for GRAT/Roth opportunity alerts. Copy: fact-not-advice voice; **counsel review before consumer launch** ([LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)).
+
 ---
 
 ## Production environment variables (Sprint 15 go-live)

@@ -1,6 +1,22 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-19 (Sprint E 6f — delete drifted validation schemas; edge-systems Tier 1 sync)
+# Last updated: 2026-06-19 (Sprint E dead-code sweep closeout; edge-systems Tier 1 sync)
+
+---
+
+## Sprint E — dead-code sweep + knip tooling (2026-06-19)
+
+**Decision:** Add **knip** + **`@next/bundle-analyzer`** as standing repo capability (#42 `ddd17a2`, doc note #43 `1007af3`). Dead-code questions are answered by `npm run knip` / `npm run knip:production`, not manual grep alone. Config at repo root (`knip.ts`) declares app router, `scripts/**`, `tools/**`, Supabase functions, Sentry boundaries, and Playwright unit specs as entry points so live tooling is not flagged.
+
+**Principle — parity-before-delete:** When domain logic is reimplemented, require a **rule-by-rule parity diff** before deletion. “A live version exists” ≠ “complete replacement.” Unwired specs can document product gaps that silent non-firing hides.
+
+**Findings behind “unused” labels (verify-before-delete paid off):**
+1. **MC assumptions (#50, merged):** Orphan `mergeAssumptions` used `Number()`; live `monteCarloAssumptionsFromRow` did not — string DB values passed through. Fixed live helper + spec before delete.
+2. **Household alerts (#51, merged):** Sprint 70 `strategyAlertRules.ts` was never wired; Sprint 81 shipped a different rule set. GRAT/Roth port + six-alert fact-not-advice voice — **counsel review before consumer launch** (gate on [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)).
+
+**Mechanical tier merged (#42–#47):** export aliases, SectionHeader `right`, Button variants (`654fa50`), waitlist test migration (`cb2fbe9`) + wrapper removal (`b613e39` — delete `shouldBypassWaitlistForSignup`, un-export `hasBetaSignupAccessCookie`), orphan emails (`3222746`).
+
+**6f `lib/validations/*`:** Merged #53 — delete drifted schemas; post-launch validation map logged separately.
 
 ---
 

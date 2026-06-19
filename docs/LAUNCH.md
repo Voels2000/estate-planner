@@ -134,6 +134,7 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 - [x] Legal placeholders in product (verify: `lib/legal/company.ts` → `/terms`, `/privacy`)
 - [ ] Counsel sign-off ToS §10, §11 (attest: __ / __)
+- [ ] **Household-alert copy counsel review** *(pending #51 merge)* — six consumer `estate_*` alerts (`lib/alerts/estateHouseholdAlerts.ts` on #51): fact-not-advice voice (state user's data → name structure/observation → redirect to licensed professional). **Must be reviewed by counsel before consumer-facing production launch** (same pass as privacy policy / ToS). #51 may merge to staging; do not ship to launch uncleared. (attest: __ / __)
 - [x] WA LLC UBI / EIN / registered agent confirmed on SOS (attest: __ / __)
 - [x] Business bank account open (attest: __ / __)
 - [x] B&O / DOR account registered (attest: __ / __ — confirm w/ accountant OK pre-ruling)
@@ -317,6 +318,6 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | B1 prod smoke optional passes | Set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` (live `whsec_`) in `.env.test.prod`; enable Upstash on Vercel for 429 test |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
-**Still open — attest (Al):** B4 irreducible (BCC inbox, drip cron 2/3) + AT-FLIP fresh signup · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel + email aliases.
+**Still open — attest (Al):** B4 irreducible (BCC inbox, drip cron 2/3) + AT-FLIP fresh signup · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel + email aliases + **household-alert copy** (pending #51; gates consumer launch, not staging).
 
 **B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.
