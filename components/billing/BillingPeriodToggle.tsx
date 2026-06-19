@@ -34,7 +34,7 @@ export function BillingPeriodToggle({
         aria-label="Toggle annual billing"
         onClick={() => onChange(period === 'monthly' ? 'annual' : 'monthly')}
         className={`relative h-6 w-12 rounded-full transition-colors ${
-          period === 'annual' ? 'bg-[color:var(--mwm-navy)]' : 'bg-neutral-200'
+          period === 'annual' ? 'bg-[var(--mwm-navy)]' : 'bg-neutral-200'
         }`}
       >
         <span

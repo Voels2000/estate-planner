@@ -145,7 +145,7 @@ export function AttorneyBillingClient({
                 type="button"
                 onClick={() => void handleSubscribe(plan.planKey!)}
                 disabled={loading !== null}
-                className="mt-4 w-full rounded-md bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="mt-4 w-full rounded-md bg-[var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {loading === plan.planKey ? 'Redirecting…' : `Subscribe to ${plan.name}`}
               </button>
