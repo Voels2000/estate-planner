@@ -1135,6 +1135,66 @@ export async function seedE2eConsumerEnrichments(opts: {
   await seedE2eDripCapture()
 }
 
+/** Production Supabase project ref — superuser fixture must never seed here. */
+const PRODUCTION_SUPABASE_PROJECT_REF = 'fnzvlmrqwcqwiqueevux'
+
+function extractSupabaseProjectRef(url: string): string | null {
+  try {
+    const match = new URL(url).hostname.match(/^([a-z0-9]+)\.supabase\.co$/i)
+    return match?.[1] ?? null
+  } catch {
+    return null
+  }
+}
+
+function isProductionSupabaseTarget(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? ''
+  return extractSupabaseProjectRef(url) === PRODUCTION_SUPABASE_PROJECT_REF
+}
+
+export async function ensureE2eSuperuser(): Promise<string | null> {
+  if (isProductionSupabaseTarget()) {
+    console.log('  superuser: skipped (production Supabase — staging-only fixture)')
+    return null
+  }
+
+  const admin = createAdminClient()
+  const su = E2E_IDENTITIES.superuser
+  const now = new Date().toISOString()
+
+  const userId = await ensureAuthUser({
+    email: su.email,
+    password: su.password,
+    fullName: su.fullName,
+    role: 'consumer',
+  })
+
+  await admin
+    .from('profiles')
+    .update({
+      full_name: su.fullName,
+      role: 'consumer',
+      email: su.email,
+      is_superuser: true,
+      is_admin: false,
+      consumer_tier: 1,
+      subscription_status: null,
+      firm_id: null,
+      firm_role: null,
+      firm_name: null,
+      terms_accepted_at: now,
+      terms_version: '2026-06-02',
+      updated_at: now,
+    })
+    .eq('id', userId)
+
+  await admin.from('households').delete().eq('owner_id', userId)
+  await admin.from('assets').delete().eq('owner_id', userId)
+
+  console.log(`  superuser: ${su.email} (is_superuser, no household)`)
+  return userId
+}
+
 /** Fail loudly if any @mywealthmaps.test account is in an invalid state. */
 export async function verifyE2eAccounts(): Promise<void> {
   const admin = createAdminClient()
@@ -1147,6 +1207,9 @@ export async function verifyE2eAccounts(): Promise<void> {
 
   const issues: string[] = []
   for (const account of accounts ?? []) {
+    if (account.email === E2E_IDENTITIES.superuser.email) {
+      continue
+    }
     if (account.role === 'attorney' && account.attorney_tier === null) {
       issues.push(`${account.email}: attorney_tier is null`)
     }

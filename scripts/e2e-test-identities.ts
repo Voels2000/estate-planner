@@ -72,6 +72,12 @@ export const E2E_IDENTITIES = {
     contactName: 'E2E Attorney Listing',
     firmName: 'MWM E2E Law Group',
   },
+  /** Staging-only — auth + is_superuser for /admin/preview; no household/estate data. */
+  superuser: {
+    email: 'e2e-superuser@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Superuser',
+  },
   advisorListing: {
     email: 'e2e-advisor-listing@mywealthmaps.test',
     contactName: 'E2E Advisor Listing',
@@ -135,6 +141,9 @@ export function buildEnvTestFileLines(opts: {
     '',
     `PLAYWRIGHT_ATTORNEY_EMAIL=${E2E_IDENTITIES.attorneyPortal.email}`,
     `PLAYWRIGHT_ATTORNEY_PASSWORD=${E2E_IDENTITIES.attorneyPortal.password}`,
+    '',
+    `PLAYWRIGHT_SUPERUSER_EMAIL=${E2E_IDENTITIES.superuser.email}`,
+    `PLAYWRIGHT_SUPERUSER_PASSWORD=${E2E_IDENTITIES.superuser.password}`,
     '',
     `PLAYWRIGHT_CONSUMER_TIER1_EMAIL=${E2E_IDENTITIES.consumerTier1.email}`,
     `PLAYWRIGHT_CONSUMER_TIER1_PASSWORD=${E2E_IDENTITIES.consumerTier1.password}`,
