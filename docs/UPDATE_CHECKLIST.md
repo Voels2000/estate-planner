@@ -139,7 +139,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 | #48 | merged | orphan components (6b) |
 | #49 | merged | `lib/routes.ts` delete (6c) |
 | #50 | merged | MC assumptions spec + delete (6e) |
-| #51 | merged | GRAT/Roth household alerts (6d, **copy gated on counsel**) |
+| #51 | merged | GRAT/Roth household alerts (6d, **counsel copy passed** 2026-06-19) |
 | #53 | merged | validation schemas delete (6f) |
 
 **Deferred:** knip in CI after baseline clean; `mammoth`/`pdf-parse` (roadmap sign-off).
@@ -157,7 +157,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Orphan components — PR #48
 - [x] `lib/routes.ts` — PR #49
 - [x] MC assumptions spec + delete — PR #50
-- [x] GRAT/Roth household alerts — PR #51 (**counsel copy review before consumer launch**)
+- [x] GRAT/Roth household alerts — PR #51 (counsel copy review **passed**, attest: Al / 2026-06-19)
 - [x] 6f validation schemas — deleted (#53); post-launch fresh validation map logged
 - [ ] knip in CI — after Sprint E baseline clean
 - [ ] **Post-launch:** estate-data input validation — ref tables + flat-column shapes; atomic PR per route ([DECISION_LOG § Sprint E 6f](./DECISION_LOG.md))
