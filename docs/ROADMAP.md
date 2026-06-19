@@ -34,6 +34,19 @@
 
 ---
 
+### Post-launch — estate-data input validation `[ ]` **scoped (Sprint E 6f, 2026-06-19)**
+
+Orphan `lib/validations/*` **deleted** — drifted from live tables/routes; wiring would have rejected valid input. Gap remains: presence-checks on data feeding tax math. Fresh Zod (or equivalent) per route, atomic PR each. **Do not resurrect deleted files** — start from live route shapes + ref tables ([DECISION_LOG § Sprint E 6f](./DECISION_LOG.md)).
+
+| Route | Source of truth |
+|-------|-----------------|
+| `/api/consumer/assets` | Flat columns + `asset_types` ref |
+| `/api/consumer/income` | `buildIncomeRow` + `income_types` ref |
+| `/api/consumer/expenses` | `buildExpenseRow` + `expense_types` ref |
+| `/api/consumer/profile` + `/api/consumer/growth-assumptions` | `ProfileSavePayload` / `buildHouseholdRow`; filing `mfj`/`mfs`/`hoh`/`qw` |
+
+---
+
 ### Sprint — Pricing surfaces alignment + firm seat billing `[x]` **shipped (2026-06-10)**
 
 | Item | Status | Entry point |

@@ -1,6 +1,35 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-18 (staging→main promotion runbook; hardening batch #28–#39 on staging)
+# Last updated: 2026-06-19 (Sprint E 6f — delete drifted validation schemas; post-launch validation scoped)
+
+---
+
+## Sprint E 6f — validation schemas: delete, do not wire (2026-06-19)
+
+**Decision:** Delete orphaned `lib/validations/{assets,income,expenses,household}.ts`. **Do not wire them in.** Drift check (2026-06-19) showed all four model a **superseded data shape**, not a stale enum — wiring would reject valid current input and add false confidence. Deleting is **not** accepting the validation gap; live write paths still use thin inline presence-checks.
+
+**Why delete (drift summary):**
+- **Assets:** Schema nests type-specific fields in `details` jsonb; live `/api/consumer/assets` writes **flat columns** (`institution`, `cost_basis`, `liquidity`, `titling`, `is_ilit`, `situs_*`, `estate_inclusion_status`) and never writes `details`. Type enum: 5 hardcoded values vs live `asset_types` ref (20+ canonical slugs).
+- **Income:** Schema enum (`salary`, `pension`, …) vs live `income_types` ref; missing `name`, `ss_person`, `start_month`, `end_month`, `annual_growth_rate`.
+- **Expenses:** Schema enum (`housing`, `food`, …) vs live `expense_types` ref; missing `name`, `owner`, month fields.
+- **Household:** Schema targets a form shape **with no live write route**. Household data goes through `PATCH /api/consumer/profile` → `validateProfileSavePayload` + `buildHouseholdRow` (`lib/profile/buildHouseholdPayload.ts`) and `PATCH /api/consumer/growth-assumptions`. Filing status in schema uses long form (`married_filing_jointly`); live uses `mfj`/`mfs`/`hoh`/`qw`.
+
+**Deps:** Keep **`zod`** — live in `app/api/rmd/route.ts` and `lib/api/schemas/householdAccess.ts`. Removed **`react-hook-form`** + **`@hookform/resolvers`** (zero source usage; re-grepped before uninstall).
+
+**Household note:** Deleting the orphan schema says nothing about whether the **live** household path validates well — that rigor lives in `validateProfileSavePayload` + `buildHouseholdRow`, which feeds the tax engine directly.
+
+**Post-launch — estate-data input validation (do not start from deleted files):**
+
+| Entity | Start from | Must match |
+|--------|------------|------------|
+| Assets | `app/api/consumer/assets/route.ts` insert/update shape | `asset_types` ref; flat columns (not `details` jsonb); `ref_liquidity_types` / `ref_titling_types` where applicable |
+| Income | `buildIncomeRow` in income route | `income_types` ref; `name`, `ss_person`, month fields, `annual_growth_rate` |
+| Expenses | `buildExpenseRow` in expenses route | `expense_types` ref; `name`, `owner`, month fields |
+| Household | `ProfileSavePayload` + `buildHouseholdRow`; growth-assumptions route | Filing `mfj`/`mfs`/`hoh`/`qw`; `growth_assumptions` jsonb; deduction/gross-estimate fields |
+
+Atomic PR per route; `safeParse` → 400 on failure; tests for legitimate + known-bad input. Behavior change on live APIs — not a sweep cleanup.
+
+**Sprint E retro judgment:** Drift check turned a tempting "adopt existing Zod work" into correct "don't resurrect stale code" — reusable parity-before-delete principle (same family as MC coercion + never-wired GRAT/Roth alerts).
 
 ---
 
