@@ -18,9 +18,9 @@
 
 **MERGED to staging (#42–#47):** knip + bundle-analyzer tooling (`ddd17a2`); mechanical tier — export aliases, SectionHeader `right`, Button variants (`654fa50`), waitlist wrapper pair (`cb2fbe9` / `b613e39`), orphan email templates (`3222746`).
 
-**PENDING (merge on green):** orphan components (#48), `lib/routes.ts` (#49), MC assumptions spec + delete (#50), GRAT/Roth household-alert port (#51).
+**PENDING (merge on green):** *(superseded — #48–#53 merged to staging 2026-06-19)*
 
-**#51:** implemented and tested; **consumer-facing copy GATED on counsel review** — may merge to staging; must not reach production launch uncleared. See [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax).
+**#51 (merged):** GRAT/Roth household-alert port on staging; **counsel copy review passed** (attest: Al / 2026-06-19). See [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax).
 
 **Deferred:** 6f validation schemas (wire-Zod-vs-ad-hoc architecture decision); knip in CI (after baseline clean); `mammoth`/`pdf-parse` (roadmap sign-off).
 

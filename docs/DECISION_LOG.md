@@ -12,7 +12,7 @@
 
 **Findings behind “unused” labels (verify-before-delete paid off):**
 1. **MC assumptions (#50, merged):** Orphan `mergeAssumptions` used `Number()`; live `monteCarloAssumptionsFromRow` did not — string DB values passed through. Fixed live helper + spec before delete.
-2. **Household alerts (#51, merged):** Sprint 70 `strategyAlertRules.ts` was never wired; Sprint 81 shipped a different rule set. GRAT/Roth port + six-alert fact-not-advice voice — **counsel review before consumer launch** (gate on [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)).
+2. **Household alerts (#51, merged):** Sprint 70 `strategyAlertRules.ts` was never wired; Sprint 81 shipped a different rule set. GRAT/Roth port + six-alert fact-not-advice voice — **counsel review complete — passed** (attest: Al / 2026-06-19; [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)).
 
 **Mechanical tier merged (#42–#47):** export aliases, SectionHeader `right`, Button variants (`654fa50`), waitlist test migration (`cb2fbe9`) + wrapper removal (`b613e39` — delete `shouldBypassWaitlistForSignup`, un-export `hasBetaSignupAccessCookie`), orphan emails (`3222746`).
 
@@ -65,7 +65,7 @@
 
 **Alerts (six, fact-not-advice voice):** `estate_ilit_gap`, `estate_gifting_gap`, `estate_grat_opportunity`, `estate_roth_window`, `estate_large_no_trust`, `estate_no_base_case` — state user's data → name structure/observation → redirect to licensed professional.
 
-**Compliance:** Counsel review required before consumer launch (gate on closeout PR #52 — [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)). Code may merge to staging; tests green ≠ copy cleared.
+**Compliance:** Counsel review **complete — passed** for all six alert strings (attest: Al / 2026-06-19; [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)). Consumer launch copy gate cleared.
 
 ---
 

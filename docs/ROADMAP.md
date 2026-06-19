@@ -28,7 +28,7 @@
 | Orphan components (6b) | `[ ]` | PENDING #48 |
 | `lib/routes.ts` delete (6c) | `[ ]` | PENDING #49 |
 | MC assumptions spec + delete (6e) | `[ ]` | PENDING #50 — fixes string-coercion bug |
-| GRAT/Roth household alerts (6d) | `[ ]` | PENDING #51 — copy → counsel before launch |
+| GRAT/Roth household alerts (6d) | `[x]` | MERGED #51 — counsel copy **passed** (2026-06-19) |
 | Validation schemas (6f) | `[-]` | KEEP — wire-Zod architecture decision deferred |
 | knip in CI | `[ ]` | After Sprint E baseline clean |
 | Bundle splitting (Sprint G) | `[ ]` | Treemap-driven; not started |
