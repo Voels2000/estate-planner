@@ -36,14 +36,18 @@
 
 ### Post-launch — estate-data input validation `[ ]` **scoped (Sprint E 6f, 2026-06-19)**
 
-Orphan `lib/validations/*` **deleted** — drifted from live tables/routes; wiring would have rejected valid input. Gap remains: presence-checks on data feeding tax math. Fresh Zod (or equivalent) per route, atomic PR each. **Do not resurrect deleted files** — start from live route shapes + ref tables ([DECISION_LOG § Sprint E 6f](./DECISION_LOG.md)).
+Orphan `lib/validations/*` **deleted** (PR #53) — drifted from live tables/routes; wiring would have rejected valid input. **This deletion does not close the validation gap.** Live paths still use presence-checks only on data feeding WA tax, Monte Carlo, and composition calcs.
 
-| Route | Source of truth |
-|-------|-----------------|
-| `/api/consumer/assets` | Flat columns + `asset_types` ref |
-| `/api/consumer/income` | `buildIncomeRow` + `income_types` ref |
-| `/api/consumer/expenses` | `buildExpenseRow` + `expense_types` ref |
-| `/api/consumer/profile` + `/api/consumer/growth-assumptions` | `ProfileSavePayload` / `buildHouseholdRow`; filing `mfj`/`mfs`/`hoh`/`qw` |
+**Why post-launch:** Validation guards new writes (no migration risk); better sized after real user input variety is visible. Definite hardening work — not conditional on incidents. Full map: [DECISION_LOG § Sprint E 6f](./DECISION_LOG.md).
+
+| Entity | Write path | Validate against |
+|--------|-----------|------------------|
+| Assets | `/api/consumer/assets` | Flat columns (not `details` jsonb); `asset_types` + `ref_liquidity_types` + `ref_titling_types` |
+| Income | `buildIncomeRow` | `income_types` ref; `GROWABLE_INCOME_SOURCES`, `employment`, month/growth fields |
+| Expenses | `buildExpenseRow` | `expense_types` ref (incl. `living`); month/owner fields |
+| Household | `profile` + `growth-assumptions` | `validateProfileSavePayload` / `buildHouseholdRow`; filing `mfj`/`mfs`/`hoh`/`qw` |
+
+Enums must come from **ref tables**, not hardcoded lists. Optional pre-launch: non-blocking Sentry shape logging (separate PR) to measure gap before enforcement.
 
 ---
 
