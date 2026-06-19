@@ -41,6 +41,18 @@
 
 ---
 
+## Sprint E 6d — GRAT/Roth household alerts port (2026-06-19)
+
+**Decision:** Port GRAT and Roth opportunity alerts from unwired Sprint 70 `strategyAlertRules.ts` into the live consumer engine. Sprint 81 `evaluateEstateAlerts` shipped a different rule set and never included GRAT/Roth — not a silent drop during a rewrite.
+
+**Implementation:** New `lib/alerts/estateHouseholdAlerts.ts` (`buildEstateHouseholdAlertRules()`). `evaluateAlerts` loads `businesses`, `business_interests`, and active `strategy_line_items`. Roth fires on pre-tax balance > $500k only (no “low-income year” trigger without reliable income data). Deleted `lib/strategy/strategyAlertRules.ts`.
+
+**Alerts (six, fact-not-advice voice):** `estate_ilit_gap`, `estate_gifting_gap`, `estate_grat_opportunity`, `estate_roth_window`, `estate_large_no_trust`, `estate_no_base_case` — state user's data → name structure/observation → redirect to licensed professional.
+
+**Compliance:** Counsel review required before consumer launch (gate on closeout PR #52 — [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)). Code may merge to staging; tests green ≠ copy cleared.
+
+---
+
 ## Edge-systems Tier 1 — webhook alerting remainder (2026-06-19)
 
 **Decision:** Extend `captureStripeWebhookSupabaseFailure` to all previously silent Supabase writes in `customer.subscription.deleted`, `customer.subscription.updated`, and `invoice.payment_failed` handlers — consumer profile updates plus firm `firms` / owner `profiles` paths that were fire-and-forget.
@@ -51,16 +63,14 @@
 
 ---
 
-## Post-launch — cron drip correctness (2026-06-19 · Tier 1 #5)
+## Edge-systems Tier 1 — cron drip correctness (2026-06-19 · Tier 1 #5)
 
-**Decision:** Defer fixes to `app/api/cron/notifications/route.ts` — **metric/delivery**, not customer billing state. Logged deliberately; bugs present on staging as of pre-flip.
+**Decision:** Fix launch-critical bugs in `app/api/cron/notifications/route.ts` before flip — step-3 ordering, §7 window, honest sent/error counters, §9 unsubscribe filter. PR `fix/cron-drip-correctness`.
 
-**Known issues:**
+**Issues fixed:**
 1. **False-success counting** — drip `fetch` calls use `.catch(() => {})` then `results.sent++`; failed sends count as sent. Fix: `errors++` on failure, don't increment `sent`.
 2. **Fragile 1-day window** (email-capture step 3) — fires only when `step1At >= eightDaysAgo && step1At < sevenDaysAgo`; missed cron day skips step 3 permanently. Fix: `step1At <= sevenDaysAgo` (advisor pattern) or "≥N days & not sent".
 3. **Step 3 without step 2** (advisor/attorney) — step 3 checks only `!step3At && step1At <= sevenDaysAgo`, no `step2At` requirement. Fix: require `step2At` before step 3.
-
-**Schedule:** Weeks 1–2 post-launch — **unless** email drip is launch-day-critical user acquisition (then fix before campaigns run). **Pre-flip fix:** PR `fix/cron-drip-correctness` (launch-critical) — step-3 ordering, §7 window, honest counters, §9 unsubscribe filter.
 
 ---
 

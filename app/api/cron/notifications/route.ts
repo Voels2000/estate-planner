@@ -2,6 +2,13 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { sendNotificationEmail } from '@/lib/emails/send-notification-email'
 import { recordCronHealth } from '@/lib/cron/recordCronHealth'
+import {
+  emailCaptureDripStep2Eligible,
+  emailCaptureDripStep3Eligible,
+  profileDripStep2Eligible,
+  profileDripStep3Eligible,
+  runDripFetch,
+} from '@/lib/cron/dripEligibility'
 import { requireCronAuth } from '@/lib/api/internalApiAuth'
 import { resend } from '@/lib/resend'
 import { NextResponse } from 'next/server'
@@ -324,8 +331,6 @@ export async function GET(request: Request) {
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
   const sevenDaysAgo = new Date(now)
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-  const eightDaysAgo = new Date(now)
-  eightDaysAgo.setDate(eightDaysAgo.getDate() - 8)
 
   const { data: dripCandidates } = await supabase
     .from('email_captures')
@@ -348,38 +353,46 @@ export async function GET(request: Request) {
 
     const eventSlug = full.source?.replace('event-assess-', '') ?? null
 
-    if (step1At && !step2At && step1At >= sevenDaysAgo && step1At < threeDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+    if (emailCaptureDripStep2Eligible({ step1At, step2At, step3At }, { threeDaysAgo, sevenDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+          },
+          body: JSON.stringify({
+            email: full.email,
+            source: full.source,
+            event_slug: eventSlug,
+            sequence_step: 2,
+          }),
         },
-        body: JSON.stringify({
-          email: full.email,
-          source: full.source,
-          event_slug: eventSlug,
-          sequence_step: 2,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `email-capture step 2 (${full.email})`,
+      )
     }
 
-    if (step1At && step2At && !step3At && step1At >= eightDaysAgo && step1At < sevenDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+    if (emailCaptureDripStep3Eligible({ step1At, step2At, step3At }, { sevenDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+          },
+          body: JSON.stringify({
+            email: full.email,
+            source: full.source,
+            event_slug: eventSlug,
+            sequence_step: 3,
+          }),
         },
-        body: JSON.stringify({
-          email: full.email,
-          source: full.source,
-          event_slug: eventSlug,
-          sequence_step: 3,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `email-capture step 3 (${full.email})`,
+      )
     }
   }
 
@@ -404,34 +417,42 @@ export async function GET(request: Request) {
 
     if (!step1At) continue
 
-    if (!step2At && step1At <= threeDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/advisor-drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+    if (profileDripStep2Eligible({ step1At, step2At, step3At }, { threeDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/advisor-drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+          },
+          body: JSON.stringify({
+            advisor_id: advisor.id,
+            sequence_step: 2,
+          }),
         },
-        body: JSON.stringify({
-          advisor_id: advisor.id,
-          sequence_step: 2,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `advisor step 2 (${advisor.id})`,
+      )
     }
 
-    if (!step3At && step1At <= sevenDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/advisor-drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+    if (profileDripStep3Eligible({ step1At, step2At, step3At }, { sevenDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/advisor-drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+          },
+          body: JSON.stringify({
+            advisor_id: advisor.id,
+            sequence_step: 3,
+          }),
         },
-        body: JSON.stringify({
-          advisor_id: advisor.id,
-          sequence_step: 3,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `advisor step 3 (${advisor.id})`,
+      )
     }
   }
 
@@ -442,6 +463,7 @@ export async function GET(request: Request) {
       'id, email, created_at, role, is_attorney, attorney_drip_step_1_sent_at, attorney_drip_step_2_sent_at, attorney_drip_step_3_sent_at',
     )
     .not('attorney_drip_step_1_sent_at', 'is', null)
+    .is('attorney_drip_unsubscribed_at', null)
 
   for (const attorney of attorneyDripCandidates ?? []) {
     const isAttorney = attorney.role === 'attorney' || attorney.is_attorney === true
@@ -459,34 +481,42 @@ export async function GET(request: Request) {
 
     if (!step1At) continue
 
-    if (!step2At && step1At <= threeDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/attorney-drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+    if (profileDripStep2Eligible({ step1At, step2At, step3At }, { threeDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/attorney-drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+          },
+          body: JSON.stringify({
+            attorney_id: attorney.id,
+            sequence_step: 2,
+          }),
         },
-        body: JSON.stringify({
-          attorney_id: attorney.id,
-          sequence_step: 2,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `attorney step 2 (${attorney.id})`,
+      )
     }
 
-    if (!step3At && step1At <= sevenDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/attorney-drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+    if (profileDripStep3Eligible({ step1At, step2At, step3At }, { sevenDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/attorney-drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+          },
+          body: JSON.stringify({
+            attorney_id: attorney.id,
+            sequence_step: 3,
+          }),
         },
-        body: JSON.stringify({
-          attorney_id: attorney.id,
-          sequence_step: 3,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `attorney step 3 (${attorney.id})`,
+      )
     }
   }
 

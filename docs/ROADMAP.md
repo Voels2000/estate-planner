@@ -49,9 +49,9 @@ Orphan `lib/validations/*` **deleted** (PR #53) — drifted from live tables/rou
 
 Enums must come from **ref tables**, not hardcoded lists. Optional pre-launch: non-blocking Sentry shape logging (separate PR) to measure gap before enforcement.
 
-### Post-launch — cron drip correctness `[ ]` **logged pre-flip (Tier 1 #5, 2026-06-19)**
+### Post-launch — cron drip correctness `[x]` **shipped pre-flip (#55)**
 
-`app/api/cron/notifications/route.ts` — three known bugs (false-success counting, fragile step-3 window, step-3-without-step-2). Metric/delivery only; **Weeks 1–2 post-launch** unless drip is launch-day outreach. **Pre-flip fix:** PR `fix/cron-drip-correctness`. [DECISION_LOG § Post-launch cron drip](./DECISION_LOG.md).
+Was deferred post-launch; **drip is launch-day-critical** → fixed in `fix/cron-drip-correctness` (#55). [DECISION_LOG § Edge-systems Tier 1 cron drip](./DECISION_LOG.md).
 
 ---
 

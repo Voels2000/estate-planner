@@ -4,6 +4,10 @@
 // Resolves alerts where the condition is no longer true.
 
 import { createClient } from '@/lib/supabase/client'
+import {
+  buildEstateHouseholdAlertRules,
+  type EstateHouseholdAlertContext,
+} from '@/lib/alerts/estateHouseholdAlerts'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -73,6 +77,9 @@ export async function evaluateAlerts(
     insuranceRes,
     realEstateRes,
     estateHealthRes,
+    businessesRes,
+    businessInterestsRes,
+    strategyLineItemsRes,
   ] = await Promise.all([
     supabase.from('households').select('*').eq('id', householdId).single(),
     supabase.from('assets').select('*').eq('owner_id', userId),
@@ -81,6 +88,16 @@ export async function evaluateAlerts(
     supabase.from('insurance_policies').select('death_benefit, is_ilit').eq('user_id', userId),
     supabase.from('real_estate').select('current_value').eq('owner_id', userId),
     supabase.from('estate_health_check').select('has_trust').eq('household_id', householdId).maybeSingle(),
+    supabase.from('businesses').select('estimated_value, ownership_pct').eq('owner_id', userId),
+    supabase
+      .from('business_interests')
+      .select('fmv_estimated, total_entity_value, ownership_pct')
+      .eq('owner_id', userId),
+    supabase
+      .from('strategy_line_items')
+      .select('strategy_source, is_active')
+      .eq('household_id', householdId)
+      .eq('is_active', true),
   ])
 
   let domicileRes = await supabase
@@ -104,6 +121,9 @@ export async function evaluateAlerts(
   const insurancePolicies = insuranceRes.data ?? []
   const realEstateRows = realEstateRes.data ?? []
   const estateHealthCheck = estateHealthRes.data
+  const businesses = businessesRes.data ?? []
+  const businessInterests = businessInterestsRes.data ?? []
+  const strategyLineItems = strategyLineItemsRes.data ?? []
   const domicile = domicileRes.data
 
   if (!household) {
@@ -172,6 +192,9 @@ export async function evaluateAlerts(
       insurancePolicies,
       realEstateRows,
       estateHealthCheck,
+      businesses,
+      businessInterests,
+      strategyLineItems,
     })
     result.triggered += estateResult.triggered
     result.resolved += estateResult.resolved
@@ -541,104 +564,15 @@ function fillTemplate(
   })
 }
 
-/** Sprint 81 — Consumer estate-planning alerts (string rule ids; no DB rows). Runs after DB alert_rules. */
-const LARGE_ESTATE_THRESHOLD_SINGLE = 10_000_000
-const LARGE_ESTATE_THRESHOLD_MFJ = 20_000_000
-const ILIT_GAP_DOLLARS = 250_000
-const LARGE_ESTATE_NO_TRUST_THRESHOLD = 1_000_000
-
-interface EstateAlertContext {
-  household: Record<string, unknown>
-  assets: Record<string, unknown>[]
-  insurancePolicies: { death_benefit?: number | null; is_ilit?: boolean | null }[]
-  realEstateRows: { current_value?: number | null }[]
-  estateHealthCheck: { has_trust?: boolean | null } | null
-}
-
 async function evaluateEstateAlerts(
   supabase: ReturnType<typeof createClient>,
   householdId: string,
-  ctx: EstateAlertContext,
+  ctx: EstateHouseholdAlertContext,
 ): Promise<{ triggered: number; resolved: number }> {
   let triggered = 0
   let resolved = 0
 
-  const grossEstate =
-    ctx.assets.reduce((s, a) => s + Number(a.value ?? 0), 0) +
-    ctx.realEstateRows.reduce((s, r) => s + Number(r.current_value ?? 0), 0)
-
-  const filingStatus = (ctx.household as { filing_status?: string }).filing_status ?? 'single'
-  const largeEstateThreshold = filingStatus === 'mfj' || filingStatus === 'married_joint'
-    ? LARGE_ESTATE_THRESHOLD_MFJ
-    : LARGE_ESTATE_THRESHOLD_SINGLE
-
-  const lifeInsuranceOutsideIlit = ctx.insurancePolicies
-    .filter((p) => !p.is_ilit)
-    .reduce((s, p) => s + Number(p.death_benefit ?? 0), 0)
-
-  const hasTrustOnFile = ctx.estateHealthCheck?.has_trust === true
-
-  const hasGiftingProgram = Boolean(
-    (ctx.household as { has_gifting_program?: boolean }).has_gifting_program,
-  )
-  const baseCaseId = (ctx.household as { base_case_scenario_id?: string | null }).base_case_scenario_id
-
-  const hasEnteredAssets =
-    ctx.assets.length > 0 || ctx.realEstateRows.length > 0
-
-  const rules: {
-    id: string
-    fire: boolean
-    alertType: 'info' | 'warning' | 'action_required'
-    severity: 'low' | 'medium' | 'high'
-    title: string
-    description: string
-    linkPath: string | null
-    context: Record<string, unknown>
-  }[] = [
-    {
-      id: 'estate_ilit_gap',
-      fire: lifeInsuranceOutsideIlit > ILIT_GAP_DOLLARS,
-      alertType: lifeInsuranceOutsideIlit > 1_000_000 ? 'action_required' : 'warning',
-      severity: lifeInsuranceOutsideIlit > 1_000_000 ? 'high' : 'medium',
-      title: 'Life insurance outside an ILIT',
-      description: `$${Math.round(lifeInsuranceOutsideIlit).toLocaleString()} in life insurance death benefit appears outside an irrevocable life insurance trust (ILIT). Consider whether an ILIT would reduce estate tax exposure.`,
-      linkPath: '/insurance',
-      context: { lifeInsuranceOutsideIlit },
-    },
-    {
-      id: 'estate_gifting_gap',
-      fire: grossEstate > largeEstateThreshold && !hasGiftingProgram,
-      alertType: 'warning',
-      severity: 'medium',
-      title: 'No annual gifting program',
-      description: `Your gross estate is about $${Math.round(grossEstate).toLocaleString()}, but no annual gifting program is on file. Systematic gifting can reduce future estate tax exposure.`,
-      linkPath: '/my-estate-strategy',
-      context: { grossEstate, largeEstateThreshold },
-    },
-    {
-      id: 'estate_large_no_trust',
-      fire: grossEstate >= LARGE_ESTATE_NO_TRUST_THRESHOLD && !hasTrustOnFile,
-      alertType: 'action_required',
-      severity: 'high',
-      title: 'Large estate without a trust',
-      description:
-        'Your estate is $1M or more and no revocable trust is on file. Consider whether a trust would help avoid probate and align with your distribution goals.',
-      linkPath: '/trust-will',
-      context: { grossEstate },
-    },
-    {
-      id: 'estate_no_base_case',
-      fire: hasEnteredAssets && !baseCaseId,
-      alertType: 'action_required',
-      severity: 'medium',
-      title: 'Generate your base-case estate projection',
-      description:
-        'You have entered assets, but no base-case projection has been generated yet. Run a base case to see estate tax exposure and common planning topics.',
-      linkPath: '/my-estate-strategy',
-      context: { hasEnteredAssets },
-    },
-  ]
+  const rules = buildEstateHouseholdAlertRules(ctx)
 
   for (const r of rules) {
     if (r.fire) {
