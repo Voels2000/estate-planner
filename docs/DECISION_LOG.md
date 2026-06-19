@@ -1,6 +1,29 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-18 (staging→main promotion runbook; hardening batch #28–#39 on staging)
+# Last updated: 2026-06-19 (edge-systems Tier 1 closeout — webhook alerting #4; cron drip #5 logged)
+
+---
+
+## Edge-systems Tier 1 — webhook alerting remainder (2026-06-19)
+
+**Decision:** Extend `captureStripeWebhookSupabaseFailure` to all previously silent Supabase writes in `customer.subscription.deleted`, `customer.subscription.updated`, and `invoice.payment_failed` handlers — consumer profile updates plus firm `firms` / owner `profiles` paths that were fire-and-forget.
+
+**Why pre-flip:** These paths return **200** on DB-write failure; Stripe does not retry and failures were invisible. Option A (#32) captured only where `console.error` already existed. Visibility before first real customers — not idempotency/retry (post-launch per [WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md](./WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md)).
+
+**Explicit non-goals:** No HTTP status change; no Stripe retry; no dedup table. Closes **alerting half** of Tier 1 #4.
+
+---
+
+## Post-launch — cron drip correctness (2026-06-19 · Tier 1 #5)
+
+**Decision:** Defer fixes to `app/api/cron/notifications/route.ts` — **metric/delivery**, not customer billing state. Logged deliberately; bugs present on staging as of pre-flip.
+
+**Known issues:**
+1. **False-success counting** — drip `fetch` calls use `.catch(() => {})` then `results.sent++`; failed sends count as sent. Fix: `errors++` on failure, don't increment `sent`.
+2. **Fragile 1-day window** (email-capture step 3) — fires only when `step1At >= eightDaysAgo && step1At < sevenDaysAgo`; missed cron day skips step 3 permanently. Fix: `step1At <= sevenDaysAgo` (advisor pattern) or "≥N days & not sent".
+3. **Step 3 without step 2** (advisor/attorney) — step 3 checks only `!step3At && step1At <= sevenDaysAgo`, no `step2At` requirement. Fix: require `step2At` before step 3.
+
+**Schedule:** Weeks 1–2 post-launch — **unless** email drip is launch-day-critical user acquisition (then fix before campaigns run).
 
 ---
 
