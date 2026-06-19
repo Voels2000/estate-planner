@@ -127,7 +127,7 @@ export function isValidBetaSignupAccessToken(token: string | null | undefined): 
   return provided === expected
 }
 
-export function hasBetaSignupAccessCookie(cookieValue: string | null | undefined): boolean {
+function hasBetaSignupAccessCookie(cookieValue: string | null | undefined): boolean {
   return cookieValue === '1'
 }
 
@@ -161,14 +161,6 @@ export function hasSignupPageAdmissionHint(
   if (searchParams.get('connectionToken')?.trim()) return true
   if (searchParams.get('access')?.trim()) return true
   return false
-}
-
-/** @deprecated Use hasSignupPageAdmissionHint — name implied a security bypass. */
-export function shouldBypassWaitlistForSignup(
-  searchParams: Pick<URLSearchParams, 'get'>,
-  options?: { betaAccessCookie?: string | null },
-): boolean {
-  return hasSignupPageAdmissionHint(searchParams, options)
 }
 
 type SignupHrefOptions = WaitlistModeOptions & {
