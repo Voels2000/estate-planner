@@ -97,7 +97,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **#31** — doc reconciliation (Sentry/CI status markers)
 - [x] **#32** — Stripe webhook failure → Sentry
 - [ ] **Webhook alerting remainder** — `captureStripeWebhookSupabaseFailure` on `subscription.deleted` / `subscription.updated` / `invoice.payment_failed` silent writes (pre-flip Tier 1 #4)
-- [ ] **Post-launch:** cron drip correctness — notifications cron false-success / step-3 window / step-3-without-step-2 ([DECISION_LOG § Post-launch cron drip](./DECISION_LOG.md))
+- [ ] **Post-launch:** cron drip correctness — **pre-flip PR** `fix/cron-drip-correctness` (launch-critical; was logged deferred)
 - [x] **#34** — `trackTierUpgrade` only after successful profile write
 - [x] **#35** — `requireRecomputeAuth` fail-closed (`RECOMPUTE_SECRET`); unit + E2E auth specs
 - [x] **#36** — `consumerCheckoutBlockReason` + `processConsumerCheckout`; API/UI parity; 38 unit tests

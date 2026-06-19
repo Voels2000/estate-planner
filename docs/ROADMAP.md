@@ -34,9 +34,9 @@
 
 ---
 
-### Post-launch — cron drip correctness `[ ]` **logged pre-flip (Tier 1 #5, 2026-06-19)**
+### Post-launch — cron drip correctness `[~]` **pre-flip fix in flight (launch-critical)**
 
-`app/api/cron/notifications/route.ts` — three known bugs (false-success counting, fragile step-3 window, step-3-without-step-2). Metric/delivery only; **Weeks 1–2 post-launch** unless drip is launch-day outreach. [DECISION_LOG § Post-launch cron drip](./DECISION_LOG.md).
+Was deferred post-launch; **drip is launch-day-critical** → `fix/cron-drip-correctness` PR. [DECISION_LOG § Post-launch cron drip](./DECISION_LOG.md).
 
 ---
 
