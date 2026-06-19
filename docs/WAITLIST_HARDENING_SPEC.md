@@ -53,7 +53,7 @@ Without `checkout.session.completed`, paid checkout does not activate subscripti
 
 **Principle:** The anon key must **never** create accounts. All account creation goes through a **server route** that validates admission **before** `admin.auth.admin.createUser()`.
 
-Removing bare `?invite=` truthiness in `shouldBypassWaitlistForSignup` is necessary hygiene but **not sufficient** while client `signUp()` remains.
+Removing bare `?invite=` truthiness in `hasSignupPageAdmissionHint` is necessary hygiene but **not sufficient** while client `signUp()` remains.
 
 ---
 
@@ -107,7 +107,7 @@ All validations use **service role** (`createAdminClient()`). Email on the reque
 | `advisor_connect` | Any | `advisor_clients.invite_token` = connect token, `status = 'consumer_requested'`, not expired, email match (same rules as `claim-consumer-invite`) |
 | `attorney_connection` | Any | `attorney_clients.id` = connectionToken UUID, row exists, listing email matches signup email, attorney has no existing profile for listing (`attorney_listings.profile_id` null) |
 
-**Remove** unvalidated middleware bypasses in `shouldBypassWaitlistForSignup`:
+**Remove** unvalidated middleware bypasses in `hasSignupPageAdmissionHint`:
 
 - Delete: `searchParams.get('invite')` truthiness
 - Delete: `invite_token` + `firm_id` presence without server validation
@@ -332,7 +332,7 @@ curl -sS -X POST https://<staging>/api/auth/signup \
 
 ## 11. Implementation order for Cursor
 
-1. **Do not** merge band-aid-only `shouldBypassWaitlistForSignup` trim without server route
+1. **Do not** merge band-aid-only `hasSignupPageAdmissionHint` trim without server route
 2. Add `lib/auth/signupAdmission.ts` + tests
 3. Add `lib/auth/completeSignup.ts` (extract side effects)
 4. Add `POST /api/auth/signup`

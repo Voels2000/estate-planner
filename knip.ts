@@ -7,10 +7,10 @@
  * Diff between runs surfaces test-only survivors. knip --production excludes test
  * entry files regardless of entry config.
  *
- * Note: exports in the same file as production imports (e.g. shouldBypassWaitlistForSignup
- * alongside hasSignupPageAdmissionHint in lib/waitlist-mode.ts) may not appear in the
- * production unused-export list — the module is reachable. For those, confirm via full
- * run only: absent from unused exports when tests are entries, present when they are not.
+ * Note: exports in the same file as production imports may not appear in the production
+ * unused-export list — the module is reachable. For deprecated wrappers, migrate callers
+ * first, confirm via full knip on staging, then delete (un-export live helpers; do not
+ * delete functions still called in-file).
  */
 /** @type {import('knip').KnipConfig} */
 const config = {
