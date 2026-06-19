@@ -134,7 +134,6 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 - [x] Legal placeholders in product (verify: `lib/legal/company.ts` → `/terms`, `/privacy`)
 - [ ] Counsel sign-off ToS §10, §11 (attest: __ / __)
-- [ ] **Consumer household-alert copy** — six `estate_*` alerts (`lib/alerts/estateHouseholdAlerts.ts`); fact-not-advice voice; Sprint E 6d. OK on staging; **counsel glance before flip** (attest: __ / __)
 - [x] WA LLC UBI / EIN / registered agent confirmed on SOS (attest: __ / __)
 - [x] Business bank account open (attest: __ / __)
 - [x] B&O / DOR account registered (attest: __ / __ — confirm w/ accountant OK pre-ruling)

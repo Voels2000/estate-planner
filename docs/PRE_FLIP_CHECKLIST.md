@@ -44,7 +44,6 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - ✅ **WA estate-tax disclaimers** — consumer page, advisor panel, PDF (date-stamped, no-portability, snapshot caveat).
 - ⬜ **Privacy policy published** — live and linked at signup.
 - 🔄 **"Not tax / legal / financial advice" disclaimers** beyond WA — counsel sign-off on placement.
-- ⬜ **Consumer household-alert copy (Sprint E 6d)** — all six `estate_*` alerts in `lib/alerts/estateHouseholdAlerts.ts` use fact-not-advice voice (GRAT/Roth ported; existing four normalized). **Counsel glance required before flip** — OK to merge #51 to staging; do not ship to production consumers until reviewed (same pass as privacy-policy / ToS counsel items).
 - ⬜ **`PUBLIC_SIGNUP_OPEN=false`** until intentional flip; **`REQUIRE_PRIVILEGED_MFA=true`** confirmed in Vercel prod.
 
 ---

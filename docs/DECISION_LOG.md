@@ -1,20 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-19 (Sprint E household alerts — GRAT/Roth port; dead-code parity principle)
+# Last updated: 2026-06-19 (Sprint E 6d — GRAT/Roth household alerts port)
 
 ---
 
-## Sprint E — domain-logic parity before delete (2026-06-19)
+## Sprint E 6d — GRAT/Roth household alerts port (2026-06-19)
 
-**Decision:** When knip flags unimported domain logic that has a “live counterpart,” require a **rule-by-rule parity diff** before deletion — “a live version exists” ≠ “complete replacement.” Unwired specs can document product gaps (silent non-firing). Treat knip “unused” as a question, not an answer.
+**Decision:** Port GRAT and Roth opportunity alerts from unwired Sprint 70 `strategyAlertRules.ts` into the live consumer engine. Sprint 81 `evaluateEstateAlerts` shipped a different rule set and never included GRAT/Roth — not a silent drop during a rewrite.
 
-**Sprint E findings (verify-before-delete paid off twice):**
-1. **MC assumptions (6e):** Orphan `mergeAssumptions` used `Number()`; live `monteCarloAssumptionsFromRow` did not — string DB values (e.g. `"7.5"`) passed through to MC math. Fixed live helper, spec’d, then deleted orphan.
-2. **Household alerts (6d):** Sprint 70 `strategyAlertRules.ts` was never wired; Sprint 81 `evaluateEstateAlerts` shipped a different rule set. GRAT/Roth **ported** into `lib/alerts/estateHouseholdAlerts.ts`. Roth fires on pre-tax balance > $500k only (no “low-income year” trigger without reliable income data).
+**Implementation:** New `lib/alerts/estateHouseholdAlerts.ts` (`buildEstateHouseholdAlertRules()`). `evaluateAlerts` loads `businesses`, `business_interests`, and active `strategy_line_items`. Roth fires on pre-tax balance > $500k only (no “low-income year” trigger without reliable income data). Deleted `lib/strategy/strategyAlertRules.ts`.
 
-**Copy / compliance:** All **six** consumer household alerts (`estate_ilit_gap`, `estate_gifting_gap`, `estate_grat_opportunity`, `estate_roth_window`, `estate_large_no_trust`, `estate_no_base_case`) normalized to fact-not-advice voice (state fact → name structure → redirect to professional). **Counsel review required before consumer launch** — code may merge to staging; do not treat “tests green” as copy cleared. See [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) · [LAUNCH.md](./LAUNCH.md) Bucket B legal.
+**Alerts (six, fact-not-advice voice):** `estate_ilit_gap`, `estate_gifting_gap`, `estate_grat_opportunity`, `estate_roth_window`, `estate_large_no_trust`, `estate_no_base_case` — state user's data → name structure/observation → redirect to licensed professional.
 
-**6f (validations):** Parked — separate architecture decision (wire Zod on estate-data write paths vs accept ad-hoc checks).
+**Compliance:** Counsel review required before consumer launch (gate on closeout PR #52 — [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)). Code may merge to staging; tests green ≠ copy cleared.
 
 ---
 
