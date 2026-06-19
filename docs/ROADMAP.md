@@ -53,6 +53,12 @@
 
 ---
 
+### Post-launch — cron drip correctness `[ ]` **logged pre-flip (Tier 1 #5, 2026-06-19)**
+
+`app/api/cron/notifications/route.ts` — three known bugs (false-success counting, fragile step-3 window, step-3-without-step-2). Metric/delivery only; **Weeks 1–2 post-launch** unless drip is launch-day outreach. [DECISION_LOG § Post-launch cron drip](./DECISION_LOG.md).
+
+---
+
 ### Sprint — Pricing surfaces alignment + firm seat billing `[x]` **shipped (2026-06-10)**
 
 | Item | Status | Entry point |
