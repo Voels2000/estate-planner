@@ -3,7 +3,12 @@
  * Run: npx playwright test tests/unit/waitlist-mode.spec.ts --project=import-unit
  */
 import { test, expect } from '@playwright/test'
-import { isWaitlistMode, getSignupHref, shouldBypassWaitlistForSignup, isValidBetaSignupAccessToken } from '../../lib/waitlist-mode'
+import {
+  isWaitlistMode,
+  getSignupHref,
+  hasSignupPageAdmissionHint,
+  isValidBetaSignupAccessToken,
+} from '../../lib/waitlist-mode'
 
 test.describe('isWaitlistMode', () => {
   const prodHost = { hostname: 'mywealthmaps.com' }
@@ -94,7 +99,7 @@ test.describe('isWaitlistMode', () => {
   })
 })
 
-test.describe('private beta signup access', () => {
+test.describe('hasSignupPageAdmissionHint', () => {
   const params = (access?: string, label?: string) => {
     const sp = new URLSearchParams()
     if (access) sp.set('access', access)
@@ -109,10 +114,10 @@ test.describe('private beta signup access', () => {
       expect(isValidBetaSignupAccessToken('secret-friends-token')).toBe(true)
       expect(isValidBetaSignupAccessToken('wrong')).toBe(false)
       expect(
-        shouldBypassWaitlistForSignup(params('secret-friends-token', 'friends-june')),
+        hasSignupPageAdmissionHint(params('secret-friends-token', 'friends-june')),
       ).toBe(true)
       // Wrong token still shows signup page (cosmetic hint); server rejects on POST /api/auth/signup
-      expect(shouldBypassWaitlistForSignup(params('wrong'))).toBe(true)
+      expect(hasSignupPageAdmissionHint(params('wrong'))).toBe(true)
     } finally {
       if (prev === undefined) delete process.env.BETA_SIGNUP_TOKEN
       else process.env.BETA_SIGNUP_TOKEN = prev
@@ -121,16 +126,16 @@ test.describe('private beta signup access', () => {
 
   test('beta access cookie bypasses waitlist without query param', () => {
     expect(
-      shouldBypassWaitlistForSignup(new URLSearchParams(), { betaAccessCookie: '1' }),
+      hasSignupPageAdmissionHint(new URLSearchParams(), { betaAccessCookie: '1' }),
     ).toBe(true)
     expect(
-      shouldBypassWaitlistForSignup(new URLSearchParams(), { betaAccessCookie: '0' }),
+      hasSignupPageAdmissionHint(new URLSearchParams(), { betaAccessCookie: '0' }),
     ).toBe(false)
   })
 
   test('invite query hints allow signup page render (not account creation)', () => {
-    expect(shouldBypassWaitlistForSignup(new URLSearchParams({ access: 'x' }))).toBe(true)
+    expect(hasSignupPageAdmissionHint(new URLSearchParams({ access: 'x' }))).toBe(true)
     const invite = new URLSearchParams({ invite: 'abc' })
-    expect(shouldBypassWaitlistForSignup(invite)).toBe(true)
+    expect(hasSignupPageAdmissionHint(invite)).toBe(true)
   })
 })
