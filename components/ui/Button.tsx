@@ -4,7 +4,6 @@
  * Button — My Wealth Maps shared button primitive
  *
  * Design tokens: --mwm-navy, --mwm-gold, --mwm-sage, --mwm-danger
- * Legacy variants secondary → outline, dark → primary (navy).
  */
 
 import Link from 'next/link'
@@ -16,20 +15,11 @@ import {
 } from 'react'
 import { cn } from '@/lib/utils'
 
-type MwmVariant = 'primary' | 'gold' | 'outline' | 'ghost' | 'sage' | 'danger' | 'link'
-/** @deprecated Use `outline` instead of `secondary`, `primary` instead of `dark`. */
-type LegacyVariant = 'secondary' | 'dark'
-export type ButtonVariant = MwmVariant | LegacyVariant
+export type ButtonVariant = 'primary' | 'gold' | 'outline' | 'ghost' | 'sage' | 'danger' | 'link'
 export type LinkVariant = ButtonVariant
 type Size = 'sm' | 'md' | 'lg'
 
-function normalizeVariant(variant: ButtonVariant): MwmVariant {
-  if (variant === 'secondary') return 'outline'
-  if (variant === 'dark') return 'primary'
-  return variant
-}
-
-const variantStyles: Record<MwmVariant, string> = {
+const variantStyles: Record<ButtonVariant, string> = {
   primary: [
     'bg-[var(--mwm-navy)] text-white',
     'hover:bg-[var(--mwm-navy-light)]',
@@ -93,11 +83,10 @@ const baseInteractiveClass =
   'cursor-pointer select-none disabled:cursor-not-allowed'
 
 function interactiveClasses(variant: ButtonVariant, size: Size, className?: string) {
-  const v = normalizeVariant(variant)
   return cn(
     baseInteractiveClass,
-    variantStyles[v],
-    v !== 'link' && sizeStyles[size],
+    variantStyles[variant],
+    variant !== 'link' && sizeStyles[size],
     className,
   )
 }
