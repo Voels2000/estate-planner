@@ -98,7 +98,7 @@ function PreviewPane({ variant }: { variant: PreviewVariant }) {
   return (
     <div className="relative min-h-full">
       <div className="pointer-events-none min-h-full select-none" aria-hidden={false}>
-        <Component {...(variant.fixture as object)} />
+        <Component {...variant.fixture} />
       </div>
       <div
         className="pointer-events-auto absolute inset-0 z-10 cursor-not-allowed"
