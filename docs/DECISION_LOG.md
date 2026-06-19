@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-19 (edge-systems Tier 1 — webhook alerting #4; cron drip #5 fixed pre-flip)
+# Last updated: 2026-06-19 (Sprint E 6d — GRAT/Roth household alerts port; edge-systems Tier 1 sync)
+
+---
+
+## Sprint E 6d — GRAT/Roth household alerts port (2026-06-19)
+
+**Decision:** Port GRAT and Roth opportunity alerts from unwired Sprint 70 `strategyAlertRules.ts` into the live consumer engine. Sprint 81 `evaluateEstateAlerts` shipped a different rule set and never included GRAT/Roth — not a silent drop during a rewrite.
+
+**Implementation:** New `lib/alerts/estateHouseholdAlerts.ts` (`buildEstateHouseholdAlertRules()`). `evaluateAlerts` loads `businesses`, `business_interests`, and active `strategy_line_items`. Roth fires on pre-tax balance > $500k only (no “low-income year” trigger without reliable income data). Deleted `lib/strategy/strategyAlertRules.ts`.
+
+**Alerts (six, fact-not-advice voice):** `estate_ilit_gap`, `estate_gifting_gap`, `estate_grat_opportunity`, `estate_roth_window`, `estate_large_no_trust`, `estate_no_base_case` — state user's data → name structure/observation → redirect to licensed professional.
+
+**Compliance:** Counsel review required before consumer launch (gate on closeout PR #52 — [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)). Code may merge to staging; tests green ≠ copy cleared.
 
 ---
 
