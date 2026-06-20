@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import SecurityClient from './_security-client'
 import PrivacyRightsClient from './_privacy-rights-client'
 import PlanVerificationClient from './_plan-verification-client'
+import DeleteAccountClient from './_delete-account-client'
 
 export default async function SecurityPage() {
   const supabase = await createClient()
@@ -23,6 +25,20 @@ export default async function SecurityPage() {
     .eq('owner_id', user.id)
     .maybeSingle()
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, subscription_status, subscription_period_end')
+    .eq('id', user.id)
+    .single()
+
+  const admin = createAdminClient()
+  const { data: pendingDeletion } = await admin
+    .from('deletion_schedule')
+    .select('scheduled_for')
+    .eq('user_id', user.id)
+    .eq('status', 'pending')
+    .maybeSingle()
+
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
       <h1 className="text-2xl font-semibold text-[color:var(--mwm-navy)] mb-1">Security</h1>
@@ -32,6 +48,12 @@ export default async function SecurityPage() {
       <SecurityClient isEnrolled={isEnrolled} factorId={totpFactor?.id} />
       {household?.id ? <PlanVerificationClient householdId={household.id} /> : null}
       <PrivacyRightsClient />
+      <DeleteAccountClient
+        role={profile?.role ?? null}
+        subscriptionStatus={profile?.subscription_status ?? null}
+        subscriptionPeriodEnd={profile?.subscription_period_end ?? null}
+        pendingDeletionAt={pendingDeletion?.scheduled_for ?? null}
+      />
     </div>
   )
 }

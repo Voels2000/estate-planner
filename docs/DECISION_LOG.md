@@ -3193,7 +3193,17 @@ Pass = at least one row with referral code matching a test signup.
 
 **Changes:** GPC honoring is declarative (no sale/share to opt out of; we detect signals for future use); portability/access/correction fulfilled manually within the 45-day SLA; `deletion_audit_log` named as a compliance-retention exception under Privacy §6; deletion clock runs from account closure (period end), not cancel click.
 
-**Implication:** `PRIVACY_POLICY_VERSION` bumped to `2026-06-21`. ToS §14 self-serve deletion promise unchanged — Batch B (B1) will implement.
+**Implication:** `PRIVACY_POLICY_VERSION` bumped to `2026-06-21`.
+
+---
+
+### June 2026 — Self-serve account deletion (B1)
+
+**Decision:** Ship ToS §14 "delete account from settings" via existing `deletion_schedule` + `process-deletions` cron (30-day pipeline after account closure).
+
+**Implementation:** `scheduleUserAccountDeletion()` blocks active subscriptions and upgraded roles; schedules at period end + 30 days when canceling, else now + 30 days. UI at Settings → Security.
+
+**Implication:** Users must cancel at `/billing` before scheduling if still on an active paid plan.
 
 ---
 

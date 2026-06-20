@@ -15,7 +15,7 @@ Ongoing compliance routines for My Wealth Maps (Privacy Policy commitments, Wash
 | Deletion audit trail | `deletion_audit_log` append-only | ✅ Live |
 | Admin deletion UI | `/admin` → Data & Compliance | ✅ Live |
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
-| Privacy rights requests | In-app form + 45-day SLA tracking | ✅ Live |
+| Self-serve account deletion | Settings → Security → `POST /api/consumer/delete-account` → `deletion_schedule` | ✅ Live (B1) |
 | Email infrastructure | `hello@`, `noreply@`, `privacy@` → Comcast (Resend verified) | ✅ Live |
 | Migrations | **102** in `supabase/migrations/` (excl. VERIFY script); through `20260630110000`; prod synced `20260605100000` + repair `11a867d` | ✅ Clean |
 
