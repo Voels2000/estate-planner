@@ -235,46 +235,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // ── 5. Subscription renewal reminder — 7 days before renewal ──────────
-  const renewalStart = new Date(now)
-  const renewalEnd = new Date(now)
-  renewalStart.setDate(renewalStart.getDate() + 7)
-  renewalEnd.setDate(renewalEnd.getDate() + 8)
-
-  const { data: renewalUsers } = await supabase
-    .from('profiles')
-    .select('id, email, subscription_renewal_date')
-    .gte('subscription_renewal_date', renewalStart.toISOString())
-    .lt('subscription_renewal_date', renewalEnd.toISOString())
-    .eq('subscription_status', 'active')
-
-  for (const user of renewalUsers ?? []) {
-    const to = user.email ?? authMap.get(user.id)?.email
-    if (!to) continue
-
-    const notifId = await callCreateNotification(supabase, {
-      user_id: user.id,
-      type: 'subscription_renewal',
-      title: 'Your subscription renews in 7 days',
-      body: 'Your WealthMaps subscription will automatically renew in 7 days. Visit billing to manage your plan.',
-      delivery: 'email',
-      cooldown: '30 days',
-    })
-    if (notifId) {
-      const r = await sendNotificationEmail({
-        to,
-        type: 'subscription_renewal',
-        title: 'Your subscription renews in 7 days',
-        body: 'Your WealthMaps subscription will automatically renew in 7 days. Visit billing to manage your plan.',
-      })
-      if (r.ok) results.sent++
-      else results.errors++
-    } else {
-      results.skipped++
-    }
-  }
-
-  // ── 6. Life event context — notify advisor of recent client events ────────
+  // ── 5. Life event context — notify advisor of recent client events ────────
   const oneDayAgo = new Date(now)
   oneDayAgo.setDate(oneDayAgo.getDate() - 1)
 
@@ -326,7 +287,7 @@ export async function GET(request: Request) {
     else results.skipped++
   }
 
-  // ── 7. Email drip — send step 2 (day 3) and step 3 (day 7) ─────────────
+  // ── 6. Email drip — send step 2 (day 3) and step 3 (day 7) ─────────────
   const threeDaysAgo = new Date(now)
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
   const sevenDaysAgo = new Date(now)
@@ -396,7 +357,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // ── 8. Advisor activation drip — step 2 (day 3) and step 3 (day 7) ───────
+  // ── 7. Advisor activation drip — step 2 (day 3) and step 3 (day 7) ───────
   const { data: advisorDripCandidates } = await supabase
     .from('profiles')
     .select('id, advisor_drip_step_1_sent_at, advisor_drip_step_2_sent_at, advisor_drip_step_3_sent_at')
@@ -456,7 +417,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // ── 9. Attorney activation drip — step 2 (day 3) and step 3 (day 7) ───────
+  // ── 8. Attorney activation drip — step 2 (day 3) and step 3 (day 7) ───────
   const { data: attorneyDripCandidates } = await supabase
     .from('profiles')
     .select(
@@ -520,7 +481,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // ── §10. Attorney weekly digest — Fridays only, 6-day cooldown ────────────
+  // ── 9. Attorney weekly digest — Fridays only, 6-day cooldown ────────────
   const isFriday = now.getUTCDay() === 5
   const sixDaysAgo = new Date(now)
   sixDaysAgo.setDate(sixDaysAgo.getDate() - 6)
@@ -563,7 +524,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // ── §11. State estate tax content staleness check — every Monday ──────────
+  // ── 10. State estate tax content staleness check — every Monday ──────────
   const isMonday = now.getUTCDay() === 1
   if (isMonday) {
     const complianceEmail = process.env.COMPLIANCE_EMAIL

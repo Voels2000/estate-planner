@@ -79,6 +79,13 @@ Run once on **production** (or production Stripe keys on preview) with this doc 
 5. [ ] `/billing` → **Manage subscription** → cancel in portal — no phone required
 6. [ ] Confirm webhook updates `subscription_status` / tier access in app
 
+### Renewal reminder email (7 days before charge)
+
+**Single source:** Stripe `invoice.upcoming` webhook → `sendConsumerRenewalReminder` in `app/api/stripe/webhook/route.ts`.
+
+- [ ] Stripe Dashboard — `invoice.upcoming` event enabled (~7 days before renewal)
+- [ ] Do **not** rely on `profiles.subscription_renewal_date` or the daily notifications cron — backup path removed (B7); column is unused legacy
+
 **Related smoke:** [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) — add billing row after C-4 ships.
 
 ---

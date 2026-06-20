@@ -3215,6 +3215,14 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Renewal reminder single source (B7)
+
+**Decision:** Remove dead backup renewal reminder from daily notifications cron (`profiles.subscription_renewal_date` was never populated). **Stripe `invoice.upcoming` webhook** is the sole consumer renewal-reminder path.
+
+**Implication:** `profiles.subscription_renewal_date` column retained (unused); documented in BILLING_DISCLOSURES_CHECKLIST.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]
