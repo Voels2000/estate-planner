@@ -179,9 +179,9 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 ### `privacy_requests` (Sprint C-7; multi-state 2026-06-20)
 
 - **Purpose:** Consumer privacy rights intake for all U.S. residents (deletion, access, correction, portability, opt_out); 45-day SLA; appeals workflow.
-- **Key columns:** `user_id` (nullable), `email`, `request_type`, `status` (`pending` \| `in_progress` \| `completed` \| `denied` \| `appealed`), `received_at`, `due_at` (DEFAULT `now() + 45 days`), `completed_at`, `notes`
+- **Key columns:** `user_id` (nullable), `email`, `request_type`, `status` (`pending` \| `in_progress` \| `completed` \| `denied` \| `appealed`), `received_at`, `due_at` (DEFAULT `now() + 45 days`), `appeal_due_at` (when `appealed`, +60 days), `completed_at`, `notes`
 - **RLS:** authenticated INSERT/SELECT own rows; service role full access
-- **Migrations:** `20260625170000_sprint_c7_privacy_requests.sql` (prod); `20260720120000_privacy_requests_appealed_status.sql` (pending prod)
+- **Migrations:** `20260625170000_sprint_c7_privacy_requests.sql` (prod); `20260720120000_privacy_requests_appealed_status.sql` (pending prod); `20260721120000_privacy_requests_appeal_due_at.sql` (pending prod)
 
 ### `deletion_audit_log` (Sprint C-6)
 
