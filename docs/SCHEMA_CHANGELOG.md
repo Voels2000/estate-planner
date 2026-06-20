@@ -1288,6 +1288,20 @@ All `@rolobe.resend.app` accounts deleted; soft-deleted scrambled accounts hard-
 
 ---
 
+## Multi-state privacy (2026-06-20) — engineering draft; counsel redline pending
+
+**Migration:** `20260720120000_privacy_requests_appealed_status.sql` (pending prod)
+
+- **`privacy_requests.status`:** adds `appealed`; index `idx_privacy_requests_due_at` includes appealed in open-request filter
+- **Policy:** `lib/legal/privacy-policy-sections.ts` v `2026-06-20` + `lib/legal/privacy-policy-addenda.ts`
+- **GPC:** `lib/privacy/globalPrivacyControl.ts` + middleware cookie
+- **Emails:** `lib/email/privacyRequestDecisionEmail.ts` (denial + appeal instructions)
+- **Docs:** `docs/legal/COUNSEL_PRIVACY_REVIEW.md`, `PRIVACY_COUNSEL_ENGINEERING_MATRIX.md`
+
+**Post-counsel engineering:** see [PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md) — conditional work by counsel answer (MHMD, GPC consumption, assess consent checkbox, self-service export, etc.).
+
+---
+
 ## Sprint C-7 (2026-05-25) — Compliance reminders + privacy requests ✅ LIVE
 
 **Migrations:** `20260625170000_sprint_c7_privacy_requests.sql` (applied prod)

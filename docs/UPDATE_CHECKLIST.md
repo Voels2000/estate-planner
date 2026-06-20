@@ -29,7 +29,8 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Human release smoke checklist |
 | [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) | Compliance language policy — education vs. advice framing |
 | [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) | Auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
-| [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | WCPA deletion SOP, C-6/C-7 automated checks, privacy request SOP |
+| [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | Privacy deletion SOP, C-6/C-7 automated checks, privacy request + appeals SOP |
+| [legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md) | Counsel Q1–Q10 → conditional engineering scope |
 
 ## New table migrations (mandatory — every PR with `supabase/migrations/*.sql`)
 
@@ -86,7 +87,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - End of UI sprint session → update `docs/NEXT_SESSION.md` (completed tasks, remaining work, discovered file paths)
 - Launch / go-live work (robots, Search Console, domain cutover, production email, **Vercel Production env vars**, **waitlist disable**) → update `docs/LAUNCH.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
 - **Staging → main promotion** (accumulated hardening batch) → [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md); sync `NEXT_SESSION.md`, `DECISION_LOG.md`, `ROADMAP.md`
-- Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
+- Compliance / data deletion (privacy rights, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`, `docs/legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
 ## Pre-launch hardening batch (PRs #28–#39) — on staging (2026-06-18)
@@ -825,7 +826,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 | Deletion audit trail | `deletion_audit_log` | ✅ Live |
 | Admin deletion UI | `/admin` → Data & Compliance | ✅ Live |
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
-| WCPA privacy requests | In-app form + 45-day SLA | ✅ Live |
+| Privacy rights requests | In-app form + 45-day SLA | ✅ Live |
 | Email infrastructure | `hello@`, `noreply@`, `privacy@` verified | ✅ Live |
 | Migrations | **75** in `supabase/migrations/`; through `20260625170000` | ✅ Clean |
 
@@ -865,6 +866,9 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 ## Sprint C-5 focus — closed ✅ 2026-06-02 (code)
 
 - [x] **Privacy Policy** — `/privacy` (`2e1dff3`, `695a860`)
+- [x] **Multi-state privacy rewrite (engineering draft)** — `lib/legal/privacy-policy-sections.ts` v `2026-06-20`, addenda, GPC, appeals, counsel packet — [PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md)
+- [ ] **Counsel redline + conditional engineering** — per matrix Q1–Q10 outcomes
+- [ ] **Migration `20260720120000`** — apply `appealed` status to prod
 - [x] **Terms of Service** — `/terms`; post-checkout accept at `/terms/accept`
 - [x] **Footer + SEO** — `LegalFooterLinks`; sitemap + robots
 - [ ] **LAUNCH_GATE.md** — placeholders + counsel (manual)

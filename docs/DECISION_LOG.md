@@ -3171,6 +3171,22 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Multi-state Privacy Policy (engineering draft)
+
+**Decision:** Adopt unified all-U.S.-residents privacy posture — highest common denominator (CCPA/Virginia-model rights for everyone) with thin state addenda. Fix incorrect "Washington WCPA" attribution for privacy rights (WCPA = RCW 19.86 unfair practices, not privacy law).
+
+**Reasoning:** HNW estate-planning audience; B2B2C across states; pre-launch below most thresholds but voluntary over-compliance reduces retrofit risk and builds trust. Washington-specific statutes retained where real: RCW 19.316 auto-renewal, RCW 19.255.010 breach notification.
+
+**Implemented:** Policy rewrite + addenda, GPC cookie in middleware, assess capture notice, appeals status + denial email, counsel packet. **Not launch-ready** until counsel redline.
+
+**Conditional engineering:** Counsel answers to Q1–Q10 may require additional work — see [PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md) (MHMD flows, consent checkbox, self-service export, GPC consumption, privacy re-acceptance, etc.).
+
+**Alternatives considered:** State-by-state policies (rejected — operational drag); lowest common denominator (rejected — trust + threshold crossing).
+
+**Implication:** Bump `PRIVACY_POLICY_VERSION` after counsel redline. Apply migration `20260720120000` before using `appealed` in prod. Do not publish MHMD-specific flows until Q1 resolved.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

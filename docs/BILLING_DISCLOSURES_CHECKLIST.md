@@ -107,7 +107,7 @@ Full legal pages live at `/privacy` and `/terms` (`lib/legal/privacy-policy-sect
 | Cancellation procedure (self-serve) | ✅ In `/terms` + `/billing` cancel | Stripe portal wired |
 | Refund policy | ✅ In `/terms` | Counsel review |
 | Washington RCW 19.316 compliance statement | ✅ In `/terms` + pricing | Counsel review |
-| Privacy Policy (WCPA) | ✅ `/privacy` | Replace TODO placeholders per [LAUNCH.md](./LAUNCH.md) |
+| Privacy Policy (multi-state) | ✅ `/privacy` | Counsel redline pending per [COUNSEL_PRIVACY_REVIEW.md](./legal/COUNSEL_PRIVACY_REVIEW.md) |
 | Counsel sign-off | ☐ Pending | ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration) |
 
 **Action:** Complete [LAUNCH.md](./LAUNCH.md) before go-live. Send ToS to counsel with §10/§11/§13 flagged; request **one consolidated redline**; apply redlines + TODO placeholders in **one final commit**. Sync `/terms/accept` dynamic sections in the same commit.

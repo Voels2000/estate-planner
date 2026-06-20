@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
+import { sendPrivacyRequestDecisionEmail } from '@/lib/email/privacyRequestDecisionEmail'
 
-const PRIVACY_STATUSES = new Set(['pending', 'in_progress', 'completed', 'denied'])
+const PRIVACY_STATUSES = new Set([
+  'pending',
+  'in_progress',
+  'completed',
+  'denied',
+  'appealed',
+])
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdminApi()
@@ -144,6 +151,12 @@ export async function PATCH(request: NextRequest) {
     update.completed_at = null
   }
 
+  const { data: existing } = await admin
+    .from('privacy_requests')
+    .select('status, email, request_type')
+    .eq('id', id)
+    .maybeSingle()
+
   const { data, error } = await admin
     .from('privacy_requests')
     .update(update)
@@ -153,6 +166,24 @@ export async function PATCH(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (
+    status === 'denied' &&
+    existing?.status !== 'denied' &&
+    existing?.email
+  ) {
+    try {
+      await sendPrivacyRequestDecisionEmail({
+        to: existing.email,
+        requestId: id,
+        requestType: existing.request_type,
+        denied: true,
+        reason: notes,
+      })
+    } catch (emailErr) {
+      console.error('privacy request denial email failed', emailErr)
+    }
   }
 
   return NextResponse.json({ data })

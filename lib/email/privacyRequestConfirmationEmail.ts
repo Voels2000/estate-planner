@@ -44,7 +44,7 @@ If you did not submit this request, contact us at privacy@mywealthmaps.com.
         </p>
         <p style="color:#374151;font-size:16px;line-height:1.6">
           <strong>Reference ID:</strong> <code style="font-family:monospace">${requestId}</code><br>
-          <strong>Response by:</strong> ${dueFormatted} (45 days per Washington law)
+          <strong>Response by:</strong> ${dueFormatted} (45 days per our Privacy Policy)
         </p>
         <p style="color:#6b7280;font-size:14px;line-height:1.6">
           If you did not submit this request, contact

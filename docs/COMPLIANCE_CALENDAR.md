@@ -1,6 +1,6 @@
 # Compliance calendar
 
-Ongoing compliance routines for My Wealth Maps (Washington WCPA, Privacy Policy commitments, and security hygiene).
+Ongoing compliance routines for My Wealth Maps (Privacy Policy commitments, Washington-specific statutes, and security hygiene).
 
 **Related:** [LAUNCH.md](./archive/LAUNCH_CHECKLIST.md) · [LAUNCH.md](./LAUNCH.md) · [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) · Sprint C-6/C-7 (`deleteUser`, compliance cron)
 
@@ -15,7 +15,7 @@ Ongoing compliance routines for My Wealth Maps (Washington WCPA, Privacy Policy 
 | Deletion audit trail | `deletion_audit_log` append-only | ✅ Live |
 | Admin deletion UI | `/admin` → Data & Compliance | ✅ Live |
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
-| WCPA privacy requests | In-app form + 45-day SLA tracking | ✅ Live |
+| Privacy rights requests | In-app form + 45-day SLA tracking | ✅ Live |
 | Email infrastructure | `hello@`, `noreply@`, `privacy@` → Comcast (Resend verified) | ✅ Live |
 | Migrations | **102** in `supabase/migrations/` (excl. VERIFY script); through `20260630110000`; prod synced `20260605100000` + repair `11a867d` | ✅ Clean |
 
@@ -25,7 +25,7 @@ Ongoing compliance routines for My Wealth Maps (Washington WCPA, Privacy Policy 
 
 ## Data deletion (Sprint C-6)
 
-Washington **WCPA** (RCW 19.255.010): respond to authenticated deletion requests within **45 days**. Privacy Policy commits to deletion within **30 days** after account close / subscription cancellation.
+Privacy Policy grants deletion and other privacy rights to all **U.S. residents**; respond to authenticated requests within **45 days**. Privacy Policy commits to deletion within **30 days** after account close / subscription cancellation. Washington **RCW 19.255.010** governs breach notification (see Privacy Policy §10); **RCW 19.316** governs auto-renewal disclosures (see ToS §5.2).
 
 ### Right-to-delete SOP (updated)
 
@@ -41,7 +41,7 @@ Washington **WCPA** (RCW 19.255.010): respond to authenticated deletion requests
 6. **Verify deletion**: `npm run verify:deletion -- --email user@example.com`
    Must show PASS before responding to the user
 7. Confirm deletion in Admin Portal → Data & Compliance → Audit Log
-8. Respond to requestor within 45 days (WCPA requirement)
+8. Respond to requestor within 45 days (Privacy Policy commitment)
    Response template: "Your request to delete personal data has been processed.
    All personal data associated with your account has been permanently deleted."
 
@@ -64,7 +64,7 @@ Handled automatically:
 |-------|-----------|-----------------|
 | Overdue deletions | Daily 8am UTC | Any pending deletion past due date |
 | Deletion failures | Daily 8am UTC | Any failure in last 7 days |
-| WCPA requests approaching deadline | Daily 8am UTC | Any request due within 7 days |
+| Privacy requests approaching deadline | Daily 8am UTC | Any request due within 7 days |
 | Ops tasks due/overdue | Daily 8am UTC | Any `ops_tasks` due within 7 days |
 | Cron health failures / stale | Daily 8am UTC | `cron_health` error or not run in 26h |
 | Post-deploy verify failure | Daily 9am UTC | Voels gate fails → immediate email |
@@ -80,7 +80,7 @@ Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` (`avoel
 2. Address the specific issue described
 3. Reply to yourself confirming resolution (creates email paper trail)
 
-## Privacy request SOP (WCPA)
+## Privacy request SOP (all U.S. residents)
 
 1. User submits via `/settings/security` → Privacy Rights OR emails privacy@mywealthmaps.com
 2. If email: Admin → Data & Compliance → Privacy Requests → **Add request**
@@ -91,8 +91,10 @@ Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` (`avoel
    - Correction: update via admin client or direct Supabase edit
    - Portability: JSON export of all user data
    - Opt-out: confirm no data sale (already true — document in response)
-5. Mark request completed in Admin Portal → Privacy Requests
-6. Send completion confirmation to user
+5. Mark request **completed** or **denied** in Admin Portal → Privacy Requests
+   - **Denied:** system emails appeal instructions automatically; user may reply to appeal
+   - **Appealed:** reopen review; respond to appeal within **60 days** per Privacy Policy §8
+6. Send completion confirmation to user when fulfilled
 
 ### Monthly compliance check (manual backup)
 
