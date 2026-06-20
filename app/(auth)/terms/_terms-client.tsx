@@ -22,7 +22,7 @@ export function TermsClient({ returnTo = '/dashboard' }: TermsClientProps) {
   const [sections, setSections]     = useState<Section[]>([])
   const [loading, setLoading]       = useState(true)
 
-  // ── Fetch live T&C content from app_config ─────────────────
+  // ── Fetch canonical ToS from GET /api/terms/content (code constants) ──
   useEffect(() => {
     async function fetchTerms() {
       try {

@@ -3223,6 +3223,14 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Terms single source of truth (B8)
+
+**Decision:** Remove admin `app_config` writes for ToS. Live pages and acceptance already read `lib/legal/terms-of-service-sections.ts` via `getCanonicalTerms()`. Admin Terms tab is read-only preview plus **Re-gate users** (`POST /api/admin/terms/regate`).
+
+**Implication:** ToS changes require editing code, bumping `TERMS_OF_SERVICE_VERSION`, deploying, then re-gating. Legacy `app_config.terms_version` / `terms_sections` keys are unused and hidden from admin settings.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]
