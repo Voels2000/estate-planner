@@ -1290,6 +1290,10 @@ All `@rolobe.resend.app` accounts deleted; soft-deleted scrambled accounts hard-
 
 ## Multi-state privacy (2026-06-20) — engineering draft; counsel redline pending
 
+**Migration:** `20260721120000_privacy_requests_appeal_due_at.sql` (pending prod)
+
+- **`privacy_requests.appeal_due_at`:** set when admin marks status `appealed` (+60 days); compliance cron alerts within 7 days
+
 **Migration:** `20260720120000_privacy_requests_appealed_status.sql` (pending prod)
 
 - **`privacy_requests.status`:** adds `appealed`; index `idx_privacy_requests_due_at` includes appealed in open-request filter

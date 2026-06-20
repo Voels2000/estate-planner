@@ -139,6 +139,7 @@ export async function PATCH(request: NextRequest) {
     status: string
     notes?: string
     completed_at?: string | null
+    appeal_due_at?: string | null
   } = { status }
 
   if (notes !== undefined) {
@@ -156,6 +157,14 @@ export async function PATCH(request: NextRequest) {
     .select('status, email, request_type')
     .eq('id', id)
     .maybeSingle()
+
+  if (status === 'appealed' && existing?.status !== 'appealed') {
+    const appealDue = new Date()
+    appealDue.setDate(appealDue.getDate() + 60)
+    update.appeal_due_at = appealDue.toISOString()
+  } else if (status !== 'appealed') {
+    update.appeal_due_at = null
+  }
 
   const { data, error } = await admin
     .from('privacy_requests')
