@@ -3207,6 +3207,14 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Eligibility attestation (B3)
+
+**Decision:** Launch 18+ / U.S.-resident attestation on the signup checkbox (embedded representation); record via existing `terms_accepted_at` + `terms_version` — no separate `age_attested_at` column pending counsel.
+
+**Implication:** ToS §3 and Privacy §12 now backed by affirmative signup attestation, not passive "by using the Service" alone.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

@@ -314,7 +314,8 @@ export function SignupForm({
                 className="mt-0.5 h-4 w-4 flex-shrink-0 cursor-pointer rounded border-neutral-300 accent-[color:var(--mwm-navy)]"
               />
               <span className="text-sm text-neutral-600 dark:text-zinc-400">
-                I agree to the{' '}
+                I am at least 18 years old, a United States resident, and I
+                agree to the{' '}
                 <a
                   href="/terms"
                   target="_blank"
@@ -339,7 +340,8 @@ export function SignupForm({
             </label>
             {termsError && (
               <p className="ml-7 text-xs text-red-600 dark:text-red-400">
-                You must accept the Terms of Service to create an account.
+                You must confirm you are 18+, a U.S. resident, and accept our
+                Terms and Privacy Policy.
               </p>
             )}
           </div>
