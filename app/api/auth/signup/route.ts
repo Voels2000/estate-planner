@@ -14,6 +14,7 @@ import {
 } from '@/lib/auth/signupAdmission'
 import { sanitizeSignupRedirect, validateSignupPassword } from '@/lib/auth/signupPolicy'
 import { isSignupExplicitlyOpen } from '@/lib/waitlist-mode'
+import { getRequestCountry, isBlockedNonUsCountry } from '@/lib/geo/usOnlyAccess'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -61,6 +62,14 @@ function isExistingUserError(message: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  const country = getRequestCountry(request)
+  if (isBlockedNonUsCountry(country)) {
+    return NextResponse.json(
+      { error: 'Service is available to US residents only.' },
+      { status: 403 },
+    )
+  }
+
   const ip = clientIp(request)
   const rate = await checkRateLimit(`signup:${ip}`, SIGNUP_RATE_LIMIT.max, SIGNUP_RATE_LIMIT.windowMs)
   if (!rate.allowed) {

@@ -697,6 +697,10 @@ If either is missing in production, recompute is skipped and a **one-time** `con
 
 **Testing & credential placement (local / preview / CI / prod):** [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · **Two-DB deploy matrix:** [DEPLOYMENT.md](./DEPLOYMENT.md) · **Release gates:** [LAUNCH.md § Release routine](./LAUNCH.md#bucket-d--post-go-live--ongoing).
 
+**Dead-code / bundle tooling (MERGED #42 `ddd17a2`):** [knip](https://knip.dev) config at repo root (`knip.ts`); `npm run knip` (full) and `npm run knip:production` (production-only survivors). `@next/bundle-analyzer` via `npm run analyze` (`ANALYZE=true`). Entry config covers app router, `middleware.ts`, `scripts/**`, `tools/**`, Supabase functions, Sentry boundaries, and Playwright unit specs so live tooling is not flagged.
+
+**Shipped (Sprint E):** `#50` — `monteCarloAssumptionsFromRow` coercion + spec; orphan `monteCarloAssumptions.ts` deleted. **`#51`** — consumer household-alert module (`lib/alerts/estateHouseholdAlerts.ts`); `evaluateAlerts` loads `businesses`, `business_interests`, and active `strategy_line_items` for GRAT/Roth opportunity alerts. Copy: fact-not-advice voice; **counsel review complete — passed** (attest: Al / 2026-06-19; [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)).
+
 ---
 
 ## Production environment variables (Sprint 15 go-live)
@@ -825,7 +829,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Checkout (`POST /api/stripe/checkout`) accepts `priceId` + `period` or `plan` query param; Estate subscriptions get `subscription_data.trial_period_days: 14`.
 - **Post-checkout success URL (2026-05-29):** consumers → `/dashboard?checkout=success` or `/profile?checkout=success`; advisors → `/advisor?checkout=success`. `/terms/accept` retained for legacy checkout flows.
 - **Terms acceptance (2026-05-27):** TERMS-1 signup checkbox sets `terms_accepted_at` + `terms_version`; email-confirm users synced in `/auth/callback` from signup metadata. Section F soft banner on dashboard for users without `terms_accepted_at` (dismissible, non-blocking).
-- **Single ToS source (2026-05-27):** Canonical Terms of Service = `lib/legal/terms-of-service-sections.ts` (`TERMS_OF_SERVICE_VERSION` `2026-06-02`). `/terms`, `/terms/accept`, `GET /api/terms/content`, and `recordTermsAcceptance` all use `getCanonicalTerms()`. Legacy Estate Planner copy removed from accept UI; `app_config` synced via migration `20260527120000_sync_terms_app_config_mwm.sql`.
+- **Single ToS source (2026-05-27, B8 2026-06-18):** Canonical Terms of Service = `lib/legal/terms-of-service-sections.ts` (`TERMS_OF_SERVICE_VERSION` `2026-06-02`). `/terms`, `/terms/accept`, `GET /api/terms/content`, and `recordTermsAcceptance` all use `getCanonicalTerms()`. Admin **Re-gate users** (`POST /api/admin/terms/regate`) clears stale `profiles.terms_accepted_at` only — no `app_config` write. Legacy `app_config.terms_*` keys are unused.
 - Webhook sets `consumer_tier` via `getTierFromPriceId()` on checkout complete and subscription updated; `subscription_status` reflects Stripe status (including `trialing`).
 - **Dashboard access:** `app/(dashboard)/layout.tsx` — consumers with `subscription_status = 'none'` get free Tier 1 access; Estate trial (`trialing`) only from Stripe checkout; banner uses `subscription_period_end`.
 - **Dashboard tier (2026-05-28):** `_dashboard-body.tsx` passes `getUserAccess().tier` to `DashboardClient` / `determinePlanStage` — not raw `profiles.consumer_tier` (fixes advisor-connected client Stage 1 split).
@@ -996,7 +1000,7 @@ Badges: Ops home (overdue + due-today tasks + stale crons); Directories (pending
 
 **Directories:** `DirectoriesTab` — pending counts + links to `/admin/advisor-directory`, `/admin/attorney-directory`.
 
-**Data & Compliance:** `DeletionCompliance.tsx` — scheduled deletions, privacy requests (45-day SLA), audit log, execute deletion; **Add request** for email-only WCPA intake (`POST /api/admin/privacy-requests`).
+**Data & Compliance:** `DeletionCompliance.tsx` — scheduled deletions, privacy requests (45-day SLA, appeals), audit log, execute deletion; **Add request** for email-only privacy intake (`POST /api/admin/privacy-requests`).
 
 **APIs:** `GET/PATCH/POST /api/admin/ops-tasks` · `GET/POST /api/admin/cron-health` · existing `GET/PATCH /api/admin/deletions` · `POST /api/admin/deletions/execute`.
 
@@ -1378,7 +1382,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Manual cron tests:** Use `https://www.mywealthmaps.com/...` — `https://mywealthmaps.com` (apex) 307-redirects to www and curl does not resend `Authorization` → false 401.
 
-**Implementation:** `app/api/cron/notifications/route.ts` — uses `createAdminClient()`; creates in-app + email notifications via `create_notification` RPC for: stale plan (30d), estate milestones ($1M / $5M / $13.61M), MFA reminder, profile completion nudge, subscription renewal (7d). **Email drips:** consumer assess captures (steps 2–3); advisor activation (steps 2–3 via `/api/email/advisor-drip`); **attorney activation (steps 2–3 via `/api/email/attorney-drip`)** after step 1 sent.
+**Implementation:** `app/api/cron/notifications/route.ts` — uses `createAdminClient()`; creates in-app + email notifications via `create_notification` RPC for: stale plan (30d), estate milestones ($1M / $5M / $13.61M), MFA reminder, profile completion nudge. **Consumer renewal reminders:** Stripe `invoice.upcoming` webhook only (`sendConsumerRenewalReminder` in `app/api/stripe/webhook/route.ts`) — not the daily notifications cron. **Email drips:** consumer assess captures (steps 2–3); advisor activation (steps 2–3 via `/api/email/advisor-drip`); **attorney activation (steps 2–3 via `/api/email/attorney-drip`)** after step 1 sent.
 
 **GitHub Actions:** `verify` on PR → `main`/`staging`; `e2e-smoke` + `rls-verify` on PR → `main`. Cron is Vercel-scheduled only.
 
@@ -1386,16 +1390,16 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Age triggers (Sprint 3 + Sprint 7):** `GET /api/cron/age-triggers` — daily 15:00 UTC (`vercel.json`); inserts `life_events` with `source='calendar_trigger'` when birth year hits ages 62, 65, 70, or 73 (deduped per user/event/year). **Sprint 7 slugs:** 62 → `social-security-timing`, 65 → `medicare-eligibility`, 70/73 → `rmd-start-age`.
 
-**Data deletion (Sprint C-6 — Washington WCPA):**
+**Data deletion (Sprint C-6):**
 
 - **Single path:** `lib/compliance/deleteUser.ts` — CLI (`scripts/gdpr-delete-user.ts`), admin execute API, daily cron, go-live **`npm run cleanup:purge`**, legacy `--rolobe` / `--legacy` cleanup script. Schema drift helpers: `lib/compliance/deleteUserSchema.ts` (`classifySchemaDeleteError`, `formatSchemaDeleteSkips`).
-- **Schema drift (2026-06-15):** Missing **table** → loud warn + skip (0 rows). Missing/wrong **column** → abort before Auth delete; audit `success=false` with `schema_skip:` prefix — prevents WCPA false-green when delete targeted wrong column (e.g. `asset_beneficiaries.household_id`). Future: CI invariant on delete table/column list vs migrations.
+- **Schema drift (2026-06-15):** Missing **table** → loud warn + skip (0 rows). Missing/wrong **column** → abort before Auth delete; audit `success=false` with `schema_skip:` prefix — prevents false-green deletion when delete targeted wrong column (e.g. `asset_beneficiaries.household_id`). Future: CI invariant on delete table/column list vs migrations.
 - **Lookup:** `scripts/check-auth-emails.ts` — confirm auth user gone after purge/deletion.
 - **Tables:** `deletion_schedule` (pending automated deletions); `deletion_audit_log` (append-only compliance record).
 - **FK scan before Auth delete:** `notifications`, `assessment_results`, `funnel_events`, `privacy_requests`, `deletion_schedule`, `ingestion_jobs`, `change_log`, `firms`, `firm_members`, `profiles`, `email_captures` (by email). `referral_clicks` via advisor_id / attorney_profile_id OR delete.
 - **Orphan Auth users:** no `profiles` row → FK sweep + Auth delete + audit log (no early return).
 - **Auth delete:** hard delete with soft-delete fallback; warn when soft delete used (`deleted_at` set — monthly ops check).
-- **Verification:** `verifyDeletion()` in-process; standalone `npm run verify:deletion -- --email …` — **PASS required** before WCPA response.
+- **Verification:** `verifyDeletion()` in-process; standalone `npm run verify:deletion -- --email …` — **PASS required** before privacy deletion response.
 - **Webhook:** `customer.subscription.deleted` → schedule deletion +30 days via `scheduleDeletionOnCancel.ts` — **skipped** if customer has another active/trialing subscription (plan change) or profile role is advisor/attorney/admin (`deletionGuards.ts`).
 - **Reactivation:** `customer.subscription.updated` with `status=active` → cancel pending `deletion_schedule` rows.
 - **Cron:** `app/api/cron/process-deletions/route.ts` — re-checks role and active subscription before execute; cancels schedule if user upgraded. **Retry (Admin-A):** exponential backoff (`retry_count`, `next_retry_at`, `last_error`); email after 3 failures.
@@ -1412,13 +1416,21 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Migration:** `20260625120000_sprint_c6_deletion_compliance.sql` — ✅ applied in production.
 - **Ops:** [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md).
 
-**Privacy requests (Sprint C-7 — WCPA):**
+**Privacy requests (Sprint C-7; multi-state expansion 2026-06-20):**
 
-- **Table:** `privacy_requests` — five request types; `due_at` DEFAULT (`now() + 45 days`); statuses `pending` / `in_progress` / `completed` / `denied`.
+- **Table:** `privacy_requests` — five request types; `due_at` DEFAULT (`now() + 45 days`); statuses `pending` / `in_progress` / `completed` / `denied` / `appealed`.
 - **Consumer:** `POST /api/consumer/privacy-request` from `/settings/security`; confirmation email with reference ID + due date.
-- **Admin:** Data & Compliance → Privacy Requests; `GET/PATCH /api/admin/deletions` (`view=privacy`).
+- **Admin:** Data & Compliance → Privacy Requests; `GET/PATCH /api/admin/deletions` (`view=privacy`); denial triggers appeal-instructions email (`lib/email/privacyRequestDecisionEmail.ts`).
 - **Reminders:** `compliance-reminders` cron — overdue deletions, deletion failures (7d), urgent privacy requests (7d), monthly summary (1st only); emails `COMPLIANCE_EMAIL` only when action needed.
-- **Migration:** `20260625170000_sprint_c7_privacy_requests.sql` — ✅ applied in production.
+- **Migrations:** `20260625170000_sprint_c7_privacy_requests.sql` — ✅ prod; `20260720120000` + `20260721120000` — ✅ staging 2026-06-18 · ⬜ **apply both to prod before promoting B6 (#67) to main** ([POLICY_ALIGNMENT_STACK.md](./POLICY_ALIGNMENT_STACK.md)).
+
+**Multi-state Privacy Policy (engineering draft 2026-06-20 — counsel redline pending):**
+
+- **Policy:** `lib/legal/privacy-policy-sections.ts` (`PRIVACY_POLICY_VERSION` `2026-06-20`) + `lib/legal/privacy-policy-addenda.ts` — all-U.S.-residents rights, appeals §8, Sentry subprocessor, GPC §11, state addenda; served at `/privacy`.
+- **GPC:** `lib/privacy/globalPrivacyControl.ts` — middleware sets `mwm_gpc_opt_out` on `Sec-GPC: 1`. `readGpcOptOut.ts` reads header + cookie; `POST /api/email-capture` skips marketing drip when opted out (sets `unsubscribed_at`).
+- **Assess capture:** `/event/[slug]/assess` — Privacy Policy link + marketing notice before email submit.
+- **Counsel packet:** `docs/legal/COUNSEL_PRIVACY_REVIEW.md`, `docs/legal/MWM_MultiState_Privacy_Terms_Draft.md`, `docs/legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md` — maps counsel Q1–Q10 to conditional engineering.
+- **Not launch-ready** until counsel redline; see engineering matrix for post-counsel build items (MHMD, GPC consumption, consent checkbox, self-service export, etc.).
 
 **Compliance infrastructure summary (C-6 + C-7 — live 2026-05-25):**
 
@@ -1429,7 +1441,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 | Deletion audit trail | `deletion_audit_log` append-only | ✅ Live |
 | Admin deletion UI | `/admin` → Data & Compliance | ✅ Live |
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
-| WCPA privacy requests | In-app form + 45-day SLA tracking | ✅ Live |
+| Privacy rights requests | In-app form + 45-day SLA + appeals | ✅ Live (policy draft pending counsel) |
 | Email senders | `hello@`, `noreply@`, `privacy@` (Resend → Comcast) | ✅ Live |
 | Migrations | **76** timestamped files in `supabase/migrations/`; through `20260626120000` | ✅ Clean |
 
@@ -1492,7 +1504,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Disk IO + recompute dedupe (2026-06-11):** `calculate_state_estate_tax` RPC rewrite + `idx_state_estate_tax_rules_state_tax_year` (`88c7427`); `resolve_household_alerts_batch` + `upsert_household_alerts_batch` + inline alert `UPDATE` (`7d22330` + follow-up); `generate_estate_recommendations(uuid, jsonb)` accepts precomputed composition — recompute drops redundant composition/state-tax RPCs (`20260709170000`–`20260709180100`). **Pre-launch DB perf (2026-06-12):** `loadDashboardBundle` + `projection_inputs_hash` (`523f28f`, `5ad5622`, `8776084`). **Redeploy Vercel** after TS changes. **Future:** optional 9-index batch from [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql) Query B if `assets` seq scans remain high; Postgres dashboard bundle RPC (Phase 2) — [NEXT_SESSION.md §5](./NEXT_SESSION.md#5-go-live-performance-audit-2026-06-11).
 
-**Sprint C-5 (code complete 2026-06-02):** Privacy Policy (`/privacy`), Terms of Service (`/terms`), `LegalFooterLinks`, sitemap/robots (`2e1dff3`, `695a860`). Post-checkout terms accept at `/terms/accept`. Legal placeholders + counsel sign-off — [LAUNCH_GATE.md](./LAUNCH_GATE.md).
+**Sprint C-5 (code complete 2026-06-02):** Privacy Policy (`/privacy`), Terms of Service (`/terms`), `LegalFooterLinks`, sitemap/robots (`2e1dff3`, `695a860`). Post-checkout terms accept at `/terms/accept`. Multi-state privacy rewrite (2026-06-20) — counsel redline pending; see [PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md).
 
 **Sprint 11 (closed):** Planning-app coherence — `PlanningSurfaceNav`, charitable empty state, `/complete` + `/projections` profile-only empty CTAs (`PLANNING_MISSING_PROJECTION_ACTIONS_TIER2`). **Updated 2026-05-29:** `/projections` uses `checkProjectionReadiness()` + inline prompts; TIER2 adds `/scenarios` link.
 Sprints 9–10 closed: life-event-on-connect, Digital Assets tier 2, `getAppUrl()`, minimal business

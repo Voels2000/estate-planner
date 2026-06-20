@@ -1,7 +1,7 @@
 import type { LegalSection } from '@/components/legal/LegalDocumentLayout'
 import { COMPANY_ADDRESS, COMPANY_LEGAL_NAME } from '@/lib/legal/company'
 
-/** ISO date — stored on profiles.terms_version and app_config.terms_version */
+/** ISO date — stored on profiles.terms_version when users accept terms */
 export const TERMS_OF_SERVICE_VERSION = '2026-06-02'
 
 export const TERMS_OF_SERVICE_LAST_UPDATED = 'June 2, 2026'
@@ -217,7 +217,7 @@ export const termsOfServiceSections: LegalSection[] = [
       },
       {
         kind: 'p',
-        text: 'Upon termination, your data will be deleted within 30 days per our Privacy Policy.',
+        text: 'Upon termination, your data will be deleted within 30 days of account closure (end of your current billing period), per our Privacy Policy.',
       },
     ],
   },

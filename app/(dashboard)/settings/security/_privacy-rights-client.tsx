@@ -52,9 +52,13 @@ export default function PrivacyRightsClient() {
     <div className="mt-8 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
       <h2 className="text-base font-medium text-neutral-900">Privacy rights</h2>
       <p className="mt-2 text-sm text-neutral-600">
-        Under Washington law, you may request deletion, access, correction, portability,
-        or opt-out of sale. We respond within 45 days. You will receive a confirmation
-        email with a reference ID.
+        As a United States resident, you may request deletion, access, correction,
+        portability, or opt-out of sale. We respond within 45 days. If we decline
+        a request, you may appeal as described in our{' '}
+        <a href="/privacy#appeals" className="underline underline-offset-2">
+          Privacy Policy
+        </a>
+        . You will receive a confirmation email with a reference ID.
       </p>
 
       {success && (

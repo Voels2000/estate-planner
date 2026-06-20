@@ -56,9 +56,6 @@ export const STRIPE_PRICE_ENV_VARS = [
   'STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY',
 ] as const
 
-/** @deprecated Use STRIPE_PRICE_ENV_VARS */
-export const LIVE_STRIPE_PRICE_ENV_VARS = STRIPE_PRICE_ENV_VARS
-
 function consumerPrice(name: ConsumerStripePriceEnvVar): EnvVarEntry {
   return entry(name, {
     scopes: ALL_SCOPES,

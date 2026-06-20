@@ -188,10 +188,11 @@ bash scripts/apply-migration.sh staging supabase/migrations/<timestamp>_name.sql
 | Step | Action |
 |------|--------|
 | 1 | Open **staging → `main`** promotion PR; list **pending production migrations** in the PR body |
-| 2 | Merge to `main` |
-| 3 | Apply the **same** migration on **production** (`fnzvlmrqwcqwiqueevux`) |
-| 4 | Verify on production |
-| 5 | Production deploy (or confirm Vercel auto-deploy completed after step 3) |
+| 2 | Apply pending migrations on **production** (`fnzvlmrqwcqwiqueevux`) |
+| 3 | **`npm run release:promotion`** — structural schema gate (fail closed) |
+| 4 | Merge to `main` |
+| 5 | Verify on production |
+| 6 | Production deploy (or confirm Vercel auto-deploy completed after step 3) |
 
 ```bash
 bash scripts/apply-migration.sh production supabase/migrations/<timestamp>_name.sql

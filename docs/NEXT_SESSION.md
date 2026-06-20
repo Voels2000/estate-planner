@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-18 (staging hardening batch #28–#39; promotion runbook)
+# Last updated: 2026-06-19 (Sprint E dead-code sweep closeout; staging at `3222746`)
 
 ---
 
@@ -12,15 +12,27 @@
 
 ---
 
-## Current focus (2026-06-18)
+## Current focus (2026-06-19)
 
-**Next ops:** Promote **`staging` → `main`** — pre-launch hardening batch (PRs #28–#39). Runbook: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md). Pre-check prod `RECOMPUTE_SECRET`, `CRON_SECRET`, `INTERNAL_API_KEY`; verify migration `20260718120000` on prod; post-deploy passive log smoke + checkout block paths only.
+**Sprint E dead-code sweep — closing out.** Staging at **`3222746`** (PR #47).
 
-Engineering pre-launch gates through **B4 automated walkthroughs**, **B5 machine slice**, **security IDOR fix**, and **launch tracker v4** are **shipped**. [LAUNCH.md](./LAUNCH.md) — **44 of 55** Bucket B checked (**11 open**). Remaining: real-card smoke, C-4 walkthrough, counsel/email aliases, B4 irreducible manual, B&O ruling (Bucket A).
+**MERGED to staging (#42–#47):** knip + bundle-analyzer tooling (`ddd17a2`); mechanical tier — export aliases, SectionHeader `right`, Button variants (`654fa50`), waitlist wrapper pair (`cb2fbe9` / `b613e39`), orphan email templates (`3222746`).
 
-**CI / deploy flow:** `feature/*` → PR → **`staging`** (`verify`: lint + tsc + unit) → PR → **`main`** (`verify` full + `e2e-smoke` + `rls-verify`). Vercel: **`estate-planner-staging`** (branch `staging`) · **`estate-planner`** Production (`main`). See [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
+**PENDING (merge on green):** *(superseded — #48–#53 merged to staging 2026-06-19)*
 
-**Staging batch (2026-06-18, PRs #28–#39 on `staging`):** Security fail-closed (#28) · Sentry (#29) · isolation CI (#30) · webhook alerting (#32, #34) · recompute auth (#35) · checkout API guards (#36) · attorney unsubscribe (#37) · notification hygiene (#38) · promotion runbook doc sync (#39).
+**#51 (merged):** GRAT/Roth household-alert port on staging; **counsel copy review passed** (attest: Al / 2026-06-19). See [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax).
+
+**Deferred:** 6f validation schemas (wire-Zod-vs-ad-hoc architecture decision); knip in CI (after baseline clean); `mammoth`/`pdf-parse` (roadmap sign-off).
+
+**knip unused files:** 12 at sweep start → **10** after #47 (`npm run knip` on `3222746`); projected **7** after #48+#49 (#48 −3 components, #49 −`lib/routes.ts`).
+
+**Next actions:** merge #48/#49/#50 on green; hold #51 consumer launch on counsel; decide 6f separately.
+
+**Still open (pre-flip):** [LAUNCH.md](./LAUNCH.md) Bucket B — real-card smoke, C-4 walkthrough, counsel/email aliases, B&O ruling (Bucket A). Promotion runbook for #28–#39 batch remains valid when promoting staging→main: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
+
+**CI / deploy flow:** `feature/*` → PR → **`staging`** (`verify`: lint + tsc + unit) → PR → **`main`** (`verify` full + `e2e-smoke` + `rls-verify`). Vercel: **`estate-planner-staging`** (branch `staging`) · **`estate-planner`** Production (`main`). See [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions).
+
+**Staging hardening batch (2026-06-18, PRs #28–#39):** Security fail-closed (#28) · Sentry (#29) · isolation CI (#30) · webhook alerting (#32, #34) · recompute auth (#35) · checkout API guards (#36) · attorney unsubscribe (#37) · notification hygiene (#38) · promotion runbook (#39).
 
 | Area | Status | Canonical doc |
 |------|--------|---------------|
@@ -35,6 +47,7 @@ Engineering pre-launch gates through **B4 automated walkthroughs**, **B5 machine
 | Environment / CI credential policy | ✅ Documented + hardened | [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · PR #27 |
 | Pre-launch security fixes (5 blockers) | ✅ Shipped | PR #28 · [DECISION_LOG § Pre-launch security](./DECISION_LOG.md) |
 | Staging hardening batch (#29–#39) | ✅ On staging | Recompute (#35) · checkout guards (#36) · attorney unsubscribe (#37) · promotion runbook (#39) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) |
+| Sprint E dead-code sweep (#42–#47 merged; #48–#51 pending) | `[~]` On staging | knip `3222746` · [DECISION_LOG § Sprint E](./DECISION_LOG.md) · [UPDATE_CHECKLIST § Sprint E](./UPDATE_CHECKLIST.md) |
 | Promote staging → main | ☐ Next | [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) |
 | Go-live blockers (real-card, B&O, C-4, counsel) | ☐ Blocker | [LAUNCH.md](./LAUNCH.md) |
 | Admin Ops Home + task engine | ✅ Shipped | `/admin` → Ops Home · `ops_tasks` · `cron_health` |

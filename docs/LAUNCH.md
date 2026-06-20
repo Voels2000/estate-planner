@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-18 (staging→main promotion runbook; hardening batch on staging)
+**Last updated:** 2026-06-19 (household-alert counsel pass attested; Sprint E closeout on staging)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -134,6 +134,7 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 - [x] Legal placeholders in product (verify: `lib/legal/company.ts` → `/terms`, `/privacy`)
 - [ ] Counsel sign-off ToS §10, §11 (attest: __ / __)
+- [x] **Household-alert copy counsel review** — six consumer `estate_*` alerts (`lib/alerts/estateHouseholdAlerts.ts`, merged #51): fact-not-advice voice (state user's data → name structure/observation → redirect to licensed professional). **Counsel review complete — passed.** (attest: Al / 2026-06-19)
 - [x] WA LLC UBI / EIN / registered agent confirmed on SOS (attest: __ / __)
 - [x] Business bank account open (attest: __ / __)
 - [x] B&O / DOR account registered (attest: __ / __ — confirm w/ accountant OK pre-ruling)
@@ -287,7 +288,7 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 
 ## Launch status scoreboard (2026-06-15)
 
-**Bucket B:** **44 of 55** checked (11 open).
+**Bucket B:** **45 of 55** checked (10 open).
 
 **Done since 2026-06-14:** B4 app-logic automated (PR #12) · stale-score UI · B5 live `verify-env?live=1` + webhook delivery + webhook-event verifier (PR #15) · `lifetime_exemption_summary` IDOR closed on staging + prod (PR #16).
 
@@ -306,7 +307,7 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 
 ## Prompt 2 sweep scoreboard (2026-06-09, superseded — see above)
 
-**Bucket B:** **44 of 55** checked (11 open).
+**Bucket B:** **45 of 55** checked (10 open).
 
 **Checked this sweep:** B1 Vercel redeploy · B1 release:preflight (full green) · B1 go-live-profile (17/17) · B1 security-isolation (10/10) · B1 cross-role · B1 post-deploy (Voels 7/7 + RLS 3/3) · B1 prod smoke (40/42, 2 advisory skips) · B2 TERMS-1 · B6 legal placeholders (prior) · B7 PROTECTED + purge guards · B8 robots/security/deletion/billing/prod harness (prior).
 
@@ -317,6 +318,6 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | B1 prod smoke optional passes | Set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` (live `whsec_`) in `.env.test.prod`; enable Upstash on Vercel for 429 test |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
-**Still open — attest (Al):** B4 irreducible (BCC inbox, drip cron 2/3) + AT-FLIP fresh signup · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel + email aliases.
+**Still open — attest (Al):** B4 irreducible (BCC inbox, drip cron 2/3) + AT-FLIP fresh signup · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel ToS §10/§11 + email aliases.
 
 **B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.

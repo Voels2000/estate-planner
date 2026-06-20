@@ -11,7 +11,7 @@
  * Options:
  *   --write-example        Write docs/.env.test.example (no secrets except placeholders)
  *   --skip-advisor-client  Skip linked advisor client household (faster)
- *   --only=consumer,advisor,attorney,tier1
+ *   --only=consumer,advisor,attorney,tier1,superuser
  */
 
 import { writeFileSync } from 'fs'
@@ -28,6 +28,7 @@ import {
   ensureAuthUser,
   ensureAdvisorFirmForE2e,
   ensureAdvisorEmptyForE2e,
+  ensureE2eSuperuser,
   initSupabaseEnv,
   seedE2eAdvisorClientHousehold,
   seedE2eConsumerHousehold,
@@ -161,12 +162,18 @@ async function main() {
     console.log('')
   }
 
+  if (run('superuser')) {
+    console.log('7. Staging superuser (preview gallery gate — auth + flag only)')
+    await ensureE2eSuperuser()
+    console.log('')
+  }
+
   if (!householdId && run('consumer')) {
     console.error('Household id missing — consumer seed failed')
     process.exit(1)
   }
 
-  console.log('7. Verify E2E account state')
+  console.log('8. Verify E2E account state')
   await verifyE2eAccounts()
   console.log('')
 

@@ -18,6 +18,3 @@ export const WA_ESTATE_TAX_ADVISOR_PANEL =
 /** Estate plan PDF footnote (WA households). */
 export const WA_ESTATE_TAX_PDF_FOOTNOTE =
   'WA estate tax estimates use law effective July 1, 2026 ($3.0M exemption, 20% top rate). "With bypass trust" assumes an executed and funded credit-shelter trust; At Death figures include projected CST asset growth between spouse deaths. Washington provides no spousal portability. Estimates only — not tax or legal advice.'
-
-/** @deprecated Use surface-specific constants above. */
-export const WA_ESTATE_TAX_ESTIMATE_DISCLAIMER = WA_ESTATE_TAX_CONSUMER_SUMMARY

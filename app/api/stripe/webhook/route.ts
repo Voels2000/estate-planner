@@ -11,6 +11,7 @@ import {
   cancelPendingDeletionOnReactivation,
   scheduleDeletionOnSubscriptionCancelled,
 } from '@/lib/compliance/scheduleDeletionOnCancel'
+import { rejectNonUsBillingCheckout } from '@/lib/billing/rejectNonUsBillingCheckout'
 
 type WebhookCaptureStage = 'signature' | 'handler' | 'processing'
 
@@ -145,6 +146,21 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
+
+        const rejectedNonUsBilling = await rejectNonUsBillingCheckout(
+          stripe,
+          session,
+          (err) => {
+            captureStripeWebhookFailure(
+              err instanceof Error ? err : new Error('non-US billing cancel failed'),
+              { stage: 'processing', event },
+            )
+          },
+        )
+        if (rejectedNonUsBilling) {
+          break
+        }
+
         const firmId = session.metadata?.firm_id
         if (firmId) {
           const subscriptionId = session.subscription as string | null
@@ -253,11 +269,22 @@ export async function POST(req: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription
         const firmId = subscription.metadata?.firm_id
         if (firmId) {
-          const { data: firmRows } = await supabase
+          const { data: firmRows, error: firmError } = await supabase
             .from('firms')
             .update({ subscription_status: 'canceled' })
             .eq('id', firmId)
             .select('owner_id')
+          if (firmError) {
+            console.error(
+              'customer.subscription.deleted — firm update failed:',
+              firmError.message,
+            )
+            captureStripeWebhookSupabaseFailure(
+              'firm subscription deleted',
+              firmError,
+              event,
+            )
+          }
           console.log('customer.subscription.deleted — firm subscription canceled')
           const ownerId = firmRows?.[0]?.owner_id as string | undefined
           if (ownerId) {
@@ -285,13 +312,24 @@ export async function POST(req: NextRequest) {
           ? getAttorneyTierFromPriceId(cancelledPriceId)
           : 0
 
-        await supabase
+        const { error: consumerDeleteError } = await supabase
           .from('profiles')
           .update({
             subscription_status: 'canceled',
             ...(attorneyTierCancelled > 0 ? { attorney_tier: 0 } : {}),
           })
           .eq('stripe_customer_id', customerId)
+        if (consumerDeleteError) {
+          console.error(
+            'customer.subscription.deleted — consumer profile update failed:',
+            consumerDeleteError.message,
+          )
+          captureStripeWebhookSupabaseFailure(
+            'consumer profile subscription deleted',
+            consumerDeleteError,
+            event,
+          )
+        }
         console.log('customer.subscription.deleted — consumer subscription canceled')
 
         // Schedule 30-day deletion only for genuine churn (not plan change / role upgrade).
@@ -326,7 +364,7 @@ export async function POST(req: NextRequest) {
           const firmTier = stripePriceId
             ? FIRM_PRICE_ID_TO_TIER[stripePriceId]
             : undefined
-          const { data: firmRows } = await supabase
+          const { data: firmRows, error: firmError } = await supabase
             .from('firms')
             .update({
               subscription_status: mappedStatus,
@@ -335,6 +373,17 @@ export async function POST(req: NextRequest) {
             })
             .eq('id', firmId)
             .select('owner_id')
+          if (firmError) {
+            console.error(
+              'customer.subscription.updated — firm update failed:',
+              firmError.message,
+            )
+            captureStripeWebhookSupabaseFailure(
+              'firm subscription updated',
+              firmError,
+              event,
+            )
+          }
           console.log('customer.subscription.updated — firm subscription updated:', mappedStatus)
           const ownerId = firmRows?.[0]?.owner_id as string | undefined
           if (ownerId) {
@@ -376,7 +425,7 @@ export async function POST(req: NextRequest) {
         const status = subscription.cancel_at_period_end
           ? 'canceling'
           : subscription.status
-        await supabase
+        const { error: consumerUpdateError } = await supabase
           .from('profiles')
           .update({
             subscription_status: status,
@@ -386,6 +435,17 @@ export async function POST(req: NextRequest) {
             ...(attorneyTier > 0 ? { attorney_tier: attorneyTier } : {}),
           })
           .eq('stripe_customer_id', customerId)
+        if (consumerUpdateError) {
+          console.error(
+            'customer.subscription.updated — consumer profile update failed:',
+            consumerUpdateError.message,
+          )
+          captureStripeWebhookSupabaseFailure(
+            'consumer profile subscription updated',
+            consumerUpdateError,
+            event,
+          )
+        }
         console.log('customer.subscription.updated — consumer subscription updated')
         break
       }
@@ -408,10 +468,21 @@ export async function POST(req: NextRequest) {
           }
         }
         if (firmId) {
-          await supabase
+          const { error: firmPastDueError } = await supabase
             .from('firms')
             .update({ subscription_status: 'past_due' })
             .eq('id', firmId)
+          if (firmPastDueError) {
+            console.error(
+              'invoice.payment_failed — firm update failed:',
+              firmPastDueError.message,
+            )
+            captureStripeWebhookSupabaseFailure(
+              'firm invoice payment failed',
+              firmPastDueError,
+              event,
+            )
+          }
 
           const { data: firm } = await supabase
             .from('firms')
@@ -419,10 +490,21 @@ export async function POST(req: NextRequest) {
             .eq('id', firmId)
             .single()
           if (firm?.owner_id) {
-            await supabase
+            const { error: ownerPastDueError } = await supabase
               .from('profiles')
               .update({ subscription_status: 'past_due' })
               .eq('id', firm.owner_id)
+            if (ownerPastDueError) {
+              console.error(
+                'invoice.payment_failed — firm owner profile update failed:',
+                ownerPastDueError.message,
+              )
+              captureStripeWebhookSupabaseFailure(
+                'firm owner profile invoice payment failed',
+                ownerPastDueError,
+                event,
+              )
+            }
           }
 
           console.log('invoice.payment_failed — firm marked past_due')
@@ -438,10 +520,21 @@ export async function POST(req: NextRequest) {
             .eq('stripe_customer_id', customerId)
             .maybeSingle()
           if (profile) {
-            await supabase
+            const { error: consumerPastDueError } = await supabase
               .from('profiles')
               .update({ subscription_status: 'past_due' })
               .eq('id', profile.id)
+            if (consumerPastDueError) {
+              console.error(
+                'invoice.payment_failed — consumer profile update failed:',
+                consumerPastDueError.message,
+              )
+              captureStripeWebhookSupabaseFailure(
+                'consumer profile invoice payment failed',
+                consumerPastDueError,
+                event,
+              )
+            }
             console.log('invoice.payment_failed — consumer profile marked past_due')
           }
         }

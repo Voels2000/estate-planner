@@ -19,6 +19,12 @@ import {
   profileRequiresPrivilegedMfa,
   userHasVerifiedTotpFactor,
 } from '@/lib/security/privilegedMfaPolicy'
+import {
+  getRequestCountry,
+  isBlockedNonUsCountry,
+  isGeoExemptPath,
+} from '@/lib/geo/usOnlyAccess'
+import { attachGpcOptOutCookie } from '@/lib/privacy/globalPrivacyControl'
 
 /** Crawlable SEO + static infra — never auth-gated or redirected. */
 const INFRA_BYPASS_PATHS = [
@@ -60,6 +66,7 @@ const PUBLIC_PATHS = [
   '/education',
   '/learn',
   '/intake',
+  '/not-available',
 ]
 
 function isInfraBypassPath(pathname: string): boolean {
@@ -97,11 +104,26 @@ function redirectPreservingCookies(
   for (const c of source.cookies.getAll()) {
     redirect.cookies.set(c.name, c.value)
   }
-  return redirect
+  return attachGpcOptOutCookie(request, redirect)
+}
+
+function finish(request: NextRequest, response: NextResponse): NextResponse {
+  return attachGpcOptOutCookie(request, response)
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
+
+  // US-only page gate — APIs excluded by matcher; null country allowed (local dev / unknown).
+  if (!isGeoExemptPath(pathname)) {
+    const country = getRequestCountry(request)
+    if (isBlockedNonUsCountry(country)) {
+      return finish(
+        request,
+        NextResponse.redirect(new URL('/not-available', request.url)),
+      )
+    }
+  }
 
   // Runtime waitlist gate — local dev hosts never redirect (env inlining in Edge is unreliable)
   const hostname = request.nextUrl.hostname
@@ -115,7 +137,10 @@ export async function middleware(request: NextRequest) {
       betaAccessCookie: request.cookies.get(BETA_SIGNUP_ACCESS_COOKIE)?.value,
     })
   ) {
-    return NextResponse.redirect(new URL('/waitlist', request.url))
+    return finish(
+      request,
+      NextResponse.redirect(new URL('/waitlist', request.url)),
+    )
   }
 
   // Infra + public paths — no auth or role checks
@@ -143,7 +168,7 @@ export async function middleware(request: NextRequest) {
         })
       }
     }
-    return response
+    return finish(request, response)
   }
 
   let supabaseResponse = nextWithPathname(request, pathname)
@@ -176,13 +201,13 @@ export async function middleware(request: NextRequest) {
     for (const c of supabaseResponse.cookies.getAll()) {
       redirect.cookies.set(c.name, c.value)
     }
-    return redirect
+    return finish(request, redirect)
   }
 
   // Allow unauthenticated users on the landing page
   // to pass through without hitting profile queries
   if (!user) {
-    return supabaseResponse
+    return finish(request, supabaseResponse)
   }
 
   // Unconfirmed email — no usable session on protected surfaces (sign out + confirm page)
@@ -194,7 +219,7 @@ export async function middleware(request: NextRequest) {
     for (const c of supabaseResponse.cookies.getAll()) {
       redirect.cookies.set(c.name, c.value)
     }
-    return redirect
+    return finish(request, redirect)
   }
 
   // MFA enforcement — if user has enrolled a factor, require AAL2 on every request
@@ -274,7 +299,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return supabaseResponse
+  return finish(request, supabaseResponse)
 }
 
 export const config = {

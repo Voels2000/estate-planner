@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
       { data: overdueDeletions },
       { data: recentFailures },
       { data: urgentRequests },
+      { data: urgentAppeals },
       { data: dueTasks },
       { data: cronJobs },
     ] = await Promise.all([
@@ -55,6 +56,12 @@ export async function GET(request: NextRequest) {
         .select('id, email, request_type, due_at, status')
         .in('status', ['pending', 'in_progress'])
         .lte('due_at', sevenDaysFromNow.toISOString()),
+      admin
+        .from('privacy_requests')
+        .select('id, email, request_type, appeal_due_at, status')
+        .eq('status', 'appealed')
+        .not('appeal_due_at', 'is', null)
+        .lte('appeal_due_at', sevenDaysFromNow.toISOString()),
       admin
         .from('ops_tasks')
         .select('slug, title, cadence, next_due_at, category, status')
@@ -136,11 +143,13 @@ export async function GET(request: NextRequest) {
     const overdue = overdueDeletions ?? []
     const failures = recentFailures ?? []
     const urgent = urgentRequests ?? []
+    const appeals = urgentAppeals ?? []
 
     const hasIssues =
       overdue.length > 0 ||
       failures.length > 0 ||
       urgent.length > 0 ||
+      appeals.length > 0 ||
       overdueTasks.length > 0 ||
       dueTodayTasks.length > 0 ||
       failingCrons.length > 0 ||
@@ -157,6 +166,7 @@ export async function GET(request: NextRequest) {
       overdueDeletions: overdue,
       recentFailures: failures,
       urgentRequests: urgent,
+      urgentAppeals: appeals,
       monthlySummary,
       overdueOpsTasks: overdueTasks,
       dueTodayOpsTasks: dueTodayTasks,
@@ -178,6 +188,7 @@ export async function GET(request: NextRequest) {
       overdueCount: overdue.length,
       failureCount: failures.length,
       urgentRequestCount: urgent.length,
+      urgentAppealCount: appeals.length,
       overdueOpsTasks: overdueTasks.length,
       dueTodayOpsTasks: dueTodayTasks.length,
       failingCrons: failingCrons.length,

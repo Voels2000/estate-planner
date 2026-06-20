@@ -43,6 +43,7 @@ type PrivacyRequest = {
   status: string
   received_at: string
   due_at: string
+  appeal_due_at?: string | null
   notes?: string | null
 }
 
@@ -232,8 +233,8 @@ export function DeletionCompliance() {
       <div>
         <h2 className="text-base font-semibold text-neutral-900">Data & Compliance</h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Washington WCPA — scheduled deletions, privacy requests (45-day SLA),
-          audit trail, and admin-triggered deletions. Dry-run before live delete.
+          Scheduled deletions, privacy requests (45-day SLA), appeals, audit trail,
+          and admin-triggered deletions. Dry-run before live delete.
         </p>
       </div>
 
@@ -520,8 +521,12 @@ export function DeletionCompliance() {
               </thead>
               <tbody className="divide-y divide-neutral-100">
                 {privacyRequests.map((row) => {
+                  const slaIso =
+                    row.status === 'appealed' && row.appeal_due_at
+                      ? row.appeal_due_at
+                      : row.due_at
                   const daysLeft = Math.ceil(
-                    (new Date(row.due_at).getTime() - Date.now()) /
+                    (new Date(slaIso).getTime() - Date.now()) /
                       (1000 * 60 * 60 * 24),
                   )
                   return (
@@ -549,13 +554,17 @@ export function DeletionCompliance() {
                           <option value="in_progress">in progress</option>
                           <option value="completed">completed</option>
                           <option value="denied">denied</option>
+                          <option value="appealed">appealed</option>
                         </select>
                       </td>
                       <td className="px-4 py-3 text-sm text-neutral-600">
                         {new Date(row.received_at).toLocaleDateString('en-US')}
                       </td>
                       <td className="px-4 py-3 text-sm text-neutral-600">
-                        {new Date(row.due_at).toLocaleDateString('en-US')}
+                        {new Date(slaIso).toLocaleDateString('en-US')}
+                        {row.status === 'appealed' ? (
+                          <span className="ml-1 text-xs text-neutral-400">(appeal)</span>
+                        ) : null}
                       </td>
                       <td
                         className={`px-4 py-3 text-sm font-medium ${
@@ -834,7 +843,7 @@ export function DeletionCompliance() {
                 }
                 className={inputClass}
               >
-                <option value="user_request">User request (WCPA)</option>
+                <option value="user_request">User request (privacy rights)</option>
                 <option value="admin_initiated">Admin initiated</option>
                 <option value="subscription_cancelled">Subscription cancelled</option>
                 <option value="account_closed">Account closed</option>

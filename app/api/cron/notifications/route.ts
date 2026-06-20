@@ -2,6 +2,13 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { sendNotificationEmail } from '@/lib/emails/send-notification-email'
 import { recordCronHealth } from '@/lib/cron/recordCronHealth'
+import {
+  emailCaptureDripStep2Eligible,
+  emailCaptureDripStep3Eligible,
+  profileDripStep2Eligible,
+  profileDripStep3Eligible,
+  runDripFetch,
+} from '@/lib/cron/dripEligibility'
 import { requireCronAuth } from '@/lib/api/internalApiAuth'
 import { resend } from '@/lib/resend'
 import { NextResponse } from 'next/server'
@@ -228,46 +235,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // ── 5. Subscription renewal reminder — 7 days before renewal ──────────
-  const renewalStart = new Date(now)
-  const renewalEnd = new Date(now)
-  renewalStart.setDate(renewalStart.getDate() + 7)
-  renewalEnd.setDate(renewalEnd.getDate() + 8)
-
-  const { data: renewalUsers } = await supabase
-    .from('profiles')
-    .select('id, email, subscription_renewal_date')
-    .gte('subscription_renewal_date', renewalStart.toISOString())
-    .lt('subscription_renewal_date', renewalEnd.toISOString())
-    .eq('subscription_status', 'active')
-
-  for (const user of renewalUsers ?? []) {
-    const to = user.email ?? authMap.get(user.id)?.email
-    if (!to) continue
-
-    const notifId = await callCreateNotification(supabase, {
-      user_id: user.id,
-      type: 'subscription_renewal',
-      title: 'Your subscription renews in 7 days',
-      body: 'Your WealthMaps subscription will automatically renew in 7 days. Visit billing to manage your plan.',
-      delivery: 'email',
-      cooldown: '30 days',
-    })
-    if (notifId) {
-      const r = await sendNotificationEmail({
-        to,
-        type: 'subscription_renewal',
-        title: 'Your subscription renews in 7 days',
-        body: 'Your WealthMaps subscription will automatically renew in 7 days. Visit billing to manage your plan.',
-      })
-      if (r.ok) results.sent++
-      else results.errors++
-    } else {
-      results.skipped++
-    }
-  }
-
-  // ── 6. Life event context — notify advisor of recent client events ────────
+  // ── 5. Life event context — notify advisor of recent client events ────────
   const oneDayAgo = new Date(now)
   oneDayAgo.setDate(oneDayAgo.getDate() - 1)
 
@@ -319,13 +287,11 @@ export async function GET(request: Request) {
     else results.skipped++
   }
 
-  // ── 7. Email drip — send step 2 (day 3) and step 3 (day 7) ─────────────
+  // ── 6. Email drip — send step 2 (day 3) and step 3 (day 7) ─────────────
   const threeDaysAgo = new Date(now)
   threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
   const sevenDaysAgo = new Date(now)
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-  const eightDaysAgo = new Date(now)
-  eightDaysAgo.setDate(eightDaysAgo.getDate() - 8)
 
   const { data: dripCandidates } = await supabase
     .from('email_captures')
@@ -348,42 +314,50 @@ export async function GET(request: Request) {
 
     const eventSlug = full.source?.replace('event-assess-', '') ?? null
 
-    if (step1At && !step2At && step1At >= sevenDaysAgo && step1At < threeDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+    if (emailCaptureDripStep2Eligible({ step1At, step2At, step3At }, { threeDaysAgo, sevenDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+          },
+          body: JSON.stringify({
+            email: full.email,
+            source: full.source,
+            event_slug: eventSlug,
+            sequence_step: 2,
+          }),
         },
-        body: JSON.stringify({
-          email: full.email,
-          source: full.source,
-          event_slug: eventSlug,
-          sequence_step: 2,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `email-capture step 2 (${full.email})`,
+      )
     }
 
-    if (step1At && step2At && !step3At && step1At >= eightDaysAgo && step1At < sevenDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+    if (emailCaptureDripStep3Eligible({ step1At, step2At, step3At }, { sevenDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-internal-key': process.env.INTERNAL_API_KEY ?? '',
+          },
+          body: JSON.stringify({
+            email: full.email,
+            source: full.source,
+            event_slug: eventSlug,
+            sequence_step: 3,
+          }),
         },
-        body: JSON.stringify({
-          email: full.email,
-          source: full.source,
-          event_slug: eventSlug,
-          sequence_step: 3,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `email-capture step 3 (${full.email})`,
+      )
     }
   }
 
-  // ── 8. Advisor activation drip — step 2 (day 3) and step 3 (day 7) ───────
+  // ── 7. Advisor activation drip — step 2 (day 3) and step 3 (day 7) ───────
   const { data: advisorDripCandidates } = await supabase
     .from('profiles')
     .select('id, advisor_drip_step_1_sent_at, advisor_drip_step_2_sent_at, advisor_drip_step_3_sent_at')
@@ -404,44 +378,53 @@ export async function GET(request: Request) {
 
     if (!step1At) continue
 
-    if (!step2At && step1At <= threeDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/advisor-drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+    if (profileDripStep2Eligible({ step1At, step2At, step3At }, { threeDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/advisor-drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+          },
+          body: JSON.stringify({
+            advisor_id: advisor.id,
+            sequence_step: 2,
+          }),
         },
-        body: JSON.stringify({
-          advisor_id: advisor.id,
-          sequence_step: 2,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `advisor step 2 (${advisor.id})`,
+      )
     }
 
-    if (!step3At && step1At <= sevenDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/advisor-drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+    if (profileDripStep3Eligible({ step1At, step2At, step3At }, { sevenDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/advisor-drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+          },
+          body: JSON.stringify({
+            advisor_id: advisor.id,
+            sequence_step: 3,
+          }),
         },
-        body: JSON.stringify({
-          advisor_id: advisor.id,
-          sequence_step: 3,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `advisor step 3 (${advisor.id})`,
+      )
     }
   }
 
-  // ── 9. Attorney activation drip — step 2 (day 3) and step 3 (day 7) ───────
+  // ── 8. Attorney activation drip — step 2 (day 3) and step 3 (day 7) ───────
   const { data: attorneyDripCandidates } = await supabase
     .from('profiles')
     .select(
       'id, email, created_at, role, is_attorney, attorney_drip_step_1_sent_at, attorney_drip_step_2_sent_at, attorney_drip_step_3_sent_at',
     )
     .not('attorney_drip_step_1_sent_at', 'is', null)
+    .is('attorney_drip_unsubscribed_at', null)
 
   for (const attorney of attorneyDripCandidates ?? []) {
     const isAttorney = attorney.role === 'attorney' || attorney.is_attorney === true
@@ -459,38 +442,46 @@ export async function GET(request: Request) {
 
     if (!step1At) continue
 
-    if (!step2At && step1At <= threeDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/attorney-drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+    if (profileDripStep2Eligible({ step1At, step2At, step3At }, { threeDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/attorney-drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+          },
+          body: JSON.stringify({
+            attorney_id: attorney.id,
+            sequence_step: 2,
+          }),
         },
-        body: JSON.stringify({
-          attorney_id: attorney.id,
-          sequence_step: 2,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `attorney step 2 (${attorney.id})`,
+      )
     }
 
-    if (!step3At && step1At <= sevenDaysAgo) {
-      await fetch(`${BASE_URL}/api/email/attorney-drip`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+    if (profileDripStep3Eligible({ step1At, step2At, step3At }, { sevenDaysAgo })) {
+      await runDripFetch(
+        `${BASE_URL}/api/email/attorney-drip`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.CRON_SECRET ?? ''}`,
+          },
+          body: JSON.stringify({
+            attorney_id: attorney.id,
+            sequence_step: 3,
+          }),
         },
-        body: JSON.stringify({
-          attorney_id: attorney.id,
-          sequence_step: 3,
-        }),
-      }).catch(() => {})
-      results.sent++
+        results,
+        `attorney step 3 (${attorney.id})`,
+      )
     }
   }
 
-  // ── §10. Attorney weekly digest — Fridays only, 6-day cooldown ────────────
+  // ── 9. Attorney weekly digest — Fridays only, 6-day cooldown ────────────
   const isFriday = now.getUTCDay() === 5
   const sixDaysAgo = new Date(now)
   sixDaysAgo.setDate(sixDaysAgo.getDate() - 6)
@@ -533,7 +524,7 @@ export async function GET(request: Request) {
     }
   }
 
-  // ── §11. State estate tax content staleness check — every Monday ──────────
+  // ── 10. State estate tax content staleness check — every Monday ──────────
   const isMonday = now.getUTCDay() === 1
   if (isMonday) {
     const complianceEmail = process.env.COMPLIANCE_EMAIL

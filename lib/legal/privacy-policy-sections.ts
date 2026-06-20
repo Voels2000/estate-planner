@@ -5,16 +5,23 @@ import {
   REGISTERED_AGENT,
 } from '@/lib/legal/company'
 
-export const PRIVACY_POLICY_LAST_UPDATED = 'June 2, 2026'
+/** ISO date — bump when counsel approves a material policy change. */
+export const PRIVACY_POLICY_VERSION = '2026-06-21'
+
+export const PRIVACY_POLICY_LAST_UPDATED = 'June 21, 2026'
 
 export const privacyPolicySections: LegalSection[] = [
   {
-    id: 'who-we-are',
-    title: '1. WHO WE ARE',
+    id: 'introduction',
+    title: '1. INTRODUCTION & SCOPE',
     blocks: [
       {
         kind: 'p',
-        text: `My Wealth Maps is operated by ${COMPANY_LEGAL_NAME}, a Washington State company ("My Wealth Maps," "we," "us," or "our"). We provide financial planning preparation tools at mywealthmaps.com.`,
+        text: `My Wealth Maps is operated by ${COMPANY_LEGAL_NAME}, a Washington State company ("My Wealth Maps," "we," "us," or "our"). We provide estate and financial planning preparation tools at mywealthmaps.com to consumers, financial advisors, and estate attorneys.`,
+      },
+      {
+        kind: 'p',
+        text: 'This Privacy Policy explains what personal data we collect, how we use it, who we share it with, and the rights you have. We extend the privacy rights described in Section 7 to all United States residents, regardless of whether your state of residence has a law requiring them. State-specific addenda appear at the end of this Policy.',
       },
       { kind: 'p', text: 'Contact: privacy@mywealthmaps.com' },
       { kind: 'p', text: `Mailing address: ${COMPANY_ADDRESS}` },
@@ -30,26 +37,31 @@ export const privacyPolicySections: LegalSection[] = [
         items: [
           'Account information: name, email address, password',
           'Household financial data: assets, income, expenses, liabilities, real estate, business interests, insurance policies, gift history, trust structures',
-          'Family information: household member names, birth years, relationships',
-          'Planning preferences: domicile state, filing status, retirement goals',
-          'Communications: messages to support, feedback',
+          'Family information: household member names, birth years, relationships, beneficiary designations',
+          'Planning preferences: domicile state, filing status, retirement goals, and related planning inputs',
+          'Communications: messages to support, feedback, and privacy-rights requests',
         ],
+      },
+      { kind: 'p', text: 'From advisors and attorneys:' },
+      {
+        kind: 'p',
+        text: 'When a professional invites or collaborates with a household you authorize, we process the data necessary to provide that collaboration.',
       },
       { kind: 'p', text: 'Information collected automatically:' },
       {
         kind: 'ul',
         items: [
-          'Usage data: pages visited, features used, time spent',
-          'Device information: browser type, operating system, IP address',
-          'Cookies and similar technologies: session management, preferences',
+          'Usage data: pages visited, features used, and general interaction with the Service',
+          'Device information: browser type, operating system, and IP address',
+          'Cookies and similar technologies: session management and preferences (see Section 11)',
         ],
       },
       { kind: 'p', text: 'Information from third parties:' },
       {
         kind: 'ul',
         items: [
-          'Payment information: processed by Stripe — we do not store card numbers',
-          'Advisor and attorney connections: if you connect a professional, limited profile information is shared with them as described in Section 5',
+          'Payment information: processed by Stripe — we do not store full card numbers',
+          'Advisor and attorney connections: limited profile information when you connect with a professional, as described in Section 5',
         ],
       },
     ],
@@ -58,47 +70,37 @@ export const privacyPolicySections: LegalSection[] = [
     id: 'how-we-use',
     title: '3. HOW WE USE YOUR INFORMATION',
     blocks: [
-      { kind: 'p', text: 'We use your information to:' },
+      { kind: 'p', text: 'We use personal data to:' },
       {
         kind: 'ul',
         items: [
-          'Provide and improve the planning tools and calculations',
+          'Provide, operate, and improve the Service, including estate-tax and planning calculations',
           'Display your household financial picture and planning readiness',
-          'Send transactional emails: account confirmation, receipts, plan summaries',
-          'Send service emails: renewal reminders (required by law), security alerts',
-          'Connect you with advisors and attorneys you choose to invite',
-          'Analyze usage to improve the product',
-          'Comply with legal obligations',
+          'Enable advisor and attorney collaboration you authorize',
+          'Process payments, manage subscriptions, and send transactional emails (confirmations, receipts, renewal reminders required by law, security alerts)',
+          'Send marketing communications when you have consented (you may withdraw consent at any time)',
+          'Maintain security, prevent fraud, and comply with legal obligations',
         ],
       },
       { kind: 'p', text: 'We do not:' },
       {
         kind: 'ul',
         items: [
-          'Sell your personal information to third parties',
+          'Sell your personal information',
+          'Share your data with advertisers or use it for cross-context behavioral advertising',
           'Use your financial data to train AI models',
-          'Share your data with advertisers',
-          'Use your data for purposes other than those listed above',
+          'Use your data for profiling that produces legal or similarly significant effects',
         ],
       },
     ],
   },
   {
-    id: 'legal-basis',
-    title: '4. LEGAL BASIS FOR PROCESSING (WASHINGTON WCPA)',
+    id: 'purposes',
+    title: '4. PURPOSES OF PROCESSING',
     blocks: [
       {
         kind: 'p',
-        text: 'Under the Washington Consumer Protection Act (WCPA) and Washington My Health MY Data Act (MHMD), you have rights regarding your personal data. We process your data on the following bases:',
-      },
-      {
-        kind: 'ul',
-        items: [
-          'Contract: to provide the services you signed up for',
-          'Legal obligation: tax records, breach notification, billing compliance',
-          'Legitimate interest: security monitoring, fraud prevention, product improvement',
-          'Consent: marketing emails (you may withdraw consent at any time)',
-        ],
+        text: 'We process personal data to deliver the Service you request, to meet our legal obligations (including tax and billing record retention and breach notification), to protect the Service and our users, and — for marketing communications only — based on your consent, which you may withdraw at any time.',
       },
     ],
   },
@@ -109,23 +111,27 @@ export const privacyPolicySections: LegalSection[] = [
       { kind: 'p', text: 'With advisors and attorneys you connect:' },
       {
         kind: 'p',
-        text: 'When you invite an advisor or attorney and they accept, they can view your household financial data within the platform. You control these connections and can revoke access at any time from your account settings.',
+        text: 'When you invite an advisor or attorney and they accept, they can view your household financial data within the platform. You control these connections and can revoke access from your account settings.',
       },
       { kind: 'p', text: 'With service providers (data processors):' },
       {
         kind: 'ul',
         items: [
-          'Supabase: database and authentication (data stored in the United States)',
+          'Supabase: database and authentication (United States)',
           'Vercel: application hosting (United States)',
           'Stripe: payment processing (does not receive your financial planning data)',
-          'Resend: transactional email delivery',
+          'Resend: transactional and marketing email delivery',
+          'Sentry: error monitoring (errors only; we configure Sentry not to collect personal information by default)',
         ],
       },
       {
         kind: 'p',
-        text: 'Each provider is bound by a Data Processing Agreement. We do not authorize them to use your data for their own purposes.',
+        text: 'Each provider processes data on our behalf under a Data Processing Agreement or equivalent contractual terms. We do not authorize them to use your data for their own purposes.',
       },
-      { kind: 'p', text: 'We do not share your data with any other third parties except:' },
+      {
+        kind: 'p',
+        text: 'We do not sell or share personal information for cross-context behavioral advertising. We do not share your data with other third parties except:',
+      },
       {
         kind: 'ul',
         items: [
@@ -138,36 +144,47 @@ export const privacyPolicySections: LegalSection[] = [
   },
   {
     id: 'data-retention',
-    title: '6. DATA RETENTION',
+    title: '6. DATA RETENTION & DELETION',
     blocks: [
       {
         kind: 'p',
-        text: 'We retain your data for as long as your account is active. If you delete your account, we delete your personal data within 30 days, except where we are required to retain it by law (e.g. billing records for 7 years per IRS requirements).',
+        text: 'We retain personal data while your account is active. If you close your account, your account is closed at the end of your current billing period, and we delete your personal data within 30 days of that closure, except where we are required or permitted to retain it by law or for legitimate compliance recordkeeping — for example, billing records (retained 7 years per IRS requirements) and a minimal deletion audit record (your account identifier, email, and record counts) retained to evidence that a deletion was performed.',
       },
       {
         kind: 'p',
-        text: 'Anonymized, aggregated data (not linked to you) may be retained indefinitely for product improvement.',
+        text: 'Anonymized, aggregated data not linked to you may be retained for product improvement.',
       },
     ],
   },
   {
     id: 'your-rights',
-    title: '7. YOUR RIGHTS (WASHINGTON WCPA)',
+    title: '7. YOUR PRIVACY RIGHTS (ALL U.S. RESIDENTS)',
     blocks: [
-      { kind: 'p', text: 'Washington residents have the right to:' },
+      {
+        kind: 'p',
+        text: 'Every United States resident may request the following, subject to identity verification:',
+      },
       {
         kind: 'ul',
         items: [
-          'Access: request a copy of the personal data we hold about you',
-          'Correction: request correction of inaccurate data',
-          'Deletion: request deletion of your personal data',
-          'Portability: receive your data in a structured, machine-readable format',
-          'Opt-out: opt out of the sale of personal data (we do not sell data)',
+          'Access / Know: what personal data we process about you',
+          'Correction: fix inaccurate personal data',
+          'Deletion: delete your personal data',
+          'Portability: receive your data in a structured, commonly used, machine-readable format',
+          'Opt-out of sale and sharing: we do not sell or share personal information; you may still submit an opt-out request',
+          'Opt-out of targeted advertising: we do not use personal data for targeted advertising',
+          'Opt-out of profiling: we do not perform profiling that produces legal or similarly significant effects',
+          'Withdraw consent to marketing emails at any time',
+          'Appeal: if we decline a request, as described in Section 8',
         ],
       },
       {
         kind: 'p',
-        text: 'To exercise these rights, email privacy@mywealthmaps.com. We will respond within 45 days. We may need to verify your identity before processing requests.',
+        text: 'To exercise these rights, submit a request in-app (Settings → Security → Privacy Rights) or email privacy@mywealthmaps.com. We fulfill verified requests — including providing your data in a structured, machine-readable format — within 45 days, with one 45-day extension where reasonably necessary. You will receive a confirmation email with a reference ID. We will not charge a fee for up to two requests per 12-month period.',
+      },
+      {
+        kind: 'p',
+        text: 'Authorized agents: you may use an authorized agent to submit a request on your behalf. We may require the agent to provide proof of authorization and may require you to verify your identity directly.',
       },
       {
         kind: 'p',
@@ -176,8 +193,53 @@ export const privacyPolicySections: LegalSection[] = [
     ],
   },
   {
+    id: 'appeals',
+    title: '8. APPEALS',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'If we decline to act on a privacy request, we will explain why in our response and tell you how to appeal. To appeal, reply to your confirmation or decision email or email privacy@mywealthmaps.com with your reference ID.',
+      },
+      {
+        kind: 'p',
+        text: 'We will respond to an appeal in writing within 60 days. If we deny your appeal, we will explain the reason and provide information on how to contact your state Attorney General or other applicable regulator.',
+      },
+    ],
+  },
+  {
+    id: 'security',
+    title: '9. DATA SECURITY',
+    blocks: [
+      { kind: 'p', text: 'We implement administrative, technical, and physical safeguards appropriate to the sensitivity of the data, including:' },
+      {
+        kind: 'ul',
+        items: [
+          'Encryption in transit: TLS 1.2+ on all connections',
+          'Encryption at rest: AES-256 via Supabase (Postgres)',
+          'Access controls: row-level security policies on database tables',
+          'Authentication: email verification and optional two-factor authentication',
+          'Session management: short-lived tokens with automatic refresh',
+        ],
+      },
+      {
+        kind: 'p',
+        text: 'No method of transmission or storage is perfectly secure. If you believe your account has been compromised, contact security@mywealthmaps.com immediately.',
+      },
+    ],
+  },
+  {
+    id: 'breach-notification',
+    title: '10. DATA BREACH NOTIFICATION',
+    blocks: [
+      {
+        kind: 'p',
+        text: 'In the event of a data breach affecting your personal information, we will notify you without unreasonable delay and in accordance with applicable law, including Washington RCW 19.255.010 (within 30 days of discovery where that statute applies). If a breach affects more than 500 Washington residents, we will also notify the Washington Attorney General. We will comply with breach-notification laws of your state of residence as applicable.',
+      },
+    ],
+  },
+  {
     id: 'cookies',
-    title: '8. COOKIES',
+    title: '11. COOKIES & TRACKING',
     blocks: [
       { kind: 'p', text: 'We use cookies and similar technologies for:' },
       {
@@ -190,64 +252,37 @@ export const privacyPolicySections: LegalSection[] = [
       },
       {
         kind: 'p',
-        text: 'We do not use advertising cookies or third-party tracking pixels. You can control cookies through your browser settings. Disabling cookies may prevent some features from working correctly.',
-      },
-    ],
-  },
-  {
-    id: 'security',
-    title: '9. SECURITY',
-    blocks: [
-      { kind: 'p', text: 'We implement the following security measures:' },
-      {
-        kind: 'ul',
-        items: [
-          'Encryption in transit: TLS 1.2+ on all connections',
-          'Encryption at rest: AES-256 via Supabase (Postgres)',
-          'Access controls: row-level security policies on all database tables',
-          'Authentication: email verification, optional two-factor authentication',
-          'Session management: short-lived tokens with automatic refresh',
-        ],
+        text: 'We do not use advertising cookies or third-party tracking pixels for cross-context behavioral advertising. You can control cookies through your browser settings; disabling cookies may prevent some features from working correctly.',
       },
       {
         kind: 'p',
-        text: 'No system is completely secure. If you believe your account has been compromised, contact security@mywealthmaps.com immediately.',
-      },
-    ],
-  },
-  {
-    id: 'breach-notification',
-    title: '10. DATA BREACH NOTIFICATION',
-    blocks: [
-      {
-        kind: 'p',
-        text: 'In the event of a data breach affecting your personal information, we will notify you within 30 days of discovery, as required by Washington RCW 19.255.010. If the breach affects more than 500 Washington residents, we will also notify the Washington Attorney General.',
+        text: 'We do not sell or share your personal information or use it for cross-context behavioral advertising. As a result, a Global Privacy Control (GPC) or other universal opt-out signal requires no additional action on our part — there is no sale or sharing to opt out of. We detect these signals and, should our practices ever change, we will honor them as a valid opt-out.',
       },
     ],
   },
   {
     id: 'children',
-    title: "11. CHILDREN'S PRIVACY",
+    title: "12. CHILDREN'S PRIVACY",
     blocks: [
       {
         kind: 'p',
-        text: 'My Wealth Maps is not directed at children under 13. We do not knowingly collect personal information from children under 13. If you believe a child has provided us with personal information, contact privacy@mywealthmaps.com.',
+        text: 'The Service is intended only for adults 18 years of age and older. We do not knowingly collect personal information from anyone under 18. If we learn we have collected such data, we will delete it. Contact privacy@mywealthmaps.com if you believe a minor has provided us with personal information.',
       },
     ],
   },
   {
     id: 'changes',
-    title: '12. CHANGES TO THIS POLICY',
+    title: '13. CHANGES TO THIS POLICY',
     blocks: [
       {
         kind: 'p',
-        text: 'We may update this Privacy Policy from time to time. We will notify you of material changes by email or by posting a notice on the platform at least 30 days before the change takes effect. Your continued use of the platform after the effective date constitutes acceptance of the updated policy.',
+        text: 'We may update this Privacy Policy from time to time. We will post changes here with an updated version and effective date. Material changes will be communicated by email or platform notice at least 30 days before the effective date where required by law. Continued use after the effective date constitutes acceptance where permitted.',
       },
     ],
   },
   {
     id: 'contact',
-    title: '13. CONTACT US',
+    title: '14. CONTACT US',
     blocks: [
       { kind: 'p', text: 'Privacy questions: privacy@mywealthmaps.com' },
       { kind: 'p', text: 'Security concerns: security@mywealthmaps.com' },

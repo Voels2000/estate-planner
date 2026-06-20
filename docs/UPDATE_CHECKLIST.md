@@ -29,7 +29,8 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Human release smoke checklist |
 | [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) | Compliance language policy — education vs. advice framing |
 | [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) | Auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
-| [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | WCPA deletion SOP, C-6/C-7 automated checks, privacy request SOP |
+| [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | Privacy deletion SOP, C-6/C-7 automated checks, privacy request + appeals SOP |
+| [legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md) | Counsel Q1–Q10 → conditional engineering scope |
 
 ## New table migrations (mandatory — every PR with `supabase/migrations/*.sql`)
 
@@ -86,7 +87,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - End of UI sprint session → update `docs/NEXT_SESSION.md` (completed tasks, remaining work, discovered file paths)
 - Launch / go-live work (robots, Search Console, domain cutover, production email, **Vercel Production env vars**, **waitlist disable**) → update `docs/LAUNCH.md` and check items there; mirror status in `ROADMAP.md` if sprint-owned
 - **Staging → main promotion** (accumulated hardening batch) → [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md); sync `NEXT_SESSION.md`, `DECISION_LOG.md`, `ROADMAP.md`
-- Compliance / data deletion (WCPA, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`
+- Compliance / data deletion (privacy rights, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`, `docs/legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
 ## Pre-launch hardening batch (PRs #28–#39) — on staging (2026-06-18)
@@ -96,6 +97,8 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **#30** — cross-household isolation in `e2e-smoke` CI (20 tests)
 - [x] **#31** — doc reconciliation (Sentry/CI status markers)
 - [x] **#32** — Stripe webhook failure → Sentry
+- [ ] **Webhook alerting remainder** — `captureStripeWebhookSupabaseFailure` on `subscription.deleted` / `subscription.updated` / `invoice.payment_failed` silent writes (pre-flip Tier 1 #4)
+- [ ] **Post-launch:** cron drip correctness — **pre-flip PR** `fix/cron-drip-correctness` (launch-critical; was logged deferred)
 - [x] **#34** — `trackTierUpgrade` only after successful profile write
 - [x] **#35** — `requireRecomputeAuth` fail-closed (`RECOMPUTE_SECRET`); unit + E2E auth specs
 - [x] **#36** — `consumerCheckoutBlockReason` + `processConsumerCheckout`; API/UI parity; 38 unit tests
@@ -119,6 +122,47 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] `E2E_SKIP_RECOMPUTE` — skip background recompute during local E2E (`triggerEstateHealthRecompute`)
 - [x] E2E fixes: spouse grid selectors, attorney aref `waitForFunction`, health-check dashboard assertion
 - [x] PLAYWRIGHT_E2E · DECISION_LOG · MASTER_ARCHITECTURE · NEXT_SESSION synced
+
+## Sprint E dead-code sweep (2026-06-19) — staging closeout
+
+**Tooling (shipped):** knip + bundle-analyzer — `ddd17a2` (PR #42), doc note `1007af3` (PR #43). Run `npm run knip` / `npm run knip:production`; `npm run analyze` for bundles.
+
+**Mechanical tier (shipped on staging):**
+
+| PR | Merge SHA | Work |
+|----|-----------|------|
+| #42 | `ddd17a2` | knip + bundle-analyzer; stripe/WA alias deletes; SectionHeader `right` |
+| #43 | `1007af3` | doc note (knip availability) |
+| #44 | `654fa50` | Button variant rename (3a) + legacy removal (3b) |
+| #45 | `cb2fbe9` | waitlist test migration off `shouldBypassWaitlistForSignup` |
+| #46 | `b613e39` | delete wrapper; un-export `hasBetaSignupAccessCookie` |
+| #47 | `3222746` | orphan email templates + `@react-email/render` (6a) |
+| #48 | merged | orphan components (6b) |
+| #49 | merged | `lib/routes.ts` delete (6c) |
+| #50 | merged | MC assumptions spec + delete (6e) |
+| #51 | merged | GRAT/Roth household alerts (6d, **counsel copy passed** 2026-06-19) |
+| #53 | merged | validation schemas delete (6f) |
+
+**Deferred:** knip in CI after baseline clean; `mammoth`/`pdf-parse` (roadmap sign-off).
+
+**Closeout:** PRs #44–#53 merged; this section is the catch-up sync ([DECISION_LOG § Sprint E](./DECISION_LOG.md)).
+
+**Checklist:**
+
+- [x] knip + bundle-analyzer — `ddd17a2` (PR #42); `npm run knip` / `npm run knip:production`; `npm run analyze`
+- [x] Export aliases + SectionHeader `right` — `ddd17a2` (PR #42)
+- [x] Button variants 3a/3b — `654fa50` (PR #44)
+- [x] Waitlist test migration — `cb2fbe9` (PR #45)
+- [x] Waitlist wrapper removal — `b613e39` (PR #46)
+- [x] Orphan email templates — `3222746` (PR #47)
+- [x] Orphan components — PR #48
+- [x] `lib/routes.ts` — PR #49
+- [x] MC assumptions spec + delete — PR #50
+- [x] GRAT/Roth household alerts — PR #51 (counsel copy review **passed**, attest: Al / 2026-06-19)
+- [x] 6f validation schemas — deleted (#53); post-launch fresh validation map logged
+- [ ] knip in CI — after Sprint E baseline clean
+- [ ] **Post-launch:** estate-data input validation — ref tables + flat-column shapes; atomic PR per route ([DECISION_LOG § Sprint E 6f](./DECISION_LOG.md))
+- [ ] **Optional pre-launch:** non-blocking Sentry shape logging on write paths (observability only) — separate PR if pursued
 
 ## Code audit Sprint C — safe performance (2026-06-12) — shipped
 
@@ -782,7 +826,7 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 | Deletion audit trail | `deletion_audit_log` | ✅ Live |
 | Admin deletion UI | `/admin` → Data & Compliance | ✅ Live |
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
-| WCPA privacy requests | In-app form + 45-day SLA | ✅ Live |
+| Privacy rights requests | In-app form + 45-day SLA | ✅ Live |
 | Email infrastructure | `hello@`, `noreply@`, `privacy@` verified | ✅ Live |
 | Migrations | **75** in `supabase/migrations/`; through `20260625170000` | ✅ Clean |
 
@@ -822,6 +866,11 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 ## Sprint C-5 focus — closed ✅ 2026-06-02 (code)
 
 - [x] **Privacy Policy** — `/privacy` (`2e1dff3`, `695a860`)
+- [x] **Multi-state privacy rewrite (engineering draft)** — `lib/legal/privacy-policy-sections.ts` v `2026-06-20`, addenda, GPC, appeals, counsel packet — [PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md)
+- [ ] **Counsel redline + conditional engineering** — per matrix Q1–Q10 outcomes
+- [x] **Migration `20260720120000`** — ✅ staging 2026-06-18 · ⬜ apply `appealed` status to **prod** before #67 on main
+- [x] **Migration `20260721120000`** — ✅ staging 2026-06-18 · ⬜ apply `appeal_due_at` to **prod** before #67 on main
+- [x] **Policy alignment stack runbook** — [POLICY_ALIGNMENT_STACK.md](./POLICY_ALIGNMENT_STACK.md) (PRs #60–#70)
 - [x] **Terms of Service** — `/terms`; post-checkout accept at `/terms/accept`
 - [x] **Footer + SEO** — `LegalFooterLinks`; sitemap + robots
 - [ ] **LAUNCH_GATE.md** — placeholders + counsel (manual)

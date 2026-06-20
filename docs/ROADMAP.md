@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-15 (pre-launch: B4 gate, launch tracker, deletion hardening)
+# Last updated: 2026-06-19 (Sprint E dead-code sweep)
 
 ---
 
@@ -19,6 +19,25 @@
 
 ## Current sprint
 
+### Sprint E — Dead-code sweep (2026-06-19) `[~]` **closing out**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| knip + bundle-analyzer tooling | `[x]` | MERGED #42 `ddd17a2` · doc #43 `1007af3` |
+| Mechanical tier (aliases, SectionHeader, Button, waitlist, emails) | `[x]` | MERGED #42–#47 · staging `3222746` |
+| Orphan components (6b) | `[ ]` | PENDING #48 |
+| `lib/routes.ts` delete (6c) | `[ ]` | PENDING #49 |
+| MC assumptions spec + delete (6e) | `[ ]` | PENDING #50 — fixes string-coercion bug |
+| GRAT/Roth household alerts (6d) | `[x]` | MERGED #51 — counsel copy **passed** (2026-06-19) |
+| Validation schemas (6f) | `[-]` | KEEP — wire-Zod architecture decision deferred |
+| knip in CI | `[ ]` | After Sprint E baseline clean |
+| Bundle splitting (Sprint G) | `[ ]` | Treemap-driven; not started |
+| Query narrowing (Sprint H) | `[ ]` | Post-launch |
+
+**knip unused files:** 12 at start → **10** on `3222746`; projected **7** after #48+#49.
+
+---
+
 ### Pre-launch engineering — B4 gate, security IDOR, launch tracker `[x]` **shipped (2026-06-15)**
 
 | Item | Status | Entry point |
@@ -31,6 +50,27 @@
 | E2E advisor-client `asset_beneficiaries` seed + verify | `[x]` | `seedE2eAdvisorClientHousehold()` · `verifyE2eAccounts()` |
 
 **Launch status:** [LAUNCH.md](./LAUNCH.md) — **44 of 55** Bucket B checked. P0: real-card smoke, B&O ruling.
+
+---
+
+### Post-launch — estate-data input validation `[ ]` **scoped (Sprint E 6f, 2026-06-19)**
+
+Orphan `lib/validations/*` **deleted** (PR #53) — drifted from live tables/routes; wiring would have rejected valid input. **This deletion does not close the validation gap.** Live paths still use presence-checks only on data feeding WA tax, Monte Carlo, and composition calcs.
+
+**Why post-launch:** Validation guards new writes (no migration risk); better sized after real user input variety is visible. Definite hardening work — not conditional on incidents. Full map: [DECISION_LOG § Sprint E 6f](./DECISION_LOG.md).
+
+| Entity | Write path | Validate against |
+|--------|-----------|------------------|
+| Assets | `/api/consumer/assets` | Flat columns (not `details` jsonb); `asset_types` + `ref_liquidity_types` + `ref_titling_types` |
+| Income | `buildIncomeRow` | `income_types` ref; `GROWABLE_INCOME_SOURCES`, `employment`, month/growth fields |
+| Expenses | `buildExpenseRow` | `expense_types` ref (incl. `living`); month/owner fields |
+| Household | `profile` + `growth-assumptions` | `validateProfileSavePayload` / `buildHouseholdRow`; filing `mfj`/`mfs`/`hoh`/`qw` |
+
+Enums must come from **ref tables**, not hardcoded lists. Optional pre-launch: non-blocking Sentry shape logging (separate PR) to measure gap before enforcement.
+
+### Post-launch — cron drip correctness `[x]` **shipped pre-flip (#55)**
+
+Was deferred post-launch; **drip is launch-day-critical** → fixed in `fix/cron-drip-correctness` (#55). [DECISION_LOG § Edge-systems Tier 1 cron drip](./DECISION_LOG.md).
 
 ---
 

@@ -79,6 +79,13 @@ Run once on **production** (or production Stripe keys on preview) with this doc 
 5. [ ] `/billing` → **Manage subscription** → cancel in portal — no phone required
 6. [ ] Confirm webhook updates `subscription_status` / tier access in app
 
+### Renewal reminder email (7 days before charge)
+
+**Single source:** Stripe `invoice.upcoming` webhook → `sendConsumerRenewalReminder` in `app/api/stripe/webhook/route.ts`.
+
+- [ ] Stripe Dashboard — `invoice.upcoming` event enabled (~7 days before renewal)
+- [ ] Do **not** rely on `profiles.subscription_renewal_date` or the daily notifications cron — backup path removed (B7); column is unused legacy
+
 **Related smoke:** [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) — add billing row after C-4 ships.
 
 ---
@@ -107,7 +114,7 @@ Full legal pages live at `/privacy` and `/terms` (`lib/legal/privacy-policy-sect
 | Cancellation procedure (self-serve) | ✅ In `/terms` + `/billing` cancel | Stripe portal wired |
 | Refund policy | ✅ In `/terms` | Counsel review |
 | Washington RCW 19.316 compliance statement | ✅ In `/terms` + pricing | Counsel review |
-| Privacy Policy (WCPA) | ✅ `/privacy` | Replace TODO placeholders per [LAUNCH.md](./LAUNCH.md) |
+| Privacy Policy (multi-state) | ✅ `/privacy` | Counsel redline pending per [COUNSEL_PRIVACY_REVIEW.md](./legal/COUNSEL_PRIVACY_REVIEW.md) |
 | Counsel sign-off | ☐ Pending | ToS §10 (disclaimers), §11 (liability cap), §13 (arbitration) |
 
 **Action:** Complete [LAUNCH.md](./LAUNCH.md) before go-live. Send ToS to counsel with §10/§11/§13 flagged; request **one consolidated redline**; apply redlines + TODO placeholders in **one final commit**. Sync `/terms/accept` dynamic sections in the same commit.

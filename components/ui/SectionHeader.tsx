@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils'
 export function SectionHeader({
   title,
   subtitle,
-  right,
   action,
   accent = false,
   as = 'h2',
@@ -12,15 +11,12 @@ export function SectionHeader({
 }: {
   title: ReactNode
   subtitle?: ReactNode
-  /** @deprecated Use `action` instead */
-  right?: ReactNode
   action?: ReactNode
   accent?: boolean
   as?: 'h1' | 'h2'
   className?: string
 }) {
   const Heading = as === 'h1' ? 'h1' : 'h2'
-  const sideAction = action ?? right
 
   return (
     <div
@@ -38,7 +34,7 @@ export function SectionHeader({
           <p className="mt-1 text-sm text-[var(--mwm-text-secondary)] leading-relaxed">{subtitle}</p>
         )}
       </div>
-      {sideAction && <div className="shrink-0 mt-0.5">{sideAction}</div>}
+      {action && <div className="shrink-0 mt-0.5">{action}</div>}
     </div>
   )
 }

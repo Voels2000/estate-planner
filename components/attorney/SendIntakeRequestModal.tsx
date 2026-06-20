@@ -124,7 +124,7 @@ export function SendIntakeRequestModal({
           )}
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
               Cancel
             </Button>
             <Button type="submit" variant="primary" disabled={submitting || atCap}>

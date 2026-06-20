@@ -1,6 +1,110 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-18 (staging→main promotion runbook; hardening batch #28–#39 on staging)
+# Last updated: 2026-06-19 (US-only enforcement; Sprint E dead-code sweep closeout)
+
+---
+
+## US-only access policy (2026-06-19)
+
+**Decision:** Restrict the service to US residents (18+). Launch with existing ToS §3 representation; **defer dedicated residency attestation pending counsel.**
+
+| Layer | Status |
+|-------|--------|
+| ToS eligibility (18+/US resident, §3 v2026-06-02) | **Live** — represented + accepted at signup |
+| Dedicated residency attestation (checkbox + `us_residency_attested_at`) | **PENDING COUNSEL — not built.** Launching on embedded §3 representation per [Al] decision; add if counsel requests. Do not build until counsel confirms standard/wording. |
+| IP geo-gate (Layer 1) | **Implemented** — middleware page-gate + signup API; `/api` excluded by matcher (webhooks/crons untouched); null country → allow; `/not-available` with recourse |
+| Stripe US-billing validation (Layer 2) | **Implemented** — `billing_address_collection: required` on consumer/firm/attorney checkout; non-US billing rejected in `checkout.session.completed` (cancel subscription, do not provision) |
+| State-level restriction | **None found at launch** — country-level gate; revisit if a state-specific UPL/licensing issue surfaces |
+
+**Standard adopted:** country/residency representation (ToS §3) + IP perimeter + billing-country at checkout. "US person" / stronger verification not adopted pending counsel ruling.
+
+**Implementation:** `lib/geo/usOnlyAccess.ts`, `lib/billing/rejectNonUsBillingCheckout.ts`, `middleware.ts`, `app/api/auth/signup/route.ts`, `app/not-available/page.tsx`, checkout session creates, `app/api/stripe/webhook/route.ts`.
+
+---
+
+## Sprint E — dead-code sweep + knip tooling (2026-06-19)
+
+**Decision:** Add **knip** + **`@next/bundle-analyzer`** as standing repo capability (#42 `ddd17a2`, doc note #43 `1007af3`). Dead-code questions are answered by `npm run knip` / `npm run knip:production`, not manual grep alone. Config at repo root (`knip.ts`) declares app router, `scripts/**`, `tools/**`, Supabase functions, Sentry boundaries, and Playwright unit specs as entry points so live tooling is not flagged.
+
+**Principle — parity-before-delete:** When domain logic is reimplemented, require a **rule-by-rule parity diff** before deletion. “A live version exists” ≠ “complete replacement.” Unwired specs can document product gaps that silent non-firing hides.
+
+**Findings behind “unused” labels (verify-before-delete paid off):**
+1. **MC assumptions (#50, merged):** Orphan `mergeAssumptions` used `Number()`; live `monteCarloAssumptionsFromRow` did not — string DB values passed through. Fixed live helper + spec before delete.
+2. **Household alerts (#51, merged):** Sprint 70 `strategyAlertRules.ts` was never wired; Sprint 81 shipped a different rule set. GRAT/Roth port + six-alert fact-not-advice voice — **counsel review complete — passed** (attest: Al / 2026-06-19; [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)).
+
+**Mechanical tier merged (#42–#47):** export aliases, SectionHeader `right`, Button variants (`654fa50`), waitlist test migration (`cb2fbe9`) + wrapper removal (`b613e39` — delete `shouldBypassWaitlistForSignup`, un-export `hasBetaSignupAccessCookie`), orphan emails (`3222746`).
+
+**6f `lib/validations/*`:** Merged #53 — delete drifted schemas; post-launch validation map logged separately.
+
+---
+
+## Sprint E 6f — validation schemas: delete, do not wire (2026-06-19)
+
+**Decision:** Delete orphaned `lib/validations/{assets,income,expenses,household}.ts`. **Do not wire them in.** Drift check (2026-06-19) showed all four model a **superseded data shape**, not a stale enum — wiring would reject valid current input and add false confidence. Deleting is **not** accepting the validation gap; live write paths still use thin inline presence-checks.
+
+**Why delete (drift summary):**
+- **Assets:** Schema nests type-specific fields in `details` jsonb; live `/api/consumer/assets` writes **flat columns** (`institution`, `cost_basis`, `liquidity`, `titling`, `is_ilit`, `situs_*`, `estate_inclusion_status`) and never writes `details`. Type enum: 5 hardcoded values vs live `asset_types` ref (20+ canonical slugs).
+- **Income:** Schema enum (`salary`, `pension`, …) vs live `income_types` ref; missing `name`, `ss_person`, `start_month`, `end_month`, `annual_growth_rate`.
+- **Expenses:** Schema enum (`housing`, `food`, …) vs live `expense_types` ref; missing `name`, `owner`, month fields.
+- **Household:** Schema targets a form shape **with no live write route**. Household data goes through `PATCH /api/consumer/profile` → `validateProfileSavePayload` + `buildHouseholdRow` (`lib/profile/buildHouseholdPayload.ts`) and `PATCH /api/consumer/growth-assumptions`. Filing status in schema uses long form (`married_filing_jointly`); live uses `mfj`/`mfs`/`hoh`/`qw`.
+
+**Deps:** Keep **`zod`** — live in `app/api/rmd/route.ts` and `lib/api/schemas/householdAccess.ts`. Removed **`react-hook-form`** + **`@hookform/resolvers`** (zero source usage; re-grepped before uninstall).
+
+**Household note:** Deleting the orphan schema says nothing about whether the **live** household path validates well — that rigor lives in `validateProfileSavePayload` + `buildHouseholdRow`, which feeds the tax engine directly. Deleting the household schema removed dead code; it did not address household validation.
+
+**Post-launch — input validation on estate-data write paths** *(logged 2026-06-19; definite work, not "only if an issue appears")*
+
+**Why deferred, not done now:** Input validation guards **new writes**, not resting data — adding it post-launch carries no migration risk to existing users. Better built **after** launch, when real user input reveals the true variety of valid shapes; building pre-launch against test fixtures risks rejecting valid live input (the exact failure the drift check found in the old schemas). Weak-but-stable presence-checks through the flip window is the lower-risk choice.
+
+**The gap:** Live write paths validate presence only (`if (!body.x)`). No type, range, or enum enforcement on data that feeds the WA tax engine, Monte Carlo, and composition calcs.
+
+**DO NOT start from `lib/validations/*`** (deleted — modeled a superseded shape). Build fresh against current truth — one atomic PR per route; each is a behavior change (stricter 400s) requiring good-input AND bad-input tests:
+
+| Entity | Write path | Validate against (current truth) |
+|--------|-----------|-----------------------------------|
+| Assets | `/api/consumer/assets` insert/update shape | Flat columns (`type`, `name`, `value`, `institution`, `cost_basis`, `liquidity`, `titling`, `is_ilit`, `situs_*`, `estate_inclusion_status`) — **NOT** jsonb `details`; `type` against `asset_types` ref (`CANONICAL_ASSET_TYPES`, 20+ values); `ref_liquidity_types`, `ref_titling_types` |
+| Income | `buildIncomeRow` / `/api/consumer/income` | `source`, `amount`, `start_year`, `end_year`, `name`, `ss_person`, `start_month`, `end_month`, `annual_growth_rate`; `source` against `income_types` ref incl. `GROWABLE_INCOME_SOURCES` (`self_employment`, `equity_awards`, `business`) and `employment` |
+| Expenses | `buildExpenseRow` / `/api/consumer/expenses` | `category`, `amount`, `start_year`, `end_year`, `name`, `owner`, `start_month`, `end_month`; `category` against `expense_types` ref (incl. `living`) |
+| Household | `/api/consumer/profile` (`validateProfileSavePayload` + `buildHouseholdRow`) AND `/api/consumer/growth-assumptions` | Filing status `mfj`/`mfs`/`hoh`/`qw` (NOT long form); `person1_first_name`/`last_name`/`name`, `person1_ss_pia`, `deduction_mode`, `custom_deduction_amount`, `gross_estate_estimate`, `has_minor_children`, `has_business_interests`, `risk_tolerance`, `growth_assumptions` jsonb |
+
+**Reference enums live in ref tables** (`asset_types`, `income_types`, `expense_types`) — validation must read from those, not hardcode lists, or it drifts again the moment a type is added. (This is exactly how the deleted schemas went stale.)
+
+**Optional pre-launch (not in scope for 6f delete):** Non-blocking Sentry shape logging on write paths (observability only — no rejection) to measure how often real input would fail strict validation; informs post-launch prioritization. Separate small PR if pursued; not a substitute for enforcement above.
+
+**Sprint E retro judgment:** Drift check turned a tempting "adopt existing Zod work" into correct "don't resurrect stale code" — reusable parity-before-delete principle (same family as MC coercion + never-wired GRAT/Roth alerts).
+
+---
+
+## Sprint E 6d — GRAT/Roth household alerts port (2026-06-19)
+
+**Decision:** Port GRAT and Roth opportunity alerts from unwired Sprint 70 `strategyAlertRules.ts` into the live consumer engine. Sprint 81 `evaluateEstateAlerts` shipped a different rule set and never included GRAT/Roth — not a silent drop during a rewrite.
+
+**Implementation:** New `lib/alerts/estateHouseholdAlerts.ts` (`buildEstateHouseholdAlertRules()`). `evaluateAlerts` loads `businesses`, `business_interests`, and active `strategy_line_items`. Roth fires on pre-tax balance > $500k only (no “low-income year” trigger without reliable income data). Deleted `lib/strategy/strategyAlertRules.ts`.
+
+**Alerts (six, fact-not-advice voice):** `estate_ilit_gap`, `estate_gifting_gap`, `estate_grat_opportunity`, `estate_roth_window`, `estate_large_no_trust`, `estate_no_base_case` — state user's data → name structure/observation → redirect to licensed professional.
+
+**Compliance:** Counsel review **complete — passed** for all six alert strings (attest: Al / 2026-06-19; [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax)). Consumer launch copy gate cleared.
+
+---
+
+## Edge-systems Tier 1 — webhook alerting remainder (2026-06-19)
+
+**Decision:** Extend `captureStripeWebhookSupabaseFailure` to all previously silent Supabase writes in `customer.subscription.deleted`, `customer.subscription.updated`, and `invoice.payment_failed` handlers — consumer profile updates plus firm `firms` / owner `profiles` paths that were fire-and-forget.
+
+**Why pre-flip:** These paths return **200** on DB-write failure; Stripe does not retry and failures were invisible. Option A (#32) captured only where `console.error` already existed. Visibility before first real customers — not idempotency/retry (post-launch per [WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md](./WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md)).
+
+**Explicit non-goals:** No HTTP status change; no Stripe retry; no dedup table. Closes **alerting half** of Tier 1 #4.
+
+---
+
+## Edge-systems Tier 1 — cron drip correctness (2026-06-19 · Tier 1 #5)
+
+**Decision:** Fix launch-critical bugs in `app/api/cron/notifications/route.ts` before flip — step-3 ordering, §7 window, honest sent/error counters, §9 unsubscribe filter. PR `fix/cron-drip-correctness`.
+
+**Issues fixed:**
+1. **False-success counting** — drip `fetch` calls use `.catch(() => {})` then `results.sent++`; failed sends count as sent. Fix: `errors++` on failure, don't increment `sent`.
+2. **Fragile 1-day window** (email-capture step 3) — fires only when `step1At >= eightDaysAgo && step1At < sevenDaysAgo`; missed cron day skips step 3 permanently. Fix: `step1At <= sevenDaysAgo` (advisor pattern) or "≥N days & not sent".
+3. **Step 3 without step 2** (advisor/attorney) — step 3 checks only `!step3At && step1At <= sevenDaysAgo`, no `step2At` requirement. Fix: require `step2At` before step 3.
 
 ---
 
@@ -3064,6 +3168,90 @@ Pass = at least one row with referral code matching a test signup.
 **Reasoning:** Local complete runs were hitting production API for referral rate-limit tests (65 POSTs) while also hammering staging DB — misleading failures and unnecessary prod load.
 
 **Implication:** `release:preflight` and local gates use `security-smoke`; post-deploy checklist uses `security-smoke:prod`.
+
+---
+
+### June 2026 — Multi-state Privacy Policy (engineering draft)
+
+**Decision:** Adopt unified all-U.S.-residents privacy posture — highest common denominator (CCPA/Virginia-model rights for everyone) with thin state addenda. Fix incorrect "Washington WCPA" attribution for privacy rights (WCPA = RCW 19.86 unfair practices, not privacy law).
+
+**Reasoning:** HNW estate-planning audience; B2B2C across states; pre-launch below most thresholds but voluntary over-compliance reduces retrofit risk and builds trust. Washington-specific statutes retained where real: RCW 19.316 auto-renewal, RCW 19.255.010 breach notification.
+
+**Implemented:** Policy rewrite + addenda, GPC cookie in middleware, assess capture notice, appeals status + denial email, counsel packet. **Not launch-ready** until counsel redline.
+
+**Conditional engineering:** Counsel answers to Q1–Q10 may require additional work — see [PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md) (MHMD flows, consent checkbox, self-service export, GPC consumption, privacy re-acceptance, etc.).
+
+**Alternatives considered:** State-by-state policies (rejected — operational drag); lowest common denominator (rejected — trust + threshold crossing).
+
+**Implication:** Bump `PRIVACY_POLICY_VERSION` after counsel redline. Apply migration `20260720120000` before using `appealed` in prod. Do not publish MHMD-specific flows until Q1 resolved.
+
+---
+
+### June 2026 — Policy alignment (Batch A: text softening)
+
+**Decision:** Soften published privacy/ToS claims to match honest current practice without changing runtime behavior.
+
+**Changes:** GPC honoring is declarative (no sale/share to opt out of; we detect signals for future use); portability/access/correction fulfilled manually within the 45-day SLA; `deletion_audit_log` named as a compliance-retention exception under Privacy §6; deletion clock runs from account closure (period end), not cancel click.
+
+**Implication:** `PRIVACY_POLICY_VERSION` bumped to `2026-06-21`.
+
+---
+
+### June 2026 — Self-serve account deletion (B1)
+
+**Decision:** Ship ToS §14 "delete account from settings" via existing `deletion_schedule` + `process-deletions` cron (30-day pipeline after account closure).
+
+**Implementation:** `scheduleUserAccountDeletion()` blocks active subscriptions and upgraded roles; schedules at period end + 30 days when canceling, else now + 30 days. UI at Settings → Security.
+
+**Implication:** Users must cancel at `/billing` before scheduling if still on an active paid plan.
+
+---
+
+### June 2026 — Eligibility attestation (B3)
+
+**Decision:** Launch 18+ / U.S.-resident attestation on the signup checkbox (embedded representation); record via existing `terms_accepted_at` + `terms_version` — no separate `age_attested_at` column pending counsel.
+
+**Implication:** ToS §3 and Privacy §12 now backed by affirmative signup attestation, not passive "by using the Service" alone.
+
+---
+
+### June 2026 — Renewal reminder single source (B7)
+
+**Decision:** Remove dead backup renewal reminder from daily notifications cron (`profiles.subscription_renewal_date` was never populated). **Stripe `invoice.upcoming` webhook** is the sole consumer renewal-reminder path.
+
+**Implication:** `profiles.subscription_renewal_date` column retained (unused); documented in BILLING_DISCLOSURES_CHECKLIST.
+
+---
+
+### June 2026 — Terms single source of truth (B8)
+
+**Decision:** Remove admin `app_config` writes for ToS. Live pages and acceptance already read `lib/legal/terms-of-service-sections.ts` via `getCanonicalTerms()`. Admin Terms tab is read-only preview plus **Re-gate users** (`POST /api/admin/terms/regate`).
+
+**Implication:** ToS changes require editing code, bumping `TERMS_OF_SERVICE_VERSION`, deploying, then re-gating. Legacy `app_config.terms_version` / `terms_sections` keys are unused and hidden from admin settings.
+
+---
+
+### June 2026 — GPC marketing suppression (B9)
+
+**Decision:** When `Sec-GPC: 1` or `mwm_gpc_opt_out` cookie is present, `POST /api/email-capture` still records the lead but skips drip step 1 and sets `unsubscribed_at` to block follow-up cron sends.
+
+**Implication:** GPC cookie set by middleware is now consumed for marketing enrollment; waitlist captures unchanged (already drip-free).
+
+---
+
+### June 2026 — Promotion schema gate (policy stack)
+
+**Decision:** Add `assert-promotion-schema.sql` + `npm run release:promotion` — fail closed if production lacks `privacy_requests.appeal_due_at` or `appealed` status before staging→main promotion of #67+.
+
+**Implication:** Converts manual migration remember-step into structural gate (same class as `assert-rls-coverage`).
+
+---
+
+### June 2026 — H5 terms re-acceptance hard-gate (parked)
+
+**Decision:** **Not in B8 scope.** B8 fixed ToS source-of-truth (code constants, admin read-only). H5 = when to **hard-gate** re-acceptance vs soft banner on routine version bumps. Decide **material-change trigger** before first post-launch ToS edit; implement when a material change ships.
+
+**Alternatives considered:** Hard gate on every `TERMS_OF_SERVICE_VERSION` bump (rejected for launch — too friction-heavy for immaterial fixes).
 
 ---
 
