@@ -18,6 +18,7 @@
 | Admin privacy queue | `DeletionCompliance.tsx`, `GET/PATCH /api/admin/deletions` | Status workflow incl. `appealed` (after migration) |
 | Denial + appeal email | `lib/email/privacyRequestDecisionEmail.ts` | Fires when admin sets status `denied` |
 | GPC signal detection | `lib/privacy/globalPrivacyControl.ts`, `middleware.ts` | Sets `mwm_gpc_opt_out` cookie on `Sec-GPC: 1` |
+| GPC marketing suppression | `lib/privacy/readGpcOptOut.ts`, `POST /api/email-capture` | Skips drip enrollment when GPC signal or cookie present |
 | Assess email notice | `app/(public)/event/[slug]/assess/page.tsx` | Privacy Policy link + marketing notice |
 | Deletion path | `lib/compliance/deleteUser.ts`, admin execute, cron | Unchanged; supports deletion requests |
 | Compliance SOP | `docs/COMPLIANCE_CALENDAR.md` | Appeals 60-day SLA documented |
@@ -75,7 +76,7 @@
 | Counsel answer | Engineering required |
 |----------------|---------------------|
 | **Detect + cookie sufficient** (no sale/share anyway) | None — current middleware stands |
-| **Must suppress something when GPC set** | **Small–Medium:** read `GPC_OPT_OUT_COOKIE` / `Sec-GPC` in any future analytics; add `lib/privacy/readGpcOptOut.ts` helper; gate marketing email enrollment from assess capture if GPC |
+| **Must suppress something when GPC set** | **Done (B9):** `readGpcOptOut.ts`; `POST /api/email-capture` skips drip + sets `unsubscribed_at`. Future analytics should reuse same helper. |
 | **Full preference center required** | **Medium:** `/privacy/choices` page; persist opt-out in DB for logged-in users; sync cookie ↔ profile |
 
 **Current gap:** cookie is **set** but **not read** anywhere. Acceptable if counsel confirms no processing to suppress.

@@ -3231,6 +3231,14 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — GPC marketing suppression (B9)
+
+**Decision:** When `Sec-GPC: 1` or `mwm_gpc_opt_out` cookie is present, `POST /api/email-capture` still records the lead but skips drip step 1 and sets `unsubscribed_at` to block follow-up cron sends.
+
+**Implication:** GPC cookie set by middleware is now consumed for marketing enrollment; waitlist captures unchanged (already drip-free).
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

@@ -1427,7 +1427,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 **Multi-state Privacy Policy (engineering draft 2026-06-20 — counsel redline pending):**
 
 - **Policy:** `lib/legal/privacy-policy-sections.ts` (`PRIVACY_POLICY_VERSION` `2026-06-20`) + `lib/legal/privacy-policy-addenda.ts` — all-U.S.-residents rights, appeals §8, Sentry subprocessor, GPC §11, state addenda; served at `/privacy`.
-- **GPC:** `lib/privacy/globalPrivacyControl.ts` — middleware sets `mwm_gpc_opt_out` on `Sec-GPC: 1` (detect-only; cookie not yet consumed downstream).
+- **GPC:** `lib/privacy/globalPrivacyControl.ts` — middleware sets `mwm_gpc_opt_out` on `Sec-GPC: 1`. `readGpcOptOut.ts` reads header + cookie; `POST /api/email-capture` skips marketing drip when opted out (sets `unsubscribed_at`).
 - **Assess capture:** `/event/[slug]/assess` — Privacy Policy link + marketing notice before email submit.
 - **Counsel packet:** `docs/legal/COUNSEL_PRIVACY_REVIEW.md`, `docs/legal/MWM_MultiState_Privacy_Terms_Draft.md`, `docs/legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md` — maps counsel Q1–Q10 to conditional engineering.
 - **Not launch-ready** until counsel redline; see engineering matrix for post-counsel build items (MHMD, GPC consumption, consent checkbox, self-service export, etc.).
