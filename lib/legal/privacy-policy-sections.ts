@@ -6,9 +6,9 @@ import {
 } from '@/lib/legal/company'
 
 /** ISO date — bump when counsel approves a material policy change. */
-export const PRIVACY_POLICY_VERSION = '2026-06-20'
+export const PRIVACY_POLICY_VERSION = '2026-06-21'
 
-export const PRIVACY_POLICY_LAST_UPDATED = 'June 20, 2026'
+export const PRIVACY_POLICY_LAST_UPDATED = 'June 21, 2026'
 
 export const privacyPolicySections: LegalSection[] = [
   {
@@ -148,7 +148,7 @@ export const privacyPolicySections: LegalSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'We retain personal data while your account is active. If you delete your account, we delete your personal data within 30 days, except where law requires retention (for example, billing records for up to seven years per IRS requirements).',
+        text: 'We retain personal data while your account is active. If you close your account, your account is closed at the end of your current billing period, and we delete your personal data within 30 days of that closure, except where we are required or permitted to retain it by law or for legitimate compliance recordkeeping — for example, billing records (retained 7 years per IRS requirements) and a minimal deletion audit record (your account identifier, email, and record counts) retained to evidence that a deletion was performed.',
       },
       {
         kind: 'p',
@@ -180,7 +180,7 @@ export const privacyPolicySections: LegalSection[] = [
       },
       {
         kind: 'p',
-        text: 'How to exercise: submit a request in-app at Settings → Security → Privacy Rights, or email privacy@mywealthmaps.com. We respond within 45 days and may extend once by an additional 45 days where reasonably necessary, with notice to you. You will receive a confirmation email with a reference ID. We will not charge a fee for up to two requests per 12-month period.',
+        text: 'To exercise these rights, submit a request in-app (Settings → Security → Privacy Rights) or email privacy@mywealthmaps.com. We fulfill verified requests — including providing your data in a structured, machine-readable format — within 45 days, with one 45-day extension where reasonably necessary. You will receive a confirmation email with a reference ID. We will not charge a fee for up to two requests per 12-month period.',
       },
       {
         kind: 'p',
@@ -256,7 +256,7 @@ export const privacyPolicySections: LegalSection[] = [
       },
       {
         kind: 'p',
-        text: 'We honor recognized universal opt-out signals (such as Global Privacy Control) as a valid opt-out of sale or sharing of personal information, to the extent applicable. We do not sell or share personal information.',
+        text: 'We do not sell or share your personal information or use it for cross-context behavioral advertising. As a result, a Global Privacy Control (GPC) or other universal opt-out signal requires no additional action on our part — there is no sale or sharing to opt out of. We detect these signals and, should our practices ever change, we will honor them as a valid opt-out.',
       },
     ],
   },

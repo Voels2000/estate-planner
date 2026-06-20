@@ -27,7 +27,7 @@ export const privacyPolicyAddenda: LegalSection[] = [
       },
       {
         kind: 'p',
-        text: 'California residents may exercise the rights in Section 7, including opt-out of sale or sharing (though we do not sell or share), via the in-app form, privacy@mywealthmaps.com, or a recognized universal opt-out signal such as Global Privacy Control (GPC), which we honor as described in Section 11.',
+        text: 'California residents may exercise the rights in Section 7, including opt-out of sale or sharing (though we do not sell or share), via the in-app form or privacy@mywealthmaps.com. Universal opt-out signals such as Global Privacy Control are described in Section 11 — we do not sell or share personal information, so no additional opt-out action is required.',
       },
       {
         kind: 'p',
@@ -45,7 +45,7 @@ export const privacyPolicyAddenda: LegalSection[] = [
     blocks: [
       {
         kind: 'p',
-        text: 'Residents of states with comprehensive privacy laws (including Colorado, Connecticut, Oregon, Texas, Virginia, and others with similar frameworks) have the access, correction, deletion, portability, opt-out, and appeal rights described in Sections 7 and 8. We honor universal opt-out mechanisms where applicable. We do not sell personal data or use it for targeted advertising.',
+        text: 'Residents of states with comprehensive privacy laws (including Colorado, Connecticut, Oregon, Texas, Virginia, and others with similar frameworks) have the access, correction, deletion, portability, opt-out, and appeal rights described in Sections 7 and 8. We detect universal opt-out signals such as Global Privacy Control as described in Section 11. We do not sell personal data or use it for targeted advertising.',
       },
     ],
   },
