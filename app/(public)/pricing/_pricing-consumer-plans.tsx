@@ -243,15 +243,13 @@ export function PricingConsumerPlans({
               {isLoggedIn ? (
                 <>
                   <p style={{ fontSize: 13, color: '#4a5568', lineHeight: 1.6, marginBottom: 12 }}>
-                    {plan.trialDays > 0
-                      ? `14-day free trial, then ${plan.priceLabel}/${plan.intervalLabel}. Cancel anytime.`
-                      : BILLING_DISCLOSURES.preCheckout(
-                          plan.name,
-                          plan.period === 'annual' && plan.annualTotal
-                            ? `$${plan.annualTotal}`
-                            : plan.priceLabel,
-                          plan.intervalLabel,
-                        )}
+                    {BILLING_DISCLOSURES.preCheckout(
+                      plan.name,
+                      plan.period === 'annual' && plan.annualTotal
+                        ? `$${plan.annualTotal}`
+                        : plan.priceLabel,
+                      plan.intervalLabel,
+                    )}
                   </p>
                   <button
                     type="button"

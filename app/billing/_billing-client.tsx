@@ -321,15 +321,13 @@ export function BillingClient({
                     highlighted ? 'text-neutral-200' : 'text-neutral-700'
                   }`}
                 >
-                  {plan.trialDays > 0
-                    ? `14-day free trial, then ${plan.priceLabel}/${plan.intervalLabel}. Cancel anytime.`
-                    : BILLING_DISCLOSURES.preCheckout(
-                        plan.name,
-                        plan.period === 'annual' && plan.annualTotal
-                          ? `$${plan.annualTotal}`
-                          : plan.priceLabel,
-                        plan.intervalLabel,
-                      )}
+                  {BILLING_DISCLOSURES.preCheckout(
+                    plan.name,
+                    plan.period === 'annual' && plan.annualTotal
+                      ? `$${plan.annualTotal}`
+                      : plan.priceLabel,
+                    plan.intervalLabel,
+                  )}
                 </p>
               )}
               <Button
