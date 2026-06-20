@@ -217,7 +217,7 @@ export const termsOfServiceSections: LegalSection[] = [
       },
       {
         kind: 'p',
-        text: 'Upon termination, your data will be deleted within 30 days per our Privacy Policy.',
+        text: 'Upon termination, your data will be deleted within 30 days of account closure (end of your current billing period), per our Privacy Policy.',
       },
     ],
   },

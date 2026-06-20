@@ -25,7 +25,7 @@ Ongoing compliance routines for My Wealth Maps (Privacy Policy commitments, Wash
 
 ## Data deletion (Sprint C-6)
 
-Privacy Policy grants deletion and other privacy rights to all **U.S. residents**; respond to authenticated requests within **45 days**. Privacy Policy commits to deletion within **30 days** after account close / subscription cancellation. Washington **RCW 19.255.010** governs breach notification (see Privacy Policy §10); **RCW 19.316** governs auto-renewal disclosures (see ToS §5.2).
+Privacy Policy grants deletion and other privacy rights to all **U.S. residents**; respond to authenticated requests within **45 days**. Privacy Policy commits to deletion within **30 days after account closure** (end of billing period), not from the cancel click. Washington **RCW 19.255.010** governs breach notification (see Privacy Policy §10); **RCW 19.316** governs auto-renewal disclosures (see ToS §5.2).
 
 ### Right-to-delete SOP (updated)
 
@@ -95,6 +95,16 @@ Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` (`avoel
    - **Denied:** system emails appeal instructions automatically; user may reply to appeal
    - **Appealed:** reopen review; respond to appeal within **60 days** per Privacy Policy §8
 6. Send completion confirmation to user when fulfilled
+
+## Policy alignment notes
+
+### Advisor and attorney activation drips (transactional onboarding)
+
+Activation emails sent to advisors and attorneys after signup or portal visit are **transactional onboarding** — relationship-initiated, operational messages to complete account setup. Unsubscribe is still offered on each drip. `[COUNSEL CONFIRM]`
+
+### Price increase notice (ToS §5.5)
+
+The 30-day advance notice before a price increase is a **manual step** in the price-change runbook. There is no automated price-change notification in code — update Stripe prices only after sending the required notice.
 
 ### Monthly compliance check (manual backup)
 

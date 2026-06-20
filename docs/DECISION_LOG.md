@@ -3187,6 +3187,16 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Policy alignment (Batch A: text softening)
+
+**Decision:** Soften published privacy/ToS claims to match honest current practice without changing runtime behavior.
+
+**Changes:** GPC honoring is declarative (no sale/share to opt out of; we detect signals for future use); portability/access/correction fulfilled manually within the 45-day SLA; `deletion_audit_log` named as a compliance-retention exception under Privacy §6; deletion clock runs from account closure (period end), not cancel click.
+
+**Implication:** `PRIVACY_POLICY_VERSION` bumped to `2026-06-21`. ToS §14 self-serve deletion promise unchanged — Batch B (B1) will implement.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]
