@@ -120,6 +120,8 @@ bash scripts/apply-migration.sh production supabase/migrations/20260720120000_pr
 bash scripts/apply-migration.sh production supabase/migrations/20260721120000_privacy_requests_appeal_due_at.sql
 ```
 
+**Structural gate (mandatory):** `npm run release:promotion` — queries prod for `appeal_due_at` + `appealed` status; **fail closed** if absent. Promoting #67–#70 always carries #67's code.
+
 **Do not promote to production without counsel redline** on privacy/ToS text — engineering draft only.
 
 ### Pre-merge (staging stack)
@@ -127,6 +129,7 @@ bash scripts/apply-migration.sh production supabase/migrations/20260721120000_pr
 - [ ] Merge #60 → retarget #61 to `staging` (or merge in order per stack doc)
 - [ ] After #67 merged: confirm staging DB has `appealed` + `appeal_due_at` (already applied)
 - [ ] Full stack on staging before `staging` → `main` promotion PR
+- [ ] **`npm run release:promotion`** passes on production after prod migrations applied
 
 ### Post-stack staging smoke
 

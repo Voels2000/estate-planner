@@ -63,6 +63,70 @@ SELECT column_name FROM information_schema.columns
   WHERE table_name = 'privacy_requests' AND column_name = 'appeal_due_at';
 ```
 
+### Structural gate (production — before staging→main)
+
+Mirrors `assert-rls-coverage.sql`: fail closed if production is schema-ahead of code.
+
+```bash
+npm run release:promotion
+# or: npm run verify:promotion-schema
+```
+
+Queries production for `appeal_due_at` and `appealed` in `privacy_requests_status_check`. **Exits non-zero** if either is missing — blocks promotion of #67+ until migrations land on prod.
+
+After applying prod migrations, re-run to confirm:
+
+```bash
+npm run verify:promotion-schema
+npm run verify:promotion-schema -- --staging   # optional staging sanity check
+```
+
+---
+
+## Stack flexibility
+
+Most batches are independent by design. If a lower PR stalls in review, these can be **retargeted to `staging`** without waiting for the full chain:
+
+| PR | Batch | Independent? |
+|----|-------|--------------|
+| #63 | B2 waitlist notice | ✅ |
+| #65 | B4 attorney billing | ✅ |
+| #66 | B5 trial disclosures | ✅ |
+| #68 | B7 renewal cron | ✅ |
+| #69 | B8 terms source | ✅ |
+
+**Not independent:** #60 (policy foundation), #67 (schema + appeals code). Promoting #67–#70 to production always carries #67's schema dependency.
+
+---
+
+## Safety-critical smoke (before stack merges to staging)
+
+| Batch | Risk | What to verify |
+|-------|------|----------------|
+| **B1** (#62) | Household data loss | `deletionGuards` blocks active subscription + advisor/attorney roles (409); schedules `deletion_schedule` — **never inline delete** |
+| **B6** (#67) | Appeal SLA broken | Admin PATCH `status→appealed` sets `appeal_due_at` immediately; compliance cron queries `status = 'appealed'` |
+| **B8** (#69) | Empty /terms | Public `/terms` renders from `terms-of-service-sections.ts`; admin app_config write removed |
+| **B9** (#70) | Over-blocking email | GPC skips **marketing drip only**; waitlist + transactional paths unchanged |
+
+---
+
+## Counsel gate
+
+| Environment | #60 policy text |
+|-------------|-----------------|
+| **Staging merge** | Safe — staging is not public |
+| **Production promotion** | **Counsel redline required** — unreviewed multi-state policy goes live on `/privacy` |
+
+Below nexus / pre-launch: engineering baseline on staging is defensible; **conscious choice** required before promoting #60 to `main`.
+
+---
+
+## Parked — H5 terms re-acceptance hard-gate
+
+**Separate from B8** (source-of-truth fix — done). H5 = soft banner vs hard gate on **material** ToS changes. Decide material-change trigger before first post-launch ToS bump; build when needed.
+
+See [DECISION_LOG.md](./DECISION_LOG.md) § H5.
+
 ---
 
 ## Per-PR smoke (minimal)
@@ -87,10 +151,11 @@ SELECT column_name FROM information_schema.columns
 
 When promoting this stack from `staging` → `main`:
 
-1. [ ] Counsel redline complete (privacy + ToS) — **do not flip to public users without this**
+1. [ ] Counsel redline complete (privacy + ToS) — **#60 text goes live on prod `/privacy`**
 2. [ ] Apply **both** pending migrations on production (see above)
-3. [ ] Merge stack to `main` (or merge `staging` after full stack on staging)
-4. [ ] Confirm Vercel production deploy green
-5. [ ] Post-deploy: privacy request denial → appeal email; assess GPC browser → no drip
+3. [ ] **`npm run release:promotion`** — structural gate must pass (prod schema)
+4. [ ] Merge stack to `main` (or merge `staging` after full stack on staging)
+5. [ ] Confirm Vercel production deploy green
+6. [ ] Post-deploy: privacy request denial → appeal email; assess GPC browser → no drip
 
 See also [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) § Policy alignment stack.

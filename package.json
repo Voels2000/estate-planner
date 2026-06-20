@@ -68,6 +68,8 @@
     "release:local": "bash scripts/release-local-gate.sh",
     "release:preflight": "bash scripts/release-local-gate.sh --preflight",
     "release:post-deploy": "bash scripts/release-post-deploy.sh",
+    "verify:promotion-schema": "dotenv -o -e .env.projects.local -e .env.local -- npx tsx scripts/verify-promotion-schema.ts",
+    "release:promotion": "bash scripts/release-promotion-gate.sh",
     "launch:tracker": "node scripts/launch-tracker-server.mjs",
     "sync:launch-tracker": "npx tsx scripts/sync-launch-tracker.ts",
     "knip": "knip",

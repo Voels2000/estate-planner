@@ -3239,6 +3239,22 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Promotion schema gate (policy stack)
+
+**Decision:** Add `assert-promotion-schema.sql` + `npm run release:promotion` — fail closed if production lacks `privacy_requests.appeal_due_at` or `appealed` status before staging→main promotion of #67+.
+
+**Implication:** Converts manual migration remember-step into structural gate (same class as `assert-rls-coverage`).
+
+---
+
+### June 2026 — H5 terms re-acceptance hard-gate (parked)
+
+**Decision:** **Not in B8 scope.** B8 fixed ToS source-of-truth (code constants, admin read-only). H5 = when to **hard-gate** re-acceptance vs soft banner on routine version bumps. Decide **material-change trigger** before first post-launch ToS edit; implement when a material change ships.
+
+**Alternatives considered:** Hard gate on every `TERMS_OF_SERVICE_VERSION` bump (rejected for launch — too friction-heavy for immaterial fixes).
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]
