@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 import { ATTORNEY_PLAN_LIMITS, ATTORNEY_PLAN_NAMES, type AttorneyPlanKey } from '@/lib/tiers'
 import { ATTORNEY_TIER_LIMITS } from '@/lib/attorney/attorneyTierLimits'
 
@@ -112,6 +113,10 @@ export function AttorneyBillingClient({
         </div>
       )}
 
+      <p className="mt-4 text-xs leading-relaxed text-neutral-600">
+        {BILLING_DISCLOSURES.pricingPageNotice}
+      </p>
+
       {currentTier >= 1 && (
         <div className="mt-6">
           <button
@@ -141,14 +146,23 @@ export function AttorneyBillingClient({
               ))}
             </ul>
             {plan.id > currentTier && plan.planKey ? (
-              <button
-                type="button"
-                onClick={() => void handleSubscribe(plan.planKey!)}
-                disabled={loading !== null}
-                className="mt-4 w-full rounded-md bg-[var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                {loading === plan.planKey ? 'Redirecting…' : `Subscribe to ${plan.name}`}
-              </button>
+              <>
+                <p className="mt-4 text-xs leading-relaxed text-neutral-600">
+                  {BILLING_DISCLOSURES.preCheckout(
+                    plan.name,
+                    `$${ATTORNEY_PLAN_LIMITS[plan.planKey].priceMonthly}`,
+                    'month',
+                  )}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void handleSubscribe(plan.planKey!)}
+                  disabled={loading !== null}
+                  className="mt-3 w-full rounded-md bg-[var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {loading === plan.planKey ? 'Redirecting…' : `Subscribe to ${plan.name}`}
+                </button>
+              </>
             ) : null}
             {plan.id > currentTier && plan.envKey && !plan.planKey ? (
               <p className="mt-4 rounded bg-amber-50 px-2 py-1 text-[10px] text-amber-700">
