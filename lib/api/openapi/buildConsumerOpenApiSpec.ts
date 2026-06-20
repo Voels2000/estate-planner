@@ -15,7 +15,7 @@ const ROUTE_SUMMARIES: Record<string, string> = {
     'Accept (PATCH) or decline (DELETE) advisor strategy line items',
   '/api/consumer/generate-base-case': 'Regenerate base-case scenario for household',
   '/api/consumer/estate-health-check': 'Persist estate health check answers',
-  '/api/consumer/privacy-request': 'Submit WCPA privacy request',
+  '/api/consumer/privacy-request': 'Submit privacy rights request',
   '/api/consumer/setup-progress': 'Read onboarding setup progress',
   '/api/consumer/estate-checklist': 'Read or update estate execution checklist',
 }

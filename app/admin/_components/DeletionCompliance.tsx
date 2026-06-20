@@ -232,8 +232,8 @@ export function DeletionCompliance() {
       <div>
         <h2 className="text-base font-semibold text-neutral-900">Data & Compliance</h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Washington WCPA — scheduled deletions, privacy requests (45-day SLA),
-          audit trail, and admin-triggered deletions. Dry-run before live delete.
+          Scheduled deletions, privacy requests (45-day SLA), appeals, audit trail,
+          and admin-triggered deletions. Dry-run before live delete.
         </p>
       </div>
 
@@ -549,6 +549,7 @@ export function DeletionCompliance() {
                           <option value="in_progress">in progress</option>
                           <option value="completed">completed</option>
                           <option value="denied">denied</option>
+                          <option value="appealed">appealed</option>
                         </select>
                       </td>
                       <td className="px-4 py-3 text-sm text-neutral-600">
@@ -834,7 +835,7 @@ export function DeletionCompliance() {
                 }
                 className={inputClass}
               >
-                <option value="user_request">User request (WCPA)</option>
+                <option value="user_request">User request (privacy rights)</option>
                 <option value="admin_initiated">Admin initiated</option>
                 <option value="subscription_cancelled">Subscription cancelled</option>
                 <option value="account_closed">Account closed</option>

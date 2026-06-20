@@ -339,6 +339,17 @@ function ResultsScreen({
             We&apos;ll email you a prioritized checklist based on your gaps —
             formatted to share with your attorney or advisor.
           </p>
+          <p style={{
+            fontSize: 12, color: 'rgba(255,255,255,0.55)',
+            lineHeight: 1.5, marginBottom: 14,
+          }}>
+            By submitting your email, you agree we may send you planning tips and
+            product updates. See our{' '}
+            <a href="/privacy" style={{ color: '#c9a84c', textDecoration: 'underline' }}>
+              Privacy Policy
+            </a>
+            . Unsubscribe anytime from any email.
+          </p>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input
               type="email"
