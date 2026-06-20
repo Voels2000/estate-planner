@@ -1422,7 +1422,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Consumer:** `POST /api/consumer/privacy-request` from `/settings/security`; confirmation email with reference ID + due date.
 - **Admin:** Data & Compliance → Privacy Requests; `GET/PATCH /api/admin/deletions` (`view=privacy`); denial triggers appeal-instructions email (`lib/email/privacyRequestDecisionEmail.ts`).
 - **Reminders:** `compliance-reminders` cron — overdue deletions, deletion failures (7d), urgent privacy requests (7d), monthly summary (1st only); emails `COMPLIANCE_EMAIL` only when action needed.
-- **Migrations:** `20260625170000_sprint_c7_privacy_requests.sql` — ✅ applied in production; `20260720120000_privacy_requests_appealed_status.sql` — pending prod apply.
+- **Migrations:** `20260625170000_sprint_c7_privacy_requests.sql` — ✅ prod; `20260720120000` + `20260721120000` — ✅ staging 2026-06-18 · ⬜ **apply both to prod before promoting B6 (#67) to main** ([POLICY_ALIGNMENT_STACK.md](./POLICY_ALIGNMENT_STACK.md)).
 
 **Multi-state Privacy Policy (engineering draft 2026-06-20 — counsel redline pending):**
 

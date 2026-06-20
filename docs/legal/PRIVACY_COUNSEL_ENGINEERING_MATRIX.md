@@ -23,7 +23,7 @@
 | Deletion path | `lib/compliance/deleteUser.ts`, admin execute, cron | Unchanged; supports deletion requests |
 | Compliance SOP | `docs/COMPLIANCE_CALENDAR.md` | Appeals 60-day SLA documented |
 
-**Pending ops (not counsel-dependent):** apply migration `20260720120000_privacy_requests_appealed_status.sql` to production.
+**Pending ops (not counsel-dependent):** migrations `20260720120000` + `20260721120000` — ✅ staging 2026-06-18 · ⬜ apply to prod before B6 on main.
 
 ---
 
