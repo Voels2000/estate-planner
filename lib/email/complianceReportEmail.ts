@@ -18,6 +18,12 @@ type UrgentRequest = {
   due_at: string
 }
 
+type UrgentAppeal = {
+  email: string
+  request_type: string
+  appeal_due_at: string
+}
+
 type MonthlySummary = {
   deletionsThisMonth: number
   pendingRequests: number
@@ -43,6 +49,7 @@ export async function sendComplianceReportEmail(params: {
   overdueDeletions: OverdueDeletion[]
   recentFailures: DeletionFailure[]
   urgentRequests: UrgentRequest[]
+  urgentAppeals?: UrgentAppeal[]
   monthlySummary: MonthlySummary | null
   overdueOpsTasks?: OpsTaskAlert[]
   dueTodayOpsTasks?: OpsTaskAlert[]
@@ -55,6 +62,7 @@ export async function sendComplianceReportEmail(params: {
     overdueDeletions,
     recentFailures,
     urgentRequests,
+    urgentAppeals = [],
     monthlySummary,
     overdueOpsTasks = [],
     dueTodayOpsTasks = [],
@@ -143,6 +151,16 @@ export async function sendComplianceReportEmail(params: {
       lines.push(`- ${row.email} — ${row.request_type} — due ${due}`)
     }
     lines.push('Action: Admin Portal → Data & Compliance → Privacy Requests.')
+    lines.push('')
+  }
+
+  if (urgentAppeals.length > 0) {
+    lines.push(`⚠️ PRIVACY APPEALS DUE WITHIN 7 DAYS: ${urgentAppeals.length}`)
+    for (const row of urgentAppeals) {
+      const due = new Date(row.appeal_due_at).toLocaleDateString('en-US')
+      lines.push(`- ${row.email} — ${row.request_type} appeal — due ${due}`)
+    }
+    lines.push('Action: Admin Portal → Data & Compliance → Privacy Requests (appealed).')
     lines.push('')
   }
 

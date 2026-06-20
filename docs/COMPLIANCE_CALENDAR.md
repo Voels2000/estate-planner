@@ -64,7 +64,8 @@ Handled automatically:
 |-------|-----------|-----------------|
 | Overdue deletions | Daily 8am UTC | Any pending deletion past due date |
 | Deletion failures | Daily 8am UTC | Any failure in last 7 days |
-| Privacy requests approaching deadline | Daily 8am UTC | Any request due within 7 days |
+| Privacy requests approaching deadline | Daily 8am UTC | Any request due within 7 days (`pending` / `in_progress`) |
+| Privacy appeals approaching deadline | Daily 8am UTC | Any `appealed` request with `appeal_due_at` within 7 days |
 | Ops tasks due/overdue | Daily 8am UTC | Any `ops_tasks` due within 7 days |
 | Cron health failures / stale | Daily 8am UTC | `cron_health` error or not run in 26h |
 | Post-deploy verify failure | Daily 9am UTC | Voels gate fails → immediate email |
@@ -93,7 +94,7 @@ Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` (`avoel
    - Opt-out: confirm no data sale (already true — document in response)
 5. Mark request **completed** or **denied** in Admin Portal → Privacy Requests
    - **Denied:** system emails appeal instructions automatically; user may reply to appeal
-   - **Appealed:** reopen review; respond to appeal within **60 days** per Privacy Policy §8
+   - **Appealed:** set status `appealed` in admin UI — system sets `appeal_due_at` (+60 days); respond within **60 days** per Privacy Policy §8; compliance cron alerts when due within 7 days
 6. Send completion confirmation to user when fulfilled
 
 ## Policy alignment notes

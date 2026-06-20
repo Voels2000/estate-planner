@@ -43,6 +43,7 @@ type PrivacyRequest = {
   status: string
   received_at: string
   due_at: string
+  appeal_due_at?: string | null
   notes?: string | null
 }
 
@@ -520,8 +521,12 @@ export function DeletionCompliance() {
               </thead>
               <tbody className="divide-y divide-neutral-100">
                 {privacyRequests.map((row) => {
+                  const slaIso =
+                    row.status === 'appealed' && row.appeal_due_at
+                      ? row.appeal_due_at
+                      : row.due_at
                   const daysLeft = Math.ceil(
-                    (new Date(row.due_at).getTime() - Date.now()) /
+                    (new Date(slaIso).getTime() - Date.now()) /
                       (1000 * 60 * 60 * 24),
                   )
                   return (
@@ -556,7 +561,10 @@ export function DeletionCompliance() {
                         {new Date(row.received_at).toLocaleDateString('en-US')}
                       </td>
                       <td className="px-4 py-3 text-sm text-neutral-600">
-                        {new Date(row.due_at).toLocaleDateString('en-US')}
+                        {new Date(slaIso).toLocaleDateString('en-US')}
+                        {row.status === 'appealed' ? (
+                          <span className="ml-1 text-xs text-neutral-400">(appeal)</span>
+                        ) : null}
                       </td>
                       <td
                         className={`px-4 py-3 text-sm font-medium ${
