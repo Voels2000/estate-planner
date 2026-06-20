@@ -95,3 +95,43 @@ are enough; no need to trigger writes or charges just for this promotion.
 
 Vercel Pro upgrade · Supabase PITR confirmation · real-card Stripe smoke test ·
 privacy-policy counsel accuracy pass. This promotion does not touch any of these.
+
+---
+
+## Policy alignment stack (PRs #60–#70) — staging merge train
+
+**Runbook:** [POLICY_ALIGNMENT_STACK.md](./POLICY_ALIGNMENT_STACK.md)
+
+Merge to `staging` in stack order (#60 → #70). Each PR targets the previous branch in the chain until merged, then retarget to `staging`.
+
+### Migrations — staging ✅ applied 2026-06-18
+
+Both applied via `scripts/apply-migration.sh staging`:
+
+- `20260720120000_privacy_requests_appealed_status.sql`
+- `20260721120000_privacy_requests_appeal_due_at.sql`
+
+### Migrations — production ⬜ required before main promotion
+
+Apply **both** on production **before** merging code that uses `appealed` / `appeal_due_at` to `main` (B6 / #67):
+
+```bash
+bash scripts/apply-migration.sh production supabase/migrations/20260720120000_privacy_requests_appealed_status.sql
+bash scripts/apply-migration.sh production supabase/migrations/20260721120000_privacy_requests_appeal_due_at.sql
+```
+
+**Structural gate (mandatory):** `npm run release:promotion` — queries prod for `appeal_due_at` + `appealed` status; **fail closed** if absent. Promoting #67–#70 always carries #67's code.
+
+**Do not promote to production without counsel redline** on privacy/ToS text — engineering draft only.
+
+### Pre-merge (staging stack)
+
+- [ ] Merge #60 → retarget #61 to `staging` (or merge in order per stack doc)
+- [ ] After #67 merged: confirm staging DB has `appealed` + `appeal_due_at` (already applied)
+- [ ] Full stack on staging before `staging` → `main` promotion PR
+- [ ] **`npm run release:promotion`** passes on production after prod migrations applied
+
+### Post-stack staging smoke
+
+See per-PR checks in [POLICY_ALIGNMENT_STACK.md § Per-PR smoke](./POLICY_ALIGNMENT_STACK.md#per-pr-smoke-minimal).
+

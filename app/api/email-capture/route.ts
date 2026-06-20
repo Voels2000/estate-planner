@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { checkRateLimit, clientIp } from '@/lib/api/simpleRateLimit'
 import { internalApiHeaders } from '@/lib/api/internalApiAuth'
+import { requestHasGpcMarketingOptOut } from '@/lib/privacy/readGpcOptOut'
 
 const EMAIL_CAPTURE_RATE_LIMIT = { max: 10, windowMs: 60_000 }
+
+function isMarketingDripSource(source: unknown): boolean {
+  return source !== 'waitlist'
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,12 +23,15 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { email, source, score } = body
+    const gpcOptOut = requestHasGpcMarketingOptOut(req)
+    const marketingDrip = isMarketingDripSource(source)
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       return NextResponse.json({ error: 'Valid email required' }, { status: 400 })
     }
 
     const supabase = createAdminClient()
+    const capturedAt = new Date().toISOString()
 
     const { error } = await supabase
       .from('email_captures')
@@ -31,7 +39,8 @@ export async function POST(req: NextRequest) {
         email: email.trim().toLowerCase(),
         source: source ?? 'unknown',
         score: typeof score === 'number' ? score : null,
-        captured_at: new Date().toISOString(),
+        captured_at: capturedAt,
+        ...(gpcOptOut && marketingDrip ? { unsubscribed_at: capturedAt } : {}),
       })
 
     if (error) {
@@ -41,7 +50,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (source !== 'waitlist') {
+    if (marketingDrip && !gpcOptOut) {
       fetch(`https://mywealthmaps.com/api/email/drip`, {
         method: 'POST',
         headers: internalApiHeaders(),

@@ -86,7 +86,7 @@ Paths are indicative; when in doubt, run the heavier column.
 | **Profile / onboarding / signup** | `release:preflight` + `npm run test:e2e:go-live-profile -- --workers=1` | `release:post-deploy` if signup defaults or triggers changed |
 | **DB migration** (any `supabase/migrations/`) | `release:preflight` + local `npm run verify:rls -- --require-sql` against target DB | **`npm run release:post-deploy`** (required) |
 | **Pre-go-live / launch-sensitive** | Full B1 stack: `release:preflight`, `test:e2e:security-isolation`, `test:e2e:cross-role`, `test:e2e:prod:smoke` | `release:post-deploy` |
-| **Staging → main promotion** (accumulated batch) | [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) — prod secrets, migration verify, merge on green CI | Passive log smoke + checkout block paths; defer live Stripe charge to real-card test |
+| **Staging → main promotion** (accumulated batch) | [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) — prod secrets, migration verify, **`npm run release:promotion`**, passive log smoke + checkout block paths | Passive log smoke + checkout block paths; defer live Stripe charge to real-card test |
 
 ### Command reference
 

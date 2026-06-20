@@ -3231,6 +3231,30 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — GPC marketing suppression (B9)
+
+**Decision:** When `Sec-GPC: 1` or `mwm_gpc_opt_out` cookie is present, `POST /api/email-capture` still records the lead but skips drip step 1 and sets `unsubscribed_at` to block follow-up cron sends.
+
+**Implication:** GPC cookie set by middleware is now consumed for marketing enrollment; waitlist captures unchanged (already drip-free).
+
+---
+
+### June 2026 — Promotion schema gate (policy stack)
+
+**Decision:** Add `assert-promotion-schema.sql` + `npm run release:promotion` — fail closed if production lacks `privacy_requests.appeal_due_at` or `appealed` status before staging→main promotion of #67+.
+
+**Implication:** Converts manual migration remember-step into structural gate (same class as `assert-rls-coverage`).
+
+---
+
+### June 2026 — H5 terms re-acceptance hard-gate (parked)
+
+**Decision:** **Not in B8 scope.** B8 fixed ToS source-of-truth (code constants, admin read-only). H5 = when to **hard-gate** re-acceptance vs soft banner on routine version bumps. Decide **material-change trigger** before first post-launch ToS edit; implement when a material change ships.
+
+**Alternatives considered:** Hard gate on every `TERMS_OF_SERVICE_VERSION` bump (rejected for launch — too friction-heavy for immaterial fixes).
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

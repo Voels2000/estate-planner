@@ -868,7 +868,9 @@ Optional: three-line header on `page.tsx` (route, tier, gate, write APIs).
 - [x] **Privacy Policy** — `/privacy` (`2e1dff3`, `695a860`)
 - [x] **Multi-state privacy rewrite (engineering draft)** — `lib/legal/privacy-policy-sections.ts` v `2026-06-20`, addenda, GPC, appeals, counsel packet — [PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md)
 - [ ] **Counsel redline + conditional engineering** — per matrix Q1–Q10 outcomes
-- [ ] **Migration `20260720120000`** — apply `appealed` status to prod
+- [x] **Migration `20260720120000`** — ✅ staging 2026-06-18 · ⬜ apply `appealed` status to **prod** before #67 on main
+- [x] **Migration `20260721120000`** — ✅ staging 2026-06-18 · ⬜ apply `appeal_due_at` to **prod** before #67 on main
+- [x] **Policy alignment stack runbook** — [POLICY_ALIGNMENT_STACK.md](./POLICY_ALIGNMENT_STACK.md) (PRs #60–#70)
 - [x] **Terms of Service** — `/terms`; post-checkout accept at `/terms/accept`
 - [x] **Footer + SEO** — `LegalFooterLinks`; sitemap + robots
 - [ ] **LAUNCH_GATE.md** — placeholders + counsel (manual)

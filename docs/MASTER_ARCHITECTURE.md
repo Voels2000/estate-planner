@@ -1422,12 +1422,12 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Consumer:** `POST /api/consumer/privacy-request` from `/settings/security`; confirmation email with reference ID + due date.
 - **Admin:** Data & Compliance → Privacy Requests; `GET/PATCH /api/admin/deletions` (`view=privacy`); denial triggers appeal-instructions email (`lib/email/privacyRequestDecisionEmail.ts`).
 - **Reminders:** `compliance-reminders` cron — overdue deletions, deletion failures (7d), urgent privacy requests (7d), monthly summary (1st only); emails `COMPLIANCE_EMAIL` only when action needed.
-- **Migrations:** `20260625170000_sprint_c7_privacy_requests.sql` — ✅ applied in production; `20260720120000_privacy_requests_appealed_status.sql` — pending prod apply.
+- **Migrations:** `20260625170000_sprint_c7_privacy_requests.sql` — ✅ prod; `20260720120000` + `20260721120000` — ✅ staging 2026-06-18 · ⬜ **apply both to prod before promoting B6 (#67) to main** ([POLICY_ALIGNMENT_STACK.md](./POLICY_ALIGNMENT_STACK.md)).
 
 **Multi-state Privacy Policy (engineering draft 2026-06-20 — counsel redline pending):**
 
 - **Policy:** `lib/legal/privacy-policy-sections.ts` (`PRIVACY_POLICY_VERSION` `2026-06-20`) + `lib/legal/privacy-policy-addenda.ts` — all-U.S.-residents rights, appeals §8, Sentry subprocessor, GPC §11, state addenda; served at `/privacy`.
-- **GPC:** `lib/privacy/globalPrivacyControl.ts` — middleware sets `mwm_gpc_opt_out` on `Sec-GPC: 1` (detect-only; cookie not yet consumed downstream).
+- **GPC:** `lib/privacy/globalPrivacyControl.ts` — middleware sets `mwm_gpc_opt_out` on `Sec-GPC: 1`. `readGpcOptOut.ts` reads header + cookie; `POST /api/email-capture` skips marketing drip when opted out (sets `unsubscribed_at`).
 - **Assess capture:** `/event/[slug]/assess` — Privacy Policy link + marketing notice before email submit.
 - **Counsel packet:** `docs/legal/COUNSEL_PRIVACY_REVIEW.md`, `docs/legal/MWM_MultiState_Privacy_Terms_Draft.md`, `docs/legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md` — maps counsel Q1–Q10 to conditional engineering.
 - **Not launch-ready** until counsel redline; see engineering matrix for post-counsel build items (MHMD, GPC consumption, consent checkbox, self-service export, etc.).
