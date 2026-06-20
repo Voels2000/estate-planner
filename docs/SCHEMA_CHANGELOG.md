@@ -1288,6 +1288,14 @@ All `@rolobe.resend.app` accounts deleted; soft-deleted scrambled accounts hard-
 
 ---
 
+## Renewal reminder cleanup (2026-06-21) — B7
+
+- Removed dead `subscription_renewal_date` backup from `app/api/cron/notifications/route.ts`
+- **Single source:** Stripe `invoice.upcoming` → `sendConsumerRenewalReminder`
+- `profiles.subscription_renewal_date` retained (unused legacy column)
+
+---
+
 ## Multi-state privacy (2026-06-20) — engineering draft; counsel redline pending
 
 **Migration:** `20260721120000_privacy_requests_appeal_due_at.sql` (pending prod)

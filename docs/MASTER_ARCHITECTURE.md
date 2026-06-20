@@ -1382,7 +1382,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Manual cron tests:** Use `https://www.mywealthmaps.com/...` — `https://mywealthmaps.com` (apex) 307-redirects to www and curl does not resend `Authorization` → false 401.
 
-**Implementation:** `app/api/cron/notifications/route.ts` — uses `createAdminClient()`; creates in-app + email notifications via `create_notification` RPC for: stale plan (30d), estate milestones ($1M / $5M / $13.61M), MFA reminder, profile completion nudge, subscription renewal (7d). **Email drips:** consumer assess captures (steps 2–3); advisor activation (steps 2–3 via `/api/email/advisor-drip`); **attorney activation (steps 2–3 via `/api/email/attorney-drip`)** after step 1 sent.
+**Implementation:** `app/api/cron/notifications/route.ts` — uses `createAdminClient()`; creates in-app + email notifications via `create_notification` RPC for: stale plan (30d), estate milestones ($1M / $5M / $13.61M), MFA reminder, profile completion nudge. **Consumer renewal reminders:** Stripe `invoice.upcoming` webhook only (`sendConsumerRenewalReminder` in `app/api/stripe/webhook/route.ts`) — not the daily notifications cron. **Email drips:** consumer assess captures (steps 2–3); advisor activation (steps 2–3 via `/api/email/advisor-drip`); **attorney activation (steps 2–3 via `/api/email/attorney-drip`)** after step 1 sent.
 
 **GitHub Actions:** `verify` on PR → `main`/`staging`; `e2e-smoke` + `rls-verify` on PR → `main`. Cron is Vercel-scheduled only.
 
