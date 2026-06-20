@@ -750,7 +750,9 @@ export function AdminClient({
             <p className="text-sm text-neutral-500 mb-6">Changes take effect immediately for new sessions.</p>
             {configError && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{configError}</p>}
             <div className="space-y-6">
-              {appConfig.map(config => {
+              {appConfig
+                .filter(config => !['terms_version', 'terms_sections'].includes(config.key))
+                .map(config => {
                 const meta = CONFIG_LABELS[config.key]
                 return (
                   <div key={config.key} className="flex items-start justify-between gap-6 pb-6 border-b border-neutral-100 last:border-0 last:pb-0">
