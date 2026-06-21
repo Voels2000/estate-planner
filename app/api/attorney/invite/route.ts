@@ -83,14 +83,14 @@ export async function POST(request: Request) {
       headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
       tags: [{ name: 'category', value: 'attorney_invite' }],
       to: invitedEmail,
-      subject: `${attorneyLabel} has invited you to MyWealthMaps`,
+      subject: `${attorneyLabel} has invited you to My Wealth Maps`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px">
-          <h1 style="color:#1a1a2e;font-size:24px">MyWealthMaps</h1>
+          <h1 style="color:#1a1a2e;font-size:24px">My Wealth Maps</h1>
           <p style="color:#6b7280;font-size:14px">Financial, Retirement &amp; Estate Planning in One Place</p>
           <div style="background:#f9fafb;border-radius:8px;padding:32px;margin:24px 0">
             <h2 style="color:#1a1a2e;font-size:20px;margin-top:0">You have been invited</h2>
-            <p style="color:#374151;font-size:16px;line-height:1.6"><strong>${attorneyLabel}</strong> has invited you to connect on MyWealthMaps.</p>
+            <p style="color:#374151;font-size:16px;line-height:1.6"><strong>${attorneyLabel}</strong> has invited you to connect on My Wealth Maps.</p>
             <p style="color:#374151;font-size:16px;line-height:1.6">Your attorney will be able to collaborate with you on your estate plan directly through the platform.</p>
             <div style="text-align:center;margin:32px 0">
               <a href="${acceptUrl}" style="background:#2563eb;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">Accept Invitation</a>

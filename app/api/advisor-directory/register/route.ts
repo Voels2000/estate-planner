@@ -54,7 +54,7 @@ export async function POST(req: Request) {
         tags: [{ name: 'category', value: 'admin_advisor_listing' }],
         html: `
           <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px">
-            <h1 style="color:#1a1a2e;font-size:24px">MyWealthMaps</h1>
+            <h1 style="color:#1a1a2e;font-size:24px">My Wealth Maps</h1>
             <p style="color:#6b7280;font-size:14px">Admin Notification</p>
             <div style="background:#f9fafb;border-radius:8px;padding:32px;margin:24px 0">
               <h2 style="color:#1a1a2e;font-size:20px;margin-top:0">New Advisor Listing Pending Review</h2>
@@ -87,7 +87,7 @@ export async function POST(req: Request) {
               </div>
             </div>
             <p style="color:#9ca3af;font-size:12px;text-align:center">
-              This is an automated notification from MyWealthMaps.
+              This is an automated notification from My Wealth Maps.
             </p>
           </div>
         `,

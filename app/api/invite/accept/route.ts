@@ -100,7 +100,7 @@ export async function POST(request: Request) {
             p_type: 'estate_milestone',
             p_title: '🎉 Connected to your advisor',
             p_body:
-              'Your advisor has added you to their practice. You can collaborate on your estate plan in MyWealthMaps.',
+              'Your advisor has added you to their practice. You can collaborate on your estate plan in My Wealth Maps.',
             p_delivery: 'both',
             p_metadata: { advisor_id: advisorId },
             p_cooldown: '1 hour',

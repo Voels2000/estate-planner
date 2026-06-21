@@ -151,10 +151,10 @@ export async function POST(request: Request) {
       headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
       tags: [{ name: 'category', value: 'firm_advisor_invite' }],
       to: email,
-      subject: "You've been invited to join a firm on MyWealthMaps",
+      subject: "You've been invited to join a firm on My Wealth Maps",
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px 16px">
-          <p style="color:#374151;font-size:16px;line-height:1.6">${firmName} has invited you to join their advisory firm on MyWealthMaps.</p>
+          <p style="color:#374151;font-size:16px;line-height:1.6">${firmName} has invited you to join their advisory firm on My Wealth Maps.</p>
           <p style="color:#374151;font-size:16px;line-height:1.6">Click below to create your account and join the firm:</p>
           <p style="margin:24px 0"><a href="${signupUrl}" style="color:#2563eb;font-size:16px">${signupUrl}</a></p>
           <p style="color:#374151;font-size:16px;line-height:1.6">If you already have an account, log in and you will be joined to the firm automatically.</p>

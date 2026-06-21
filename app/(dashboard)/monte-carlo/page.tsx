@@ -15,7 +15,7 @@ import { loadMonteCarloAdvisorAssumptions } from '@/lib/monte-carlo/loadMonteCar
 import { MonteCarloClient } from './_monte-carlo-client'
 
 export const metadata = {
-  title: 'Monte Carlo Simulations | Estate Planner',
+  title: 'Monte Carlo Simulations | My Wealth Maps',
   description: 'Probabilistic retirement outcome modeling',
 }
 
