@@ -3225,7 +3225,25 @@ Pass = at least one row with referral code matching a test signup.
 
 **Implementation:** `scheduleUserAccountDeletion()` blocks active subscriptions and upgraded roles; schedules at period end + 30 days when canceling, else now + 30 days. UI at Settings → Security.
 
+**Manual smoke:** Settings → Security → Delete account — **passed** (attest: Al / 2026-06-21).
+
 **Implication:** Users must cancel at `/billing` before scheduling if still on an active paid plan.
+
+---
+
+### June 2026 — Privacy appeals SLA (B6)
+
+**Decision:** Admin `appealed` status + `appeal_due_at` (+60 days); denial email includes appeal instructions; compliance cron alerts appeals due within 7 days.
+
+**Manual smoke (prod):** Request `6e6a2b55-de50-41f5-ba3e-a6cb86f30873` (`avoels@comcast.net`, access) — consumer submit → admin **denied** (appeal email received) → **appealed** → **completed**. Final DB row: `status=completed`, `completed_at` set, `appeal_due_at` null (cleared on exit from appealed). **Attest: Al / 2026-06-21.**
+
+---
+
+### June 2026 — Terms single source of truth (B8)
+
+**Decision:** Remove admin `app_config` ToS writes; canonical source = `lib/legal/terms-of-service-sections.ts` (`TERMS_OF_SERVICE_VERSION` `2026-06-02`). Admin T&C tab read-only + **Re-gate users** (`POST /api/admin/terms/regate`).
+
+**Manual smoke (prod):** `/terms` + `/api/terms/content` → `2026-06-02`; admin T&C read-only preview matches public page; `POST /api/admin/terms/update` → 404; `terms_version` / `terms_sections` absent from app_config UI; Re-gate success. **Attest: Al / 2026-06-21.**
 
 ---
 
@@ -3258,6 +3276,8 @@ Pass = at least one row with referral code matching a test signup.
 **Decision:** When `Sec-GPC: 1` or `mwm_gpc_opt_out` cookie is present, `POST /api/email-capture` still records the lead but skips drip step 1 and sets `unsubscribed_at` to block follow-up cron sends.
 
 **Implication:** GPC cookie set by middleware is now consumed for marketing enrollment; waitlist captures unchanged (already drip-free).
+
+**Attestation:** Al / 2026-06-21 — staging `POST /api/email-capture` with GPC; `email_captures.unsubscribed_at` set, `drip_step_1_sent_at` null (query **mwm-staging**, not prod).
 
 ---
 
