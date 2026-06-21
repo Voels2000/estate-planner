@@ -25,24 +25,27 @@ const LINKS = [
 export function AttorneyNav({ pendingRequestCount = 0 }: { pendingRequestCount?: number }) {
   const pathname = usePathname()
 
+  const tabClass = (active: boolean) =>
+    [
+      'relative inline-flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-sm font-medium -mb-px transition-colors',
+      active
+        ? 'border-[color:var(--mwm-gold)] text-[color:var(--mwm-navy)]'
+        : 'border-transparent text-neutral-500 hover:border-neutral-300 hover:text-[color:var(--mwm-navy)]',
+    ].join(' ')
+
   return (
-    <nav className="flex flex-wrap items-center gap-1 border-b border-neutral-200 bg-white px-6">
+    <nav
+      className="flex flex-wrap gap-1 border-b border-neutral-200"
+      aria-label="Attorney sections"
+    >
       {LINKS.map((link) => {
         const active = link.match(pathname)
         const badge = link.href === '/attorney/requests' && pendingRequestCount > 0
         return (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`relative px-3 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              active
-                ? 'border-neutral-900 text-neutral-900'
-                : 'border-transparent text-neutral-500 hover:text-neutral-700'
-            }`}
-          >
+          <Link key={link.href} href={link.href} className={tabClass(active)}>
             {link.label}
             {badge && (
-              <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--mwm-gold)] px-1.5 text-[10px] font-bold text-[color:var(--mwm-navy)]">
                 {pendingRequestCount}
               </span>
             )}

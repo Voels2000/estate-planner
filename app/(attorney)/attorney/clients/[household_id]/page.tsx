@@ -181,7 +181,7 @@ export default async function AttorneyClientPage({
           <a href="/attorney" className="text-sm text-neutral-400 hover:text-neutral-600 mb-1 block">
             ← Back to clients
           </a>
-          <h1 className="text-2xl font-semibold text-neutral-900">
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">
             {clientProfile?.full_name ?? 'Client'}
           </h1>
           <p className="text-sm text-neutral-400 mt-0.5">
