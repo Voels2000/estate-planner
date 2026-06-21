@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useAnnualBillingAvailable } from '@/lib/billing/AnnualBillingContext'
 import { upgradePricingLine } from '@/lib/billing/upgradePricingCopy'
 import { formatDollars } from '@/lib/utils/formatCurrency'
 
@@ -47,6 +48,7 @@ export default function UpgradeBanner({
   householdContext,
 }: UpgradeBannerProps) {
   const pathname = usePathname()
+  const annualBillingAvailable = useAnnualBillingAvailable()
   const billingHref = `/billing?returnTo=${encodeURIComponent(pathname)}`
 
   function buildPersonalizedCopy(): string | null {
@@ -173,7 +175,9 @@ export default function UpgradeBanner({
         {tierContext}
         <p className="font-semibold text-amber-950">{moduleName}</p>
         <p className="mt-1 text-sm text-amber-900">{personalizedCopy ?? valueProposition}</p>
-        <p className="mt-2 text-sm text-amber-900/90">{upgradePricingLine(requiredTier)}</p>
+        <p className="mt-2 text-sm text-amber-900/90">
+          {upgradePricingLine(requiredTier, annualBillingAvailable)}
+        </p>
         <p className="mt-1 text-xs text-amber-800/90">
           {requiredTier === 2 ? 'Included with the Retirement plan.' : 'Included with the Estate plan.'}
         </p>
