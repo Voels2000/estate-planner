@@ -14,12 +14,15 @@ export default async function AdvisorToolsLayout({
 
   return (
     <div className="min-h-screen bg-[var(--mwm-off-white)]">
-      <nav className="bg-white border-b border-neutral-200 px-6 py-3 flex items-center justify-between">
+      <nav className="flex items-center justify-between border-b border-[color:var(--mwm-navy)]/20 bg-[color:var(--mwm-navy)] px-6 py-3">
         <div className="flex items-center gap-4">
-          <a href="/advisor" className="text-sm text-[color:var(--mwm-navy)] hover:underline">
+          <a
+            href="/advisor"
+            className="text-sm font-medium text-white/70 hover:text-white hover:underline"
+          >
             ← Advisor Portal
           </a>
-          <span className="text-sm font-semibold text-neutral-900">Prospect Mode</span>
+          <span className="text-sm font-semibold text-white">Prospect Mode</span>
         </div>
       </nav>
       <main className="mx-auto max-w-4xl px-4 py-8">{children}</main>

@@ -24,7 +24,7 @@ export default async function AdvisorLayout({
     <div className="min-h-screen bg-[var(--mwm-off-white)]">
       <nav className="border-b border-[color:var(--mwm-navy)]/20 bg-[color:var(--mwm-navy)] px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-white font-semibold text-sm tracking-wide">Estate Planner</span>
+          <span className="text-white font-semibold text-sm tracking-wide">My Wealth Maps</span>
           <span className="rounded-full border border-[color:var(--mwm-gold)]/40 bg-[color:var(--mwm-gold)]/20 px-2.5 py-0.5 text-xs font-medium text-[color:var(--mwm-gold)]">
             Advisor Portal
           </span>
