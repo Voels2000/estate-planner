@@ -3247,11 +3247,37 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Waitlist privacy notice (B2)
+
+**Decision:** `/waitlist` email capture shows consent copy + Privacy Policy link **before** the email field (matches event assess capture order).
+
+**Manual smoke (prod):** Privacy notice visible above “Email address” on `/waitlist`. Original #63 placement was after the input; corrected in PR #73. **Attest: Al / 2026-06-21.**
+
+---
+
 ### June 2026 — Eligibility attestation (B3)
 
 **Decision:** Launch 18+ / U.S.-resident attestation on the signup checkbox (embedded representation); record via existing `terms_accepted_at` + `terms_version` — no separate `age_attested_at` column pending counsel.
 
 **Implication:** ToS §3 and Privacy §12 now backed by affirmative signup attestation, not passive "by using the Service" alone.
+
+**Manual smoke (prod):** Signup checkbox includes 18+ / U.S. resident attestation (via beta access link while waitlist on). **Attest: Al / 2026-06-21.**
+
+---
+
+### June 2026 — Attorney billing disclosures (B4)
+
+**Decision:** `BILLING_DISCLOSURES.preCheckout()` on `/attorney/billing` — renewal amount, frequency, auto-renewal, self-serve cancel path, ToS/Privacy — shown before Subscribe on paid attorney tiers (RCW 19.316 / FTC negative option).
+
+**Manual smoke (prod):** Admin preview → Billing → Attorney plan picker; page-level RCW notice + per-plan `preCheckout` above Subscribe on Starter/Growth. **Attest: Al / 2026-06-21.**
+
+---
+
+### June 2026 — Trial checkout disclosures (B5)
+
+**Decision:** Full RCW 19.316 / FTC pre-checkout disclosure on consumer trial tier at `/billing` and `/pricing` (same `BILLING_DISCLOSURES.preCheckout` pattern as attorney).
+
+**Manual smoke (prod):** Trial tier cards show full billing disclosure before Subscribe on `/billing` + `/pricing`. **Attest: Al / 2026-06-21.**
 
 ---
 
