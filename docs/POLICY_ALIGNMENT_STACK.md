@@ -136,10 +136,10 @@ See [DECISION_LOG.md](./DECISION_LOG.md) § H5.
 | #60 | `/privacy` renders v2026-06-20; GPC cookie on `Sec-GPC: 1`; admin privacy PATCH `denied` sends email |
 | #61 | Privacy version `2026-06-21`; GPC declarative §11; manual fulfillment §7 |
 | #62 | Settings → Security → Delete account; 409 if active sub — **attested Al / 2026-06-21** |
-| #63 | `/waitlist` shows privacy notice before email field |
-| #64 | Signup checkbox includes 18+ / U.S. resident |
-| #65 | `/attorney/billing` shows `preCheckout()` disclosures |
-| #66 | Estate trial tier shows full billing disclosure on `/billing` + `/pricing` |
+| #63 | `/waitlist` shows privacy notice before email field — **attested Al / 2026-06-21** (prod; privacy copy above email input; fix in PR #73) |
+| #64 | Signup checkbox includes 18+ / U.S. resident — **attested Al / 2026-06-21** (prod; beta signup link) |
+| #65 | `/attorney/billing` shows `preCheckout()` disclosures — **attested Al / 2026-06-21** (admin preview → Attorney plan picker; per-plan copy above Subscribe) |
+| #66 | Estate trial tier shows full billing disclosure on `/billing` + `/pricing` — **attested Al / 2026-06-21** |
 | #67 | Admin privacy → set `appealed` → `appeal_due_at` populated; compliance cron includes appeals — **attested Al / 2026-06-21** (denial email received; prod row `6e6a2b55…`) |
 | #68 | Notifications cron no longer queries `subscription_renewal_date` |
 | #69 | Admin Terms read-only; Re-gate users works; `/terms` unchanged — **attested Al / 2026-06-21** |
