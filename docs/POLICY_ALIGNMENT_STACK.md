@@ -1,6 +1,6 @@
 # Policy ↔ code alignment stack (PRs #60–#70)
 
-**Last updated:** 2026-06-18  
+**Last updated:** 2026-06-21  
 **Target branch:** `staging` (merge in order; each PR is stacked on the previous)  
 **Counsel status:** Privacy/ToS text is an engineering draft — counsel redline still pending before public launch.
 
@@ -105,7 +105,7 @@ Most batches are independent by design. If a lower PR stalls in review, these ca
 |-------|------|----------------|
 | **B1** (#62) | Household data loss | `deletionGuards` blocks active subscription + advisor/attorney roles (409); schedules `deletion_schedule` — **never inline delete** |
 | **B6** (#67) | Appeal SLA broken | Admin PATCH `status→appealed` sets `appeal_due_at` immediately; compliance cron queries `status = 'appealed'` |
-| **B8** (#69) | Empty /terms | Public `/terms` renders from `terms-of-service-sections.ts`; admin app_config write removed |
+| **B8** (#69) | Empty /terms | Public `/terms` renders from `terms-of-service-sections.ts`; admin app_config write removed — **attested Al / 2026-06-21** |
 | **B9** (#70) | Over-blocking email | GPC skips **marketing drip only**; waitlist + transactional paths unchanged |
 
 ---
@@ -135,15 +135,15 @@ See [DECISION_LOG.md](./DECISION_LOG.md) § H5.
 |----|------------|
 | #60 | `/privacy` renders v2026-06-20; GPC cookie on `Sec-GPC: 1`; admin privacy PATCH `denied` sends email |
 | #61 | Privacy version `2026-06-21`; GPC declarative §11; manual fulfillment §7 |
-| #62 | Settings → Security → Delete account; 409 if active sub |
-| #63 | `/waitlist` shows privacy notice before email field |
-| #64 | Signup checkbox includes 18+ / U.S. resident |
-| #65 | `/attorney/billing` shows `preCheckout()` disclosures |
-| #66 | Estate trial tier shows full billing disclosure on `/billing` + `/pricing` |
-| #67 | Admin privacy → set `appealed` → `appeal_due_at` populated; compliance cron includes appeals |
+| #62 | Settings → Security → Delete account; 409 if active sub — **attested Al / 2026-06-21** |
+| #63 | `/waitlist` shows privacy notice before email field — **attested Al / 2026-06-21** (prod; privacy copy above email input; fix in PR #73) |
+| #64 | Signup checkbox includes 18+ / U.S. resident — **attested Al / 2026-06-21** (prod; beta signup link) |
+| #65 | `/attorney/billing` shows `preCheckout()` disclosures — **attested Al / 2026-06-21** (admin preview → Attorney plan picker; per-plan copy above Subscribe) |
+| #66 | Estate trial tier shows full billing disclosure on `/billing` + `/pricing` — **attested Al / 2026-06-21** |
+| #67 | Admin privacy → set `appealed` → `appeal_due_at` populated; compliance cron includes appeals — **attested Al / 2026-06-21** (denial email received; prod row `6e6a2b55…`) |
 | #68 | Notifications cron no longer queries `subscription_renewal_date` |
-| #69 | Admin Terms read-only; Re-gate users works; `/terms` unchanged |
-| #70 | Email capture with GPC → no drip step 1; `unsubscribed_at` set |
+| #69 | Admin Terms read-only; Re-gate users works; `/terms` unchanged — **attested Al / 2026-06-21** |
+| #70 | Email capture with GPC → no drip step 1; `unsubscribed_at` set — **attested Al / 2026-06-21** (staging `email_captures`; GPC → `unsubscribed_at` set, `drip_step_1_sent_at` null) |
 
 ---
 
@@ -156,6 +156,6 @@ When promoting this stack from `staging` → `main`:
 3. [ ] **`npm run release:promotion`** — structural gate must pass (prod schema)
 4. [ ] Merge stack to `main` (or merge `staging` after full stack on staging)
 5. [ ] Confirm Vercel production deploy green
-6. [ ] Post-deploy: privacy request denial → appeal email; assess GPC browser → no drip
+6. [x] Post-deploy: privacy request denial → appeal email (**B6 attested**); GPC marketing drip skip (**B9 attested** — staging DB)
 
 See also [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) § Policy alignment stack.

@@ -39,11 +39,12 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 ### Observability
 - ✅ **Error monitoring live** (Sentry) — error-only, `sendDefaultPii: false`, tunnel `/monitoring`; preview event confirmed in Sentry dashboard; `SENTRY_AUTH_TOKEN` on both Vercel projects; per-DSN rate limit 150/12h (attest: Al / 2026-06-17 · [PR #29](https://github.com/Voels2000/estate-planner/pull/29) merged to staging).
+- ✅ **`SENTRY_AUTH_TOKEN` verify-env REVIEW flag** — build-time source-map upload only; **keep on Vercel** (do not delete). `verify-env?live=1` REVIEW is expected (not in runtime manifest); no further action (attest: Al / 2026-06-21).
 
 ### Legal / disclaimers (confirm with counsel)
 - ✅ **WA estate-tax disclaimers** — consumer page, advisor panel, PDF (date-stamped, no-portability, snapshot caveat).
-- ⬜ **Privacy policy published** — live and linked at signup.
-- 🔄 **"Not tax / legal / financial advice" disclaimers** beyond WA — counsel sign-off on placement.
+- ✅ **Privacy policy published** — live at `/privacy` and linked at signup (engineering draft #60; counsel redline **post-go-live**).
+- 🔄 **"Not tax / legal / financial advice" disclaimers** beyond WA — household alerts passed; ToS §10/§11 counsel **post-go-live** (revenue approaching first-state nexus).
 - ✅ **Household-alert copy (all six `estate_*` alerts)** — counsel review **complete — passed** for advice-vs-fact framing (attest: Al / 2026-06-19). Impl merged #51; gate on [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax).
 - ⬜ **`PUBLIC_SIGNUP_OPEN=false`** until intentional flip; **`REQUIRE_PRIVILEGED_MFA=true`** confirmed in Vercel prod.
 
@@ -74,12 +75,14 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 ### Measurement & ops
 - ⬜ **Analytics / funnel instrumentation live** before flip.
-- ⬜ **Vercel dashboard housekeeping** — delete stale vars (`STRIPE_CUSTOMER_PORTAL_URL`, `RESEND_WEBHOOK_SECRET`) (B5).
+- ✅ **Vercel env name audit (`estate-planner`)** — `vercel env ls` Production vs Preview (names only, 2026-06-21): dead vars **`STRIPE_CUSTOMER_PORTAL_URL`** / **`RESEND_WEBHOOK_SECRET`** absent both scopes; two-DB split intentional (prod Supabase + live `STRIPE_PRICE_*` / `STRIPE_WEBHOOK_SECRET` Production-only; Preview `WAITLIST_MODE` + staging Supabase). **Attest: Al / 2026-06-21.**
+- 🔄 **Vercel dashboard housekeeping (remainder)** — `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA`, `EMAIL_FROM` present on Production (`verify-env` OK); optional `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed (B5).
 
 ### External (in flight, may not gate flip but track)
 - 🌐 **WA B&O ruling** (Bucket A, P0-external).
 - 🌐 **DOR written ruling on SaaS DAS sales-tax classification**.
-- ⬜ **Counsel ToS §10/§11 + email aliases** `security@`, `legal@`, `privacy@` (B6).
+- ⬜ **Email aliases** `security@`, `legal@`, `privacy@` (B6).
+- **Post-go-live:** Counsel ToS §10/§11 + privacy redline when revenue approaches nexus in first state (Al / 2026-06-20).
 
 ---
 

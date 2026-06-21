@@ -1,6 +1,28 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-19 (US-only enforcement; Sprint E dead-code sweep closeout)
+# Last updated: 2026-06-20 (counsel post-go-live gate; privacy_requests RLS fix)
+
+---
+
+## Counsel sign-off — post-go-live (2026-06-20)
+
+**Decision:** Defer counsel redline on **privacy policy (#60)** and **ToS §10/§11** until **post-go-live**, when revenue approaches nexus in the first state. Engineering draft stays live on `/privacy` and `/terms`; `PUBLIC_SIGNUP_OPEN` flip is not blocked on counsel completion.
+
+**Reasoning:** Pre-launch traffic is waitlist-gated; state-law applicability thresholds are not met today. Voluntary multi-state posture is shipped in code; formal counsel pass is timed to commercial nexus, not deploy.
+
+**Still pre-flip:** email aliases (`security@`, `legal@`), real-card smoke, C-4 walkthrough, B&O Bucket A.
+
+---
+
+## privacy_requests consumer INSERT RLS failure (2026-06-20)
+
+**Symptom:** `POST /api/consumer/privacy-request` returned `new row violates row-level security policy for table "privacy_requests"`.
+
+**Root cause:** Sprint C-7 migration (`20260625170000`) enabled RLS and INSERT/SELECT policies but **omitted explicit `GRANT`s** (pre–MIGRATION_TEMPLATE standard). Consumer route inserted via user JWT + `.select()` (RETURNING). On production, authenticated role could not satisfy INSERT/SELECT + RLS for PostgREST — admin intake (`createAdminClient`) worked because service_role bypasses RLS.
+
+**Fix:** Route uses `createAdminClient()` after session auth (same pattern as `delete-account`); migration `20260722120000_privacy_requests_grants.sql` adds `GRANT SELECT, INSERT TO authenticated` and recreates consumer policies.
+
+**Ops:** Apply migration on production before relying on user-JWT path; deploy route fix to Vercel Production.
 
 ---
 
@@ -289,6 +311,10 @@
 **Reasoning:** Close PRE_FLIP observability gap without draining free tier or leaking household PII into error reports.
 
 **Attested (Al / 2026-06-17):** Preview deploy event captured end-to-end; `SENTRY_AUTH_TOKEN` on both Vercel projects (all scopes); per-DSN rate limit 150/12h; test issue resolved; [PR #29](https://github.com/Voels2000/estate-planner/pull/29) merged to `staging`. First Production-environment event confirms on first prod deploy after merge to `main`.
+
+**Verify-env REVIEW (2026-06-21):** `GET /api/admin/verify-env?live=1` may flag `SENTRY_AUTH_TOKEN` as REVIEW (not in `lib/env/manifest.ts`). **Keep on Vercel** — used at build time for source maps, not runtime. No delete; no manifest change required pre-flip.
+
+**Vercel env name audit (2026-06-21):** `vercel env ls` on `estate-planner` — Production (32) vs Preview (18) keys; **`STRIPE_CUSTOMER_PORTAL_URL`** and **`RESEND_WEBHOOK_SECRET`** absent both scopes; intentional Production-only live `STRIPE_PRICE_*` + `STRIPE_WEBHOOK_SECRET`; Preview staging Supabase + `WAITLIST_MODE`. Values not compared (secrets). **Attest: Al / 2026-06-21.**
 
 ---
 
@@ -3203,7 +3229,33 @@ Pass = at least one row with referral code matching a test signup.
 
 **Implementation:** `scheduleUserAccountDeletion()` blocks active subscriptions and upgraded roles; schedules at period end + 30 days when canceling, else now + 30 days. UI at Settings → Security.
 
+**Manual smoke:** Settings → Security → Delete account — **passed** (attest: Al / 2026-06-21).
+
 **Implication:** Users must cancel at `/billing` before scheduling if still on an active paid plan.
+
+---
+
+### June 2026 — Privacy appeals SLA (B6)
+
+**Decision:** Admin `appealed` status + `appeal_due_at` (+60 days); denial email includes appeal instructions; compliance cron alerts appeals due within 7 days.
+
+**Manual smoke (prod):** Request `6e6a2b55-de50-41f5-ba3e-a6cb86f30873` (`avoels@comcast.net`, access) — consumer submit → admin **denied** (appeal email received) → **appealed** → **completed**. Final DB row: `status=completed`, `completed_at` set, `appeal_due_at` null (cleared on exit from appealed). **Attest: Al / 2026-06-21.**
+
+---
+
+### June 2026 — Terms single source of truth (B8)
+
+**Decision:** Remove admin `app_config` ToS writes; canonical source = `lib/legal/terms-of-service-sections.ts` (`TERMS_OF_SERVICE_VERSION` `2026-06-02`). Admin T&C tab read-only + **Re-gate users** (`POST /api/admin/terms/regate`).
+
+**Manual smoke (prod):** `/terms` + `/api/terms/content` → `2026-06-02`; admin T&C read-only preview matches public page; `POST /api/admin/terms/update` → 404; `terms_version` / `terms_sections` absent from app_config UI; Re-gate success. **Attest: Al / 2026-06-21.**
+
+---
+
+### June 2026 — Waitlist privacy notice (B2)
+
+**Decision:** `/waitlist` email capture shows consent copy + Privacy Policy link **before** the email field (matches event assess capture order).
+
+**Manual smoke (prod):** Privacy notice visible above “Email address” on `/waitlist`. Original #63 placement was after the input; corrected in PR #73. **Attest: Al / 2026-06-21.**
 
 ---
 
@@ -3212,6 +3264,24 @@ Pass = at least one row with referral code matching a test signup.
 **Decision:** Launch 18+ / U.S.-resident attestation on the signup checkbox (embedded representation); record via existing `terms_accepted_at` + `terms_version` — no separate `age_attested_at` column pending counsel.
 
 **Implication:** ToS §3 and Privacy §12 now backed by affirmative signup attestation, not passive "by using the Service" alone.
+
+**Manual smoke (prod):** Signup checkbox includes 18+ / U.S. resident attestation (via beta access link while waitlist on). **Attest: Al / 2026-06-21.**
+
+---
+
+### June 2026 — Attorney billing disclosures (B4)
+
+**Decision:** `BILLING_DISCLOSURES.preCheckout()` on `/attorney/billing` — renewal amount, frequency, auto-renewal, self-serve cancel path, ToS/Privacy — shown before Subscribe on paid attorney tiers (RCW 19.316 / FTC negative option).
+
+**Manual smoke (prod):** Admin preview → Billing → Attorney plan picker; page-level RCW notice + per-plan `preCheckout` above Subscribe on Starter/Growth. **Attest: Al / 2026-06-21.**
+
+---
+
+### June 2026 — Trial checkout disclosures (B5)
+
+**Decision:** Full RCW 19.316 / FTC pre-checkout disclosure on consumer trial tier at `/billing` and `/pricing` (same `BILLING_DISCLOSURES.preCheckout` pattern as attorney).
+
+**Manual smoke (prod):** Trial tier cards show full billing disclosure before Subscribe on `/billing` + `/pricing`. **Attest: Al / 2026-06-21.**
 
 ---
 
@@ -3236,6 +3306,8 @@ Pass = at least one row with referral code matching a test signup.
 **Decision:** When `Sec-GPC: 1` or `mwm_gpc_opt_out` cookie is present, `POST /api/email-capture` still records the lead but skips drip step 1 and sets `unsubscribed_at` to block follow-up cron sends.
 
 **Implication:** GPC cookie set by middleware is now consumed for marketing enrollment; waitlist captures unchanged (already drip-free).
+
+**Attestation:** Al / 2026-06-21 — staging `POST /api/email-capture` with GPC; `email_captures.unsubscribed_at` set, `drip_step_1_sent_at` null (query **mwm-staging**, not prod).
 
 ---
 

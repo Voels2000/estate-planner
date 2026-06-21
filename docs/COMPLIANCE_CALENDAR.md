@@ -15,7 +15,7 @@ Ongoing compliance routines for My Wealth Maps (Privacy Policy commitments, Wash
 | Deletion audit trail | `deletion_audit_log` append-only | ✅ Live |
 | Admin deletion UI | `/admin` → Data & Compliance | ✅ Live |
 | Daily compliance check | 8am cron → `avoels@comcast.net` if issues | ✅ Live |
-| Self-serve account deletion | Settings → Security → `POST /api/consumer/delete-account` → `deletion_schedule` | ✅ Live (B1) |
+| Self-serve account deletion | Settings → Security → `POST /api/consumer/delete-account` → `deletion_schedule` | ✅ Live (B1) · manual smoke attested Al / 2026-06-21 |
 | Email infrastructure | `hello@`, `noreply@`, `privacy@` → Comcast (Resend verified) | ✅ Live |
 | Migrations | **102** in `supabase/migrations/` (excl. VERIFY script); through `20260630110000`; prod synced `20260605100000` + repair `11a867d` | ✅ Clean |
 
@@ -93,7 +93,7 @@ Cron: `GET /api/cron/compliance-reminders` → emails `COMPLIANCE_EMAIL` (`avoel
    - Portability: JSON export of all user data
    - Opt-out: confirm no data sale (already true — document in response)
 5. Mark request **completed** or **denied** in Admin Portal → Privacy Requests
-   - **Denied:** system emails appeal instructions automatically; user may reply to appeal
+   - **Denied:** system emails appeal instructions automatically; user may reply to appeal — **prod smoke attested Al / 2026-06-21** (denial email received for request `6e6a2b55-de50-41f5-ba3e-a6cb86f30873`)
    - **Appealed:** set status `appealed` in admin UI — system sets `appeal_due_at` (+60 days); respond within **60 days** per Privacy Policy §8; compliance cron alerts when due within 7 days
 6. Send completion confirmation to user when fulfilled
 
