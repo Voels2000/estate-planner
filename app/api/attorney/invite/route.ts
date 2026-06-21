@@ -4,6 +4,7 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { getAttorneyListingIdForUser } from '@/lib/attorney/attorneyClientCap'
 import { resend } from '@/lib/resend'
 import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export async function POST(request: Request) {
   try {
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     const attorneyLabel = attorney.full_name?.trim() || 'An attorney'
 
     const { error: emailError } = await resend.emails.send({
-      from: 'MyWealthMaps <noreply@mywealthmaps.com>',
+      from: EMAIL_FROM,
       headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
       tags: [{ name: 'category', value: 'attorney_invite' }],
       to: invitedEmail,

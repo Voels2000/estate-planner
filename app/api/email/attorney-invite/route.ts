@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { resend } from '@/lib/resend'
 import { assertAppUrl, escapeHtml } from '@/lib/api/escapeHtml'
 import { requireInternalApi } from '@/lib/api/internalApiAuth'
+import { EMAIL_FROM, EMAIL_REPLY_TO } from '@/lib/email/config'
 
 export async function POST(req: Request) {
   const denied = requireInternalApi(req)
@@ -23,7 +24,8 @@ export async function POST(req: Request) {
     const safeConsumer = escapeHtml(String(consumerName ?? 'A client'))
 
     const { error: emailError } = await resend.emails.send({
-      from: 'MyWealthMaps <hello@mywealthmaps.com>',
+      from: EMAIL_FROM,
+    replyTo: EMAIL_REPLY_TO,
       to: email,
       bcc: 'avoels@comcast.net',
       subject: `${safeConsumer} has requested your review on MyWealthMaps`,

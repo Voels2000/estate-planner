@@ -5,6 +5,7 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
 import { getAdvisorClientCapacity } from '@/lib/advisor/advisorClientLimits'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 
 export async function POST(request: Request) {
@@ -83,8 +84,7 @@ export async function POST(request: Request) {
     const acceptUrl = `${appUrl}/invite/${token}`
 
     const { error: emailError } = await resend.emails.send({
-      from: 'MyWealthMaps <noreply@mywealthmaps.com>'
-,
+      from: EMAIL_FROM,
       headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
       tags: [{ name: 'category', value: 'advisor_invite' }],
       to: invitedEmail,

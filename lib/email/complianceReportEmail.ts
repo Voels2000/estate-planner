@@ -1,4 +1,5 @@
 import { resend } from '@/lib/resend'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 type OverdueDeletion = {
   email: string
@@ -186,7 +187,7 @@ export async function sendComplianceReportEmail(params: {
     : '📋 My Wealth Maps — Monthly compliance summary'
 
   const { error } = await resend.emails.send({
-    from: 'My Wealth Maps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     to,
     subject,
     text,

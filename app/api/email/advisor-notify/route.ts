@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { resend } from '@/lib/resend'
 import { escapeHtml } from '@/lib/api/escapeHtml'
 import { requireInternalApi } from '@/lib/api/internalApiAuth'
+import { EMAIL_FROM, EMAIL_REPLY_TO } from '@/lib/email/config'
 
 export async function POST(req: Request) {
   const denied = requireInternalApi(req)
@@ -18,7 +19,8 @@ export async function POST(req: Request) {
     const safeMessage = escapeHtml(String(message ?? ''))
 
     const { error: emailError } = await resend.emails.send({
-      from: 'MyWealthMaps <hello@mywealthmaps.com>',
+      from: EMAIL_FROM,
+    replyTo: EMAIL_REPLY_TO,
       to: email,
       bcc: bcc ?? 'avoels@comcast.net',
       subject: subject ?? 'A message from MyWealthMaps',

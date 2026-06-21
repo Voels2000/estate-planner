@@ -196,13 +196,8 @@ export const ENV_MANIFEST: EnvVarEntry[] = [
     secret: false,
     shape: { production: EMAIL },
   }),
-  entry('EMAIL_FROM', {
-    scopes: ALL_SCOPES,
-    requiredInScopes: ALL_DEPLOYED,
-    secret: false,
-  }),
 
-  // --- Security / go-live flags ---
+  // --- Email (canonical sender in lib/email/config.ts) ---
   entry('REQUIRE_PRIVILEGED_MFA', {
     scopes: ALL_SCOPES,
     requiredInScopes: ['production'],

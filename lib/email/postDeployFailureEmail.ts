@@ -1,4 +1,5 @@
 import { resend } from '@/lib/resend'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export async function sendPostDeployFailureEmail(params: {
   to: string
@@ -28,7 +29,7 @@ export async function sendPostDeployFailureEmail(params: {
   const subject = `⚠️ Post-deploy verify failed — My Wealth Maps ${dateStr}`
 
   const { error } = await resend.emails.send({
-    from: 'My Wealth Maps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     to: params.to,
     subject,
     text,

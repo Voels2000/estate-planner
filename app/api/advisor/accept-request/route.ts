@@ -8,6 +8,7 @@ import { pickConnectionLifeEvent } from '@/lib/life-events/connectionContext'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { applyAdvisorConnectionBilling } from '@/lib/advisor/applyAdvisorConnectionBilling'
 import { getAdvisorClientCapacity } from '@/lib/advisor/advisorClientLimits'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export const dynamic = 'force-dynamic'
 
@@ -148,7 +149,7 @@ export async function POST(request: Request) {
 
   try {
     await resend.emails.send({
-      from: 'MyWealthMaps <noreply@mywealthmaps.com>',
+      from: EMAIL_FROM,
       headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
       tags: [{ name: 'category', value: 'advisor_accept' }],
       to: consumer.email,

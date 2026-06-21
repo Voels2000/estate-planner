@@ -4,6 +4,7 @@ import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
 import { resend } from '@/lib/resend'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAppUrl } from '@/lib/app-url'
+import { EMAIL_FROM, EMAIL_REPLY_TO } from '@/lib/email/config'
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdminApi()
@@ -60,7 +61,8 @@ export async function POST(req: NextRequest) {
     if (listing.email) {
       try {
         await resend.emails.send({
-          from: 'MyWealthMaps <hello@mywealthmaps.com>',
+          from: EMAIL_FROM,
+    replyTo: EMAIL_REPLY_TO,
           to: listing.email,
           bcc: 'avoels@comcast.net',
           subject: 'Your attorney listing has been approved — MyWealthMaps',
@@ -96,7 +98,8 @@ export async function POST(req: NextRequest) {
     if (advisorProfile?.email) {
       try {
         await resend.emails.send({
-          from: 'MyWealthMaps <hello@mywealthmaps.com>',
+          from: EMAIL_FROM,
+    replyTo: EMAIL_REPLY_TO,
           to: advisorProfile.email,
           bcc: 'avoels@comcast.net',
           subject: 'The attorney you nominated is now live — MyWealthMaps',
@@ -156,7 +159,8 @@ export async function POST(req: NextRequest) {
     if (listing.email) {
       try {
         await resend.emails.send({
-          from: 'MyWealthMaps <hello@mywealthmaps.com>',
+          from: EMAIL_FROM,
+    replyTo: EMAIL_REPLY_TO,
           to: listing.email,
           bcc: 'avoels@comcast.net',
           subject: 'Your attorney listing was not approved — MyWealthMaps',
@@ -187,7 +191,8 @@ export async function POST(req: NextRequest) {
     if (advisorProfile?.email) {
       try {
         await resend.emails.send({
-          from: 'MyWealthMaps <hello@mywealthmaps.com>',
+          from: EMAIL_FROM,
+    replyTo: EMAIL_REPLY_TO,
           to: advisorProfile.email,
           bcc: 'avoels@comcast.net',
           subject: 'Attorney nomination not approved — MyWealthMaps',

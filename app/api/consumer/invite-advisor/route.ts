@@ -5,6 +5,7 @@ import { resend } from '@/lib/resend'
 import { getAppUrl } from '@/lib/app-url'
 import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export const dynamic = 'force-dynamic'
 
@@ -106,7 +107,7 @@ export async function POST(request: Request) {
 
     try {
       await resend.emails.send({
-        from: 'MyWealthMaps <noreply@mywealthmaps.com>',
+        from: EMAIL_FROM,
         headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
         tags: [{ name: 'category', value: 'consumer_invite_advisor' }],
         to: advisorEmail,
@@ -161,7 +162,7 @@ export async function POST(request: Request) {
 
     try {
       await resend.emails.send({
-        from: 'MyWealthMaps <noreply@mywealthmaps.com>',
+        from: EMAIL_FROM,
         headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
         tags: [{ name: 'category', value: 'consumer_invite_advisor_signup' }],
         to: advisorEmail,

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getDripSequence, buildDripEmailHtml } from '@/lib/emails/drip-templates'
 import { buildUnsubscribeUrl } from '@/lib/email/unsubscribeToken'
 import { requireCronOrInternal } from '@/lib/api/internalApiAuth'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 const BASE_URL = 'https://mywealthmaps.com'
 
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     })
 
     const { data, error } = await resend.emails.send({
-      from: 'My Wealth Maps <hello@mywealthmaps.com>',
+      from: EMAIL_FROM,
       to: normalizedEmail,
       subject: emailData.subject,
       html,

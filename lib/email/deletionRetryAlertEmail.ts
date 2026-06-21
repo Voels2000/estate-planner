@@ -1,4 +1,5 @@
 import { resend } from '@/lib/resend'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export async function sendDeletionRetryAlertEmail(params: {
   to: string
@@ -19,7 +20,7 @@ export async function sendDeletionRetryAlertEmail(params: {
   const text = lines.join('\n')
 
   const { error } = await resend.emails.send({
-    from: 'My Wealth Maps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     to: params.to,
     subject: `⚠️ Deletion failed after ${params.retryCount} retries — ${params.email}`,
     text,

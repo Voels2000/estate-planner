@@ -1,3 +1,4 @@
+import { EMAIL_FROM } from '@/lib/email/config'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: process.env.EMAIL_FROM,
+            from: EMAIL_FROM,
             to: consumerEmail,
             bcc: 'avoels@comcast.net',
             subject: 'Your advisor connection request was not accepted',

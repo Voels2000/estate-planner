@@ -11,6 +11,7 @@ import {
   getAttorneyListingIdForUser,
   isAtAttorneyClientCap,
 } from '@/lib/attorney/attorneyClientCap'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export const dynamic = 'force-dynamic'
 
@@ -116,7 +117,7 @@ export async function POST(request: Request) {
   ;(async () => {
     try {
       await resend.emails.send({
-        from: 'MyWealthMaps <noreply@mywealthmaps.com>',
+        from: EMAIL_FROM,
         headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
         tags: [{ name: 'category', value: 'attorney_accept' }],
         to: consumer.email,

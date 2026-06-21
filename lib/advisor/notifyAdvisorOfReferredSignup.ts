@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resend } from '@/lib/resend'
 import { getAppUrl } from '@/lib/app-url'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export async function notifyAdvisorOfReferredSignup(params: {
   advisorId: string
@@ -35,7 +36,7 @@ export async function notifyAdvisorOfReferredSignup(params: {
   }
 
   await resend.emails.send({
-    from: 'My Wealth Maps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     to: advisor.email,
     bcc: 'avoels@comcast.net',
     subject: 'New household connected through your referral',
