@@ -1,4 +1,5 @@
 import { resend } from '@/lib/resend'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 const REQUEST_LABELS: Record<string, string> = {
   deletion: 'data deletion',
@@ -23,7 +24,7 @@ export async function sendPrivacyRequestConfirmationEmail(params: {
   })
 
   const { error } = await resend.emails.send({
-    from: 'My Wealth Maps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     to,
     subject: 'We received your privacy request — My Wealth Maps',
     text: `My Wealth Maps — Privacy Request Confirmation

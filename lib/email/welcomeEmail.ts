@@ -1,8 +1,10 @@
 import { resend } from '@/lib/resend'
+import { EMAIL_FROM, EMAIL_REPLY_TO } from '@/lib/email/config'
 
 export async function sendWelcomeEmail(email: string, firstName: string) {
   const { error: emailError } = await resend.emails.send({
-    from: 'MyWealthMaps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
+    replyTo: EMAIL_REPLY_TO,
     to: email,
     subject: 'Welcome to MyWealthMaps',
     html: `

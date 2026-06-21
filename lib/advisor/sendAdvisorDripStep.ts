@@ -5,6 +5,7 @@ import {
   ADVISOR_DRIP_SEQUENCE,
   buildAdvisorDripEmailHtml,
 } from '@/lib/emails/advisor-drip-templates'
+import { EMAIL_FROM } from '@/lib/email/config'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { buildUnsubscribeUrl } from '@/lib/email/unsubscribeToken'
 
@@ -75,7 +76,7 @@ export async function sendAdvisorDripStep(
   })
 
   const { error: sendError } = await resend.emails.send({
-    from: 'MyWealthMaps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
     tags: [{ name: 'category', value: `advisor_drip_${sequenceStep}` }],
     to: normalizedEmail,

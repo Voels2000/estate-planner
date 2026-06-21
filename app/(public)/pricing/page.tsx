@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { EMAIL_REPLY_TO } from '@/lib/email/config'
 import { getSignupHref } from '@/lib/waitlist-mode'
 import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
 import { PricingConsumerPlans } from './_pricing-consumer-plans'
@@ -315,7 +316,7 @@ export default async function PricingPage() {
                 </ul>
                 {plan.name === 'Enterprise' ? (
                   <a
-                    href="mailto:hello@mywealthmaps.com?subject=Enterprise%20Advisor%20Plan"
+                    href={`mailto:${EMAIL_REPLY_TO}?subject=Enterprise%20Advisor%20Plan`}
                     style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
                   >
                     Contact us

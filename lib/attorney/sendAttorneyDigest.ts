@@ -4,6 +4,7 @@ import {
   buildAttorneyDigestEmail,
   buildAttorneyDigestEmailHtml,
 } from '@/lib/emails/attorney-digest-template'
+import { EMAIL_FROM } from '@/lib/email/config'
 import {
   attorneyDigestHasActionableItems,
   getAttorneyDigestData,
@@ -37,7 +38,7 @@ export async function sendAttorneyDigest(
   const normalizedEmail = profile.email.trim().toLowerCase()
 
   const { error: sendError } = await resend.emails.send({
-    from: 'MyWealthMaps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
     tags: [{ name: 'category', value: 'attorney_digest_weekly' }],
     to: normalizedEmail,

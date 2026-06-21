@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
 import { appendAdminUserActionLog, getAdminActorEmail } from '@/lib/admin/adminActionLog'
 import { resend } from '@/lib/resend'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 type RouteContext = { params: Promise<{ userId: string }> }
 
@@ -43,7 +44,7 @@ export async function POST(_request: Request, context: RouteContext) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mywealthmaps.com'
 
   const { error: emailErr } = await resend.emails.send({
-    from: 'My Wealth Maps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     to: profile.email,
     subject: 'Reset your My Wealth Maps password',
     html: `

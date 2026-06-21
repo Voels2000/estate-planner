@@ -4,6 +4,7 @@ import {
   BETA_SIGNUP_ACCESS_LABEL_PARAM,
   BETA_SIGNUP_ACCESS_PARAM,
 } from '@/lib/waitlist-mode'
+import { EMAIL_FROM } from '@/lib/email/config'
 import { appendAdminUserActionLog, getAdminActorEmail } from '@/lib/admin/adminActionLog'
 
 function buildInviteUrl(label?: string): string {
@@ -61,7 +62,7 @@ export async function sendWaitlistInvite(
   }
 
   const { error: emailErr } = await resend.emails.send({
-    from: 'My Wealth Maps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     to: normalizedEmail,
     subject: 'Your invitation to My Wealth Maps',
     html: `
