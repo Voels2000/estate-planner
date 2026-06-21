@@ -135,7 +135,9 @@ export function AttorneyBillingClient({
           <div
             key={plan.id}
             className={`rounded-xl border p-5 ${
-              currentTier === plan.id ? 'border-blue-400 bg-blue-50/50' : 'border-neutral-200 bg-white'
+              currentTier === plan.id
+                ? 'border-[color:var(--mwm-gold)] bg-[var(--mwm-gold-pale)]/50'
+                : 'border-neutral-200 bg-white'
             }`}
           >
             <h2 className="font-semibold text-neutral-900">{plan.name}</h2>

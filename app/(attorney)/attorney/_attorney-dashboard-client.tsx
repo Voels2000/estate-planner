@@ -50,7 +50,7 @@ type Props = {
 
 const STATUS_BADGE: Record<IntakeRequestRow['displayStatus'], string> = {
   sent: 'bg-neutral-100 text-neutral-600',
-  opened: 'bg-blue-100 text-blue-700',
+  opened: 'bg-[var(--mwm-gold-pale)] text-[color:var(--mwm-navy)]',
   completed: 'bg-green-100 text-green-700',
   expired: 'bg-red-100 text-red-700',
 }
@@ -360,8 +360,8 @@ Attorney ref: ${referralCode}`
                     onClick={() => setNewsletterTab(t.key)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       newsletterTab === t.key
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                        ? 'bg-[color:var(--mwm-navy)] text-white'
+                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                     }`}
                   >
                     {t.label}
@@ -402,7 +402,7 @@ Attorney ref: ${referralCode}`
                                     window.prompt('Copy this link:', url)
                                   }
                                 }}
-                                className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-800 whitespace-nowrap"
+                                className="shrink-0 text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy-light)] whitespace-nowrap"
                               >
                                 {copiedSlug === slug ? '✓ Copied' : 'Copy'}
                               </button>
@@ -433,7 +433,7 @@ Attorney ref: ${referralCode}`
                         window.prompt('Copy this text:', emailCopy)
                       }
                     }}
-                    className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                    className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy-light)]"
                   >
                     {copiedNewsletter ? '✓ Copied' : 'Copy all'}
                   </button>
@@ -461,7 +461,7 @@ Attorney ref: ${referralCode}`
                         window.prompt('Copy this text:', textCopy)
                       }
                     }}
-                    className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                    className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy-light)]"
                   >
                     {copiedNewsletter ? '✓ Copied' : 'Copy all'}
                   </button>
@@ -484,7 +484,7 @@ Attorney ref: ${referralCode}`
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 border border-neutral-200 rounded-lg text-sm
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                       focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] focus:border-transparent bg-white"
           />
         </div>
       )}
@@ -511,12 +511,12 @@ Attorney ref: ${referralCode}`
             key={client.connection_id}
             href={`/attorney/clients/${client.household_id}`}
             className="block bg-white border border-neutral-200 rounded-xl p-5
-                       hover:border-blue-300 hover:shadow-sm transition-all group"
+                       hover:border-[color:var(--mwm-navy)]/30 hover:shadow-sm transition-all group"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-start gap-4">
-                <div className="h-10 w-10 rounded-full bg-blue-50 flex items-center
-                                justify-center text-blue-600 font-semibold text-sm shrink-0">
+                <div className="h-10 w-10 rounded-full bg-[var(--mwm-gold-pale)] flex items-center
+                                justify-center text-[color:var(--mwm-navy)] font-semibold text-sm shrink-0">
                   {client.full_name.charAt(0).toUpperCase()}
                 </div>
                 <div>
@@ -530,7 +530,7 @@ Attorney ref: ${referralCode}`
                       </span>
                     )}
                     {client.matter_stage && client.matter_stage !== 'intake' && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium capitalize">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--mwm-gold-pale)] text-[color:var(--mwm-navy)] font-medium capitalize">
                         {client.matter_stage.replace('_', ' ')}
                       </span>
                     )}
@@ -559,7 +559,7 @@ Attorney ref: ${referralCode}`
                   </div>
                 </div>
               </div>
-              <span className="text-neutral-300 group-hover:text-blue-400 transition-colors shrink-0">›</span>
+              <span className="text-neutral-300 group-hover:text-[color:var(--mwm-navy)] transition-colors shrink-0">›</span>
             </div>
           </Link>
         ))}
