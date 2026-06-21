@@ -75,7 +75,8 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 ### Measurement & ops
 - ⬜ **Analytics / funnel instrumentation live** before flip.
-- ⬜ **Vercel dashboard housekeeping** — delete stale vars (`STRIPE_CUSTOMER_PORTAL_URL`, `RESEND_WEBHOOK_SECRET`) (B5).
+- ✅ **Vercel env name audit (`estate-planner`)** — `vercel env ls` Production vs Preview (names only, 2026-06-21): dead vars **`STRIPE_CUSTOMER_PORTAL_URL`** / **`RESEND_WEBHOOK_SECRET`** absent both scopes; two-DB split intentional (prod Supabase + live `STRIPE_PRICE_*` / `STRIPE_WEBHOOK_SECRET` Production-only; Preview `WAITLIST_MODE` + staging Supabase). **Attest: Al / 2026-06-21.**
+- 🔄 **Vercel dashboard housekeeping (remainder)** — `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA`, `EMAIL_FROM` present on Production (`verify-env` OK); optional `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed (B5).
 
 ### External (in flight, may not gate flip but track)
 - 🌐 **WA B&O ruling** (Bucket A, P0-external).

@@ -314,6 +314,8 @@
 
 **Verify-env REVIEW (2026-06-21):** `GET /api/admin/verify-env?live=1` may flag `SENTRY_AUTH_TOKEN` as REVIEW (not in `lib/env/manifest.ts`). **Keep on Vercel** — used at build time for source maps, not runtime. No delete; no manifest change required pre-flip.
 
+**Vercel env name audit (2026-06-21):** `vercel env ls` on `estate-planner` — Production (32) vs Preview (18) keys; **`STRIPE_CUSTOMER_PORTAL_URL`** and **`RESEND_WEBHOOK_SECRET`** absent both scopes; intentional Production-only live `STRIPE_PRICE_*` + `STRIPE_WEBHOOK_SECRET`; Preview staging Supabase + `WAITLIST_MODE`. Values not compared (secrets). **Attest: Al / 2026-06-21.**
+
 ---
 
 ## Webhook `tier_upgraded` analytics integrity (2026-06-18)
