@@ -28,7 +28,7 @@ export function AttorneySettingsClient({ initialListing }: { initialListing: Lis
       <div className="max-w-2xl mx-auto p-6">
         <p className="text-sm text-neutral-600">
           No directory listing linked to your account yet.{' '}
-          <a href="/attorney-directory/register" className="text-blue-600 underline">
+          <a href="/attorney-directory/register" className="text-[color:var(--mwm-navy)] underline hover:text-[color:var(--mwm-navy-light)]">
             Register your practice
           </a>{' '}
           to appear in Find an Attorney.

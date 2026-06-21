@@ -1,5 +1,5 @@
 # DATABASE_SCHEMA_REFERENCE.md
-# MyWealthMaps / Estate Planner — Database Schema Guide
+# My Wealth Maps — Database Schema Guide
 # Last updated: 2026-06-18 (attorney drip unsubscribe column; promotion runbook)
 
 **Session history:** [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · **Consumer journeys:** [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md)
