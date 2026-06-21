@@ -28,7 +28,7 @@
 
 **Next actions:** merge #48/#49/#50 on green; hold #51 consumer launch on counsel; decide 6f separately.
 
-**Still open (pre-flip):** [LAUNCH.md](./LAUNCH.md) Bucket B — real-card smoke, C-4 walkthrough, counsel/email aliases, B&O ruling (Bucket A). Promotion runbook for #28–#39 batch remains valid when promoting staging→main: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
+**Still open (pre-flip):** [LAUNCH.md](./LAUNCH.md) Bucket B — real-card smoke, C-4 walkthrough, B&O ruling (Bucket A). Email aliases attested 2026-06-21. Promotion runbook for #28–#39 batch remains valid when promoting staging→main: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
 
 **CI / deploy flow:** `feature/*` → PR → **`staging`** (`verify`: lint + tsc + unit) → PR → **`main`** (`verify` full + `e2e-smoke` + `rls-verify`). Vercel: **`estate-planner-staging`** (branch `staging`) · **`estate-planner`** Production (`main`). See [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions).
 
@@ -133,7 +133,7 @@ Do NOT set `PUBLIC_SIGNUP_OPEN=true` until **B&O-READY** per [LAUNCH.md](./LAUNC
 
 > My Wealth Maps — **go-live prep.** Admin sprints + **WA estate tax SEO** + **13-state `/learn`** + **`/learn` discovery** + **`/assess` state picker** + **pricing/billing alignment** are **shipped**. Per-seat advisor checkout on `/pricing` and `/billing`; attorney flat tiers on `/pricing`; consumer checkout is consumer-only. Admin-A (Ops Home), Admin-P1 (tax config, user detail, waitlist), Admin-Redesign (sidebar nav). L1–L4 + B2B2C billing complete. Release routine: `npm run release:local` before PR; `npm run release:post-deploy` after prod deploy.
 >
-> **Remaining blockers before open signups:** [LAUNCH.md](./LAUNCH.md) **44/55** Bucket B — **P0:** real-card live smoke + WA B&O ruling; **P1:** C-4 walkthrough, counsel ToS §10/§11 + email aliases; **P2:** BCC inbox, drip cron 2/3, optional Vercel housekeeping. Launch tracker: `npm run launch:tracker` → sync via `npm run sync:launch-tracker`.
+> **Remaining blockers before open signups:** [LAUNCH.md](./LAUNCH.md) Bucket B — **P0:** real-card live smoke + WA B&O ruling; **P1:** C-4 walkthrough; **P2:** optional Vercel housekeeping. B4 automated + manual smokes attested 2026-06-21 (drip 2/3, prospect BCC). Email aliases attested. Counsel ToS §10/§11 post-go-live. Launch tracker: `npm run launch:tracker` → sync via `npm run sync:launch-tracker`.
 >
 > **Go-live day:** Stripe Phase 2 live catalog → [archived LAUNCH.md § Opening signups](./archive/LAUNCH_CHECKLIST.md#opening-signups--go-live-flip) · then `PUBLIC_SIGNUP_OPEN=true`.
 >

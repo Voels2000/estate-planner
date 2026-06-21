@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-20 (counsel post-go-live gate; privacy_requests RLS fix)
+# Last updated: 2026-06-21 (@mywealthmaps.com email aliases attested)
+
+---
+
+## @mywealthmaps.com email aliases — live and tested (2026-06-21)
+
+**Decision:** All published `@mywealthmaps.com` contact paths are operational before flip.
+
+**Inbound (Cloudflare forwarding, tested):** `support@`, `privacy@`, `legal@`, `security@`, `hello@`.
+
+**Outbound (Resend):** `noreply@` as canonical sender (`lib/email/config.ts`, PR #78); transactional `replyTo` → `support@`. Enterprise `/pricing` mailto uses `support@`. Vercel Production `EMAIL_FROM` env var deleted (code no longer reads it).
+
+**Attest: Al / 2026-06-21.**
 
 ---
 
@@ -10,7 +22,7 @@
 
 **Reasoning:** Pre-launch traffic is waitlist-gated; state-law applicability thresholds are not met today. Voluntary multi-state posture is shipped in code; formal counsel pass is timed to commercial nexus, not deploy.
 
-**Still pre-flip:** email aliases (`security@`, `legal@`), real-card smoke, C-4 walkthrough, B&O Bucket A.
+**Still pre-flip:** real-card smoke, C-4 walkthrough, B&O Bucket A.
 
 ---
 

@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-19 (household-alert counsel pass attested; Sprint E closeout on staging)
+**Last updated:** 2026-06-21 (B4 prospect BCC + drip cron attested; B6 email aliases)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -94,8 +94,8 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 **Still manual (irreducible):**
 
-- [ ] Prospect step 10 — BCC inbox (`avoels@comcast.net`) (attest: __ / __)
-- [ ] Drip cron steps 2/3 (day 3 / day 7) unless backdated cron run on staging (attest: __ / __)
+- [x] Prospect step 10 — BCC inbox (`avoels@comcast.net`) — intake invitation from `/prospect` BCC confirmed in inbox. **Attest: Al / 2026-06-21**
+- [x] Drip cron steps 2/3 (day 3 / day 7) — `verify:drip` flagged overdue step 2; overdue email received in inbox; cron path confirmed. **Attest: Al / 2026-06-21**
 - [ ] End-to-end fresh signup on **production URL** — AT-FLIP only (`PUBLIC_SIGNUP_OPEN=true`) (attest: __ / __)
 
 **Automated walkthroughs (staging seed + specs — PR #12 `test:e2e:b4-gate` / preflight `b4-deep`):**
@@ -104,6 +104,7 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 - [x] Health Score + Advisor Playbook — **10 documented behaviors** (not 18 numbered steps in repo): score/context, strategy badge, health-check labels, stale prompt, playbook empty + activation (`b4-health-score.spec.ts`, `b4-playbook-activation.spec.ts`) (attest: CI / PR #12 e2e-smoke 2026-06-14)
 - [x] PDF narrative engine — steps 1–9 content (`b4-pdf-narrative.spec.ts`, preflight) (attest: local preflight 2026-06-14)
 - [x] Drip step 1 — `email_captures.drip_step_1_sent_at` (`b4-drip-step1.spec.ts` + `npm run verify:drip`) (attest: CI / PR #12 e2e-smoke 2026-06-14)
+- [x] Drip steps 2/3 — cron + `verify:drip` overdue path; step 2 delivery confirmed in inbox (attest: Al / 2026-06-21 · local `test:e2e:b4-gate` 13/13)
 
 ### B5. Stripe (code wired; live config is ops-attested)
 
@@ -126,11 +127,12 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 **Ops — still open (human / card-required):**
 
-- [ ] Vercel dashboard housekeeping: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed; declare `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA`, `EMAIL_FROM`; delete dead vars (`STRIPE_CUSTOMER_PORTAL_URL`, `RESEND_WEBHOOK_SECRET` if present) (attest: __ / __)
+- [ ] Vercel dashboard housekeeping: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed; declare `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA`; delete dead vars (`STRIPE_CUSTOMER_PORTAL_URL`, `RESEND_WEBHOOK_SECRET` if present) (attest: __ / __)
   - [x] **`SENTRY_AUTH_TOKEN`** — verify-env REVIEW is expected; keep on Vercel for source maps (attest: Al / 2026-06-21)
   - [x] **Dead vars absent** — `STRIPE_CUSTOMER_PORTAL_URL`, `RESEND_WEBHOOK_SECRET` not on Production or Preview (attest: Al / 2026-06-21 · `vercel env ls`)
   - [x] **Production vs Preview env names** — two-DB split healthy; live prices/webhook Production-only (attest: Al / 2026-06-21)
-  - [x] **`PUBLIC_SIGNUP_OPEN` / `REQUIRE_PRIVILEGED_MFA` / `EMAIL_FROM`** — present on Production (`verify-env` vars OK, 2026-06-21)
+  - [x] **`PUBLIC_SIGNUP_OPEN` / `REQUIRE_PRIVILEGED_MFA`** — present on Production (`verify-env` vars OK, 2026-06-21)
+  - [x] **`EMAIL_FROM` removed from Production** — sender identity is code constant (`lib/email/config.ts`, PR #78); dead env var deleted from Vercel (attest: Al / 2026-06-21)
 - [ ] C-4 manual walkthrough on prod: signup → checkout → active → cancel → deletion schedule — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (attest: __ / __)
 - [ ] One real-card live smoke, smallest tier, refund/cancel after verify — **proves live checkout → `checkout.session.completed` → subscription active** (attest: __ / __)
 
@@ -143,7 +145,7 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 - [x] WA LLC UBI / EIN / registered agent confirmed on SOS (attest: __ / __)
 - [x] Business bank account open (attest: __ / __)
 - [x] B&O / DOR account registered (attest: __ / __ — confirm w/ accountant OK pre-ruling)
-- [ ] Email aliases `security@`, `legal@` live (`privacy@` routed) (attest: __ / __)
+- [x] **Email aliases @mywealthmaps.com** — `support@`, `privacy@`, `legal@`, `security@`, `hello@` Cloudflare forwarding live and tested; outbound `noreply@` via Resend (`lib/email/config.ts`, PR #78); Enterprise `/pricing` mailto → `support@`; Vercel `EMAIL_FROM` env var removed from Production. **Attest: Al / 2026-06-21**
 
 ### B7. Database cleanup (prod one-time done; ongoing purge is staging-only)
 
@@ -304,9 +306,8 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | **P0** | One real-card live smoke (checkout → `checkout.session.completed` → subscription active) | B5 |
 | **P0** | WA B&O / DAS ruling | A |
 | **P1** | C-4 billing walkthrough on prod | B5 |
-| **P1** | Email aliases (`security@`, `legal@`) | B6 |
 | **Post-go-live** | Counsel ToS §10/§11 + privacy redline (first-state nexus / revenue) | B6 / Bucket D |
-| **P2** | BCC inbox, drip cron 2/3, optional Vercel dashboard housekeeping | B4 / B5 |
+| **P2** | Optional Vercel dashboard housekeeping | B5 |
 | **AT-FLIP** | Fresh prod signup smoke | B4 / C |
 
 ---
@@ -324,6 +325,6 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | B1 prod smoke optional passes | Set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` (live `whsec_`) in `.env.test.prod`; enable Upstash on Vercel for 429 test |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
-**Still open — attest (Al):** B4 irreducible (BCC inbox, drip cron 2/3) + AT-FLIP fresh signup · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel ToS §10/§11 + email aliases.
+**Still open — attest (Al):** B4 AT-FLIP fresh signup · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel ToS §10/§11 (post-go-live gate).
 
 **B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.

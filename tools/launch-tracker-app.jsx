@@ -66,11 +66,11 @@ const SECTIONS = [
   {
     id: "b4",
     title: "B4 · Irreducible manual + AT-FLIP",
-    note: "Automated walkthroughs shipped (PR #12). Remaining: BCC inbox, drip cron 2/3, fresh prod signup at flip.",
+    note: "Automated walkthroughs shipped (PR #12). Remaining: fresh prod signup at flip.",
     accent: C.ink,
     items: [
-      { id: "b4-bcc", label: "Prospect step 10 — BCC inbox (avoels@comcast.net)", type: "open", attest: true },
-      { id: "b4-drip-cron", label: "Drip cron steps 2/3 (day 3 / day 7)", type: "open", attest: true, flag: "or backdated cron run on staging" },
+      { id: "b4-bcc", label: "Prospect step 10 — BCC inbox (avoels@comcast.net)", type: "done", attest: true },
+      { id: "b4-drip-cron", label: "Drip cron steps 2/3 (day 3 / day 7)", type: "done", attest: true },
       { id: "b4-signup", label: "Fresh signup on production URL", type: "open", attest: true, flag: "AT-FLIP only — needs PUBLIC_SIGNUP_OPEN=true" },
     ],
   },
@@ -95,7 +95,7 @@ const SECTIONS = [
       { id: "b6-entity", label: "WA LLC UBI / EIN / registered agent on SOS", type: "open", attest: true },
       { id: "b6-bank", label: "Business bank account open", type: "open", attest: true },
       { id: "b6-dor", label: "B&O / DOR account registered", type: "open", attest: true, flag: "check sequencing w/ accountant — likely OK before ruling" },
-      { id: "b6-aliases", label: "Email aliases security@ / legal@ live (privacy@ routed)", type: "open", attest: true },
+      { id: "b6-aliases", label: "@mywealthmaps.com aliases live + tested (support, privacy, legal, security, hello; noreply outbound)", type: "done", attest: true },
     ],
   },
   {

@@ -54,7 +54,8 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 ### Email
 - ⬜ **Deliverability** — DKIM/DMARC + inbox placement at Gmail/Outlook (transactional + drip).
-- ⬜ **BCC inbox smoke** (B4) and **drip cron steps 2/3** on a real timeline (B4).
+- ✅ **BCC inbox smoke** (B4 prospect step 10) — `/prospect` intake invitation BCC at `avoels@comcast.net` confirmed (attest: Al / 2026-06-21).
+- ✅ **Drip cron steps 2/3** — `verify:drip` + overdue email received; B4 automated gate re-run 13/13 (attest: Al / 2026-06-21).
 
 ### Billing depth (beyond the happy path)
 - 🔄 **C-4 billing walkthrough on prod** (B5).
@@ -76,12 +77,12 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 ### Measurement & ops
 - ⬜ **Analytics / funnel instrumentation live** before flip.
 - ✅ **Vercel env name audit (`estate-planner`)** — `vercel env ls` Production vs Preview (names only, 2026-06-21): dead vars **`STRIPE_CUSTOMER_PORTAL_URL`** / **`RESEND_WEBHOOK_SECRET`** absent both scopes; two-DB split intentional (prod Supabase + live `STRIPE_PRICE_*` / `STRIPE_WEBHOOK_SECRET` Production-only; Preview `WAITLIST_MODE` + staging Supabase). **Attest: Al / 2026-06-21.**
-- 🔄 **Vercel dashboard housekeeping (remainder)** — `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA`, `EMAIL_FROM` present on Production (`verify-env` OK); optional `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed (B5).
+- 🔄 **Vercel dashboard housekeeping (remainder)** — declare `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA` on Production; optional `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed (B5). **`EMAIL_FROM` deleted from Production** — sender is `lib/email/config.ts` constant (PR #78, attest Al / 2026-06-21).
 
 ### External (in flight, may not gate flip but track)
 - 🌐 **WA B&O ruling** (Bucket A, P0-external).
 - 🌐 **DOR written ruling on SaaS DAS sales-tax classification**.
-- ⬜ **Email aliases** `security@`, `legal@`, `privacy@` (B6).
+- ✅ **Email aliases @mywealthmaps.com** — `support@`, `privacy@`, `legal@`, `security@`, `hello@` Cloudflare forwarding live and tested; outbound `noreply@` via Resend; `/pricing` Enterprise → `support@` (B6). **Attest: Al / 2026-06-21.**
 - **Post-go-live:** Counsel ToS §10/§11 + privacy redline when revenue approaches nexus in first state (Al / 2026-06-20).
 
 ---
