@@ -312,6 +312,8 @@
 
 **Attested (Al / 2026-06-17):** Preview deploy event captured end-to-end; `SENTRY_AUTH_TOKEN` on both Vercel projects (all scopes); per-DSN rate limit 150/12h; test issue resolved; [PR #29](https://github.com/Voels2000/estate-planner/pull/29) merged to `staging`. First Production-environment event confirms on first prod deploy after merge to `main`.
 
+**Verify-env REVIEW (2026-06-21):** `GET /api/admin/verify-env?live=1` may flag `SENTRY_AUTH_TOKEN` as REVIEW (not in `lib/env/manifest.ts`). **Keep on Vercel** — used at build time for source maps, not runtime. No delete; no manifest change required pre-flip.
+
 ---
 
 ## Webhook `tier_upgraded` analytics integrity (2026-06-18)
