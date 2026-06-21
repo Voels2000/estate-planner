@@ -72,6 +72,21 @@ export default function WaitlistClient() {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: '#718096',
+                  lineHeight: 1.5,
+                  marginBottom: 14,
+                }}
+              >
+                By submitting your email, you agree we may send you planning tips and
+                product updates. See our{' '}
+                <a href="/privacy" style={{ color: '#0f1f3d', textDecoration: 'underline' }}>
+                  Privacy Policy
+                </a>
+                . Unsubscribe anytime from any email.
+              </p>
               <label
                 htmlFor="waitlist-email"
                 style={{
@@ -105,21 +120,6 @@ export default function WaitlistClient() {
               {error && (
                 <p style={{ fontSize: 13, color: '#dc2626', marginBottom: 12 }}>{error}</p>
               )}
-              <p
-                style={{
-                  fontSize: 12,
-                  color: '#718096',
-                  lineHeight: 1.5,
-                  marginBottom: 14,
-                }}
-              >
-                By submitting your email, you agree we may send you planning tips and
-                product updates. See our{' '}
-                <a href="/privacy" style={{ color: '#0f1f3d', textDecoration: 'underline' }}>
-                  Privacy Policy
-                </a>
-                . Unsubscribe anytime from any email.
-              </p>
               <button
                 type="submit"
                 disabled={submitting}
