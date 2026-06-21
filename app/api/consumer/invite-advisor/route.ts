@@ -114,7 +114,7 @@ export async function POST(request: Request) {
         subject: `${consumerLabel} invited you to connect on My Wealth Maps`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px">
-            <h1 style="color:#1a1a2e;font-size:24px">MyWealthMaps</h1>
+            <h1 style="color:#1a1a2e;font-size:24px">My Wealth Maps</h1>
             <p style="color:#374151;font-size:16px;line-height:1.6">
               <strong>${consumerLabel}</strong> would like to connect with you on My Wealth Maps.
             </p>
@@ -169,7 +169,7 @@ export async function POST(request: Request) {
         subject: `${consumerLabel} invited you to My Wealth Maps`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px">
-            <h1 style="color:#1a1a2e;font-size:24px">MyWealthMaps</h1>
+            <h1 style="color:#1a1a2e;font-size:24px">My Wealth Maps</h1>
             <p style="color:#374151;font-size:16px;line-height:1.6">
               <strong>${consumerLabel}</strong> uses My Wealth Maps and invited you to connect as their advisor.
             </p>

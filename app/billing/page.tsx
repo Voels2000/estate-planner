@@ -134,7 +134,7 @@ export default async function BillingPage({
             Your plan is managed by your advisor
           </h2>
           <p className="text-sm text-blue-800">
-            No payment required. Your advisor covers access to MyWealthMaps on your behalf. Contact
+            No payment required. Your advisor covers access to My Wealth Maps on your behalf. Contact
             your advisor if you have billing questions.
           </p>
         </Card>
@@ -151,7 +151,7 @@ export default async function BillingPage({
           </h2>
           <p className="text-sm text-blue-800">
             No payment required for this planning access while connected. Your attorney&apos;s firm
-            covers MyWealthMaps as part of your engagement. Contact your attorney if you have billing
+            covers My Wealth Maps as part of your engagement. Contact your attorney if you have billing
             questions.
           </p>
         </Card>

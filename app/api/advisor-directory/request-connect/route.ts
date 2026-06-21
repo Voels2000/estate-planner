@@ -103,12 +103,12 @@ export async function POST(request: Request) {
         subject: `New connection request from ${consumerLabel}`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px">
-            <h1 style="color:#1a1a2e;font-size:24px">MyWealthMaps</h1>
+            <h1 style="color:#1a1a2e;font-size:24px">My Wealth Maps</h1>
             <p style="color:#6b7280;font-size:14px">Financial, Retirement &amp; Estate Planning in One Place</p>
             <div style="background:#f9fafb;border-radius:8px;padding:32px;margin:24px 0">
               <h2 style="color:#1a1a2e;font-size:20px;margin-top:0">New Connection Request</h2>
               <p style="color:#374151;font-size:16px;line-height:1.6">
-                <strong>${consumerLabel}</strong> has requested to connect with <strong>${listing.firm_name}</strong> on MyWealthMaps.
+                <strong>${consumerLabel}</strong> has requested to connect with <strong>${listing.firm_name}</strong> on My Wealth Maps.
               </p>
               <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:16px;margin:16px 0">
                 <p style="color:#374151;font-size:14px;font-style:italic;margin:0">"${message.trim()}"</p>
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
               </p>
             </div>
             <p style="color:#9ca3af;font-size:12px;text-align:center">
-              This request was sent via MyWealthMaps. If you did not expect this, you can safely ignore it.
+              This request was sent via My Wealth Maps. If you did not expect this, you can safely ignore it.
             </p>
           </div>
         `,

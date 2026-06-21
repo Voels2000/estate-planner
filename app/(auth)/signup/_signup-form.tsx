@@ -186,7 +186,7 @@ export function SignupForm({
 
         {hasAdvisorInvite && (
           <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200">
-            👋 Your financial advisor has invited you to MyWealthMaps. Create your account to get
+            👋 Your financial advisor has invited you to My Wealth Maps. Create your account to get
             started — no subscription required.
           </div>
         )}
@@ -200,7 +200,7 @@ export function SignupForm({
 
         {hasFirmInvite && (
           <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-200">
-            🏢 You&apos;ve been invited to join a firm on MyWealthMaps. Complete your signup to accept.
+            🏢 You&apos;ve been invited to join a firm on My Wealth Maps. Complete your signup to accept.
           </div>
         )}
 

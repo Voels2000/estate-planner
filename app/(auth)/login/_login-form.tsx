@@ -114,7 +114,7 @@ export function LoginForm() {
           Sign in to your account
         </h1>
         <p className="mt-2 text-sm text-neutral-600 dark:text-zinc-400">
-          Welcome back. Enter your details to access your estate planner.
+          Welcome back. Enter your details to access your My Wealth Maps account.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">

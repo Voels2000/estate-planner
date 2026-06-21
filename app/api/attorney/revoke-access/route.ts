@@ -139,11 +139,11 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           to:      notifyEmail,
           bcc:     'avoels@comcast.net',
-          subject: 'Attorney access has been revoked on EstatePlanner',
+          subject: 'Attorney access has been revoked on My Wealth Maps',
           html: `
             <p>Hi ${notifyName ?? 'there'},</p>
             <p><strong>${revokerProfile?.full_name ?? 'A user'}</strong> has revoked 
-            attorney access on EstatePlanner.</p>
+            attorney access on My Wealth Maps.</p>
             <p>Any documents already uploaded remain safely stored in the client vault.</p>
             <p><a href="${appUrl}/dashboard">Go to Dashboard</a></p>
           `,

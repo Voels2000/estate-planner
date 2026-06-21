@@ -1,5 +1,5 @@
 # MASTER_ARCHITECTURE.md
-# MyWealthMaps / Estate Planner — Full Architecture Reference
+# My Wealth Maps — Full Architecture Reference
 # Last updated: 2026-06-18 (pre-launch hardening batch PRs #28–#39 on staging; promotion runbook; staging Vercel §10 closed)
 
 ---

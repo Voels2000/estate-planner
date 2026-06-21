@@ -35,7 +35,7 @@ export async function sendMeetingPrepSharedEmail({
     subject: `${advisorName} shared a planning brief with you`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px">
-        <h1 style="color:#1a1a2e;font-size:24px">MyWealthMaps</h1>
+        <h1 style="color:#1a1a2e;font-size:24px">My Wealth Maps</h1>
         <p style="color:#374151;font-size:16px;line-height:1.6">Hi ${clientFirstName},</p>
         <p style="color:#374151;font-size:16px;line-height:1.6">
           <strong>${advisorName}</strong> prepared a meeting brief from your plan on My Wealth Maps.

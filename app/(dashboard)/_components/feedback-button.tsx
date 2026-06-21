@@ -70,7 +70,7 @@ export function FeedbackButton({ userId }: { userId: string }) {
             <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
               <div>
                 <h2 className="text-base font-semibold text-neutral-900">Share Feedback</h2>
-                <p className="text-xs text-neutral-500 mt-0.5">Help us improve Estate Planner</p>
+                <p className="text-xs text-neutral-500 mt-0.5">Help us improve My Wealth Maps</p>
               </div>
               <button
                 onClick={() => setIsOpen(false)}

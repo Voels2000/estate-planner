@@ -52,7 +52,7 @@ export function ConsumerAttorneyDocumentRequests({
               <div className="mt-2 flex flex-wrap gap-2">
                 <Link
                   href="/settings/attorney-access"
-                  className="text-xs font-medium text-blue-600 hover:underline"
+                  className="text-xs font-medium text-[color:var(--mwm-navy)] hover:underline"
                 >
                   Open document vault
                 </Link>

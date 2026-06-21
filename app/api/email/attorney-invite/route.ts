@@ -28,16 +28,16 @@ export async function POST(req: Request) {
     replyTo: EMAIL_REPLY_TO,
       to: email,
       bcc: 'avoels@comcast.net',
-      subject: `${safeConsumer} has requested your review on MyWealthMaps`,
+      subject: `${safeConsumer} has requested your review on My Wealth Maps`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:40px 20px">
-          <h1 style="color:#1a1a2e;font-size:24px">MyWealthMap</h1>
+          <h1 style="color:#1a1a2e;font-size:24px">My Wealth Maps</h1>
           <p style="color:#6b7280;font-size:14px">Financial, Retirement &amp; Estate Planning in One Place</p>
           <div style="background:#f9fafb;border-radius:8px;padding:32px;margin:24px 0">
             <h2 style="color:#1a1a2e;font-size:20px;margin-top:0">You have been invited to review an estate plan</h2>
             <p style="color:#374151;font-size:16px;line-height:1.6">Hello ${safeAttorney},</p>
             <p style="color:#374151;font-size:16px;line-height:1.6">
-              <strong>${safeConsumer}</strong> has selected you as their attorney on MyWealthMaps and is requesting your review of their estate plan.
+              <strong>${safeConsumer}</strong> has selected you as their attorney on My Wealth Maps and is requesting your review of their estate plan.
             </p>
             <div style="text-align:center;margin:32px 0">
               <a href="${safeSignupUrl}" style="background:#2563eb;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold">Create Your Attorney Account</a>

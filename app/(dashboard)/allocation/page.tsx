@@ -7,7 +7,7 @@ import { loadAssetAllocationData } from '@/lib/allocation/loadAssetAllocationDat
 import AllocationClient from './_allocation-client'
 
 export const metadata = {
-  title: 'Asset Allocation | Estate Planner',
+  title: 'Asset Allocation | My Wealth Maps',
   description: 'Define your target mix of stocks, bonds, and cash',
 }
 

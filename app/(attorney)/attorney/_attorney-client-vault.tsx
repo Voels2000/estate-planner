@@ -206,7 +206,7 @@ export function AttorneyClientVault({
               onClick={() => setTypeFilter(opt.value)}
               className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                 typeFilter === opt.value
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-[color:var(--mwm-navy)] text-white'
                   : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
               }`}
             >
@@ -221,7 +221,7 @@ export function AttorneyClientVault({
             <select
               value={docType}
               onChange={(e) => setDocType(e.target.value)}
-              className="border border-neutral-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-neutral-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] focus:border-transparent"
             >
               {Object.entries(DOCTYPE_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -238,7 +238,7 @@ export function AttorneyClientVault({
             <button
               onClick={handleUpload}
               disabled={uploading}
-              className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 whitespace-nowrap"
+              className="px-4 py-2 bg-[color:var(--mwm-navy)] text-white text-sm rounded-lg hover:bg-[color:var(--mwm-navy-light)] disabled:opacity-50 whitespace-nowrap transition"
             >
               {uploading ? 'Uploading...' : '⬆️ Upload PDF'}
             </button>
@@ -292,7 +292,7 @@ export function AttorneyClientVault({
                     </select>
                     <button
                       onClick={() => handleDownload(doc.id)}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-medium px-3 py-1.5 border border-blue-200 rounded-lg hover:bg-blue-50"
+                      className="text-xs text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy-light)] font-medium px-3 py-1.5 border border-[color:var(--mwm-navy)]/20 rounded-lg hover:bg-[var(--mwm-gold-pale)] transition"
                     >
                       ⬇️ Download
                     </button>
