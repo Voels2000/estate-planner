@@ -36,10 +36,10 @@ export function AdvisorValuePropBanner() {
             Your clients get a plan they can actually use
           </h2>
           <p className="mt-2 text-sm text-[color:var(--mwm-text-secondary)] leading-relaxed max-w-3xl">
-            Most planning portals keep clients on the outside — quarterly PDFs, no ongoing visibility.
-            My Wealth Maps gives clients a guided dashboard for financial, retirement, and estate planning.
-            You get read-only access to their live data, strategy sandbox, meeting prep, and gap workflow —
-            without re-keying their balance sheet.
+            My Wealth Maps adds a client-facing layer to the planning you already do — with estate planning
+            built in, not bolted on. Your clients get a guided dashboard for financial, retirement, and estate
+            planning that they return to between meetings, and you get read-only access to their live data, a
+            strategy sandbox, meeting prep, and gap workflow, without re-keying their balance sheet.
           </p>
         </div>
         <button
@@ -54,17 +54,18 @@ export function AdvisorValuePropBanner() {
 
       <div className="grid gap-px bg-[color:var(--mwm-border)] sm:grid-cols-3">
         <div className="bg-white px-5 py-4">
-          <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">vs. traditional portals</p>
+          <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">The estate layer your stack is missing</p>
           <p className="mt-1.5 text-sm text-neutral-600 leading-relaxed">
-            eMoney and similar tools are advisor-first. Clients get reports — not a living dashboard they
-            return to between meetings.
+            Most planning tools go deep on investments and retirement but stop short of estate. My Wealth Maps
+            surfaces estate health, exemption headroom, and open gaps on live data — so you can raise the
+            conversation clients expect from a trusted advisor.
           </p>
         </div>
         <div className="bg-white px-5 py-4">
-          <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">B2B2C value</p>
+          <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">No extra cost to clients</p>
           <p className="mt-1.5 text-sm text-neutral-600 leading-relaxed">
-            Connected clients receive Estate-tier access at no extra consumer cost. You collaborate on
-            real data; they stay engaged in the plan.
+            Connected clients receive full Estate-tier access at no added consumer cost. You collaborate on
+            real, live data instead of static snapshots — and they stay engaged in the plan.
           </p>
         </div>
         <div className="bg-white px-5 py-4">
