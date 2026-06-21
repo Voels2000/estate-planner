@@ -235,7 +235,7 @@ export default function ExportPanel({
       const wb = XLSX.utils.book_new()
 
       const assumptions = [
-        ['EstatePlanner - Export'],
+        ['My Wealth Maps - Export'],
         ['Generated', new Date().toISOString()],
         ['Advisor', advisorName || ''],
         ['Scenario ID', scenarioId],

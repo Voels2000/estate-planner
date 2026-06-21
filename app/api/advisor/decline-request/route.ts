@@ -96,7 +96,7 @@ export async function POST(request: Request) {
             to: consumerEmail,
             bcc: 'avoels@comcast.net',
             subject: 'Your advisor connection request was not accepted',
-            text: `Hi,\n\n${advisorLabel} was unable to take on new clients at this time and has declined your request.\n\nYou can return to the platform to connect with a different advisor.\n\n${process.env.NEXT_PUBLIC_APP_URL}/advisors\n\nThe Estate Planner Team`,
+            text: `Hi,\n\n${advisorLabel} was unable to take on new clients at this time and has declined your request.\n\nYou can return to the platform to connect with a different advisor.\n\n${process.env.NEXT_PUBLIC_APP_URL}/advisors\n\nThe My Wealth Maps Team`,
           }),
         })
       } catch (emailErr) {

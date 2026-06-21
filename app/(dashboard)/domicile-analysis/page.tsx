@@ -12,7 +12,7 @@ import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import DomicileAnalysisClient from './_domicile-analysis-client'
 
-export const metadata = { title: 'Domicile Analysis | Estate Planner' }
+export const metadata = { title: 'Domicile Analysis | My Wealth Maps' }
 
 export default async function DomicileAnalysisPage() {
   const access = await getUserAccess()

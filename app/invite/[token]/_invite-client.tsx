@@ -56,7 +56,7 @@ export default function InviteClient({ token, advisorName, invitedEmail }: Props
 
         <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400 text-center">
           <span className="font-medium text-zinc-900 dark:text-zinc-100">{advisorName}</span> has
-          invited you to connect on MyWealthMaps.
+          invited you to connect on My Wealth Maps.
         </p>
 
         <div className="mt-6 rounded-xl bg-zinc-50 dark:bg-zinc-800 p-4 space-y-2 text-sm">

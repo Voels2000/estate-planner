@@ -98,7 +98,7 @@ export function AdvisorRegisterClient({ userId, userName, userEmail, existingId 
         <p className="mt-3 text-neutral-500">
           Your listing is pending admin review. You&apos;ll receive an email
           at <strong>{form.email}</strong> once it&apos;s approved and live
-          in the MyWealthMaps advisor directory.
+          in the My Wealth Maps advisor directory.
         </p>
         <button
           type="button"

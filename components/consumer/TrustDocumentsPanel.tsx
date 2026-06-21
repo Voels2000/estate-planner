@@ -339,7 +339,7 @@ export function TrustDocumentsPanel({
       </CollapsibleSection>
 
       <p className="text-xs text-neutral-400 border-t border-neutral-100 pt-6">
-        This guidance is generated based on information you have entered into Estate Planner.
+        This guidance is generated based on information you have entered into My Wealth Maps.
         It is not legal advice. Always consult a licensed estate planning attorney in your state
         before making decisions about trusts, wills, or estate documents.
       </p>

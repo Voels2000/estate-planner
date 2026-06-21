@@ -30,7 +30,7 @@ function baseTemplate(title: string, body: string, ctaText?: string, ctaUrl?: st
               <td style="background:#0f172a;padding:24px 32px;">
                 <a href="${BASE_URL}" style="color:#ffffff;font-size:18px;
                    font-weight:600;text-decoration:none;">
-                  WealthMaps
+                  My Wealth Maps
                 </a>
               </td>
             </tr>
@@ -112,7 +112,7 @@ export function buildNotificationEmail(payload: NotificationEmailPayload): {
 
     case 'subscription_renewal':
       return {
-        subject: 'Your WealthMaps subscription renews soon',
+        subject: 'Your My Wealth Maps subscription renews soon',
         html: baseTemplate(
           title,
           body,
@@ -145,7 +145,7 @@ export function buildNotificationEmail(payload: NotificationEmailPayload): {
 
     case 'mfa_reminder':
       return {
-        subject: 'Secure your WealthMaps account',
+        subject: 'Secure your My Wealth Maps account',
         html: baseTemplate(
           title,
           body,
