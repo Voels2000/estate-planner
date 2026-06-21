@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: 'avoels@comcast.net',
-        subject: 'New attorney nomination submitted — EstatePlanner',
+        subject: 'New attorney nomination submitted — My Wealth Maps',
         html: `
           <p>A new attorney has been nominated to the directory.</p>
           <ul>

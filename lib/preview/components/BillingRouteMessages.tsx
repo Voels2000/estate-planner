@@ -33,7 +33,7 @@ export function AdvisorManagedBillingBlock() {
           Your plan is managed by your advisor
         </h2>
         <p className="text-sm text-blue-800">
-          No payment required. Your advisor covers access to MyWealthMaps on your behalf. Contact
+          No payment required. Your advisor covers access to My Wealth Maps on your behalf. Contact
           your advisor if you have billing questions.
         </p>
       </Card>

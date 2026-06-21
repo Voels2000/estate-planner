@@ -1228,7 +1228,7 @@ export function generatePDFHTML(data: PDFReportData): string {
         .join('')}
       <div class="disclaimer" style="margin-top:32px">
         This report is for informational purposes only and does not constitute legal, tax, or financial advice.
-        MyWealthMaps / Estate Planner is not a law firm and does not provide legal services.
+        My Wealth Maps is not a law firm and does not provide legal services.
         All estate planning strategies should be reviewed by a qualified estate planning attorney
         and tax professional before implementation.
       </div>

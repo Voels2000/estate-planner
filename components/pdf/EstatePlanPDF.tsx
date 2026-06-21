@@ -670,7 +670,7 @@ const PDFHeader = ({ data }: { data: EstatePlanPdfData }) => (
   <View>
     <View style={s.headerAccent} />
     <View style={s.header}>
-      <Text style={s.headerAppName}>ESTATE PLANNER</Text>
+      <Text style={s.headerAppName}>MY WEALTH MAPS</Text>
       <Text style={s.headerClientName}>{clientName(data.household)}</Text>
       <Text style={s.headerSubtitle}>
         {data.household.state_primary}  |  {data.household.filing_status === 'mfj' ? 'Married Filing Jointly' : data.household.filing_status?.toUpperCase()}  |  Complexity: {capitalize(data.household.estate_complexity_flag ?? '')}
@@ -696,7 +696,7 @@ const PDFHeader = ({ data }: { data: EstatePlanPdfData }) => (
 // --- Shared Footer ---
 const PDFFooter = ({ data }: { data: EstatePlanPdfData }) => (
   <View style={s.footer} fixed>
-    <Text style={s.footerText}>Estate Planner  |  Confidential  |  {clientName(data.household)}</Text>
+    <Text style={s.footerText}>My Wealth Maps  |  Confidential  |  {clientName(data.household)}</Text>
     <Text style={s.footerText} render={({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) => `Page ${pageNumber} of ${totalPages}`} />
   </View>
 )

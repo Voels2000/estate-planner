@@ -73,7 +73,7 @@ export default async function AttorneyInvitePage({ params }: Props) {
               p_user_id: clientId,
               p_type: 'estate_milestone',
               p_title: '✅ Connected to your attorney',
-              p_body: 'You are now connected with your attorney on MyWealthMaps. They can collaborate with you on your estate plan.',
+              p_body: 'You are now connected with your attorney on My Wealth Maps. They can collaborate with you on your estate plan.',
               p_delivery: 'both',
               p_metadata: { attorney_listing_id: invite.attorney_id },
               p_cooldown: '1 hour',
