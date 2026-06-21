@@ -7,6 +7,7 @@ import type {
   CreateGrantPayload,
   BeneficiaryAccessGrant,
 } from '@/lib/types/beneficiary-grant'
+import { EMAIL_FROM } from '@/lib/email/config'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -158,7 +159,7 @@ async function sendGrantInviteEmail(grant: BeneficiaryAccessGrant): Promise<void
 
   try {
     await resend.emails.send({
-      from: 'EstatePlanner <noreply@mywealthmaps.com>',
+      from: EMAIL_FROM,
       to: grant.grantee_email,
       subject: 'Your estate plan access has been shared with you',
       html: `

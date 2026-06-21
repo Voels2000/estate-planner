@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { getAppUrl } from '@/lib/app-url'
 import { escapeHtml } from '@/lib/api/escapeHtml'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
 
@@ -61,7 +62,7 @@ export async function POST(req: Request) {
     const appUrl = getAppUrl()
 
     await resend.emails.send({
-      from: 'hello@mywealthmaps.com',
+      from: EMAIL_FROM,
       to: advisor.email,
       subject: `New Introduction Request — ${userName}`,
       html: `
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
     })
 
     await resend.emails.send({
-      from: 'hello@mywealthmaps.com',
+      from: EMAIL_FROM,
       to: userEmail,
       subject: `Your introduction to ${firmName} has been sent`,
       html: `

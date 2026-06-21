@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { randomUUID } from 'crypto'
 import { getAppUrl } from '@/lib/app-url'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export const dynamic = 'force-dynamic'
 
@@ -96,7 +97,7 @@ export async function POST(request: Request) {
     try {
       // Email to listing email address
       await resend.emails.send({
-        from: 'MyWealthMaps <hello@mywealthmaps.com>',
+        from: EMAIL_FROM,
         to: listing.email,
         bcc: 'avoels@comcast.net',
         subject: `New connection request from ${consumerLabel}`,

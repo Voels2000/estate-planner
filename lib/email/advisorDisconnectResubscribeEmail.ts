@@ -1,4 +1,5 @@
 import { resend } from '@/lib/resend'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 type Params = {
   to: string
@@ -27,7 +28,7 @@ export async function sendAdvisorDisconnectResubscribeEmail({
     : 'Your advisor connection has ended. You can continue using My Wealth Maps with your updated account access.'
 
   const { error } = await resend.emails.send({
-    from: 'MyWealthMaps <noreply@mywealthmaps.com>',
+    from: EMAIL_FROM,
     headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
     tags: [{ name: 'category', value: 'advisor_disconnect' }],
     to,

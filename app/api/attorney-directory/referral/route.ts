@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { getAppUrl } from '@/lib/app-url'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export async function POST(req: Request) {
   try {
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
     const appUrl = getAppUrl()
 
     await resend.emails.send({
-      from: 'hello@mywealthmaps.com',
+      from: EMAIL_FROM,
       to: attorneyEmail,
       subject: `New Referral Request — ${userName}`,
       html: `
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
     })
 
     await resend.emails.send({
-      from: 'hello@mywealthmaps.com',
+      from: EMAIL_FROM,
       to: userEmail,
       subject: `Your referral to ${attorneyFirmName} has been sent`,
       html: `

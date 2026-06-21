@@ -5,6 +5,7 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { getAppUrl } from '@/lib/app-url'
 import { countFirmRosterSeats, getFirmTierMaxSeats } from '@/lib/firm/firmRoster'
+import { EMAIL_FROM, EMAIL_REPLY_TO } from '@/lib/email/config'
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase()
@@ -144,7 +145,8 @@ export async function POST(request: Request) {
     const signupUrl = `${siteUrl}/signup?invite_token=${encodeURIComponent(inviteToken)}&firm_id=${encodeURIComponent(ctx.firm_id)}&role=advisor`
 
     const { error: emailError } = await resend.emails.send({
-      from: 'MyWealthMaps <hello@mywealthmaps.com>',
+      from: EMAIL_FROM,
+    replyTo: EMAIL_REPLY_TO,
       bcc: 'avoels@comcast.net',
       headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
       tags: [{ name: 'category', value: 'firm_advisor_invite' }],

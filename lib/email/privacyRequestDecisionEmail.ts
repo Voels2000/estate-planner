@@ -1,4 +1,5 @@
 import { resend } from '@/lib/resend'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export async function sendPrivacyRequestDecisionEmail(params: {
   to: string
@@ -22,7 +23,7 @@ If you disagree with this decision, you may appeal by replying to this email or 
   const reasonBlock = denied && reason?.trim() ? `\n\nReason: ${reason.trim()}` : ''
 
   const { error } = await resend.emails.send({
-    from: 'My Wealth Maps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     to,
     subject,
     text: `My Wealth Maps — Privacy Request Update

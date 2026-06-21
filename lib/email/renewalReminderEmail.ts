@@ -1,5 +1,6 @@
 import { resend } from '@/lib/resend'
 import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export async function sendRenewalReminderEmail(
   to: string,
@@ -9,7 +10,7 @@ export async function sendRenewalReminderEmail(
 ) {
   const body = BILLING_DISCLOSURES.renewalReminderEmail.body(planName, price, renewalDate)
   const { error } = await resend.emails.send({
-    from: 'My Wealth Maps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     to,
     subject: BILLING_DISCLOSURES.renewalReminderEmail.subject,
     html: `

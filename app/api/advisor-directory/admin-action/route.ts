@@ -3,6 +3,7 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
 import { resend } from '@/lib/resend'
 import { NextRequest, NextResponse } from 'next/server'
+import { EMAIL_FROM, EMAIL_REPLY_TO } from '@/lib/email/config'
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,7 +40,8 @@ export async function POST(req: NextRequest) {
       if (listing.email) {
         try {
           await resend.emails.send({
-            from: 'MyWealthMaps <hello@mywealthmaps.com>',
+            from: EMAIL_FROM,
+    replyTo: EMAIL_REPLY_TO,
             to: listing.email,
             bcc: 'avoels@comcast.net',
             subject: 'Your advisor listing is now live — MyWealthMaps',
@@ -88,7 +90,8 @@ export async function POST(req: NextRequest) {
       if (listing.email) {
         try {
           await resend.emails.send({
-            from: 'MyWealthMaps <hello@mywealthmaps.com>',
+            from: EMAIL_FROM,
+    replyTo: EMAIL_REPLY_TO,
             to: listing.email,
             bcc: 'avoels@comcast.net',
             subject: 'Your advisor listing was not approved — MyWealthMaps',

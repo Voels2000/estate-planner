@@ -5,6 +5,7 @@ import {
   getAttorneyDripSequence,
   buildAttorneyDripEmailHtml,
 } from '@/lib/emails/attorney-drip-templates'
+import { EMAIL_FROM } from '@/lib/email/config'
 import { buildUnsubscribeUrl } from '@/lib/email/unsubscribeToken'
 
 const DRIP_SENT_COLUMNS = {
@@ -63,7 +64,7 @@ export async function sendAttorneyDripStep(
   })
 
   const { error: sendError } = await resend.emails.send({
-    from: 'MyWealthMaps <hello@mywealthmaps.com>',
+    from: EMAIL_FROM,
     headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
     tags: [{ name: 'category', value: `attorney_drip_${sequenceStep}` }],
     to: normalizedEmail,
