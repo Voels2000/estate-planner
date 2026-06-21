@@ -224,7 +224,7 @@ export function AttorneyDashboardClient({
 
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-900">Attorney Portal</h1>
+          <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Attorney Portal</h1>
           <p className="text-neutral-500 mt-1">
             Welcome back, {attorneyName}. You have access to {totalClients || clients.length} client
             {(totalClients || clients.length) !== 1 ? 's' : ''}.

@@ -87,7 +87,7 @@ export function AttorneyRequestsClient({
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-neutral-900">Requests</h1>
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Requests</h1>
         <p className="text-sm text-neutral-500 mt-1">
           Connection requests and open intake invitations. Accepting grants read-only access to client
           estate data — clients retain ownership and can revoke anytime.
@@ -150,7 +150,7 @@ export function AttorneyRequestsClient({
                   type="button"
                   disabled={loadingId === req.id}
                   onClick={() => void handleAccept(req.id)}
-                  className="rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:opacity-50"
+                  className="rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 transition"
                 >
                   {loadingId === req.id ? 'Accepting…' : 'Accept'}
                 </button>

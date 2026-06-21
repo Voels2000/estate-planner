@@ -89,7 +89,7 @@ export function AttorneyBillingClient({
       <Link href="/attorney" className="text-sm text-neutral-400 hover:text-neutral-600">
         ← Back to portal
       </Link>
-      <h1 className="mt-4 text-2xl font-semibold text-neutral-900">Attorney Plans</h1>
+      <h1 className="mt-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Attorney Plans</h1>
       <p className="mt-1 text-sm text-neutral-500">
         Current plan: <strong>{ATTORNEY_TIER_LIMITS[currentTier]?.label ?? 'Free'}</strong>
       </p>
