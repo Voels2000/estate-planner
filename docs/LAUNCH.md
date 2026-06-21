@@ -127,6 +127,7 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 **Ops — still open (human / card-required):**
 
 - [ ] Vercel dashboard housekeeping: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed; declare `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA`, `EMAIL_FROM`; delete dead vars (`STRIPE_CUSTOMER_PORTAL_URL`, `RESEND_WEBHOOK_SECRET` if present) (attest: __ / __)
+  - [x] **`SENTRY_AUTH_TOKEN`** — verify-env REVIEW is expected; keep on Vercel for source maps (attest: Al / 2026-06-21)
 - [ ] C-4 manual walkthrough on prod: signup → checkout → active → cancel → deletion schedule — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (attest: __ / __)
 - [ ] One real-card live smoke, smallest tier, refund/cancel after verify — **proves live checkout → `checkout.session.completed` → subscription active** (attest: __ / __)
 

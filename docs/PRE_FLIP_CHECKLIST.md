@@ -39,6 +39,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 ### Observability
 - ✅ **Error monitoring live** (Sentry) — error-only, `sendDefaultPii: false`, tunnel `/monitoring`; preview event confirmed in Sentry dashboard; `SENTRY_AUTH_TOKEN` on both Vercel projects; per-DSN rate limit 150/12h (attest: Al / 2026-06-17 · [PR #29](https://github.com/Voels2000/estate-planner/pull/29) merged to staging).
+- ✅ **`SENTRY_AUTH_TOKEN` verify-env REVIEW flag** — build-time source-map upload only; **keep on Vercel** (do not delete). `verify-env?live=1` REVIEW is expected (not in runtime manifest); no further action (attest: Al / 2026-06-21).
 
 ### Legal / disclaimers (confirm with counsel)
 - ✅ **WA estate-tax disclaimers** — consumer page, advisor panel, PDF (date-stamped, no-portability, snapshot caveat).
