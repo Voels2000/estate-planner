@@ -1,6 +1,27 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-20 (counsel post-go-live gate; privacy_requests RLS fix)
+# Last updated: 2026-06-21 (client Stripe price resolution — server-only)
+
+---
+
+## Client Stripe price resolution — server-only (2026-06-21)
+
+**Decision:** Client code must **never** resolve Stripe price IDs. `STRIPE_PRICE_*` env vars are server-only and invisible in `'use client'` bundles, where they silently fall back to stale test literals or make `hasPriceConfig()` return false. The client sends `{ tier, period }`; the server is the single source of price truth. Applies to **checkout** and any client display of price availability (annual toggles, upgrade banners).
+
+**Symptom (production only):** Consumer Subscribe returned HTTP 400 — "Invalid plan. Use firm or attorney checkout for professional subscriptions." Staging looked fine (test price IDs on both client fallback and server).
+
+**Root cause:** `getConsumerPlansForPeriod()` / `handleSubscribe` ran in client components and called `getPriceConfig()` → `resolveConsumerPriceId()`. In the browser, env vars are unset → legacy `price_1TIL…` literals POSTed to `/api/stripe/checkout` while production server validated live `price_*` IDs.
+
+**Surfaces fixed (PR #86):**
+| Surface | Before | After |
+|---------|--------|--------|
+| `/billing`, `/pricing` Subscribe | POST `{ priceId }` from client | POST `{ tier, period }` |
+| Plan catalog | `ConsumerPlanForCheckout.priceId` | Removed; `getConsumerPlanDisplay()` for UI amounts only |
+| `UpgradeBanner` | `hasPriceConfig()` in client → annual copy hidden | `AnnualBillingProvider` from dashboard layout (server flag) + display-only metadata |
+
+**Regression guard:** E2E clicks real **Get started** on `/billing`, intercepts POST, asserts `not.toHaveProperty('priceId')`.
+
+**Rule for future work:** If a client component needs "is annual available?" or a Stripe price ID, pass a boolean or tier from a Server Component / API route — do not read `STRIPE_PRICE_*` or call `getPriceConfig()` / `hasPriceConfig()` from `'use client'` code.
 
 ---
 
