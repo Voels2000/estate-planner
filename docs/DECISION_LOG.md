@@ -1,6 +1,28 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-19 (US-only enforcement; Sprint E dead-code sweep closeout)
+# Last updated: 2026-06-20 (counsel post-go-live gate; privacy_requests RLS fix)
+
+---
+
+## Counsel sign-off — post-go-live (2026-06-20)
+
+**Decision:** Defer counsel redline on **privacy policy (#60)** and **ToS §10/§11** until **post-go-live**, when revenue approaches nexus in the first state. Engineering draft stays live on `/privacy` and `/terms`; `PUBLIC_SIGNUP_OPEN` flip is not blocked on counsel completion.
+
+**Reasoning:** Pre-launch traffic is waitlist-gated; state-law applicability thresholds are not met today. Voluntary multi-state posture is shipped in code; formal counsel pass is timed to commercial nexus, not deploy.
+
+**Still pre-flip:** email aliases (`security@`, `legal@`), real-card smoke, C-4 walkthrough, B&O Bucket A.
+
+---
+
+## privacy_requests consumer INSERT RLS failure (2026-06-20)
+
+**Symptom:** `POST /api/consumer/privacy-request` returned `new row violates row-level security policy for table "privacy_requests"`.
+
+**Root cause:** Sprint C-7 migration (`20260625170000`) enabled RLS and INSERT/SELECT policies but **omitted explicit `GRANT`s** (pre–MIGRATION_TEMPLATE standard). Consumer route inserted via user JWT + `.select()` (RETURNING). On production, authenticated role could not satisfy INSERT/SELECT + RLS for PostgREST — admin intake (`createAdminClient`) worked because service_role bypasses RLS.
+
+**Fix:** Route uses `createAdminClient()` after session auth (same pattern as `delete-account`); migration `20260722120000_privacy_requests_grants.sql` adds `GRANT SELECT, INSERT TO authenticated` and recreates consumer policies.
+
+**Ops:** Apply migration on production before relying on user-JWT path; deploy route fix to Vercel Production.
 
 ---
 

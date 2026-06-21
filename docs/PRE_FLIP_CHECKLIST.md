@@ -42,8 +42,8 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 ### Legal / disclaimers (confirm with counsel)
 - ✅ **WA estate-tax disclaimers** — consumer page, advisor panel, PDF (date-stamped, no-portability, snapshot caveat).
-- ⬜ **Privacy policy published** — live and linked at signup.
-- 🔄 **"Not tax / legal / financial advice" disclaimers** beyond WA — counsel sign-off on placement.
+- ✅ **Privacy policy published** — live at `/privacy` and linked at signup (engineering draft #60; counsel redline **post-go-live**).
+- 🔄 **"Not tax / legal / financial advice" disclaimers** beyond WA — household alerts passed; ToS §10/§11 counsel **post-go-live** (revenue approaching first-state nexus).
 - ✅ **Household-alert copy (all six `estate_*` alerts)** — counsel review **complete — passed** for advice-vs-fact framing (attest: Al / 2026-06-19). Impl merged #51; gate on [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax).
 - ⬜ **`PUBLIC_SIGNUP_OPEN=false`** until intentional flip; **`REQUIRE_PRIVILEGED_MFA=true`** confirmed in Vercel prod.
 
@@ -79,7 +79,8 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 ### External (in flight, may not gate flip but track)
 - 🌐 **WA B&O ruling** (Bucket A, P0-external).
 - 🌐 **DOR written ruling on SaaS DAS sales-tax classification**.
-- ⬜ **Counsel ToS §10/§11 + email aliases** `security@`, `legal@`, `privacy@` (B6).
+- ⬜ **Email aliases** `security@`, `legal@`, `privacy@` (B6).
+- **Post-go-live:** Counsel ToS §10/§11 + privacy redline when revenue approaches nexus in first state (Al / 2026-06-20).
 
 ---
 

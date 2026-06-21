@@ -133,7 +133,8 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 ### B6. Legal / entity (ops-attested, ex-tax)
 
 - [x] Legal placeholders in product (verify: `lib/legal/company.ts` → `/terms`, `/privacy`)
-- [ ] Counsel sign-off ToS §10, §11 (attest: __ / __)
+- [ ] ~~Counsel sign-off ToS §10, §11~~ → **post-go-live** (revenue approaching nexus in first state) — attest: Al / 2026-06-20
+- [ ] ~~Counsel redline privacy policy (#60)~~ → **post-go-live** (same gate) — engineering draft live on `/privacy`; matrix Q1–Q10 deferred
 - [x] **Household-alert copy counsel review** — six consumer `estate_*` alerts (`lib/alerts/estateHouseholdAlerts.ts`, merged #51): fact-not-advice voice (state user's data → name structure/observation → redirect to licensed professional). **Counsel review complete — passed.** (attest: Al / 2026-06-19)
 - [x] WA LLC UBI / EIN / registered agent confirmed on SOS (attest: __ / __)
 - [x] Business bank account open (attest: __ / __)
@@ -299,7 +300,8 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | **P0** | One real-card live smoke (checkout → `checkout.session.completed` → subscription active) | B5 |
 | **P0** | WA B&O / DAS ruling | A |
 | **P1** | C-4 billing walkthrough on prod | B5 |
-| **P1** | Counsel ToS §10/§11 + email aliases | B6 |
+| **P1** | Email aliases (`security@`, `legal@`) | B6 |
+| **Post-go-live** | Counsel ToS §10/§11 + privacy redline (first-state nexus / revenue) | B6 / Bucket D |
 | **P2** | BCC inbox, drip cron 2/3, optional Vercel dashboard housekeeping | B4 / B5 |
 | **AT-FLIP** | Fresh prod signup smoke | B4 / C |
 
