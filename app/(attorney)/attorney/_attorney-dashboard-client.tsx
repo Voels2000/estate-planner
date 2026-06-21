@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AttorneyUpgradePrompt } from '@/components/attorney/AttorneyUpgradePrompt'
+import { AttorneyValuePropBanner } from '@/components/attorney/AttorneyValuePropBanner'
 import { SendIntakeRequestModal } from '@/components/attorney/SendIntakeRequestModal'
 import { RosterNetWorthColumnHeader } from '@/components/shared/RosterNetWorthColumnHeader'
 import { formatRosterNetWorth } from '@/lib/roster/rosterNetWorth'
@@ -252,6 +253,8 @@ export function AttorneyDashboardClient({
           )}
         </div>
       </div>
+
+      <AttorneyValuePropBanner />
 
       {atCap && (
         <div className="mb-6">
