@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resend } from '@/lib/resend'
+import { EMAIL_FROM } from '@/lib/email/config'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   try {
     await resend.emails.send({
-      from: 'MyWealthMaps <hello@mywealthmaps.com>',
+      from: EMAIL_FROM,
       to: 'avoels@comcast.net',
       subject: 'New Attorney Listing Submitted — Pending Review',
       headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },

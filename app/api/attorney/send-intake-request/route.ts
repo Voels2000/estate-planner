@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { getAppUrl } from '@/lib/app-url'
 import { buildIntakeRequestEmail } from '@/lib/email/buildIntakeRequestEmail'
 import { resend } from '@/lib/resend'
+import { EMAIL_FROM, EMAIL_REPLY_TO } from '@/lib/email/config'
 
 function isAttorneyProfile(profile: { role?: string | null; is_attorney?: boolean | null }) {
   return profile.role === 'attorney' || profile.is_attorney === true
@@ -98,7 +99,8 @@ export async function POST(req: NextRequest) {
       (profile?.role === 'advisor' ? 'Your advisor' : 'Your attorney')
 
     const { error: emailError } = await resend.emails.send({
-      from: 'My Wealth Maps <hello@mywealthmaps.com>',
+      from: EMAIL_FROM,
+    replyTo: EMAIL_REPLY_TO,
       to: clientEmail.trim().toLowerCase(),
       bcc: 'avoels@comcast.net',
       subject: `${attorneyName} has invited you to complete your estate planning profile`,

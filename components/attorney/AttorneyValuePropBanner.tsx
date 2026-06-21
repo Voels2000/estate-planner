@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 
-const STORAGE_KEY = 'mwm_advisor_value_prop_dismissed'
+const STORAGE_KEY = 'mwm_attorney_value_prop_dismissed'
 
-export function AdvisorValuePropBanner() {
+export function AttorneyValuePropBanner() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -33,13 +33,12 @@ export function AdvisorValuePropBanner() {
             Why My Wealth Maps
           </p>
           <h2 className="mt-1 text-base font-semibold text-[color:var(--mwm-navy)]">
-            Your clients get a plan they can actually use
+            Walk into every matter already prepared
           </h2>
           <p className="mt-2 text-sm text-[color:var(--mwm-text-secondary)] leading-relaxed max-w-3xl">
-            My Wealth Maps adds a client-facing layer to the planning you already do — with estate planning
-            built in, not bolted on. Your clients get a guided dashboard for financial, retirement, and estate
-            planning that they return to between meetings, and you get read-only access to their live data, a
-            strategy sandbox, meeting prep, and gap workflow, without re-keying their balance sheet.
+            My Wealth Maps gives you a structured, read-only view of a client&apos;s financial and estate picture
+            before the first meeting — assets, beneficiaries, existing documents, and open gaps in one place. You
+            spend your time on drafting and counsel, not on assembling the file.
           </p>
         </div>
         <button
@@ -54,25 +53,24 @@ export function AdvisorValuePropBanner() {
 
       <div className="grid gap-px bg-[color:var(--mwm-border)] sm:grid-cols-3">
         <div className="bg-white px-5 py-4">
-          <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">The estate layer your stack is missing</p>
+          <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">The full picture, organized</p>
           <p className="mt-1.5 text-sm text-neutral-600 leading-relaxed">
-            Most planning tools go deep on investments and retirement but stop short of estate. My Wealth Maps
-            surfaces estate health, exemption headroom, and open gaps on live data — so you can raise the
-            conversation clients expect from a trusted advisor.
+            Client financials, beneficiaries, and existing instruments arrive structured and ready to review — so
+            you start from a complete file instead of building one from scattered statements.
           </p>
         </div>
         <div className="bg-white px-5 py-4">
-          <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">No extra cost to clients</p>
+          <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">Gaps surfaced before you draft</p>
           <p className="mt-1.5 text-sm text-neutral-600 leading-relaxed">
-            Connected clients receive full Estate-tier access at no added consumer cost. You collaborate on
-            real, live data instead of static snapshots — and they stay engaged in the plan.
+            The platform flags estate exposure, exemption headroom, and open gaps on live data — so the issues
+            worth your attention are visible from the first read.
           </p>
         </div>
         <div className="bg-white px-5 py-4">
-          <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">Your workflow</p>
+          <p className="text-xs font-semibold text-[color:var(--mwm-navy)]">Intake without the back-and-forth</p>
           <p className="mt-1.5 text-sm text-neutral-600 leading-relaxed">
-            Model strategies in the sandbox, send recommendations clients accept in their dashboard, and
-            email meeting prep briefs — all from one client workspace.
+            Send a branded intake request and clients complete their profile before they arrive. Documents you
+            upload stay in one secure workspace tied to the matter.
           </p>
         </div>
       </div>

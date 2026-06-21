@@ -9,6 +9,7 @@ import {
   profileDripStep3Eligible,
   runDripFetch,
 } from '@/lib/cron/dripEligibility'
+import { EMAIL_FROM } from '@/lib/email/config'
 import { requireCronAuth } from '@/lib/api/internalApiAuth'
 import { resend } from '@/lib/resend'
 import { NextResponse } from 'next/server'
@@ -551,7 +552,7 @@ export async function GET(request: Request) {
       ].join('\n')
 
       const { error: emailErr } = await resend.emails.send({
-        from: 'My Wealth Maps <hello@mywealthmaps.com>',
+        from: EMAIL_FROM,
         to: complianceEmail,
         subject: `[MWM] ${overdueStates.length} state estate tax page(s) need review`,
         text: body,
