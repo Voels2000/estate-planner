@@ -8,12 +8,12 @@ import {
   getConsumerPlansForPeriod,
   type ConsumerPlanForCheckout,
 } from '@/lib/billing/consumerPlanCatalog'
-import { getPriceConfig, hasPriceConfig, type BillingPeriod } from '@/lib/billing/stripePrices'
+import { getConsumerPlanDisplay, type BillingPeriod, type PlanTier } from '@/lib/billing/stripePrices'
 
-function estateAnnualSavingsLine(): string | null {
-  if (!hasPriceConfig(3, 'annual')) return null
-  const annual = getPriceConfig(3, 'annual')
-  const monthly = getPriceConfig(3, 'monthly')
+function estateAnnualSavingsLine(annualBillingAvailable: boolean): string | null {
+  if (!annualBillingAvailable) return null
+  const annual = getConsumerPlanDisplay(3, 'annual')
+  const monthly = getConsumerPlanDisplay(3, 'monthly')
   const savings = monthly.monthlyEquivalent * 12 - annual.annualTotal
   return `Or $${annual.annualTotal.toLocaleString()}/year (save $${savings.toLocaleString()} vs monthly)`
 }
@@ -30,7 +30,7 @@ export function PricingConsumerPlans({
   annualBillingAvailable,
 }: Props) {
   const [period, setPeriod] = useState<BillingPeriod>('monthly')
-  const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null)
+  const [loadingCheckoutTier, setLoadingCheckoutTier] = useState<PlanTier | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const billingPeriod = annualBillingAvailable ? period : 'monthly'
   const plans = useMemo(
@@ -40,12 +40,12 @@ export function PricingConsumerPlans({
 
   async function handleCheckout(plan: ConsumerPlanForCheckout) {
     setCheckoutError(null)
-    setLoadingPriceId(plan.priceId)
+    setLoadingCheckoutTier(plan.tier)
     try {
       const res = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: plan.priceId, period: plan.period }),
+        body: JSON.stringify({ tier: plan.tier, period: plan.period }),
       })
       const data = await res.json()
       if (res.ok && data.url) {
@@ -60,7 +60,7 @@ export function PricingConsumerPlans({
     } catch {
       setCheckoutError('Network error. Please try again.')
     } finally {
-      setLoadingPriceId(null)
+      setLoadingCheckoutTier(null)
     }
   }
 
@@ -203,7 +203,7 @@ export function PricingConsumerPlans({
                   </p>
                 )}
                 {isEstate && period === 'annual' && (() => {
-                  const line = estateAnnualSavingsLine()
+                  const line = estateAnnualSavingsLine(annualBillingAvailable)
                   return line ? (
                     <p style={{ fontSize: 12, color: '#4a7c6f', fontWeight: 500 }}>{line}</p>
                   ) : null
@@ -253,7 +253,7 @@ export function PricingConsumerPlans({
                   </p>
                   <button
                     type="button"
-                    disabled={loadingPriceId === plan.priceId}
+                    disabled={loadingCheckoutTier === plan.tier}
                     onClick={() => void handleCheckout(plan)}
                     style={{
                       width: '100%',
@@ -264,12 +264,12 @@ export function PricingConsumerPlans({
                       color: plan.accent === '#c9a84c' ? '#0f1f3d' : 'white',
                       fontSize: 14,
                       fontWeight: 600,
-                      cursor: loadingPriceId === plan.priceId ? 'wait' : 'pointer',
+                      cursor: loadingCheckoutTier === plan.tier ? 'wait' : 'pointer',
                       fontFamily: 'DM Sans, system-ui, sans-serif',
-                      opacity: loadingPriceId === plan.priceId ? 0.7 : 1,
+                      opacity: loadingCheckoutTier === plan.tier ? 0.7 : 1,
                     }}
                   >
-                    {loadingPriceId === plan.priceId ? 'Redirecting…' : plan.cta}
+                    {loadingCheckoutTier === plan.tier ? 'Redirecting…' : plan.cta}
                   </button>
                 </>
               ) : (

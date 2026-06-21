@@ -1,5 +1,5 @@
 import { TIER_DESCRIPTIONS, TIER_FEATURES, TIER_NAMES } from '@/lib/tiers'
-import { getPriceConfig, type BillingPeriod, type PlanTier } from '@/lib/billing/stripePrices'
+import { getConsumerPlanDisplay, type BillingPeriod, type PlanTier } from '@/lib/billing/stripePrices'
 
 export type ConsumerPlanCatalogEntry = {
   tier: PlanTier
@@ -53,7 +53,6 @@ export const CONSUMER_PLAN_CATALOG: ConsumerPlanCatalogEntry[] = [
 ]
 
 export type ConsumerPlanForCheckout = ConsumerPlanCatalogEntry & {
-  priceId: string
   displayPrice: number
   annualTotal: number | null
   period: BillingPeriod
@@ -64,12 +63,11 @@ export type ConsumerPlanForCheckout = ConsumerPlanCatalogEntry & {
 
 export function getConsumerPlansForPeriod(period: BillingPeriod): ConsumerPlanForCheckout[] {
   return CONSUMER_PLAN_CATALOG.map((plan) => {
-    const price = getPriceConfig(plan.tier, period)
+    const price = getConsumerPlanDisplay(plan.tier, period)
     const displayPrice = price.monthlyEquivalent
     const annualTotal = period === 'annual' ? price.annualTotal : null
     return {
       ...plan,
-      priceId: price.priceId,
       displayPrice,
       annualTotal,
       period,

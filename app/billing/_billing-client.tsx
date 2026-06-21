@@ -10,7 +10,7 @@ import {
   formatPlanPriceDisplay,
   type ConsumerPlanForCheckout,
 } from '@/lib/billing/consumerPlanCatalog'
-import type { BillingPeriod } from '@/lib/billing/stripePrices'
+import type { BillingPeriod, PlanTier } from '@/lib/billing/stripePrices'
 import { TIER_PRICES, PRICE_ID_TO_TIER, TIER_NAMES } from '@/lib/tiers'
 
 type Props = {
@@ -34,7 +34,8 @@ export function BillingClient({
 }: Props) {
   const [period, setPeriod] = useState<BillingPeriod>(() => subscribedPeriod ?? 'monthly')
   const billingPeriod = annualBillingAvailable ? period : 'monthly'
-  const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null)
+  const [loadingCheckoutTier, setLoadingCheckoutTier] = useState<PlanTier | null>(null)
+  const [loadingAction, setLoadingAction] = useState<'portal' | 'cancel' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cancelMessage, setCancelMessage] = useState<string | null>(null)
 
@@ -53,7 +54,7 @@ export function BillingClient({
 
   async function handleSubscribe(plan: ConsumerPlanForCheckout) {
     setError(null)
-    setLoadingPriceId(plan.priceId)
+    setLoadingCheckoutTier(plan.tier)
     try {
       const params = new URLSearchParams(window.location.search)
       const returnTo = params.get('returnTo') ?? undefined
@@ -61,7 +62,7 @@ export function BillingClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          priceId: plan.priceId,
+          tier: plan.tier,
           period: plan.period,
           ...(returnTo ? { returnTo } : {}),
         }),
@@ -69,44 +70,44 @@ export function BillingClient({
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || 'Something went wrong.')
-        setLoadingPriceId(null)
+        setLoadingCheckoutTier(null)
         return
       }
       window.location.assign(data.url)
     } catch {
       setError('Something went wrong. Please try again.')
-      setLoadingPriceId(null)
+      setLoadingCheckoutTier(null)
     }
   }
 
   async function handleManageSubscription() {
     setError(null)
-    setLoadingPriceId('portal')
+    setLoadingAction('portal')
     try {
       const res = await fetch('/api/stripe/portal', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || 'Something went wrong.')
-        setLoadingPriceId(null)
+        setLoadingAction(null)
         return
       }
       window.location.assign(data.url)
     } catch {
       setError('Something went wrong. Please try again.')
-      setLoadingPriceId(null)
+      setLoadingAction(null)
     }
   }
 
   async function handleCancelSubscription() {
     setError(null)
     setCancelMessage(null)
-    setLoadingPriceId('cancel')
+    setLoadingAction('cancel')
     try {
       const res = await fetch('/api/stripe/cancel', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || 'Something went wrong.')
-        setLoadingPriceId(null)
+        setLoadingAction(null)
         return
       }
       const accessThrough = data.accessThrough
@@ -126,7 +127,7 @@ export function BillingClient({
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
-      setLoadingPriceId(null)
+      setLoadingAction(null)
     }
   }
 
@@ -333,13 +334,13 @@ export function BillingClient({
               <Button
                 type="button"
                 onClick={() => void handleSubscribe(plan)}
-                disabled={loadingPriceId === plan.priceId || (isCurrentPlan && isActive)}
+                disabled={loadingCheckoutTier === plan.tier || (isCurrentPlan && isActive)}
                 variant="primary"
                 className="mt-4 w-full rounded-lg py-2.5 text-sm font-medium"
               >
                 {isCurrentPlan && isActive
                   ? 'Current Plan'
-                  : loadingPriceId === plan.priceId
+                  : loadingCheckoutTier === plan.tier
                     ? 'Redirecting...'
                     : plan.cta}
               </Button>
@@ -365,19 +366,19 @@ export function BillingClient({
           <button
             type="button"
             onClick={() => void handleCancelSubscription()}
-            disabled={loadingPriceId === 'cancel'}
+            disabled={loadingAction === 'cancel'}
             className="text-sm font-medium text-neutral-800 underline-offset-4 hover:text-neutral-950 hover:underline disabled:opacity-50"
           >
-            {loadingPriceId === 'cancel' ? 'Cancelling…' : 'Cancel subscription'}
+            {loadingAction === 'cancel' ? 'Cancelling…' : 'Cancel subscription'}
           </button>
         )}
         <button
           type="button"
           onClick={() => void handleManageSubscription()}
-          disabled={loadingPriceId === 'portal'}
+          disabled={loadingAction === 'portal'}
           className="text-sm text-neutral-500 underline-offset-4 hover:text-neutral-700 hover:underline disabled:opacity-50"
         >
-          {loadingPriceId === 'portal' ? 'Loading...' : 'Manage existing subscription'}
+          {loadingAction === 'portal' ? 'Loading...' : 'Manage existing subscription'}
         </button>
       </div>
     </div>

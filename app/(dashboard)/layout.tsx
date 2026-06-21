@@ -16,6 +16,8 @@ import { checkHouseholdHasData } from '@/lib/onboarding/checkHouseholdHasData'
 import { shouldRequireWizardOnboarding } from '@/lib/onboarding/shouldRequireWizardOnboarding'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { LinkPendingInviteOnMount } from '@/components/advisor/LinkPendingInviteOnMount'
+import { AnnualBillingProvider } from '@/lib/billing/AnnualBillingContext'
+import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
 
 function DashboardMain({
   children,
@@ -96,6 +98,8 @@ export default async function DashboardLayout({
     !profileFull?.onboarding_invite_advisor_completed_at &&
     isMinimumViableProfile(householdRow ?? {}).complete
 
+  const annualBillingAvailable = isAnnualBillingConfigured()
+
   const hasHousehold = !!householdRow
 
   // Superuser: use actual role as primary identity, unlock everything on top
@@ -116,13 +120,15 @@ export default async function DashboardLayout({
           />
         }
       >
-        <DashboardMain
-          needsWizardOnboarding={needsWizardOnboarding}
-          needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
-          linkPendingInvite={profileFull?.role === 'consumer'}
-        >
-          {children}
-        </DashboardMain>
+        <AnnualBillingProvider available={annualBillingAvailable}>
+          <DashboardMain
+            needsWizardOnboarding={needsWizardOnboarding}
+            needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
+            linkPendingInvite={profileFull?.role === 'consumer'}
+          >
+            {children}
+          </DashboardMain>
+        </AnnualBillingProvider>
       </DashboardShell>
     )
   }
@@ -204,15 +210,17 @@ export default async function DashboardLayout({
         />
       }
     >
-      <DashboardMain
-        showBanner={showStripeTrialBanner}
-        trialExpiry={stripeTrialEndsAt ?? undefined}
-        needsWizardOnboarding={needsWizardOnboarding}
-        needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
-        linkPendingInvite={isConsumer}
-      >
-        {children}
-      </DashboardMain>
+      <AnnualBillingProvider available={annualBillingAvailable}>
+        <DashboardMain
+          showBanner={showStripeTrialBanner}
+          trialExpiry={stripeTrialEndsAt ?? undefined}
+          needsWizardOnboarding={needsWizardOnboarding}
+          needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
+          linkPendingInvite={isConsumer}
+        >
+          {children}
+        </DashboardMain>
+      </AnnualBillingProvider>
     </DashboardShell>
   )
 }
