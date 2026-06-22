@@ -143,6 +143,22 @@ export function isAnnualBillingConfigured(): boolean {
   return ([1, 2, 3] as PlanTier[]).every((tier) => hasPriceConfig(tier, 'annual'))
 }
 
+/** Display-only metadata — safe in client bundles (no Stripe price ID resolution). */
+export function getConsumerPlanDisplay(
+  tier: PlanTier,
+  period: BillingPeriod,
+): Pick<PriceConfig, 'tier' | 'period' | 'monthlyEquivalent' | 'annualTotal' | 'trialDays'> {
+  const key = metaKey(tier, period)
+  const meta = PRICE_META[key]
+  return {
+    tier: meta.tier,
+    period: meta.period,
+    monthlyEquivalent: meta.monthlyEquivalent,
+    annualTotal: meta.annualTotal,
+    trialDays: meta.trialDays,
+  }
+}
+
 export function getPriceConfig(tier: PlanTier, period: BillingPeriod): PriceConfig {
   const key = metaKey(tier, period)
   const meta = PRICE_META[key]
