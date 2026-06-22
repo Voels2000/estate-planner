@@ -438,6 +438,7 @@ export async function POST(req: NextRequest) {
           .from('profiles')
           .update({
             subscription_status: status,
+            stripe_subscription_id: subscription.id,
             ...(renewalIso != null ? { subscription_period_end: renewalIso } : {}),
             ...(priceId ? { subscription_plan: priceId } : {}),
             ...(consumerTier ? { consumer_tier: consumerTier } : {}),
