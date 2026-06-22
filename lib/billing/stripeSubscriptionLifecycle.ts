@@ -1,7 +1,7 @@
 /** Pause or resume consumer Stripe subscriptions during B2B2C connect/disconnect. */
 
 import { createStripeClient } from '@/lib/stripe/config'
-import { getSubscriptionPeriodEnd } from '@/lib/stripe/subscriptionPeriod'
+import { subscriptionPeriodEndIso } from '@/lib/stripe/subscriptionPeriod'
 
 export async function pauseActiveStripeSubscriptionAtPeriodEnd(
   stripeCustomerId: string,
@@ -24,9 +24,7 @@ export async function pauseActiveStripeSubscriptionAtPeriodEnd(
       return { cancelAt: null, ok: true }
     }
 
-    const periodEnd = getSubscriptionPeriodEnd(activeSub)
-    const cancelAt =
-      periodEnd != null ? new Date(periodEnd * 1000).toISOString() : null
+    const cancelAt = subscriptionPeriodEndIso(activeSub)
 
     await stripe.subscriptions.update(activeSub.id, {
       cancel_at_period_end: true,
