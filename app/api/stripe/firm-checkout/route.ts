@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { ADVISOR_FIRM_PRICE_IDS } from '@/lib/tiers'
 import { getAppUrl } from '@/lib/app-url'
+import { createStripeClient } from '@/lib/stripe/config'
 
 const VALID_FIRM_PRICE_IDS = new Set(
   Object.values(ADVISOR_FIRM_PRICE_IDS).filter((id): id is string => Boolean(id)),
@@ -24,7 +24,7 @@ const tierBandMin: Record<string, number> = {
 
 export async function POST(req: Request) {
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+    const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
     const ctx = await getAccessContext()
 
     if (!ctx.user) {

@@ -3,6 +3,7 @@ import {
   analyzeStripeWebhookEndpoints,
   type StripeWebhookLiveness,
 } from '@/lib/env/stripeWebhookVerify'
+import { createStripeClient } from '@/lib/stripe/config'
 import { createClient } from '@supabase/supabase-js'
 import {
   ENV_MANIFEST,
@@ -460,7 +461,7 @@ async function runLivenessChecks(
       result.stripe_reason = mismatch
     } else {
       try {
-        const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' })
+        const stripe = createStripeClient(stripeKey)
         await stripe.balance.retrieve()
         result.stripe = 'LIVE_OK'
 

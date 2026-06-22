@@ -1,44 +1,38 @@
 /** Pause or resume consumer Stripe subscriptions during B2B2C connect/disconnect. */
 
+import { createStripeClient } from '@/lib/stripe/config'
+import { getSubscriptionPeriodEnd } from '@/lib/stripe/subscriptionPeriod'
+
 export async function pauseActiveStripeSubscriptionAtPeriodEnd(
   stripeCustomerId: string,
 ): Promise<{ cancelAt: string | null; ok: boolean }> {
-  if (!process.env.STRIPE_SECRET_KEY) {
+  const stripeKey = process.env.STRIPE_SECRET_KEY
+  if (!stripeKey) {
     return { cancelAt: null, ok: true }
   }
 
   try {
-    const stripeRes = await fetch(
-      `https://api.stripe.com/v1/subscriptions?customer=${encodeURIComponent(stripeCustomerId)}&status=active&limit=1`,
-      {
-        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
-      },
-    )
-    const stripeData = (await stripeRes.json()) as {
-      data: Array<{ id: string; current_period_end: number }>
-    }
+    const stripe = createStripeClient(stripeKey)
+    const { data } = await stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      status: 'active',
+      limit: 1,
+    })
 
-    const activeSub = stripeData.data?.[0]
+    const activeSub = data[0]
     if (!activeSub) {
       return { cancelAt: null, ok: true }
     }
 
-    const cancelRes = await fetch(`https://api.stripe.com/v1/subscriptions/${activeSub.id}`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'cancel_at_period_end=true',
-    })
-    if (!cancelRes.ok) {
-      throw new Error(`Stripe cancel failed: ${cancelRes.status}`)
-    }
+    const periodEnd = getSubscriptionPeriodEnd(activeSub)
+    const cancelAt =
+      periodEnd != null ? new Date(periodEnd * 1000).toISOString() : null
 
-    return {
-      cancelAt: new Date(activeSub.current_period_end * 1000).toISOString(),
-      ok: true,
-    }
+    await stripe.subscriptions.update(activeSub.id, {
+      cancel_at_period_end: true,
+    })
+
+    return { cancelAt, ok: true }
   } catch (err) {
     console.error('pauseActiveStripeSubscriptionAtPeriodEnd:', err)
     return { cancelAt: null, ok: false }
@@ -48,34 +42,27 @@ export async function pauseActiveStripeSubscriptionAtPeriodEnd(
 export async function resumePausedStripeSubscription(
   stripeCustomerId: string,
 ): Promise<boolean> {
-  if (!process.env.STRIPE_SECRET_KEY) {
+  const stripeKey = process.env.STRIPE_SECRET_KEY
+  if (!stripeKey) {
     return false
   }
 
   try {
-    const stripeRes = await fetch(
-      `https://api.stripe.com/v1/subscriptions?customer=${encodeURIComponent(stripeCustomerId)}&status=active&limit=1`,
-      {
-        headers: { Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}` },
-      },
-    )
-    const stripeData = (await stripeRes.json()) as {
-      data: Array<{ id: string; cancel_at_period_end: boolean }>
-    }
-    const activeSub = stripeData.data?.[0]
+    const stripe = createStripeClient(stripeKey)
+    const { data } = await stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      status: 'active',
+      limit: 1,
+    })
+    const activeSub = data[0]
     if (!activeSub?.cancel_at_period_end) {
       return false
     }
 
-    const resumeRes = await fetch(`https://api.stripe.com/v1/subscriptions/${activeSub.id}`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'cancel_at_period_end=false',
+    await stripe.subscriptions.update(activeSub.id, {
+      cancel_at_period_end: false,
     })
-    return resumeRes.ok
+    return true
   } catch (err) {
     console.error('resumePausedStripeSubscription:', err)
     return false

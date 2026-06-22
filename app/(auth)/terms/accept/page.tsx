@@ -1,9 +1,11 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import Stripe from 'stripe'
+import type Stripe from 'stripe'
 import { TermsClient } from '../_terms-client'
 import { getTierFromPriceId } from '@/lib/billing/stripePrices'
+import { createStripeClient } from '@/lib/stripe/config'
+import { subscriptionPeriodEndIso } from '@/lib/stripe/subscriptionPeriod'
 
 export default async function TermsAcceptPage({
   searchParams,
@@ -21,9 +23,7 @@ export default async function TermsAcceptPage({
 
   if (session_id) {
     try {
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-        apiVersion: '2025-02-24.acacia',
-      })
+      const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
       const session = await stripe.checkout.sessions.retrieve(session_id)
 
       const checkoutComplete =
@@ -41,7 +41,7 @@ export default async function TermsAcceptPage({
         if (subId) {
           const sub = await stripe.subscriptions.retrieve(subId)
           subscriptionStatus = sub.status
-          renewalIso = new Date(sub.current_period_end * 1000).toISOString()
+          renewalIso = subscriptionPeriodEndIso(sub)
           priceId = sub.items.data[0]?.price.id ?? null
           consumerTier = priceId ? getTierFromPriceId(priceId) : null
         }

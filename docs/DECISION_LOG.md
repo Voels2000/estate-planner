@@ -25,6 +25,22 @@
 
 ---
 
+## Stripe Clover pin + Basil period migration (2026-06-22)
+
+**Decision:** All Stripe clients pinned to **`2026-02-25.clover`** via single `createStripeClient()` in `lib/stripe/config.ts`; never rely on account-default API version. Basil+ moved `current_period_end` onto `SubscriptionItem` — all period reads go through `lib/stripe/subscriptionPeriod.ts` helpers (item-level → top-level fallback → null, never throw).
+
+**Symptom:** `customer.subscription.updated` HTTP 500, `RangeError: Invalid time value` when top-level `current_period_end` was undefined on webhook payloads (live smoke, incomplete→active).
+
+**SDK types:** `stripe` npm may not yet list Clover in `LatestApiVersion`; runtime sends `'2026-02-25.clover'` via cast — update when package types ship Clover.
+
+**Surfaces migrated:** webhook (renewal reminder, checkout completed, subscription updated), cancel route, terms accept, admin Stripe sync, repair script, B2B2C subscription lifecycle (replaced unversioned raw `fetch`).
+
+**Not period reads (verified):** firm checkout webhook retrieve (price/seats/tier only), `syncFirmQuantity` retrieve (item id + quantity only). `cancel_at_period_end` remains on Subscription (boolean), not a period timestamp.
+
+**Dashboard:** account/webhook endpoint API version unchanged — code-level pin only.
+
+---
+
 ## Counsel sign-off — post-go-live (2026-06-20)
 
 **Decision:** Defer counsel redline on **privacy policy (#60)** and **ToS §10/§11** until **post-go-live**, when revenue approaches nexus in the first state. Engineering draft stays live on `/privacy` and `/terms`; `PUBLIC_SIGNUP_OPEN` flip is not blocked on counsel completion.
