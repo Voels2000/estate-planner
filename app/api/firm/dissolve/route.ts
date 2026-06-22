@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { createStripeClient } from '@/lib/stripe/config'
 
 export async function POST() {
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+    const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
     const ctx = await getAccessContext()
     if (!ctx.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

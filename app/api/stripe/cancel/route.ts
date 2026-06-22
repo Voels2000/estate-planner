@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
+import type Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
+import { createStripeClient } from '@/lib/stripe/config'
+import { subscriptionPeriodEndIso } from '@/lib/stripe/subscriptionPeriod'
 
 const ACTIVE_FIRM_STATUSES = new Set(['active', 'trialing', 'canceling', 'past_due'])
 
@@ -25,9 +27,7 @@ async function resolveSubscriptionId(
 
 export async function POST() {
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: '2025-02-24.acacia',
-    })
+    const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
     const supabase = await createClient()
     const {
       data: { user },
@@ -80,14 +80,14 @@ export async function POST() {
       cancel_at_period_end: true,
     })
 
-    const periodEndIso = new Date(updated.current_period_end * 1000).toISOString()
+    const periodEndIso = subscriptionPeriodEndIso(updated)
 
     await supabase
       .from('profiles')
       .update({
         subscription_status: 'canceling',
         stripe_subscription_id: subscriptionId,
-        subscription_period_end: periodEndIso,
+        ...(periodEndIso != null ? { subscription_period_end: periodEndIso } : {}),
       })
       .eq('id', user.id)
 

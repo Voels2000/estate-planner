@@ -4,6 +4,11 @@ import { sendRenewalReminderEmail } from '@/lib/email/renewalReminderEmail'
 import Stripe from 'stripe'
 import type { PostgrestError } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createStripeClient } from '@/lib/stripe/config'
+import {
+  getSubscriptionPeriodEnd,
+  subscriptionPeriodEndIso,
+} from '@/lib/stripe/subscriptionPeriod'
 import { getTierFromPriceId } from '@/lib/billing/stripePrices'
 import { FIRM_PRICE_ID_TO_TIER, getAttorneyTierFromPriceId } from '@/lib/tiers'
 import { trackTierUpgrade } from '@/lib/analytics/trackUpgrade'
@@ -86,7 +91,13 @@ async function sendConsumerRenewalReminder(
   const to = profile?.email
   if (!to) return
 
-  const reminderKey = String(subscription.current_period_end)
+  const periodEnd = getSubscriptionPeriodEnd(subscription)
+  if (periodEnd == null) {
+    console.log('invoice.upcoming — no subscription period end, skip renewal reminder')
+    return
+  }
+
+  const reminderKey = String(periodEnd)
   if (subscription.metadata?.renewal_reminder_sent_for === reminderKey) return
 
   const line = invoice.lines.data[0]
@@ -95,7 +106,7 @@ async function sendConsumerRenewalReminder(
       ? (line.price.product as Stripe.Product).name
       : null) ?? 'My Wealth Maps'
   const price = formatUsdCents(invoice.amount_due ?? line?.amount ?? 0)
-  const renewalDate = formatRenewalDate(subscription.current_period_end)
+  const renewalDate = formatRenewalDate(periodEnd)
 
   await sendRenewalReminderEmail(to, planName, price, renewalDate)
 
@@ -123,7 +134,7 @@ function mapFirmSubscriptionStatus(status: Stripe.Subscription.Status): string {
 }
 
 export async function POST(req: NextRequest) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')!
   let event: Stripe.Event
@@ -233,7 +244,7 @@ export async function POST(req: NextRequest) {
           if (subId) {
             const sub = await stripe.subscriptions.retrieve(subId)
             subscriptionStatus = sub.status
-            renewalIso = new Date(sub.current_period_end * 1000).toISOString()
+            renewalIso = subscriptionPeriodEndIso(sub)
             priceId = sub.items.data[0]?.price.id ?? null
             consumerTier = priceId ? getTierFromPriceId(priceId) : null
           }
@@ -416,9 +427,7 @@ export async function POST(req: NextRequest) {
           console.log('customer.subscription.updated — skipping managed B2B2C profile')
           break
         }
-        const renewalIso = new Date(
-          subscription.current_period_end * 1000
-        ).toISOString()
+        const renewalIso = subscriptionPeriodEndIso(subscription)
         const priceId = subscription.items.data[0]?.price.id ?? null
         const consumerTier = priceId ? getTierFromPriceId(priceId) : null
         const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
@@ -429,7 +438,7 @@ export async function POST(req: NextRequest) {
           .from('profiles')
           .update({
             subscription_status: status,
-            subscription_period_end: renewalIso,
+            ...(renewalIso != null ? { subscription_period_end: renewalIso } : {}),
             ...(priceId ? { subscription_plan: priceId } : {}),
             ...(consumerTier ? { consumer_tier: consumerTier } : {}),
             ...(attorneyTier > 0 ? { attorney_tier: attorneyTier } : {}),

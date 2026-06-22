@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { createStripeClient } from '@/lib/stripe/config'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { processConsumerCheckout } from '@/lib/billing/processConsumerCheckout'
 import {
@@ -19,9 +19,7 @@ const PLAN_NAME_TO_TIER: Record<string, PlanTier> = {
 }
 
 export async function POST(req: Request) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-02-24.acacia',
-  })
+  const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
 
   try {
     const supabase = await createClient()
