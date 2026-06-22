@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:stripe-dates": "node scripts/check-stripe-period-reads.mjs",
     "test:e2e": "dotenv -o -e .env.test -- npx playwright test",
     "test:e2e:advisor": "dotenv -o -e .env.test -- npx playwright test --project=advisor-setup --project=advisor",
     "test:e2e:consumer": "dotenv -o -e .env.test -- npx playwright test --project=consumer-setup --project=consumer",
