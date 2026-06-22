@@ -421,10 +421,7 @@ export async function POST(req: NextRequest) {
       }
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription
-        const customerIdForReactivation =
-          typeof subscription.customer === 'string'
-            ? subscription.customer
-            : subscription.customer?.id
+        const customerIdForReactivation = resolveStripeCustomerId(subscription.customer)
 
         if (subscription.status === 'active' && customerIdForReactivation) {
           await cancelPendingDeletionOnReactivation({
@@ -597,8 +594,7 @@ export async function POST(req: NextRequest) {
           break
         }
 
-        const customerId =
-          typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+        const customerId = resolveStripeCustomerId(invoice.customer)
         if (customerId) {
           const { data: profile } = await supabase
             .from('profiles')
@@ -632,8 +628,7 @@ export async function POST(req: NextRequest) {
         if (!subscriptionId) break
 
         const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-        const customerId =
-          typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+        const customerId = resolveStripeCustomerId(invoice.customer)
         if (!customerId || subscription.metadata?.firm_id) break
 
         try {
