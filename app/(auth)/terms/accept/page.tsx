@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type Stripe from 'stripe'
 import { TermsClient } from '../_terms-client'
-import { getTierFromPriceId } from '@/lib/billing/stripePrices'
 import { createStripeClient } from '@/lib/stripe/config'
-import { subscriptionPeriodEndIso } from '@/lib/stripe/subscriptionPeriod'
+import { activateConsumerProfileFromSubscription } from '@/lib/stripe/activateConsumerSubscription'
+import { resolveCheckoutSubscription } from '@/lib/stripe/checkoutSubscription'
+import { resolveStripeCustomerId } from '@/lib/stripe/stripeIds'
 
 export default async function TermsAcceptPage({
   searchParams,
@@ -33,33 +33,27 @@ export default async function TermsAcceptPage({
 
       if (checkoutComplete) {
         const admin = createAdminClient()
-        const subId = session.subscription as string | null
-        let renewalIso: string | null = null
-        let priceId: string | null = null
-        let consumerTier: number | null = null
-        let subscriptionStatus: Stripe.Subscription.Status = 'active'
-        if (subId) {
-          const sub = await stripe.subscriptions.retrieve(subId)
-          subscriptionStatus = sub.status
-          renewalIso = subscriptionPeriodEndIso(sub)
-          priceId = sub.items.data[0]?.price.id ?? null
-          consumerTier = priceId ? getTierFromPriceId(priceId) : null
-        }
+        const stripeCustomerId = resolveStripeCustomerId(session.customer)
+        const sub = await resolveCheckoutSubscription(stripe, session)
 
-        const { error } = await admin
-          .from('profiles')
-          .update({
-            subscription_status: subscriptionStatus,
-            stripe_customer_id: session.customer as string,
-            stripe_subscription_id: subId,
-            subscription_plan: priceId,
-            ...(consumerTier ? { consumer_tier: consumerTier } : {}),
-            ...(renewalIso ? { subscription_period_end: renewalIso } : {}),
-          })
-          .eq('id', user.id)
-
-        if (error) {
-          console.error('Terms accept profile update error:', error.message)
+        if (!stripeCustomerId) {
+          console.error('Terms accept — no customer id on checkout session')
+        } else if (!sub) {
+          if (session.mode === 'subscription') {
+            console.error(
+              'Terms accept — subscription mode but no subscription resolved, skipping activation',
+            )
+          }
+        } else {
+          const { error } = await activateConsumerProfileFromSubscription(
+            admin,
+            user.id,
+            sub,
+            stripeCustomerId,
+          )
+          if (error) {
+            console.error('Terms accept profile update error:', error.message)
+          }
         }
       }
     } catch (err) {

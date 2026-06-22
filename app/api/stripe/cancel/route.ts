@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createStripeClient } from '@/lib/stripe/config'
+import { mapConsumerSubscriptionStatus } from '@/lib/stripe/consumerSubscriptionStatus'
 import { subscriptionPeriodEndIso } from '@/lib/stripe/subscriptionPeriod'
 
 const ACTIVE_FIRM_STATUSES = new Set(['active', 'trialing', 'canceling', 'past_due'])
@@ -81,11 +82,12 @@ export async function POST() {
     })
 
     const periodEndIso = subscriptionPeriodEndIso(updated)
+    const mappedStatus = mapConsumerSubscriptionStatus(updated)
 
     await supabase
       .from('profiles')
       .update({
-        subscription_status: 'canceling',
+        subscription_status: mappedStatus,
         stripe_subscription_id: subscriptionId,
         ...(periodEndIso != null ? { subscription_period_end: periodEndIso } : {}),
       })
