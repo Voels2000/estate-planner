@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ATTORNEY_PLAN_PRICE_IDS, type AttorneyPlanKey } from '@/lib/tiers'
+import { createStripeClient } from '@/lib/stripe/config'
 
 export async function POST(req: NextRequest) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-02-24.acacia',
-  })
+  const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
 
   try {
     const supabase = await createClient()

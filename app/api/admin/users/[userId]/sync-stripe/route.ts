@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireAdminApi } from '@/lib/compliance/requireAdminApi'
 import { appendAdminUserActionLog, getAdminActorEmail } from '@/lib/admin/adminActionLog'
 import { syncConsumerStripeSubscription } from '@/lib/billing/syncConsumerStripeSubscription'
+import { createStripeClient } from '@/lib/stripe/config'
 
 type RouteContext = { params: Promise<{ userId: string }> }
 
@@ -11,7 +11,7 @@ export async function POST(_request: Request, context: RouteContext) {
   const auth = await requireAdminApi()
   if (auth instanceof NextResponse) return auth
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
 
   const { userId } = await context.params
   const admin = createAdminClient()

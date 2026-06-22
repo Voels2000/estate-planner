@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { getAppUrl } from '@/lib/app-url'
+import { createStripeClient } from '@/lib/stripe/config'
 
 const ACTIVE_FIRM_STATUSES = ['active', 'trialing', 'canceling', 'past_due']
 
 export async function POST() {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-02-24.acacia',
-  })
+  const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

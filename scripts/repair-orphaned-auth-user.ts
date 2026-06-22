@@ -6,8 +6,9 @@
  *   dotenv -e .env.local -- npx tsx scripts/repair-orphaned-auth-user.ts <email>
  */
 import { createClient } from '@supabase/supabase-js'
-import Stripe from 'stripe'
 import { getTierFromPriceId } from '../lib/billing/stripePrices'
+import { createStripeClient } from '../lib/stripe/config'
+import { subscriptionPeriodEndIso } from '../lib/stripe/subscriptionPeriod'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,7 +22,7 @@ async function syncStripeSubscription(userId: string, email: string) {
     return
   }
 
-  const stripe = new Stripe(stripeKey, { apiVersion: '2025-02-24.acacia' })
+  const stripe = createStripeClient(stripeKey)
   const customers = await stripe.customers.list({ email, limit: 1 })
   const customer = customers.data[0]
   if (!customer) {
@@ -42,12 +43,12 @@ async function syncStripeSubscription(userId: string, email: string) {
 
   const priceId = sub.items.data[0]?.price.id ?? null
   const consumerTier = priceId ? getTierFromPriceId(priceId) : null
-  const renewalIso = new Date(sub.current_period_end * 1000).toISOString()
+  const renewalIso = subscriptionPeriodEndIso(sub)
 
   const coreUpdate = {
     subscription_status: sub.status,
     subscription_plan: priceId,
-    subscription_period_end: renewalIso,
+    ...(renewalIso != null ? { subscription_period_end: renewalIso } : {}),
     ...(consumerTier ? { consumer_tier: consumerTier } : {}),
   }
 

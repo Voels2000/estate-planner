@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { getTierFromPriceId } from '@/lib/billing/stripePrices'
 import { getAttorneyTierFromPriceId } from '@/lib/tiers'
+import { subscriptionPeriodEndIso } from '@/lib/stripe/subscriptionPeriod'
 
 export type StripeSyncResult = {
   subscription_status: string
@@ -81,14 +82,14 @@ export async function syncConsumerStripeSubscription(
       throw new Error('Cannot sync — profile is advisor/attorney managed (B2B2C)')
     }
 
-    const renewalIso = new Date(activeSub.current_period_end * 1000).toISOString()
+    const renewalIso = subscriptionPeriodEndIso(activeSub)
     const priceId = activeSub.items.data[0]?.price.id ?? null
     const consumerTier = priceId ? getTierFromPriceId(priceId) : null
     const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
 
     update = {
       subscription_status: activeSub.cancel_at_period_end ? 'canceling' : activeSub.status,
-      subscription_period_end: renewalIso,
+      ...(renewalIso != null ? { subscription_period_end: renewalIso } : {}),
       stripe_subscription_id: activeSub.id,
       ...(priceId ? { subscription_plan: priceId } : {}),
       ...(consumerTier ? { consumer_tier: consumerTier } : {}),

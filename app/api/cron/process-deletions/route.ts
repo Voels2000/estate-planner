@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { deleteUserData } from '@/lib/compliance/deleteUser'
 import { getCancelScheduledDeletionReason } from '@/lib/compliance/deletionGuards'
@@ -9,6 +8,7 @@ import {
   nextDeletionRetryAt,
   sendDeletionRetryAlertEmail,
 } from '@/lib/email/deletionRetryAlertEmail'
+import { createStripeClient } from '@/lib/stripe/config'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   if (denied) return denied
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+    const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
     const admin = createAdminClient()
     const now = new Date().toISOString()
 

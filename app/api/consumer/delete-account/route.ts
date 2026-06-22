@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { scheduleUserAccountDeletion } from '@/lib/compliance/scheduleUserAccountDeletion'
+import { createStripeClient } from '@/lib/stripe/config'
 
 export async function POST() {
   const supabase = await createClient()
@@ -31,9 +31,7 @@ export async function POST() {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-02-24.acacia',
-  })
+  const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
   const admin = createAdminClient()
 
   try {
