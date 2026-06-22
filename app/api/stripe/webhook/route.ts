@@ -5,10 +5,18 @@ import Stripe from 'stripe'
 import type { PostgrestError } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createStripeClient } from '@/lib/stripe/config'
+import { activateConsumerProfileFromSubscription } from '@/lib/stripe/activateConsumerSubscription'
+import { resolveCheckoutSubscription } from '@/lib/stripe/checkoutSubscription'
+import { mapConsumerSubscriptionStatus } from '@/lib/stripe/consumerSubscriptionStatus'
 import {
+  formatUnixDateEnUs,
   getSubscriptionPeriodEnd,
   subscriptionPeriodEndIso,
 } from '@/lib/stripe/subscriptionPeriod'
+import {
+  resolveInvoiceSubscriptionId,
+  resolveStripeCustomerId,
+} from '@/lib/stripe/stripeIds'
 import { getTierFromPriceId } from '@/lib/billing/stripePrices'
 import { FIRM_PRICE_ID_TO_TIER, getAttorneyTierFromPriceId } from '@/lib/tiers'
 import { trackTierUpgrade } from '@/lib/analytics/trackUpgrade'
@@ -67,14 +75,6 @@ function formatUsdCents(amountCents: number) {
   }).format(amountCents / 100)
 }
 
-function formatRenewalDate(unixSeconds: number) {
-  return new Date(unixSeconds * 1000).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
 async function sendConsumerRenewalReminder(
   stripe: Stripe,
   supabase: ReturnType<typeof createAdminClient>,
@@ -106,7 +106,7 @@ async function sendConsumerRenewalReminder(
       ? (line.price.product as Stripe.Product).name
       : null) ?? 'My Wealth Maps'
   const price = formatUsdCents(invoice.amount_due ?? line?.amount ?? 0)
-  const renewalDate = formatRenewalDate(periodEnd)
+  const renewalDate = formatUnixDateEnUs(periodEnd) ?? 'your renewal date'
 
   await sendRenewalReminderEmail(to, planName, price, renewalDate)
 
@@ -236,38 +236,38 @@ export async function POST(req: NextRequest) {
             .single()
           const previousTier = priorProfile?.consumer_tier ?? 0
 
-          const subId = session.subscription as string | null
-          let renewalIso: string | null = null
-          let priceId: string | null = null
-          let consumerTier: number | null = null
-          let subscriptionStatus: Stripe.Subscription.Status = 'active'
-          if (subId) {
-            const sub = await stripe.subscriptions.retrieve(subId)
-            subscriptionStatus = sub.status
-            renewalIso = subscriptionPeriodEndIso(sub)
-            priceId = sub.items.data[0]?.price.id ?? null
-            consumerTier = priceId ? getTierFromPriceId(priceId) : null
+          const stripeCustomerId = resolveStripeCustomerId(session.customer)
+          if (!stripeCustomerId) {
+            console.log('checkout.session.completed — no customer id, skipping profile update')
+            break
           }
-          const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
-          const { error } = await supabase
-            .from('profiles')
-            .update({
-              subscription_status: subscriptionStatus,
-              stripe_customer_id: session.customer as string,
-              stripe_subscription_id: subId,
-              subscription_plan: priceId,
-              ...(consumerTier ? { consumer_tier: consumerTier } : {}),
-              ...(attorneyTier > 0 ? { attorney_tier: attorneyTier } : {}),
-              ...(renewalIso ? { subscription_period_end: renewalIso } : {}),
-            })
-            .eq('id', userId)
+
+          const sub = await resolveCheckoutSubscription(stripe, session)
+          if (!sub) {
+            if (session.mode === 'subscription') {
+              console.log(
+                'checkout.session.completed — subscription mode but no subscription resolved, skipping activation',
+              )
+            }
+            break
+          }
+
+          const { error, fields } = await activateConsumerProfileFromSubscription(
+            supabase,
+            userId,
+            sub,
+            stripeCustomerId,
+          )
           if (error) {
             console.error('Supabase update error:', error.message)
             captureStripeWebhookSupabaseFailure('consumer checkout profile update', error, event)
-          } else if (consumerTier && consumerTier > previousTier) {
+          } else if (
+            fields?.consumer_tier &&
+            fields.consumer_tier > previousTier
+          ) {
             void trackTierUpgrade({
               userId,
-              tier: consumerTier,
+              tier: fields.consumer_tier,
               previousTier,
             })
           }
@@ -317,7 +317,11 @@ export async function POST(req: NextRequest) {
           }
           break
         }
-        const customerId = subscription.customer as string
+        const customerId = resolveStripeCustomerId(subscription.customer)
+        if (!customerId) {
+          console.log('customer.subscription.deleted — no customer id, skip consumer update')
+          break
+        }
         const cancelledPriceId = subscription.items.data[0]?.price.id ?? null
         const attorneyTierCancelled = cancelledPriceId
           ? getAttorneyTierFromPriceId(cancelledPriceId)
@@ -326,7 +330,7 @@ export async function POST(req: NextRequest) {
         const { error: consumerDeleteError } = await supabase
           .from('profiles')
           .update({
-            subscription_status: 'canceled',
+            subscription_status: mapConsumerSubscriptionStatus(subscription),
             ...(attorneyTierCancelled > 0 ? { attorney_tier: 0 } : {}),
           })
           .eq('stripe_customer_id', customerId)
@@ -349,6 +353,70 @@ export async function POST(req: NextRequest) {
           admin: supabase,
           subscription,
         })
+        break
+      }
+      case 'customer.subscription.created': {
+        const subscription = event.data.object as Stripe.Subscription
+        if (subscription.metadata?.firm_id) {
+          break
+        }
+
+        const customerId = resolveStripeCustomerId(subscription.customer)
+        if (!customerId) {
+          console.log('customer.subscription.created — no customer id, skipping activation')
+          break
+        }
+
+        const { data: managedRows } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('stripe_customer_id', customerId)
+          .in('subscription_status', ['advisor_managed', 'attorney_managed'])
+          .limit(1)
+        if (managedRows?.length) {
+          console.log('customer.subscription.created — skipping managed B2B2C profile')
+          break
+        }
+
+        let userId = subscription.metadata?.userId as string | undefined
+        if (!userId) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('stripe_customer_id', customerId)
+            .maybeSingle()
+          userId = profile?.id
+        }
+        if (!userId) {
+          console.log('customer.subscription.created — no profile for customer, skipping activation')
+          break
+        }
+
+        const { data: priorProfile } = await supabase
+          .from('profiles')
+          .select('consumer_tier')
+          .eq('id', userId)
+          .single()
+        const previousTier = priorProfile?.consumer_tier ?? 0
+
+        const { error, fields } = await activateConsumerProfileFromSubscription(
+          supabase,
+          userId,
+          subscription,
+          customerId,
+        )
+        if (error) {
+          console.error('customer.subscription.created — profile update failed:', error.message)
+          captureStripeWebhookSupabaseFailure('consumer subscription created', error, event)
+        } else if (fields?.consumer_tier && fields.consumer_tier > previousTier) {
+          void trackTierUpgrade({
+            userId,
+            tier: fields.consumer_tier,
+            previousTier,
+          })
+        } else {
+          console.log('customer.subscription.created — consumer subscription activated')
+        }
         break
       }
       case 'customer.subscription.updated': {
@@ -416,7 +484,11 @@ export async function POST(req: NextRequest) {
           }
           break
         }
-        const customerId = subscription.customer as string
+        const customerId = resolveStripeCustomerId(subscription.customer)
+        if (!customerId) {
+          console.log('customer.subscription.updated — no customer id, skip consumer update')
+          break
+        }
         const { data: managedRows } = await supabase
           .from('profiles')
           .select('id')
@@ -431,9 +503,7 @@ export async function POST(req: NextRequest) {
         const priceId = subscription.items.data[0]?.price.id ?? null
         const consumerTier = priceId ? getTierFromPriceId(priceId) : null
         const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
-        const status = subscription.cancel_at_period_end
-          ? 'canceling'
-          : subscription.status
+        const status = mapConsumerSubscriptionStatus(subscription)
         const { error: consumerUpdateError } = await supabase
           .from('profiles')
           .update({
@@ -465,16 +535,22 @@ export async function POST(req: NextRequest) {
           invoice.metadata?.firm_id ??
           invoice.subscription_details?.metadata?.firm_id
         // Fallback: retrieve subscription metadata if invoice metadata missing
-        if (!firmId && invoice.subscription) {
-          try {
-            const sub = await stripe.subscriptions.retrieve(invoice.subscription as string)
-            firmId = sub.metadata?.firm_id ?? null
-          } catch (e) {
-            console.error('invoice.payment_failed: failed to retrieve subscription for firm_id fallback', e)
-            captureStripeWebhookFailure(
-              new Error('invoice.payment_failed subscription retrieve failed'),
-              { stage: 'processing', event },
-            )
+        if (!firmId) {
+          const subscriptionId = resolveInvoiceSubscriptionId(invoice)
+          if (subscriptionId) {
+            try {
+              const sub = await stripe.subscriptions.retrieve(subscriptionId)
+              firmId = sub.metadata?.firm_id ?? null
+            } catch (e) {
+              console.error(
+                'invoice.payment_failed: failed to retrieve subscription for firm_id fallback',
+                e,
+              )
+              captureStripeWebhookFailure(
+                new Error('invoice.payment_failed subscription retrieve failed'),
+                { stage: 'processing', event },
+              )
+            }
           }
         }
         if (firmId) {
@@ -552,8 +628,7 @@ export async function POST(req: NextRequest) {
       }
       case 'invoice.upcoming': {
         const invoice = event.data.object as Stripe.Invoice
-        const subscriptionId =
-          typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id
+        const subscriptionId = resolveInvoiceSubscriptionId(invoice)
         if (!subscriptionId) break
 
         const subscription = await stripe.subscriptions.retrieve(subscriptionId)
