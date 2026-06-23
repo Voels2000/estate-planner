@@ -112,6 +112,91 @@ export async function restoreHouseholdDeferredFields(
   return patchHouseholdById(householdId, { ...snapshot })
 }
 
+/** Fields that gate /social-security (tier 2+) via getUserAccess. */
+export type ProfileAccessFields = {
+  consumer_tier: number | null
+  subscription_status: string | null
+  subscription_plan: string | null
+}
+
+export async function fetchProfileAccessFields(
+  userId: string,
+): Promise<ProfileAccessFields | null> {
+  return restGet<ProfileAccessFields>(
+    'profiles',
+    `id=eq.${userId}&select=consumer_tier,subscription_status,subscription_plan`,
+  )
+}
+
+export async function patchProfileAccessFields(
+  userId: string,
+  fields: Partial<ProfileAccessFields>,
+): Promise<boolean> {
+  const cfg = supabaseRestConfig()
+  if (!cfg) return false
+  const res = await fetch(`${cfg.url}/rest/v1/profiles?id=eq.${userId}`, {
+    method: 'PATCH',
+    headers: {
+      apikey: cfg.key,
+      Authorization: `Bearer ${cfg.key}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify({ ...fields, updated_at: new Date().toISOString() }),
+  })
+  return res.ok
+}
+
+/** /social-security requires tier ≥ 2; inactive subs resolve to tier 1 in getUserAccess. */
+export const SOCIAL_SECURITY_PROMPT_ACCESS: ProfileAccessFields = {
+  consumer_tier: 3,
+  subscription_status: 'active',
+  subscription_plan: null,
+}
+
+/** Mirrors reset-staging-stripe-test-users.ts — tier-1 gate path on /social-security. */
+export const SOCIAL_SECURITY_GATE_ACCESS: ProfileAccessFields = {
+  consumer_tier: 1,
+  subscription_status: 'none',
+  subscription_plan: null,
+}
+
+export async function restoreProfileAccessFields(
+  userId: string,
+  snapshot: ProfileAccessFields,
+): Promise<void> {
+  const ok = await patchProfileAccessFields(userId, snapshot)
+  if (!ok) {
+    throw new Error(
+      `Failed to restore profile access for ${userId} — staging cast may be stranded at tier 3`,
+    )
+  }
+}
+
+/**
+ * Patch profile tier/subscription for a test, then always restore the prior snapshot.
+ * Throws if restore fails so CI cannot pass while leaving staging cast mutated.
+ */
+export async function deferProfileAccessRestore(
+  userId: string,
+  patch: Partial<ProfileAccessFields>,
+  run: () => Promise<void>,
+): Promise<void> {
+  const snapshot = await fetchProfileAccessFields(userId)
+  if (!snapshot) {
+    throw new Error(`Could not load profile access fields for ${userId}`)
+  }
+  const patched = await patchProfileAccessFields(userId, patch)
+  if (!patched) {
+    throw new Error(`Could not patch profile access fields for ${userId}`)
+  }
+  try {
+    await run()
+  } finally {
+    await restoreProfileAccessFields(userId, snapshot)
+  }
+}
+
 export async function fetchHouseholdPlanningFields(
   householdId: string,
 ): Promise<HouseholdPlanningFields | null> {

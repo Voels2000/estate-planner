@@ -75,6 +75,12 @@ async function main() {
     console.log(`  ✓ ${row.email}`)
   }
   console.log(`Done — ${data?.length ?? 0} profile(s) cleared.`)
+  console.log(
+    '\nNext: npm run seed:e2e — restores consumer_tier + subscription_status on the E2E cast.',
+  )
+  console.log(
+    'Why: go-live-profile /social-security prompt tests need tier ≥ 2; inactive subs show UpgradeBanner.',
+  )
 }
 
 main()
