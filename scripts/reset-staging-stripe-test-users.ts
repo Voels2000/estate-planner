@@ -2,10 +2,14 @@
  * Clear dangling Stripe columns on staging E2E / @mywealthmaps.test profiles
  * after re-keying Stripe (new sandbox, new price IDs, new sk_test).
  *
- * Usage: dotenv -e .env.local -- npx tsx scripts/reset-staging-stripe-test-users.ts
+ * Usage: dotenv -o -e .env.test.staging -- npx tsx scripts/reset-staging-stripe-test-users.ts
  */
 import { createClient } from '@supabase/supabase-js'
 import { DRIP_SMOKE_EMAIL, E2E_IDENTITIES } from './e2e-test-identities'
+import { applyTestEnvAliases, assertStagingSecretsConsistency, STAGING_SUPABASE_PROJECT_REF } from './testEnv'
+
+applyTestEnvAliases()
+assertStagingSecretsConsistency()
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -15,12 +19,10 @@ if (!supabaseUrl || !serviceKey) {
   process.exit(1)
 }
 
-const STAGING_PROJECT_REF = 'cmzyxpxfyvdvbsykjvsg'
-
 const ref = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1]
-if (ref !== STAGING_PROJECT_REF) {
+if (ref !== STAGING_SUPABASE_PROJECT_REF) {
   console.error(
-    `Refusing: expected staging Supabase (${STAGING_PROJECT_REF}), got ${ref ?? 'unknown'}`,
+    `Refusing: expected staging Supabase (${STAGING_SUPABASE_PROJECT_REF}), got ${ref ?? 'unknown'}`,
   )
   process.exit(1)
 }

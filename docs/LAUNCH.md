@@ -47,6 +47,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] `npm run test:e2e:cross-role` (verify: green — 2026-06-09; `advisor-client-setup`)
 - [x] `npm run release:post-deploy` (verify: **Voels 7/7 + RLS 3/3** — 2026-06-09; `SUPABASE_DB_URL` in `.env.local` only — Session pooler URI from Supabase **Connect → Copy**, must be `SUPABASE_DB_URL=postgresql://...`; region must match project e.g. `us-west-2`)
 - [x] `npm run test:e2e:prod:smoke -- --workers=1` (verify: **40/42 passed, 2 advisory skips** — 2026-06-09; `.env.test.prod` live `PLAYWRIGHT_ADVISOR_FIRM_*` aligned with Vercel `STRIPE_PRICE_ADVISOR_*_MONTHLY`; skips: webhook (`PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` unset) + referral 429 (in-memory limits without Upstash); `--workers=1`)
+- [x] E2E environment guard in place and proven to fire (`scripts/testEnv.ts` → `tests/e2e/globalSetup.ts`). Target/env mismatch, localhost-in-remote, Supabase-ref mismatch, leaked-prod-secret, and unguarded production runs all hard-fail at `globalSetup`. `resolveE2eEmail` gated so production uses real canary credentials. Staging tier-1 billing: 3/3. Prod consumer canary auth: green. (attest: Al / 2026-06-23)
 
 ### B2. TERMS-1
 

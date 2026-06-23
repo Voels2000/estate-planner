@@ -18,10 +18,10 @@ import { writeFileSync } from 'fs'
 import { join } from 'path'
 import {
   buildEnvTestFileLines,
-  E2E_DEFAULT_BASE_URL,
   E2E_IDENTITIES,
   E2E_REFERRAL_CODES,
 } from './e2e-test-identities'
+import { ENVIRONMENTS, resolveTestEnv, type TestEnv } from './testEnv'
 import {
   ensureAdvisorDirectoryListing,
   ensureAttorneyListingAndPortal,
@@ -54,7 +54,14 @@ async function main() {
   const only = parseOnlyFlag()
   const skipAdvisorClient = process.argv.includes('--skip-advisor-client')
   const writeExample = process.argv.includes('--write-example')
-  const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? E2E_DEFAULT_BASE_URL
+  const testEnv: TestEnv = (() => {
+    try {
+      return resolveTestEnv()
+    } catch {
+      return 'local'
+    }
+  })()
+  const { baseURL: baseUrl, envFile } = ENVIRONMENTS[testEnv]
 
   const run = (name: string) => !only || only.has(name)
 
@@ -178,14 +185,14 @@ async function main() {
   console.log('')
 
   const envBlock = buildEnvTestFileLines({
-    baseUrl,
+    testEnv,
     householdId,
     advisorClientHouseholdId: advisorClientHouseholdId || undefined,
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   })
 
-  console.log('=== Copy into .env.test ===\n')
+  console.log(`=== Copy into ${envFile} ===\n`)
   console.log(envBlock)
 
   console.log('=== Referral smoke URLs ===')
@@ -201,9 +208,9 @@ async function main() {
   console.log('  npm run cleanup:purge')
 
   if (writeExample) {
-    const examplePath = join(process.cwd(), '.env.test.example')
+    const examplePath = join(process.cwd(), '.env.test.local.example')
     const sanitized = buildEnvTestFileLines({
-      baseUrl: E2E_DEFAULT_BASE_URL,
+      testEnv: 'local',
       householdId: '<run seed-e2e-fixtures.ts>',
     })
     writeFileSync(examplePath, sanitized, 'utf8')

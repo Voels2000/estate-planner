@@ -762,16 +762,33 @@ Two layers — do not conflate them:
 
 | Script | Purpose |
 |--------|---------|
-| **`scripts/seed-e2e-fixtures.ts`** | **Canonical go-live reset** — all `@mywealthmaps.test` users, households, directory listings, `.env.test` output ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)) |
+| **`scripts/seed-e2e-fixtures.ts`** | **Canonical go-live reset** — all `@mywealthmaps.test` users, households, directory listings, `.env.test.local` output ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)) |
 | `scripts/e2e-test-identities.ts` | Single source of truth for E2E emails, passwords, referral codes |
 | `scripts/prune-e2e-household-artifacts.ts` | Removes Playwright-named rows without deleting users |
 | *(removed 2026-06-12)* | Legacy one-off seeds (`seed-test-*`, `seed-michael-johnson-*`, `seed-advisor2-*`) — use **`seed:e2e` only** |
 
 ```bash
 npm run seed:e2e
-# copy printed block → .env.test
+# copy printed block → .env.test.local (or .env.test.staging for remote staging runs)
 npm run test:e2e:complete -- --workers=1
 ```
+
+### E2E environment resolution & guard
+
+<!-- Added 2026-06-23 — TEST_ENV single-switch + globalSetup guard -->
+
+Single source of truth: `scripts/testEnv.ts` — exports `TestEnv`, `ENVIRONMENTS`, `STAGING_SUPABASE_PROJECT_REF`, `PRODUCTION_SUPABASE_PROJECT_REF`, `resolveTestEnv()`, `getTestEnvConfig()`, `assertPlaywrightEnvGuard()`, `stripLeakedProductionSecrets()`.
+
+- `ENVIRONMENTS[env]` declares `baseURL` and `envFile` for local / staging / production and is the **only** source of the test base URL. Base URL is never read from an env file.
+- `playwright.config.ts` resolves base URL from `TEST_ENV` via the map and registers `tests/e2e/globalSetup.ts` as `globalSetup`, which runs `assertPlaywrightEnvGuard()` before any browser test.
+- Per-environment secrets live in `.env.test.local`, `.env.test.staging`, `.env.test.production` (gitignored; `.example` committed). Secrets only — never `PLAYWRIGHT_BASE_URL`.
+- Run commands: `npm run test:e2e` (local), `npm run test:e2e:staging`, `npm run test:e2e:prod:smoke`.
+- Supabase refs enforced per environment: local & staging → `cmzyxpxfyvdvbsykjvsg` (`STAGING_SUPABASE_PROJECT_REF`); production → `fnzvlmrqwcqwiqueevux` (`PRODUCTION_SUPABASE_PROJECT_REF`). Guard asserts loaded secrets match the active `TEST_ENV` (all three locked).
+- `.env.test.local` intentionally pairs a localhost app URL with the staging Supabase ref — same model as `.env.local` for day-to-day dev. A chosen config, locked by the guard, not an accident.
+- Production is smoke-only: anon/browser creds, no service-role key, no live Stripe API key; requires `I_KNOW_THIS_IS_PRODUCTION=yes`. Real canary credentials are used as-is (not remapped) under `TEST_ENV=production`; non-prod environments remap to `.test` addresses via `resolveE2eEmail` in `tests/e2e/helpers/e2e-auth.ts`.
+- Constraint: prod smoke tests depending on password-sync require a service-role key, which production intentionally lacks — such tests must use real provisioned canary creds or be scoped to staging.
+
+Files: `scripts/testEnv.ts`, `tests/e2e/globalSetup.ts`, `playwright.config.ts`, `tests/e2e/helpers/e2e-auth.ts`, `.env.test.local.example`, `.env.test.staging.example`, `.env.test.production.example`
 
 See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE_TEST.md#test-data-setup-staging--pre-sprint-14).
 
@@ -802,7 +819,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 **Consumer coverage highlights:** route regression (full CONSUMER_NAV_MAP), sidebar/footer contract, estate-tier gates, profile save, UI asset save, health-check wizard, family CRUD, titling on real assets, billing, digital assets, life events, terms accept, import access, strategy recommendation panel (when advisor linked). **`consumer-core-recompute.spec.ts`** automates CONSUMER_RELEASE_SMOKE_TEST §2.4.
 
-**Required env (`.env.test`):** `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_HOUSEHOLD_ID`, `PLAYWRIGHT_ADVISOR_EMAIL`, `PLAYWRIGHT_ADVISOR_PASSWORD`, `SUPABASE_SERVICE_ROLE_KEY` (profile + referral asserts), `NEXT_PUBLIC_SUPABASE_ANON_KEY` (recompute poll). Optional: `PLAYWRIGHT_CONSUMER_TIER1_*`, `PLAYWRIGHT_ATTORNEY_*`, `PLAYWRIGHT_ADVISOR_REFERRAL_CODE`, `PLAYWRIGHT_ATTORNEY_REFERRAL_CODE`.
+**Required env (`.env.test.local` / `.env.test.staging`):** `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_HOUSEHOLD_ID`, `PLAYWRIGHT_ADVISOR_EMAIL`, `PLAYWRIGHT_ADVISOR_PASSWORD`, `SUPABASE_SERVICE_ROLE_KEY` (profile + referral asserts), `NEXT_PUBLIC_SUPABASE_ANON_KEY` (recompute poll). Optional: `PLAYWRIGHT_CONSUMER_TIER1_*` / `E2E_TIER1_*`, `PLAYWRIGHT_ATTORNEY_*`, `PLAYWRIGHT_ADVISOR_REFERRAL_CODE`, `PLAYWRIGHT_ATTORNEY_REFERRAL_CODE`. Production smoke: `.env.test.production` only — see E2E environment resolution above.
 
 **Advisor client seed:** included in `npm run seed:e2e` (`e2e-advisor-client@mywealthmaps.test`).
 
