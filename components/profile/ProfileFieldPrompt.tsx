@@ -103,6 +103,7 @@ export function ProfileFieldPrompt({
 
   return (
     <div
+      data-testid="profile-field-prompt"
       className={`mb-6 rounded-lg border border-[#C9A84C]/40 border-l-4 border-l-[#C9A84C] bg-amber-50/30 p-4 ${className}`}
     >
       <p className="text-sm font-semibold text-[#0F1B3C]">{title}</p>

@@ -1,10 +1,12 @@
 import { test, expect, type Page } from '@playwright/test'
+import { resolveConsumerHouseholdId } from '../helpers/e2e-households'
 import {
   deferProfileAccessRestore,
   fetchHouseholdById,
   patchHouseholdById,
   pickDeferredFields,
   restoreHouseholdDeferredFields,
+  SOCIAL_SECURITY_GATE_ACCESS,
   SOCIAL_SECURITY_PROMPT_ACCESS,
   type HouseholdDeferredFields,
 } from '../helpers/supabase-fixture'
@@ -18,7 +20,7 @@ import {
  * Staging cast drift: `npm run reset:staging-stripe` sets subscription_status='none'
  * on @mywealthmaps.test profiles (Stripe re-key hygiene). Re-seed with `npm run seed:e2e`
  * or prompt tests temporarily elevate tier inside deferProfileAccessRestore.
- * Tier-1 upgrade banners: `consumer-tier1-gates.spec.ts` (consumer-tier1 project).
+ * Social Security tests resolve household from e2e-consumer email (not PLAYWRIGHT_HOUSEHOLD_ID).
  */
 test.describe.configure({ mode: 'serial' })
 
@@ -176,16 +178,36 @@ test.describe('ProfileFieldPrompt — Scenarios', () => {
 })
 
 test.describe('ProfileFieldPrompt — Social Security', () => {
+  let householdId = ''
+
+  test.beforeAll(async ({}, testInfo) => {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+      testInfo.skip(true, 'SUPABASE_SERVICE_ROLE_KEY required')
+      return
+    }
+    householdId = (await resolveConsumerHouseholdId()) ?? ''
+    if (!householdId) {
+      testInfo.skip(true, 'Could not resolve canonical consumer household — run npm run seed:e2e')
+    }
+  })
+
+  test('inactive subscription shows upgrade banner (tier gate)', async ({ page }) => {
+    await withHouseholdOwner(householdId, async (ownerId) => {
+      await deferProfileAccessRestore(ownerId, SOCIAL_SECURITY_GATE_ACCESS, async () => {
+        await page.goto('/social-security')
+        await expect(page.getByText(/Upgrade to unlock/i)).toBeVisible({ timeout: 15_000 })
+        await expect(page.getByTestId('upgrade-banner')).toBeVisible()
+        await expect(page.getByTestId('profile-field-prompt')).toHaveCount(0)
+      })
+    })
+  })
+
   test('shows person-1 prompt when SS fields unset; save updates calculator PIA', async ({
     page,
   }) => {
-    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
-    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
-    test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, 'SUPABASE_SERVICE_ROLE_KEY required')
-
-    await withSocialSecurityPromptAccess(householdId!, async () => {
+    await withSocialSecurityPromptAccess(householdId, async () => {
       await deferRestore(
-        householdId!,
+        householdId,
         { person1_ss_claiming_age: null, person1_ss_pia: null },
         async () => {
           await ensurePromptNotDismissed(page, [SS_PROMPT_KEY], '/social-security')
@@ -202,18 +224,18 @@ test.describe('ProfileFieldPrompt — Social Security', () => {
 
           await expect(card).toBeHidden({ timeout: 15_000 })
 
-          await expect.poll(async () => (await fetchHouseholdById(householdId!))?.person1_ss_pia).toBe(
+          await expect.poll(async () => (await fetchHouseholdById(householdId))?.person1_ss_pia).toBe(
             2500,
           )
           await expect.poll(
-            async () => (await fetchHouseholdById(householdId!))?.person1_ss_claiming_age,
+            async () => (await fetchHouseholdById(householdId))?.person1_ss_claiming_age,
           ).toBe(68)
 
           await page.reload()
           await expect(page.getByText(/Elected age 68/i).first()).toBeVisible({ timeout: 15_000 })
           await expect(page.getByText(/PIA \$2,500\/mo/i).first()).toBeVisible({ timeout: 15_000 })
 
-          const after = await fetchHouseholdById(householdId!)
+          const after = await fetchHouseholdById(householdId)
           expect(after?.person1_ss_claiming_age).toBe(68)
           expect(after?.person1_ss_pia).toBe(2500)
         },
@@ -222,13 +244,9 @@ test.describe('ProfileFieldPrompt — Social Security', () => {
   })
 
   test('Remind me later dismisses SS prompt for session', async ({ page }) => {
-    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
-    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
-    test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, 'SUPABASE_SERVICE_ROLE_KEY required')
-
-    await withSocialSecurityPromptAccess(householdId!, async () => {
+    await withSocialSecurityPromptAccess(householdId, async () => {
       await deferRestore(
-        householdId!,
+        householdId,
         { person1_ss_claiming_age: null, person1_ss_pia: null },
         async () => {
           await ensurePromptNotDismissed(page, [SS_PROMPT_KEY], '/social-security')
