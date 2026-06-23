@@ -12,6 +12,7 @@ import {
 } from '@/lib/billing/consumerPlanCatalog'
 import type { BillingPeriod, PlanTier } from '@/lib/billing/stripePrices'
 import { getConsumerPlanDisplay } from '@/lib/billing/stripePrices'
+import { PlanAndExportCta } from '@/components/billing/PlanAndExportCta'
 import { TIER_PRICES, PRICE_ID_TO_TIER, TIER_NAMES } from '@/lib/tiers'
 
 const ESTATE_TRIAL_DAYS = getConsumerPlanDisplay(3, 'monthly').trialDays
@@ -24,6 +25,7 @@ type Props = {
   isAdvisorClient: boolean
   annualBillingAvailable: boolean
   recommendedPlanId?: 'financial' | 'retirement' | 'estate' | null
+  showPlanAndExportOffer?: boolean
 }
 
 export function BillingClient({
@@ -34,6 +36,7 @@ export function BillingClient({
   isAdvisorClient,
   annualBillingAvailable,
   recommendedPlanId = null,
+  showPlanAndExportOffer = false,
 }: Props) {
   const [period, setPeriod] = useState<BillingPeriod>(() => subscribedPeriod ?? 'monthly')
   const billingPeriod = annualBillingAvailable ? period : 'monthly'
@@ -354,6 +357,12 @@ export function BillingClient({
           )
         })}
       </div>
+
+      {showPlanAndExportOffer && (
+        <div className="mt-10">
+          <PlanAndExportCta returnTo="/print" variant="card" />
+        </div>
+      )}
 
       {plans.some((p) => p.tier === 3) && (
         <p className="mx-auto mt-6 max-w-md text-center text-xs text-[color:var(--mwm-text-muted)]">

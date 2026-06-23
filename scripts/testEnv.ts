@@ -175,3 +175,49 @@ export function getTestEnvConfig() {
   const env = resolveTestEnv()
   return { env, ...ENVIRONMENTS[env] }
 }
+
+/**
+ * Fail loud before staging money-path validation scripts (2a/2b/2c).
+ * Unlike Playwright, these scripts must never trust PLAYWRIGHT_BASE_URL from an env file.
+ * Invoke via: TEST_ENV=staging dotenv -e .env.test.staging -- npx tsx scripts/...
+ * Do NOT use dotenv -o — file must not override shell TEST_ENV or inject localhost URLs.
+ */
+export function assertStagingMoneyPathGuard(): void {
+  if (process.env.TEST_ENV !== 'staging') {
+    throw new Error(
+      '[money-path guard] TEST_ENV must be staging (set in shell before dotenv). Got: ' +
+        JSON.stringify(process.env.TEST_ENV),
+    )
+  }
+
+  prepareTestEnv()
+  assertStagingSecretsConsistency()
+
+  const staleBase = process.env.PLAYWRIGHT_BASE_URL?.trim()
+  const expectedBase = ENVIRONMENTS.staging.baseURL
+  if (staleBase && staleBase !== expectedBase) {
+    throw new Error(
+      `[money-path guard] PLAYWRIGHT_BASE_URL=${staleBase} conflicts with staging (${expectedBase}). ` +
+        'Remove PLAYWRIGHT_BASE_URL from .env.test.staging — base URL is derived from ENVIRONMENTS.',
+    )
+  }
+  process.env.PLAYWRIGHT_BASE_URL = expectedBase
+
+  const stripeKey =
+    process.env.STRIPE_SECRET_KEY?.trim() ??
+    process.env.STRIPE_SECRET_KEY_LIVE?.trim() ??
+    ''
+  if (stripeKey.startsWith('sk_live_')) {
+    throw new Error('[money-path guard] STRIPE_SECRET_KEY must be test mode for staging validation')
+  }
+
+  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+  const ref = supabaseProjectRef(url)
+  console.log(
+    `[money-path guard] OK — TEST_ENV=staging, Supabase ref=${ref}, baseURL=${expectedBase}`,
+  )
+}
+
+export function stagingMoneyPathBaseUrl(): string {
+  return ENVIRONMENTS.staging.baseURL
+}

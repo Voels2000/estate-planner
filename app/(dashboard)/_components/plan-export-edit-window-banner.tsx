@@ -76,6 +76,9 @@ export function PlanExportEditWindowBanner({ editWindowEndsAt }: Props) {
         >
           Subscribe to keep editing →
         </Link>
+        <p className="text-xs text-amber-800/90">
+          Your Plan &amp; Export purchase counts toward your subscription if you upgrade.
+        </p>
         <button
           type="button"
           className="text-xs text-amber-800 underline underline-offset-2"
