@@ -5,11 +5,9 @@ import {
   patchHouseholdById,
   pickDeferredFields,
   restoreHouseholdDeferredFields,
-  SOCIAL_SECURITY_GATE_ACCESS,
   SOCIAL_SECURITY_PROMPT_ACCESS,
   type HouseholdDeferredFields,
 } from '../helpers/supabase-fixture'
-import { assertUpgradeBanner } from '../helpers/page-assertions'
 
 /**
  * ProfileFieldPrompt UI — /scenarios and /social-security inline deferred fields.
@@ -20,6 +18,7 @@ import { assertUpgradeBanner } from '../helpers/page-assertions'
  * Staging cast drift: `npm run reset:staging-stripe` sets subscription_status='none'
  * on @mywealthmaps.test profiles (Stripe re-key hygiene). Re-seed with `npm run seed:e2e`
  * or prompt tests temporarily elevate tier inside deferProfileAccessRestore.
+ * Tier-1 upgrade banners: `consumer-tier1-gates.spec.ts` (consumer-tier1 project).
  */
 test.describe.configure({ mode: 'serial' })
 
@@ -177,19 +176,6 @@ test.describe('ProfileFieldPrompt — Scenarios', () => {
 })
 
 test.describe('ProfileFieldPrompt — Social Security', () => {
-  test('inactive subscription shows upgrade banner (tier gate)', async ({ page }) => {
-    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
-    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
-    test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, 'SUPABASE_SERVICE_ROLE_KEY required')
-
-    await withHouseholdOwner(householdId!, async (ownerId) => {
-      await deferProfileAccessRestore(ownerId, SOCIAL_SECURITY_GATE_ACCESS, async () => {
-        await page.goto('/social-security')
-        await assertUpgradeBanner(page)
-      })
-    })
-  })
-
   test('shows person-1 prompt when SS fields unset; save updates calculator PIA', async ({
     page,
   }) => {
