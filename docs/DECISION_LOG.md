@@ -1,6 +1,22 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-21 (client Stripe price resolution — server-only)
+# Last updated: 2026-06-23 (Stripe checkout cross-environment self-heal)
+
+---
+
+## Stripe checkout cross-environment guards (2026-06-23)
+
+**Decision:** Consumer checkout must survive Stripe re-keys (new sandbox, new `sk_test_`, new price catalog) without manual per-user DB surgery. Three layers:
+
+1. **`getOrigin(request)`** (`lib/app-url.ts`) — Stripe `success_url` / `cancel_url` hosts come from request `Origin` → `Host` → `NEXT_PUBLIC_APP_URL` fallback. **`assertAbsoluteHttpUrl`** throws if the resolved value is not `http(s)://` (clear local error vs cryptic Stripe 400).
+2. **`processConsumerCheckout`** — before session create: `customers.retrieve(stripe_customer_id)`; clear id on `deleted` or `resource_missing`; create + persist new customer in current environment. Validate `baseUrl` is absolute before `checkout.sessions.create`.
+3. **Staging DB reset after re-key** — `scripts/reset-staging-stripe-test-users.ts` nulls `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `subscription_plan`, `subscription_period_end` on all `@mywealthmaps.test` / canonical E2E profiles (staging Supabase ref guard). Run after every Stripe sandbox/key rotation on staging.
+
+**Symptom pattern (three instances, same root cause):** live price ID + `sk_test_`; old-sandbox price + new sandbox key; old-sandbox `stripe_customer_id` + new sandbox key → checkout HTTP 500 / Stripe `No such price` / `No such customer`.
+
+**Rule:** Stripe API keys, webhook secrets, price env vars, and profile `stripe_customer_id` must all belong to the **same** Stripe environment (default test-mode sandbox vs named sandbox vs live). `NEXT_PUBLIC_APP_URL` is for emails/recompute/sitemap — **not** checkout return URLs.
+
+**Prod note:** Self-heal (2) prevents recurrence when a user’s stored customer id is from a prior environment; prod re-key still requires `reset-staging-stripe-test-users` equivalent discipline for test accounts only — never bulk-null prod consumer profiles.
 
 ---
 
