@@ -1,4 +1,7 @@
 import type { ProfileSavePayload } from '../../../lib/profile/buildHouseholdPayload'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { initSupabaseEnv } from '../../../scripts/seed-e2e-lib'
 
 function supabaseRestConfig(): { url: string; key: string } | null {
   const url =
@@ -194,6 +197,61 @@ export async function deferProfileAccessRestore(
     await run()
   } finally {
     await restoreProfileAccessFields(userId, snapshot)
+  }
+}
+
+/**
+ * Suspend a connected advisor→client link so getUserAccess follows subscription/tier.
+ * e2e-consumer is advisor-linked in seed; without this, tier-gate tests see tier 3 regardless of profile patch.
+ */
+export async function deferConnectedAdvisorClientLinkSuspended(
+  clientUserId: string,
+  run: () => Promise<void>,
+): Promise<void> {
+  initSupabaseEnv()
+  const admin = createAdminClient()
+  const { data: link, error: fetchError } = await admin
+    .from('advisor_clients')
+    .select('id, status, client_status')
+    .eq('client_id', clientUserId)
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
+    .maybeSingle()
+
+  if (fetchError) {
+    throw new Error(`advisor_clients lookup failed: ${fetchError.message}`)
+  }
+  if (!link) {
+    await run()
+    return
+  }
+
+  const snapshot = {
+    id: link.id,
+    status: link.status,
+    client_status: link.client_status ?? null,
+  }
+
+  const { error: suspendError } = await admin
+    .from('advisor_clients')
+    .update({ status: 'removed', client_status: 'inactive' })
+    .eq('id', link.id)
+  if (suspendError) {
+    throw new Error(`advisor_clients suspend failed: ${suspendError.message}`)
+  }
+
+  try {
+    await run()
+  } finally {
+    const { error: restoreError } = await admin
+      .from('advisor_clients')
+      .update({
+        status: snapshot.status,
+        client_status: snapshot.client_status,
+      })
+      .eq('id', snapshot.id)
+    if (restoreError) {
+      throw new Error(`advisor_clients restore failed: ${restoreError.message}`)
+    }
   }
 }
 

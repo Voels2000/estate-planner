@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { resolveConsumerHouseholdId } from '../helpers/e2e-households'
 import {
+  deferConnectedAdvisorClientLinkSuspended,
   deferProfileAccessRestore,
   fetchHouseholdById,
   patchHouseholdById,
@@ -189,11 +190,14 @@ test.describe('ProfileFieldPrompt — Social Security', () => {
 
   test('inactive subscription shows upgrade banner (tier gate)', async ({ page }) => {
     await withHouseholdOwner(householdId, async (ownerId) => {
-      await deferProfileAccessRestore(ownerId, SOCIAL_SECURITY_GATE_ACCESS, async () => {
-        await page.goto('/social-security')
-        await expect(page.getByText(/Upgrade to unlock/i)).toBeVisible({ timeout: 15_000 })
-        await expect(page.getByTestId('upgrade-banner')).toBeVisible()
-        await expect(page.getByTestId('profile-field-prompt')).toHaveCount(0)
+      // e2e-consumer is advisor-linked in seed — isAdvisorClient bypasses subscription tier.
+      await deferConnectedAdvisorClientLinkSuspended(ownerId, async () => {
+        await deferProfileAccessRestore(ownerId, SOCIAL_SECURITY_GATE_ACCESS, async () => {
+          await page.goto('/social-security')
+          await expect(page.getByText(/Upgrade to unlock/i)).toBeVisible({ timeout: 15_000 })
+          await expect(page.getByTestId('upgrade-banner')).toBeVisible()
+          await expect(page.getByTestId('profile-field-prompt')).toHaveCount(0)
+        })
       })
     })
   })
