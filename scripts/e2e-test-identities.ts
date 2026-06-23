@@ -24,6 +24,38 @@ export const PROD_CANARY = {
   householdName: 'Canary Test Household',
 } as const
 
+/**
+ * Production role canaries — login smoke only (no firm/subscription, no advisor links).
+ * Password: same E2E_CANARY_PASSWORD as consumer canary. Seed: npm run seed:prod-role-canaries -- --confirm
+ */
+export const PROD_ROLE_CANARIES = {
+  advisor: {
+    email: 'canary-advisor@mywealthmaps.com',
+    fullName: 'Canary Advisor',
+  },
+  advisorEmpty: {
+    email: 'canary-advisor-empty@mywealthmaps.com',
+    fullName: 'Canary Empty Advisor',
+  },
+  attorney: {
+    email: 'canary-attorney@mywealthmaps.com',
+    fullName: 'Canary Attorney',
+  },
+  advisorClient: {
+    email: 'canary-advisor-client@mywealthmaps.com',
+    fullName: 'Canary Advisor Client',
+    householdName: 'Canary Advisor Client Household',
+  },
+} as const
+
+export const PROD_CANARY_EMAILS = [
+  PROD_CANARY.email,
+  PROD_ROLE_CANARIES.advisor.email,
+  PROD_ROLE_CANARIES.advisorEmpty.email,
+  PROD_ROLE_CANARIES.attorney.email,
+  PROD_ROLE_CANARIES.advisorClient.email,
+] as const
+
 export const E2E_IDENTITIES = {
   consumer: {
     email: 'e2e-consumer@mywealthmaps.test',

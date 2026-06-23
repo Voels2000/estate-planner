@@ -63,8 +63,7 @@ test.beforeAll(async ({}, testInfo) => {
   }
 })
 
-test.describe('@production', () => {
-test.describe('Consumer isolation', () => {
+test.describe('Consumer isolation @production', () => {
   test.use({ storageState: '.auth/consumer.json' })
 
   test('POST gifting-summary on foreign household returns 403 or 404', async ({ request }) => {
@@ -234,10 +233,9 @@ test.describe('Advisor-empty isolation (unlinked book)', () => {
     expectAccessDenied(res.status())
   })
 })
-})
 
 /** SECURITY DEFINER views with public grants bypass table RLS — must not be PostgREST-readable. */
-test.describe('PostgREST view isolation', () => {
+test.describe('PostgREST view isolation @production', () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
 
