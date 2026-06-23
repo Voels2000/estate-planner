@@ -148,21 +148,53 @@ export async function patchProfileAccessFields(
 }
 
 /** /social-security requires tier ≥ 2; inactive subs resolve to tier 1 in getUserAccess. */
-export async function ensureSocialSecurityTierAccess(userId: string): Promise<ProfileAccessFields | null> {
-  const before = await fetchProfileAccessFields(userId)
-  if (!before) return null
-  await patchProfileAccessFields(userId, {
-    consumer_tier: 3,
-    subscription_status: 'active',
-  })
-  return before
+export const SOCIAL_SECURITY_PROMPT_ACCESS: ProfileAccessFields = {
+  consumer_tier: 3,
+  subscription_status: 'active',
+  subscription_plan: null,
+}
+
+/** Mirrors reset-staging-stripe-test-users.ts — tier-1 gate path on /social-security. */
+export const SOCIAL_SECURITY_GATE_ACCESS: ProfileAccessFields = {
+  consumer_tier: 1,
+  subscription_status: 'none',
+  subscription_plan: null,
 }
 
 export async function restoreProfileAccessFields(
   userId: string,
   snapshot: ProfileAccessFields,
-): Promise<boolean> {
-  return patchProfileAccessFields(userId, snapshot)
+): Promise<void> {
+  const ok = await patchProfileAccessFields(userId, snapshot)
+  if (!ok) {
+    throw new Error(
+      `Failed to restore profile access for ${userId} — staging cast may be stranded at tier 3`,
+    )
+  }
+}
+
+/**
+ * Patch profile tier/subscription for a test, then always restore the prior snapshot.
+ * Throws if restore fails so CI cannot pass while leaving staging cast mutated.
+ */
+export async function deferProfileAccessRestore(
+  userId: string,
+  patch: Partial<ProfileAccessFields>,
+  run: () => Promise<void>,
+): Promise<void> {
+  const snapshot = await fetchProfileAccessFields(userId)
+  if (!snapshot) {
+    throw new Error(`Could not load profile access fields for ${userId}`)
+  }
+  const patched = await patchProfileAccessFields(userId, patch)
+  if (!patched) {
+    throw new Error(`Could not patch profile access fields for ${userId}`)
+  }
+  try {
+    await run()
+  } finally {
+    await restoreProfileAccessFields(userId, snapshot)
+  }
 }
 
 export async function fetchHouseholdPlanningFields(

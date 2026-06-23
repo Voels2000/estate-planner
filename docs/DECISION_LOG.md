@@ -24,6 +24,8 @@
 
 **Follow-up (provisioning):** Closed 2026-06-23 — non-consumer role auth stays **staging-only** (`npm run test:e2e:staging` + `seed:e2e`). Prod smoke `@production` = consumer canary + public/read-only checks only; no prod role canary creds. Same deploy artifact on staging and production; role login/billing/isolation certified before promote. Consumer canary on prod remains the live “real auth on production” spot-check.
 
+**Staging cast subscription drift (2026-06-23):** `npm run reset:staging-stripe` sets `subscription_status: 'none'` on all `@mywealthmaps.test` profiles (Stripe re-key hygiene). That drops CI consumer to tier 1 on `/social-security` (UpgradeBanner, no ProfileFieldPrompt). Fix class: re-seed (`npm run seed:e2e`) after stripe reset; fix failure: `deferProfileAccessRestore` in go-live-profile SS tests with throw-on-failed-restore + explicit tier-gate test in the same file.
+
 ---
 
 ## Stripe checkout cross-environment guards (2026-06-23)

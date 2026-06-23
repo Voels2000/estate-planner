@@ -1,20 +1,25 @@
 import { test, expect, type Page } from '@playwright/test'
 import {
+  deferProfileAccessRestore,
   fetchHouseholdById,
   patchHouseholdById,
   pickDeferredFields,
   restoreHouseholdDeferredFields,
-  ensureSocialSecurityTierAccess,
-  restoreProfileAccessFields,
+  SOCIAL_SECURITY_GATE_ACCESS,
+  SOCIAL_SECURITY_PROMPT_ACCESS,
   type HouseholdDeferredFields,
-  type ProfileAccessFields,
 } from '../helpers/supabase-fixture'
+import { assertUpgradeBanner } from '../helpers/page-assertions'
 
 /**
  * ProfileFieldPrompt UI — /scenarios and /social-security inline deferred fields.
  * Uses service role to temporarily clear columns on PLAYWRIGHT_HOUSEHOLD_ID; restores after each test.
  *
  * Run (go-live bundle): npm run test:e2e:go-live-profile
+ *
+ * Staging cast drift: `npm run reset:staging-stripe` sets subscription_status='none'
+ * on @mywealthmaps.test profiles (Stripe re-key hygiene). Re-seed with `npm run seed:e2e`
+ * or prompt tests temporarily elevate tier inside deferProfileAccessRestore.
  */
 test.describe.configure({ mode: 'serial' })
 
@@ -52,6 +57,24 @@ async function deferRestore(
   } finally {
     await restoreHouseholdDeferredFields(householdId, snapshot)
   }
+}
+
+async function withHouseholdOwner(
+  householdId: string,
+  run: (ownerId: string) => Promise<void>,
+): Promise<void> {
+  const household = await fetchHouseholdById(householdId)
+  test.skip(!household, 'Could not load household row')
+  await run(household!.owner_id)
+}
+
+async function withSocialSecurityPromptAccess(
+  householdId: string,
+  run: () => Promise<void>,
+): Promise<void> {
+  await withHouseholdOwner(householdId, async (ownerId) => {
+    await deferProfileAccessRestore(ownerId, SOCIAL_SECURITY_PROMPT_ACCESS, run)
+  })
 }
 
 test.describe('ProfileFieldPrompt — Scenarios', () => {
@@ -154,36 +177,17 @@ test.describe('ProfileFieldPrompt — Scenarios', () => {
 })
 
 test.describe('ProfileFieldPrompt — Social Security', () => {
-  let householdOwnerId: string | null = null
-  let profileAccessSnapshot: ProfileAccessFields | null = null
-
-  test.beforeAll(async ({}, testInfo) => {
+  test('inactive subscription shows upgrade banner (tier gate)', async ({ page }) => {
     const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
-    if (!householdId) {
-      testInfo.skip(true, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
-      return
-    }
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      testInfo.skip(true, 'SUPABASE_SERVICE_ROLE_KEY required')
-      return
-    }
+    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
+    test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, 'SUPABASE_SERVICE_ROLE_KEY required')
 
-    const household = await fetchHouseholdById(householdId)
-    if (!household) {
-      testInfo.skip(true, 'Could not load household row')
-      return
-    }
-    householdOwnerId = household.owner_id
-    profileAccessSnapshot = await ensureSocialSecurityTierAccess(householdOwnerId)
-    if (!profileAccessSnapshot) {
-      testInfo.skip(true, 'Could not load household owner profile')
-    }
-  })
-
-  test.afterAll(async () => {
-    if (householdOwnerId && profileAccessSnapshot) {
-      await restoreProfileAccessFields(householdOwnerId, profileAccessSnapshot)
-    }
+    await withHouseholdOwner(householdId!, async (ownerId) => {
+      await deferProfileAccessRestore(ownerId, SOCIAL_SECURITY_GATE_ACCESS, async () => {
+        await page.goto('/social-security')
+        await assertUpgradeBanner(page)
+      })
+    })
   })
 
   test('shows person-1 prompt when SS fields unset; save updates calculator PIA', async ({
@@ -193,40 +197,42 @@ test.describe('ProfileFieldPrompt — Social Security', () => {
     test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
     test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, 'SUPABASE_SERVICE_ROLE_KEY required')
 
-    await deferRestore(
-      householdId!,
-      { person1_ss_claiming_age: null, person1_ss_pia: null },
-      async () => {
-        await ensurePromptNotDismissed(page, [SS_PROMPT_KEY], '/social-security')
-        await expect(page.getByRole('heading', { name: /social security/i })).toBeVisible({
-          timeout: 20_000,
-        })
+    await withSocialSecurityPromptAccess(householdId!, async () => {
+      await deferRestore(
+        householdId!,
+        { person1_ss_claiming_age: null, person1_ss_pia: null },
+        async () => {
+          await ensurePromptNotDismissed(page, [SS_PROMPT_KEY], '/social-security')
+          await expect(page.getByRole('heading', { name: /social security/i })).toBeVisible({
+            timeout: 20_000,
+          })
 
-        const card = ssPromptCard(page, /Alex's Social Security details/i)
-        await expect(card).toBeVisible()
-        const form = card.locator('form')
-        await form.locator('input[type="number"]').nth(0).fill('68')
-        await form.locator('input[type="number"]').nth(1).fill('2500')
-        await form.getByRole('button', { name: /^Save$/i }).click()
+          const card = ssPromptCard(page, /Alex's Social Security details/i)
+          await expect(card).toBeVisible()
+          const form = card.locator('form')
+          await form.locator('input[type="number"]').nth(0).fill('68')
+          await form.locator('input[type="number"]').nth(1).fill('2500')
+          await form.getByRole('button', { name: /^Save$/i }).click()
 
-        await expect(card).toBeHidden({ timeout: 15_000 })
+          await expect(card).toBeHidden({ timeout: 15_000 })
 
-        await expect.poll(async () => (await fetchHouseholdById(householdId!))?.person1_ss_pia).toBe(
-          2500,
-        )
-        await expect.poll(async () => (await fetchHouseholdById(householdId!))?.person1_ss_claiming_age).toBe(
-          68,
-        )
+          await expect.poll(async () => (await fetchHouseholdById(householdId!))?.person1_ss_pia).toBe(
+            2500,
+          )
+          await expect.poll(
+            async () => (await fetchHouseholdById(householdId!))?.person1_ss_claiming_age,
+          ).toBe(68)
 
-        await page.reload()
-        await expect(page.getByText(/Elected age 68/i).first()).toBeVisible({ timeout: 15_000 })
-        await expect(page.getByText(/PIA \$2,500\/mo/i).first()).toBeVisible({ timeout: 15_000 })
+          await page.reload()
+          await expect(page.getByText(/Elected age 68/i).first()).toBeVisible({ timeout: 15_000 })
+          await expect(page.getByText(/PIA \$2,500\/mo/i).first()).toBeVisible({ timeout: 15_000 })
 
-        const after = await fetchHouseholdById(householdId!)
-        expect(after?.person1_ss_claiming_age).toBe(68)
-        expect(after?.person1_ss_pia).toBe(2500)
-      },
-    )
+          const after = await fetchHouseholdById(householdId!)
+          expect(after?.person1_ss_claiming_age).toBe(68)
+          expect(after?.person1_ss_pia).toBe(2500)
+        },
+      )
+    })
   })
 
   test('Remind me later dismisses SS prompt for session', async ({ page }) => {
@@ -234,22 +240,24 @@ test.describe('ProfileFieldPrompt — Social Security', () => {
     test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
     test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, 'SUPABASE_SERVICE_ROLE_KEY required')
 
-    await deferRestore(
-      householdId!,
-      { person1_ss_claiming_age: null, person1_ss_pia: null },
-      async () => {
-        await ensurePromptNotDismissed(page, [SS_PROMPT_KEY], '/social-security')
+    await withSocialSecurityPromptAccess(householdId!, async () => {
+      await deferRestore(
+        householdId!,
+        { person1_ss_claiming_age: null, person1_ss_pia: null },
+        async () => {
+          await ensurePromptNotDismissed(page, [SS_PROMPT_KEY], '/social-security')
 
-        const card = ssPromptCard(page, /Alex's Social Security details/i)
-        await expect(card).toBeVisible({ timeout: 20_000 })
+          const card = ssPromptCard(page, /Alex's Social Security details/i)
+          await expect(card).toBeVisible({ timeout: 20_000 })
 
-        await card.getByRole('button', { name: /remind me later/i }).click()
-        await expect(card).toBeHidden()
+          await card.getByRole('button', { name: /remind me later/i }).click()
+          await expect(card).toBeHidden()
 
-        await page.evaluate((key) => sessionStorage.removeItem(key), SS_PROMPT_KEY)
-        await page.reload()
-        await expect(card).toBeVisible({ timeout: 15_000 })
-      },
-    )
+          await page.evaluate((key) => sessionStorage.removeItem(key), SS_PROMPT_KEY)
+          await page.reload()
+          await expect(card).toBeVisible({ timeout: 15_000 })
+        },
+      )
+    })
   })
 })
