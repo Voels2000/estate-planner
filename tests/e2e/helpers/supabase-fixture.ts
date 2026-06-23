@@ -202,7 +202,7 @@ export async function deferProfileAccessRestore(
 
 /**
  * Suspend a connected advisor→client link so getUserAccess follows subscription/tier.
- * e2e-consumer is advisor-linked in seed; without this, tier-gate tests see tier 3 regardless of profile patch.
+ * Defensive for tier-gate tests when staging DB has a stray advisor→e2e-consumer link pre-reseed.
  */
 export async function deferConnectedAdvisorClientLinkSuspended(
   clientUserId: string,
