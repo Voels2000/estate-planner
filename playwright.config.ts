@@ -2,9 +2,18 @@ import { defineConfig, devices, type Project } from '@playwright/test'
 import { ENVIRONMENTS, getTestEnvConfig } from './scripts/testEnv'
 
 function loadTestEnvConfig(): { baseURL: string; envFile: string } {
-  const config = getTestEnvConfig()
-  process.env.PLAYWRIGHT_BASE_URL = config.baseURL
-  return config
+  if (!process.env.TEST_ENV) {
+    process.env.TEST_ENV = 'local'
+  }
+  try {
+    const config = getTestEnvConfig()
+    process.env.PLAYWRIGHT_BASE_URL = config.baseURL
+    return config
+  } catch {
+    const config = ENVIRONMENTS.local
+    process.env.PLAYWRIGHT_BASE_URL = config.baseURL
+    return config
+  }
 }
 
 const { baseURL, envFile } = loadTestEnvConfig()
