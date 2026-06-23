@@ -5,6 +5,7 @@ import { deleteUserData } from '../lib/compliance/deleteUser'
 import {
   E2E_IDENTITIES,
   LEGACY_E2E_EMAILS,
+  PROD_CANARY_EMAILS,
   ROLOBE_ACCOUNTS,
   DRIP_SMOKE_EMAIL,
 } from './e2e-test-identities'
@@ -72,8 +73,9 @@ const GO_LIVE_PROTECTED = [
   'avoels@outlook.com',
   'david@gmail.com',
   'Stephen.a.voels@sbcglobal.net',
-  // prod consumer canary — E2E target, never delete
+  // prod canaries — E2E targets, never delete
   'canary-consumer@mywealthmaps.com',
+  ...PROD_CANARY_EMAILS.filter((e) => e !== 'canary-consumer@mywealthmaps.com'),
 ]
 
 /** Canonical @mywealthmaps.test — never delete */

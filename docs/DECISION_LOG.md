@@ -22,7 +22,7 @@
 
 **Files:** `scripts/testEnv.ts` · `tests/e2e/globalSetup.ts` · `playwright.config.ts` · `tests/e2e/helpers/e2e-auth.ts` · `.env.test.local.example` · `.env.test.staging.example` · `.env.test.production.example` · legacy `.env.test` / `.env.test.prod` retired.
 
-**Follow-up (provisioning, not code):** Prod smoke `@production` setup for advisor, attorney, advisor-empty, and advisor-client — provision real canary creds on production (like `canary-consumer@mywealthmaps.com`) or scope those four roles to `TEST_ENV=staging`. Confirmed 2026-06-23 rerun: consumer-setup green; four non-consumer setups fail at login timeout (`.test` accounts, no service-role password-sync in prod).
+**Follow-up (provisioning):** Closed 2026-06-23 — non-consumer role auth stays **staging-only** (`npm run test:e2e:staging` + `seed:e2e`). Prod smoke `@production` = consumer canary + public/read-only checks only; no prod role canary creds. Same deploy artifact on staging and production; role login/billing/isolation certified before promote. Consumer canary on prod remains the live “real auth on production” spot-check.
 
 ---
 

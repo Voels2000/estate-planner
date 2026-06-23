@@ -2,7 +2,7 @@ import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import { resolveE2eEmail, resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
 
-setup('authenticate advisor-empty @production', async ({ page }) => {
+setup('authenticate advisor-empty', async ({ page }) => {
   const email = resolveE2eEmail(
     process.env.PLAYWRIGHT_ADVISOR_EMPTY_EMAIL,
     E2E_IDENTITIES.advisorEmpty.email,
