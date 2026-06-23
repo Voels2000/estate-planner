@@ -16,14 +16,22 @@ function mockSupabase(): SupabaseClient {
   return { from: () => chain } as unknown as SupabaseClient
 }
 
-function mockStripe() {
+function mockStripe(opts?: {
+  retrieve?: () => Promise<{ id: string; deleted?: boolean }>
+}) {
   let checkoutCreateCalls = 0
   let customerCreateCalls = 0
+  let customerRetrieveCalls = 0
   const stripe = {
     customers: {
+      retrieve: async () => {
+        customerRetrieveCalls += 1
+        if (opts?.retrieve) return opts.retrieve()
+        return { id: 'cus_existing', deleted: false as const }
+      },
       create: async () => {
         customerCreateCalls += 1
-        return { id: 'cus_test' }
+        return { id: 'cus_new' }
       },
     },
     checkout: {
@@ -42,6 +50,9 @@ function mockStripe() {
     },
     get customerCreateCalls() {
       return customerCreateCalls
+    },
+    get customerRetrieveCalls() {
+      return customerRetrieveCalls
     },
   }
 }
@@ -140,6 +151,67 @@ test.describe('processConsumerCheckout guard', () => {
     if (!result.ok) return
     expect(result.url).toMatch(/^https:\/\/checkout\.stripe\.test/)
     expect(mocks.checkoutCreateCalls).toBe(1)
+    expect(mocks.customerRetrieveCalls).toBe(1)
+    expect(mocks.customerCreateCalls).toBe(0)
+  })
+
+  test('recreates Stripe customer when stored id is missing in current environment', async () => {
+    const mocks = mockStripe({
+      retrieve: async () => {
+        const err = new Error('No such customer') as Error & { code: string }
+        err.code = 'resource_missing'
+        throw err
+      },
+    })
+    const result = await processConsumerCheckout({
+      ...baseInput,
+      stripe: mocks.stripe,
+      billingProfile: {
+        subscription_status: 'none',
+        stripe_customer_id: 'cus_stale_cross_env',
+      },
+      isAdvisorClient: false,
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(mocks.customerRetrieveCalls).toBe(1)
+    expect(mocks.customerCreateCalls).toBe(1)
+    expect(mocks.checkoutCreateCalls).toBe(1)
+  })
+
+  test('recreates Stripe customer when stored id is deleted', async () => {
+    const mocks = mockStripe({
+      retrieve: async () => ({ id: 'cus_deleted', deleted: true }),
+    })
+    const result = await processConsumerCheckout({
+      ...baseInput,
+      stripe: mocks.stripe,
+      billingProfile: {
+        subscription_status: 'none',
+        stripe_customer_id: 'cus_deleted',
+      },
+      isAdvisorClient: false,
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(mocks.customerCreateCalls).toBe(1)
+    expect(mocks.checkoutCreateCalls).toBe(1)
+  })
+
+  test('throws on invalid checkout baseUrl', async () => {
+    const mocks = mockStripe()
+    await expect(
+      processConsumerCheckout({
+        ...baseInput,
+        baseUrl: 'estate-planner-staging.vercel.app',
+        stripe: mocks.stripe,
+        billingProfile: { subscription_status: 'none' },
+        isAdvisorClient: false,
+      }),
+    ).rejects.toThrow(/Invalid checkout baseUrl/)
+    expect(mocks.checkoutCreateCalls).toBe(0)
   })
 
   test('creates checkout session for canceled consumer', async () => {
