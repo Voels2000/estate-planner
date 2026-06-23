@@ -9,6 +9,8 @@
  * - Must include: amount, frequency, renewal date notice, cancellation method
  */
 
+import { PLAN_EXPORT_EDIT_WINDOW_DAYS } from '@/lib/billing/planExportAccess'
+
 export const LEGAL_URLS = {
   tos: 'https://mywealthmaps.com/terms',
   privacy: 'https://mywealthmaps.com/privacy',
@@ -60,4 +62,23 @@ export const BILLING_DISCLOSURES = {
     'All plans renew automatically. Cancel anytime from your account settings. ' +
     'Washington residents: pursuant to RCW 19.316, you will receive a reminder ' +
     'before each renewal. No cancellation fees.',
+
+  /**
+   * Plan & Export one-time SKU — checkout, receipt, and in-app surfaces.
+   * Lock removes plan *updates*; prior downloads remain available.
+   */
+  planAndExportCheckout: (priceDisplay: string) =>
+    `Plan & Export is a one-time ${priceDisplay} purchase including ${PLAN_EXPORT_EDIT_WINDOW_DAYS} days of plan editing and unlimited downloads. ` +
+    `After ${PLAN_EXPORT_EDIT_WINDOW_DAYS} days your plan stays downloadable; updating it requires a subscription.`,
+
+  planExportWindowWarningEmail: (daysRemaining: 14 | 3, lockDate: string) => ({
+    subject:
+      daysRemaining <= 3
+        ? 'Your Plan & Export editing window closes in 3 days'
+        : 'Your Plan & Export editing window closes in 14 days',
+    body:
+      `Your Plan & Export editing window closes on ${lockDate} (${daysRemaining} days remaining). ` +
+      `After that date you can still download plans you already generated, but updating your plan ` +
+      `requires an Estate subscription.`,
+  }),
 } as const

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { SidebarNav } from './_components/sidebar-nav'
 import { DashboardShell } from './_components/dashboard-shell'
 import { TrialBanner } from './_components/trial-banner'
+import { PlanExportEditWindowBanner } from './_components/plan-export-edit-window-banner'
 import { InviteAdvisorOnboardingGate } from './_components/invite-advisor-gate'
 import { WizardOnboardingGate } from './_components/wizard-onboarding-gate'
 import { getDashboardLayoutContext } from '@/lib/access/getDashboardLayoutContext'
@@ -18,11 +19,17 @@ import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectio
 import { LinkPendingInviteOnMount } from '@/components/advisor/LinkPendingInviteOnMount'
 import { AnnualBillingProvider } from '@/lib/billing/AnnualBillingContext'
 import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
+import { isWithinPlanExportFinalWarning } from '@/lib/billing/planExportAccess'
+import {
+  getUserPlanExportPurchase,
+} from '@/lib/billing/oneTimePurchases'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 function DashboardMain({
   children,
   showBanner,
   trialExpiry,
+  planExportEditWindowEndsAt,
   needsWizardOnboarding,
   needsInviteAdvisorOnboarding,
   linkPendingInvite,
@@ -30,6 +37,7 @@ function DashboardMain({
   children: React.ReactNode
   showBanner?: boolean
   trialExpiry?: Date
+  planExportEditWindowEndsAt?: string | null
   needsWizardOnboarding: boolean
   needsInviteAdvisorOnboarding: boolean
   linkPendingInvite?: boolean
@@ -39,6 +47,11 @@ function DashboardMain({
       {linkPendingInvite && <LinkPendingInviteOnMount />}
       {showBanner && trialExpiry && (
         <TrialBanner expiryTimestamp={trialExpiry.getTime()} />
+      )}
+      {planExportEditWindowEndsAt && (
+        <div className="px-4 pt-4">
+          <PlanExportEditWindowBanner editWindowEndsAt={planExportEditWindowEndsAt} />
+        </div>
       )}
       <WizardOnboardingGate needsWizard={needsWizardOnboarding} />
       <InviteAdvisorOnboardingGate needsOnboarding={needsInviteAdvisorOnboarding} />
@@ -193,6 +206,20 @@ export default async function DashboardLayout({
 
   const isTrial = isStripeTrial
 
+  let planExportEditWindowEndsAt: string | null = null
+  if (isConsumer && !isAdvisorClient && subscriptionStatus !== 'active') {
+    const planExportPurchase = await getUserPlanExportPurchase(
+      createAdminClient(),
+      sessionUser.id,
+    )
+    if (
+      planExportPurchase &&
+      isWithinPlanExportFinalWarning(planExportPurchase.edit_window_ends_at)
+    ) {
+      planExportEditWindowEndsAt = planExportPurchase.edit_window_ends_at
+    }
+  }
+
   return (
     <DashboardShell
       sidebar={
@@ -214,6 +241,7 @@ export default async function DashboardLayout({
         <DashboardMain
           showBanner={showStripeTrialBanner}
           trialExpiry={stripeTrialEndsAt ?? undefined}
+          planExportEditWindowEndsAt={planExportEditWindowEndsAt}
           needsWizardOnboarding={needsWizardOnboarding}
           needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
           linkPendingInvite={isConsumer}

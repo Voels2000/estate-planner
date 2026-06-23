@@ -17,6 +17,10 @@
       "schedule": "0 8 * * *"
     },
     {
+      "path": "/api/cron/plan-export-warnings",
+      "schedule": "0 7 * * *"
+    },
+    {
       "path": "/api/cron/post-deploy-verify",
       "schedule": "0 9 * * *"
     }

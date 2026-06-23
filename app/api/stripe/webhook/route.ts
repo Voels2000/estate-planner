@@ -9,6 +9,11 @@ import { activateConsumerProfileFromSubscription } from '@/lib/stripe/activateCo
 import { resolveCheckoutSubscription } from '@/lib/stripe/checkoutSubscription'
 import { mapConsumerSubscriptionStatus } from '@/lib/stripe/consumerSubscriptionStatus'
 import {
+  applyPlanAndExportCreditIfEligible,
+  fulfillPlanAndExportPurchase,
+} from '@/lib/billing/oneTimePurchases'
+import { isPlanAndExportSku } from '@/lib/billing/stripePrices'
+import {
   formatUnixDateEnUs,
   getSubscriptionPeriodEnd,
   subscriptionPeriodEndIso,
@@ -169,6 +174,42 @@ export async function POST(req: NextRequest) {
           },
         )
         if (rejectedNonUsBilling) {
+          break
+        }
+
+        if (session.mode === 'payment') {
+          const sku = session.metadata?.sku
+          const paymentUserId = session.metadata?.userId
+          if (isPlanAndExportSku(sku) && paymentUserId) {
+            const amountCents = session.amount_total ?? 0
+            const currency = session.currency ?? 'usd'
+            const paymentIntentId =
+              typeof session.payment_intent === 'string'
+                ? session.payment_intent
+                : session.payment_intent?.id ?? null
+
+            const { error: fulfillError } = await fulfillPlanAndExportPurchase({
+              admin: supabase,
+              userId: paymentUserId,
+              sessionId: session.id,
+              paymentIntentId,
+              amountCents,
+              currency,
+            })
+
+            if (fulfillError) {
+              console.error('Plan & Export fulfillment error:', fulfillError.message)
+              captureStripeWebhookFailure(fulfillError, {
+                stage: 'processing',
+                event,
+                extra: { context: 'plan_and_export_fulfillment' },
+              })
+            }
+          } else {
+            console.log(
+              'checkout.session.completed — payment mode without plan_and_export metadata, skipping',
+            )
+          }
           break
         }
 
@@ -416,6 +457,24 @@ export async function POST(req: NextRequest) {
           })
         } else {
           console.log('customer.subscription.created — consumer subscription activated')
+        }
+
+        const { error: creditError } = await applyPlanAndExportCreditIfEligible({
+          admin: supabase,
+          stripe,
+          userId,
+          stripeCustomerId: customerId,
+        })
+        if (creditError) {
+          console.error(
+            'customer.subscription.created — Plan & Export credit failed:',
+            creditError.message,
+          )
+          captureStripeWebhookFailure(creditError, {
+            stage: 'processing',
+            event,
+            extra: { context: 'plan_and_export_credit' },
+          })
         }
         break
       }

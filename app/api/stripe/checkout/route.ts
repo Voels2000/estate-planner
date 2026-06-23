@@ -4,10 +4,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createStripeClient } from '@/lib/stripe/config'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { getOrigin } from '@/lib/app-url'
-import { processConsumerCheckout } from '@/lib/billing/processConsumerCheckout'
+import { processConsumerCheckout, processPlanAndExportCheckout } from '@/lib/billing/processConsumerCheckout'
 import {
   getPriceConfig,
   getTierFromPriceId,
+  isPlanAndExportPriceId,
+  isPlanAndExportSku,
   type BillingPeriod,
   type PlanTier,
 } from '@/lib/billing/stripePrices'
@@ -34,10 +36,56 @@ export async function POST(req: Request) {
     const url = new URL(req.url)
     const planParam = url.searchParams.get('plan')
     const periodParam = url.searchParams.get('period') as BillingPeriod | null
+    const skuParam = url.searchParams.get('sku')
 
     let priceId: string | undefined
     let returnTo: string | undefined
     let trialDays = 0
+    let body: Record<string, unknown> = {}
+
+    if (!planParam && !skuParam) {
+      body = await req.json().catch(() => ({}))
+    }
+
+    const skuRequest =
+      skuParam ?? (typeof body.sku === 'string' ? body.sku : undefined)
+
+    if (isPlanAndExportSku(skuRequest)) {
+      const { data: billingProfile } = await supabase
+        .from('profiles')
+        .select('subscription_status, subscription_plan, stripe_customer_id')
+        .eq('id', user.id)
+        .single()
+
+      const { data: clientRow } = await supabase
+        .from('advisor_clients')
+        .select('id')
+        .eq('client_id', user.id)
+        .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
+        .maybeSingle()
+
+      returnTo = typeof body.returnTo === 'string' ? body.returnTo : undefined
+
+      const result = await processPlanAndExportCheckout({
+        user,
+        returnTo,
+        billingProfile,
+        isAdvisorClient: !!clientRow,
+        baseUrl: getOrigin(req),
+        stripe,
+        supabase,
+        admin: createAdminClient(),
+      })
+
+      if (!result.ok) {
+        return NextResponse.json(
+          { error: result.block.message, code: result.block.code },
+          { status: result.block.httpStatus },
+        )
+      }
+
+      return NextResponse.json({ url: result.url })
+    }
 
     if (planParam) {
       const tier = PLAN_NAME_TO_TIER[planParam]
@@ -49,11 +97,16 @@ export async function POST(req: Request) {
         trialDays = config.trialDays
       }
     } else {
-      const body = await req.json().catch(() => ({}))
       returnTo = typeof body.returnTo === 'string' ? body.returnTo : undefined
 
       if (typeof body.priceId === 'string') {
         priceId = body.priceId
+        if (isPlanAndExportPriceId(body.priceId)) {
+          return NextResponse.json(
+            { error: 'Use sku=plan_and_export for one-time Plan & Export checkout.' },
+            { status: 400 },
+          )
+        }
         const tier = getTierFromPriceId(body.priceId)
         if (tier) {
           const period: BillingPeriod =

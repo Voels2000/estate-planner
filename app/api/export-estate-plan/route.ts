@@ -3,10 +3,16 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
-import { hasPaidDownloadAccess } from '@/lib/access/requirePaidDownloadAccess'
+import { hasDeliverableDownloadAccess, hasDeliverableUpdateAccess } from '@/lib/access/requirePaidDownloadAccess'
+import {
+  getUserPlanExportPurchase,
+  toPlanExportPurchaseContext,
+} from '@/lib/billing/oneTimePurchases'
 import { requireVaultHouseholdAccess } from '@/lib/api/requireVaultAccess'
 import { parseHouseholdIdParam } from '@/lib/api/schemas/householdAccess'
 import { loadEstatePlanPdfTaxPayload } from '@/lib/export/loadEstatePlanPdfTaxPayload'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { DELIVERABLE_MIN_TIER } from '@/lib/tiers'
 
 export const runtime = 'nodejs'
 
@@ -55,10 +61,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
     }
 
-    // Download policy: trial users cannot export. Consumers must be paid-active.
-    if (!hasPaidDownloadAccess(profile, 3)) {
+    const planExportPurchase = toPlanExportPurchaseContext(
+      await getUserPlanExportPurchase(createAdminClient(), user.id),
+    )
+
+    const accessOptions = { planExportPurchase }
+
+    if (!hasDeliverableUpdateAccess(profile, DELIVERABLE_MIN_TIER, accessOptions)) {
+      const downloadOnly =
+        planExportPurchase &&
+        hasDeliverableDownloadAccess(profile, DELIVERABLE_MIN_TIER, accessOptions)
       return NextResponse.json(
-        { error: 'Paid active Tier 3 subscription required for PDF export' },
+        {
+          error: downloadOnly
+            ? 'Plan editing window ended — subscribe to update your estate plan PDF'
+            : 'Paid active Tier 3 subscription or Plan & Export purchase required for PDF export',
+        },
         { status: 403 },
       )
     }

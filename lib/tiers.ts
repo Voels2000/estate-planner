@@ -99,6 +99,9 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   'my-estate-trust-strategy': 3,
   'trust-will':          3,
 }
+
+/** Minimum tier for generated deliverable (estate-plan PDF). Aliased to estate-tax gate. */
+export const DELIVERABLE_MIN_TIER = FEATURE_TIERS['estate-tax']
 // Stripe Estate trial (subscription_status = 'trialing' from webhook) unlocks tier-3 features.
 export const TRIAL_TIER = 3
 /** Resolve which consumer tier a profile maps to */

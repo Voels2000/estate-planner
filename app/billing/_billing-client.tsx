@@ -11,7 +11,10 @@ import {
   type ConsumerPlanForCheckout,
 } from '@/lib/billing/consumerPlanCatalog'
 import type { BillingPeriod, PlanTier } from '@/lib/billing/stripePrices'
+import { getConsumerPlanDisplay } from '@/lib/billing/stripePrices'
 import { TIER_PRICES, PRICE_ID_TO_TIER, TIER_NAMES } from '@/lib/tiers'
+
+const ESTATE_TRIAL_DAYS = getConsumerPlanDisplay(3, 'monthly').trialDays
 
 type Props = {
   currentPlan: string | null
@@ -190,7 +193,7 @@ export function BillingClient({
           Professional planning infrastructure at a fraction of attorney fees.
         </p>
         <p className="mt-1 text-sm text-[color:var(--mwm-text-muted)]">
-          {`Starting at $${TIER_PRICES[1]}/month · Estate plan includes a 14-day free trial`}
+          {`Starting at $${TIER_PRICES[1]}/month · Estate plan includes a ${ESTATE_TRIAL_DAYS}-day free trial`}
         </p>
         {isActive && activePlanName && (
           <p className="mt-2 text-sm font-medium text-green-600">
@@ -209,7 +212,9 @@ export function BillingClient({
         <div className="mb-6 rounded-lg border border-[color:var(--mwm-gold)]/40 bg-[color:var(--mwm-gold)]/10 px-4 py-3 text-center text-sm text-[color:var(--mwm-navy)]">
           Based on your assessment, we recommend the{' '}
           <strong>{recommendedPlan.name}</strong> plan
-          {recommendedPlan.trialDays > 0 ? ' — includes a 14-day free trial' : ''}.
+          {recommendedPlan.trialDays > 0
+            ? ` — includes a ${recommendedPlan.trialDays}-day free trial`
+            : ''}.
         </div>
       )}
 

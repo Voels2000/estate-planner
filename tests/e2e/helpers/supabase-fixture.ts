@@ -1,5 +1,6 @@
 import type { ProfileSavePayload } from '../../../lib/profile/buildHouseholdPayload'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { computePlanExportEditWindowEndsAt } from '@/lib/billing/planExportAccess'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { initSupabaseEnv } from '../../../scripts/seed-e2e-lib'
 
@@ -202,7 +203,7 @@ export async function deferProfileAccessRestore(
 
 /**
  * Suspend a connected advisor→client link so getUserAccess follows subscription/tier.
- * e2e-consumer is advisor-linked in seed; without this, tier-gate tests see tier 3 regardless of profile patch.
+ * Defensive for tier-gate tests when staging DB has a stray advisor→e2e-consumer link pre-reseed.
  */
 export async function deferConnectedAdvisorClientLinkSuspended(
   clientUserId: string,
@@ -349,4 +350,82 @@ export async function queryReferralClickLatest(
   if (!res.ok) return null
   const rows = (await res.json()) as { id: string }[]
   return rows[0] ?? null
+}
+
+export async function deletePlanAndExportPurchasesForUser(userId: string): Promise<void> {
+  const cfg = supabaseRestConfig()
+  if (!cfg) return
+  await fetch(
+    `${cfg.url}/rest/v1/one_time_purchases?user_id=eq.${userId}&sku=eq.plan_and_export`,
+    {
+      method: 'DELETE',
+      headers: {
+        apikey: cfg.key,
+        Authorization: `Bearer ${cfg.key}`,
+      },
+    },
+  )
+}
+
+export type PlanAndExportPurchaseFixtureOptions = {
+  purchasedAt?: Date
+  editWindowEndsAt?: string
+}
+
+export async function insertPlanAndExportPurchase(
+  userId: string,
+  sessionId: string,
+  amountCents: number,
+  options?: PlanAndExportPurchaseFixtureOptions,
+): Promise<boolean> {
+  const cfg = supabaseRestConfig()
+  if (!cfg) return false
+  const purchasedAt = options?.purchasedAt ?? new Date()
+  const editWindowEndsAt =
+    options?.editWindowEndsAt ??
+    computePlanExportEditWindowEndsAt(purchasedAt).toISOString()
+
+  const res = await fetch(`${cfg.url}/rest/v1/one_time_purchases`, {
+    method: 'POST',
+    headers: {
+      apikey: cfg.key,
+      Authorization: `Bearer ${cfg.key}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify({
+      user_id: userId,
+      sku: 'plan_and_export',
+      stripe_checkout_session_id: sessionId,
+      amount_cents: amountCents,
+      currency: 'usd',
+      status: 'completed',
+      purchased_at: purchasedAt.toISOString(),
+      edit_window_ends_at: editWindowEndsAt,
+    }),
+  })
+  return res.ok
+}
+
+export async function deferPlanAndExportPurchase(
+  userId: string,
+  sessionId: string,
+  amountCents: number,
+  run: () => Promise<void>,
+  options?: PlanAndExportPurchaseFixtureOptions,
+): Promise<void> {
+  const inserted = await insertPlanAndExportPurchase(
+    userId,
+    sessionId,
+    amountCents,
+    options,
+  )
+  if (!inserted) {
+    throw new Error(`Could not insert plan_and_export purchase for ${userId}`)
+  }
+  try {
+    await run()
+  } finally {
+    await deletePlanAndExportPurchasesForUser(userId)
+  }
 }
