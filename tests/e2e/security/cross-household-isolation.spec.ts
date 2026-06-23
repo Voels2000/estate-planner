@@ -39,28 +39,50 @@ test.beforeAll(async ({}, testInfo) => {
   consumerHouseholdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID?.trim() ?? ''
   advisorClientHouseholdId = process.env.PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID?.trim() ?? ''
 
-  if (!consumerHouseholdId && canAdminLookup) {
-    consumerHouseholdId =
+  if (canAdminLookup) {
+    initSupabaseEnv()
+    const canonicalConsumer =
       (await fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.consumer.email)) ?? ''
-  }
-  if (!advisorClientHouseholdId && canAdminLookup) {
-    advisorClientHouseholdId = (await fetchAdvisorClientHouseholdId()) ?? ''
+    const canonicalAdvisorClient = (await fetchAdvisorClientHouseholdId()) ?? ''
+
+    if (canonicalConsumer) {
+      if (consumerHouseholdId && consumerHouseholdId !== canonicalConsumer) {
+        console.warn(
+          `[e2e] PLAYWRIGHT_HOUSEHOLD_ID (${consumerHouseholdId}) ≠ canonical consumer (${canonicalConsumer}); using canonical`,
+        )
+      }
+      consumerHouseholdId = canonicalConsumer
+    } else if (!consumerHouseholdId) {
+      consumerHouseholdId = ''
+    }
+
+    if (canonicalAdvisorClient) {
+      if (
+        advisorClientHouseholdId &&
+        advisorClientHouseholdId !== canonicalAdvisorClient
+      ) {
+        console.warn(
+          `[e2e] PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID (${advisorClientHouseholdId}) ≠ canonical (${canonicalAdvisorClient}); using canonical`,
+        )
+      }
+      advisorClientHouseholdId = canonicalAdvisorClient
+    } else if (!advisorClientHouseholdId) {
+      advisorClientHouseholdId = ''
+    }
+
+    consumerOwnerUserId = (await findUserIdByEmail(E2E_IDENTITIES.consumer.email)) ?? ''
+    advisorClientOwnerUserId =
+      (await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)) ?? ''
   }
 
   if (!consumerHouseholdId || !advisorClientHouseholdId) {
     testInfo.skip(
       true,
-      'Missing household IDs — set PLAYWRIGHT_HOUSEHOLD_ID in .env.test.production (see .env.test.production.example), or add Supabase service role for lookup',
+      'Missing household IDs — run npm run seed:e2e on staging, or set PLAYWRIGHT_HOUSEHOLD_ID / service role for lookup',
     )
     return
   }
   expect(consumerHouseholdId).not.toBe(advisorClientHouseholdId)
-
-  if (canAdminLookup) {
-    initSupabaseEnv()
-    consumerOwnerUserId = (await findUserIdByEmail(E2E_IDENTITIES.consumer.email)) ?? ''
-    advisorClientOwnerUserId = (await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)) ?? ''
-  }
 })
 
 test.describe('Consumer isolation @production', () => {

@@ -26,6 +26,8 @@
 
 **Staging cast subscription drift (2026-06-23):** `npm run reset:staging-stripe` sets `subscription_status: 'none'` on all `@mywealthmaps.test` profiles (Stripe re-key hygiene). That drops CI consumer to tier 1 on `/social-security` (UpgradeBanner, no ProfileFieldPrompt). Fix class: re-seed (`npm run seed:e2e`) after stripe reset; fix failure: `deferProfileAccessRestore` in go-live-profile SS tests with throw-on-failed-restore + explicit tier-gate test in the same file.
 
+**CI household ID drift (2026-06-23):** Stale `PLAYWRIGHT_HOUSEHOLD_ID` in GitHub secrets (pre-`seed:e2e`) pointed at a household the advisor could access → cross-household isolation saw HTTP 200 instead of 403/404. Fix: `append-ci-e2e-household-ids.ts` patches `.env.test.local` from canonical `e2e-consumer` / `e2e-advisor-client` emails; `cross-household-isolation` beforeAll prefers canonical lookup when service role is present.
+
 ---
 
 ## Stripe checkout cross-environment guards (2026-06-23)

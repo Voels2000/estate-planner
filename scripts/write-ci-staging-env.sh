@@ -52,3 +52,5 @@ E2E_SKIP_RECOMPUTE=true
 EOF
 
 echo "Wrote .env.local and .env.test.local for CI (staging ref check passed)."
+
+npx tsx scripts/append-ci-e2e-household-ids.ts
