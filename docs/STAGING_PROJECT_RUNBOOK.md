@@ -96,15 +96,24 @@ Code guards (deployed with PR #93/#94): `getOrigin(request)` for return URLs; `p
 - `service_role_present` (boolean only — never exposes the key)
 - with `?live=1`: `liveness.supabase` confirms the service role works against that project
 
-First-boot check against the staging URL:
+First-boot check against the staging URL (requires `ADMIN_VERIFY_TOKEN` on **estate-planner-staging** Production scope — without it the route returns 404):
 
 ```bash
 curl -s -H "x-admin-token: $STAGING_ADMIN_VERIFY_TOKEN" \
-  'https://staging.mywealthmaps.com/api/admin/verify-env?live=1' \
-  | jq '{scope, boot, liveness: .liveness | {supabase, supabase_reason}}'
+  'https://estate-planner-staging.vercel.app/api/admin/verify-env?live=1' \
+  | jq '{
+      boot: .boot | {
+        vercel_deployment_id,
+        stripe_secret_key_prefix,
+        stripe_secret_key_last4,
+        stripe_publishable_key_prefix,
+        stripe_price_financial_monthly
+      },
+      stripe: .liveness | {stripe, stripe_reason, financial: (.stripe_prices[] | select(.env_var=="STRIPE_PRICE_FINANCIAL_MONTHLY"))}
+    }'
 ```
 
-Want: `scope:"production"` (of the **staging** Vercel project), `boot.supabase_project_ref:"cmzyxpxfyvdvbsykjvsg"`, `boot.app_url_hostname:"staging.mywealthmaps.com"`, `boot.service_role_present:true`, `liveness.supabase:"LIVE_OK"`.
+Want: `boot.stripe_secret_key_last4` matches the key you curl-verified, `boot.stripe_price_financial_monthly` is `price_1ThKuW…`, and `?live=1` shows that price `active` (not `resource_missing`). Mismatch between dashboard key and `boot.*` → stale deployment or wrong Vercel scope.
 
 ---
 
