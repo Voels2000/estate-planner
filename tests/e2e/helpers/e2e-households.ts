@@ -2,6 +2,7 @@ import type { APIRequestContext } from '@playwright/test'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import { findUserIdByEmail, initSupabaseEnv } from '../../../scripts/seed-e2e-lib'
+import { resolveE2eEmail } from './e2e-auth'
 
 export async function fetchHouseholdIdByOwnerEmail(email: string): Promise<string | null> {
   initSupabaseEnv()
@@ -20,9 +21,13 @@ export async function fetchAdvisorClientHouseholdId(): Promise<string | null> {
   return fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.advisorClient.email)
 }
 
-/** Canonical e2e-consumer household — prefer over PLAYWRIGHT_HOUSEHOLD_ID (CI secret can drift). */
+/** Canonical logged-in consumer household (same email as consumer.setup). */
 export async function resolveConsumerHouseholdId(): Promise<string | null> {
-  return fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.consumer.email)
+  const email = resolveE2eEmail(
+    process.env.PLAYWRIGHT_CONSUMER_EMAIL,
+    E2E_IDENTITIES.consumer.email,
+  )
+  return fetchHouseholdIdByOwnerEmail(email)
 }
 
 export async function fetchAttorneyListingId(): Promise<string | null> {
