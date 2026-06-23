@@ -1109,7 +1109,6 @@ export async function seedE2eConsumerEnrichments(opts: {
   advisorClientUserId?: string
 }): Promise<void> {
   if (opts.primaryAdvisorId) {
-    await linkAdvisorToClient(opts.primaryAdvisorId, opts.consumerUserId)
     await seedE2ePendingAdvisorRecommendation(opts.primaryAdvisorId, opts.consumerHouseholdId)
   }
 
@@ -1127,7 +1126,6 @@ export async function seedE2eConsumerEnrichments(opts: {
     await linkAdvisorToClient(opts.primaryAdvisorId, opts.tier1UserId)
     await pruneStrayE2eAdvisorClientLinks(opts.primaryAdvisorId, [
       opts.advisorClientUserId,
-      opts.consumerUserId,
       opts.tier1UserId,
     ])
   }

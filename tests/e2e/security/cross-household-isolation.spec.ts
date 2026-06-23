@@ -1,6 +1,6 @@
 /**
  * Cross-household IDOR matrix — consumer and advisor must not read foreign households.
- * Requires PLAYWRIGHT_HOUSEHOLD_ID (e2e-consumer) and seeded E2E advisor client.
+ * e2e-consumer is not advisor-linked (pending rec only); advisor-client + tier1 are linked.
  */
 import { test, expect } from '@playwright/test'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
@@ -10,7 +10,7 @@ import {
   fetchHouseholdIdByOwnerEmail,
 } from '../helpers/e2e-households'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { findUserIdByEmail, initSupabaseEnv } from '../../../scripts/seed-e2e-lib'
+import { findUserIdByEmail, initSupabaseEnv, pruneStrayE2eAdvisorClientLinks } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
 
 const API_TIMEOUT_MS = 30_000
@@ -73,6 +73,15 @@ test.beforeAll(async ({}, testInfo) => {
     consumerOwnerUserId = (await findUserIdByEmail(E2E_IDENTITIES.consumer.email)) ?? ''
     advisorClientOwnerUserId =
       (await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)) ?? ''
+
+    const advisorId = (await findUserIdByEmail(E2E_IDENTITIES.advisor.email)) ?? ''
+    const tier1UserId = (await findUserIdByEmail(E2E_IDENTITIES.consumerTier1.email)) ?? ''
+    if (advisorId) {
+      await pruneStrayE2eAdvisorClientLinks(advisorId, [
+        advisorClientOwnerUserId,
+        tier1UserId,
+      ].filter(Boolean))
+    }
   }
 
   if (!consumerHouseholdId || !advisorClientHouseholdId) {
