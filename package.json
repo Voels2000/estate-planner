@@ -43,6 +43,7 @@
     "verify:security": "bash scripts/security-audit.sh",
     "verify:event-copy": "npx tsx scripts/verify-event-upgrade-copy.ts",
     "test:import:api": "dotenv -o -e .env.test -- npx playwright test tests/e2e/consumer/consumer-import.spec.ts --project=consumer --workers=1",
+    "reset:staging-stripe": "dotenv -e .env.local -- npx tsx scripts/reset-staging-stripe-test-users.ts",
     "seed:e2e": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.ts",
     "verify:e2e-auth": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/verify-e2e-auth.ts",
     "seed:e2e:fast": "dotenv -o -e .env.local -e .env.test -- npx tsx scripts/seed-e2e-fixtures.ts --skip-advisor-client",

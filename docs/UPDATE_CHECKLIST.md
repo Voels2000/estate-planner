@@ -210,6 +210,14 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] LAUNCH_GATE · NEXT_SESSION synced
 - [x] No migration — terms served from code via `getCanonicalTerms()`
 
+## Stripe checkout cross-environment guards (2026-06-23) — shipped
+
+- [x] **`getOrigin(request)`** — `lib/app-url.ts`; absolute `http(s)://` guard; consumer checkout return URLs (PR #93)
+- [x] **`processConsumerCheckout`** — retrieve-or-create `stripe_customer_id`; validate `baseUrl`; unit tests (PR #94)
+- [x] **`scripts/reset-staging-stripe-test-users.ts`** + `npm run reset:staging-stripe` — clear dangling Stripe columns on staging E2E profiles after re-key
+- [x] **Docs** — DECISION_LOG, MASTER_ARCHITECTURE, STAGING_PROJECT_RUNBOOK, E2E_TEST_RESET
+- [ ] **Staging smoke** — tier-1 checkout E2E on `estate-planner-staging.vercel.app` after deploy
+
 ## Pricing surfaces alignment + firm seat billing (2026-06-10) — shipped
 
 - [x] `/pricing` — advisor per-seat (Starter/Growth/Enterprise) + attorney tiers from `lib/tiers.ts`

@@ -42,9 +42,9 @@ Canonical source of truth for names: `lib/env/manifest.ts`. Set **all** of these
 **Must differ from prod — set to TEST/STAGING values:**
 
 - Supabase: `NEXT_PUBLIC_SUPABASE_URL` → `https://cmzyxpxfyvdvbsykjvsg.supabase.co` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` (staging) · **`SUPABASE_SERVICE_ROLE_KEY` (staging)** ← the one that was missing; do not skip
-- Stripe keys: `STRIPE_SECRET_KEY` (`sk_test_`) · `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (`pk_test_`) · `STRIPE_WEBHOOK_SECRET` (test webhook on the staging URL)
-- All 11 price IDs (test): `STRIPE_PRICE_FINANCIAL_MONTHLY/ANNUAL`, `STRIPE_PRICE_RETIREMENT_*`, `STRIPE_PRICE_ESTATE_*`, `STRIPE_PRICE_ADVISOR_STARTER/GROWTH/ENTERPRISE_MONTHLY`, `STRIPE_PRICE_ATTORNEY_STARTER/GROWTH_MONTHLY` — set all so the legacy hardcoded fallback never fires
-- `NEXT_PUBLIC_APP_URL` → the staging URL (`https://staging.mywealthmaps.com`), **never** gules
+- Stripe keys: `STRIPE_SECRET_KEY` (`sk_test_`) · `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (`pk_test_`) · `STRIPE_WEBHOOK_SECRET` (test webhook on the staging URL) — **all three from the same Stripe sandbox** (named sandbox keys ≠ default test-mode keys; price IDs are not portable across sandboxes)
+- All 11 price IDs (test): `STRIPE_PRICE_FINANCIAL_MONTHLY/ANNUAL`, `STRIPE_PRICE_RETIREMENT_*`, `STRIPE_PRICE_ESTATE_*`, `STRIPE_PRICE_ADVISOR_STARTER/GROWTH/ENTERPRISE_MONTHLY`, `STRIPE_PRICE_ATTORNEY_STARTER/GROWTH_MONTHLY` — set all so the legacy hardcoded fallback never fires; IDs must match the sandbox that issued the `sk_test_` above
+- `NEXT_PUBLIC_APP_URL` → the staging URL (`https://estate-planner-staging.vercel.app` or `https://staging.mywealthmaps.com`), **never** gules — used for emails, recompute, sitemap; **checkout return URLs use `getOrigin(request)`** (PR #93/#94), not this env var
 - `PUBLIC_SIGNUP_OPEN` = `true` · `REQUIRE_PRIVILEGED_MFA` = `false` (or omit)
 - Email: `RESEND_API_KEY` (sandbox), `EMAIL_FROM` (staging from-address), `COMPLIANCE_EMAIL` (optional)
 
@@ -63,6 +63,19 @@ Canonical source of truth for names: `lib/env/manifest.ts`. Set **all** of these
 **`SIGNUP_SKIP_EMAIL_CONFIRM`** — may be `true` on staging for E2E, but it must NEVER reach prod (`verify-env` asserts unset on prod).
 
 After setting: **redeploy** (env changes don't apply to an already-built deployment — this is the step that was missed).
+
+### After re-keying Stripe (new sandbox or new test keys)
+
+Vercel env is only half the fix — **staging `profiles` rows may still hold `stripe_customer_id` / `stripe_subscription_id` from the old environment.**
+
+```bash
+# Staging Supabase only (ref guard in script)
+npm run reset:staging-stripe
+```
+
+Clears Stripe billing columns on all `@mywealthmaps.test` and canonical E2E emails. Then smoke: log in as `e2e-consumer-tier1@mywealthmaps.test` → `/billing` → Subscribe → `checkout.stripe.com`.
+
+Code guards (deployed with PR #93/#94): `getOrigin(request)` for return URLs; `processConsumerCheckout` self-heals stale customer ids on checkout.
 
 ---
 

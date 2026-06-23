@@ -8,7 +8,23 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-# Last updated: 2026-06-18 (attorney drip unsubscribe; recompute fail-closed; checkout API guards)
+# Last updated: 2026-06-23 (Stripe checkout cross-environment guards; no migration)
+
+---
+
+## Stripe checkout cross-environment guards (2026-06-23)
+
+**No migration.**
+
+**App (code only):**
+- `lib/app-url.ts` — `getOrigin(request)` + `assertAbsoluteHttpUrl` for Stripe checkout return URLs (PR #93)
+- `lib/billing/processConsumerCheckout.ts` — `stripe_customer_id` retrieve-or-create self-heal; `baseUrl` absolute URL guard (PR #94)
+- `scripts/reset-staging-stripe-test-users.ts` — staging-only script to null dangling Stripe columns on E2E profiles after re-key
+- `tests/unit/app-url.spec.ts` · extended `processConsumerCheckout.spec.ts`
+
+**Ops:** After staging Stripe re-key → `npm run reset:staging-stripe` then redeploy. See [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md).
+
+**Verify:** `npx playwright test tests/unit/app-url.spec.ts tests/unit/processConsumerCheckout.spec.ts --project=import-unit`
 
 ---
 
