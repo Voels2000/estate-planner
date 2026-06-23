@@ -112,6 +112,59 @@ export async function restoreHouseholdDeferredFields(
   return patchHouseholdById(householdId, { ...snapshot })
 }
 
+/** Fields that gate /social-security (tier 2+) via getUserAccess. */
+export type ProfileAccessFields = {
+  consumer_tier: number | null
+  subscription_status: string | null
+  subscription_plan: string | null
+}
+
+export async function fetchProfileAccessFields(
+  userId: string,
+): Promise<ProfileAccessFields | null> {
+  return restGet<ProfileAccessFields>(
+    'profiles',
+    `id=eq.${userId}&select=consumer_tier,subscription_status,subscription_plan`,
+  )
+}
+
+export async function patchProfileAccessFields(
+  userId: string,
+  fields: Partial<ProfileAccessFields>,
+): Promise<boolean> {
+  const cfg = supabaseRestConfig()
+  if (!cfg) return false
+  const res = await fetch(`${cfg.url}/rest/v1/profiles?id=eq.${userId}`, {
+    method: 'PATCH',
+    headers: {
+      apikey: cfg.key,
+      Authorization: `Bearer ${cfg.key}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify({ ...fields, updated_at: new Date().toISOString() }),
+  })
+  return res.ok
+}
+
+/** /social-security requires tier ≥ 2; inactive subs resolve to tier 1 in getUserAccess. */
+export async function ensureSocialSecurityTierAccess(userId: string): Promise<ProfileAccessFields | null> {
+  const before = await fetchProfileAccessFields(userId)
+  if (!before) return null
+  await patchProfileAccessFields(userId, {
+    consumer_tier: 3,
+    subscription_status: 'active',
+  })
+  return before
+}
+
+export async function restoreProfileAccessFields(
+  userId: string,
+  snapshot: ProfileAccessFields,
+): Promise<boolean> {
+  return patchProfileAccessFields(userId, snapshot)
+}
+
 export async function fetchHouseholdPlanningFields(
   householdId: string,
 ): Promise<HouseholdPlanningFields | null> {

@@ -4,7 +4,10 @@ import {
   patchHouseholdById,
   pickDeferredFields,
   restoreHouseholdDeferredFields,
+  ensureSocialSecurityTierAccess,
+  restoreProfileAccessFields,
   type HouseholdDeferredFields,
+  type ProfileAccessFields,
 } from '../helpers/supabase-fixture'
 
 /**
@@ -151,6 +154,38 @@ test.describe('ProfileFieldPrompt — Scenarios', () => {
 })
 
 test.describe('ProfileFieldPrompt — Social Security', () => {
+  let householdOwnerId: string | null = null
+  let profileAccessSnapshot: ProfileAccessFields | null = null
+
+  test.beforeAll(async ({}, testInfo) => {
+    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
+    if (!householdId) {
+      testInfo.skip(true, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
+      return
+    }
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      testInfo.skip(true, 'SUPABASE_SERVICE_ROLE_KEY required')
+      return
+    }
+
+    const household = await fetchHouseholdById(householdId)
+    if (!household) {
+      testInfo.skip(true, 'Could not load household row')
+      return
+    }
+    householdOwnerId = household.owner_id
+    profileAccessSnapshot = await ensureSocialSecurityTierAccess(householdOwnerId)
+    if (!profileAccessSnapshot) {
+      testInfo.skip(true, 'Could not load household owner profile')
+    }
+  })
+
+  test.afterAll(async () => {
+    if (householdOwnerId && profileAccessSnapshot) {
+      await restoreProfileAccessFields(householdOwnerId, profileAccessSnapshot)
+    }
+  })
+
   test('shows person-1 prompt when SS fields unset; save updates calculator PIA', async ({
     page,
   }) => {
