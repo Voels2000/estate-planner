@@ -13,14 +13,13 @@ import {
 
 /**
  * ProfileFieldPrompt UI — /scenarios and /social-security inline deferred fields.
- * Uses service role to temporarily clear columns on PLAYWRIGHT_HOUSEHOLD_ID; restores after each test.
+ * Resolves e2e-consumer household canonically (not PLAYWRIGHT_HOUSEHOLD_ID).
  *
  * Run (go-live bundle): npm run test:e2e:go-live-profile
  *
  * Staging cast drift: `npm run reset:staging-stripe` sets subscription_status='none'
  * on @mywealthmaps.test profiles (Stripe re-key hygiene). Re-seed with `npm run seed:e2e`
- * or prompt tests temporarily elevate tier inside deferProfileAccessRestore.
- * Social Security tests resolve household from e2e-consumer email (not PLAYWRIGHT_HOUSEHOLD_ID).
+ * or SS prompt tests temporarily elevate tier inside deferProfileAccessRestore.
  */
 test.describe.configure({ mode: 'serial' })
 
@@ -79,12 +78,21 @@ async function withSocialSecurityPromptAccess(
 }
 
 test.describe('ProfileFieldPrompt — Scenarios', () => {
-  test('shows longevity prompt when unset; save persists and hides card', async ({ page }) => {
-    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
-    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
-    test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, 'SUPABASE_SERVICE_ROLE_KEY required')
+  let householdId = ''
 
-    await deferRestore(householdId!, { person1_longevity_age: null }, async () => {
+  test.beforeAll(async ({}, testInfo) => {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+      testInfo.skip(true, 'SUPABASE_SERVICE_ROLE_KEY required')
+      return
+    }
+    householdId = (await resolveConsumerHouseholdId()) ?? ''
+    if (!householdId) {
+      testInfo.skip(true, 'Could not resolve canonical consumer household — run npm run seed:e2e')
+    }
+  })
+
+  test('shows longevity prompt when unset; save persists and hides card', async ({ page }) => {
+    await deferRestore(householdId, { person1_longevity_age: null }, async () => {
       await ensurePromptNotDismissed(page, [SCENARIOS_PROMPT_KEY], '/scenarios')
       await expect(page.getByRole('heading', { name: /scenario/i })).toBeVisible({
         timeout: 20_000,
@@ -99,18 +107,14 @@ test.describe('ProfileFieldPrompt — Scenarios', () => {
 
       await expect(card).toBeHidden({ timeout: 15_000 })
 
-      const after = await fetchHouseholdById(householdId!)
+      const after = await fetchHouseholdById(householdId)
       expect(after?.person1_longevity_age).toBe(92)
     })
   })
 
   test('does not prompt deduction when standard is explicitly set', async ({ page }) => {
-    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
-    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
-    test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, 'SUPABASE_SERVICE_ROLE_KEY required')
-
     await deferRestore(
-      householdId!,
+      householdId,
       { deduction_mode: 'standard', person1_longevity_age: 90 },
       async () => {
         await ensurePromptNotDismissed(page, [SCENARIOS_PROMPT_KEY], '/scenarios')
@@ -123,12 +127,8 @@ test.describe('ProfileFieldPrompt — Scenarios', () => {
   })
 
   test('custom deduction follow-on saves amount via partial PATCH', async ({ page }) => {
-    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
-    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
-    test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, 'SUPABASE_SERVICE_ROLE_KEY required')
-
     await deferRestore(
-      householdId!,
+      householdId,
       { deduction_mode: null, person1_longevity_age: 90 },
       async () => {
         await ensurePromptNotDismissed(page, [SCENARIOS_PROMPT_KEY], '/scenarios')
@@ -144,7 +144,7 @@ test.describe('ProfileFieldPrompt — Scenarios', () => {
 
         await expect(card).toBeHidden({ timeout: 15_000 })
 
-        const after = await fetchHouseholdById(householdId!)
+        const after = await fetchHouseholdById(householdId)
         expect(after?.deduction_mode).toBe('custom')
         expect(after?.custom_deduction_amount).toBe(45000)
       },
@@ -154,11 +154,7 @@ test.describe('ProfileFieldPrompt — Scenarios', () => {
   test('Remind me later dismisses for session; reappears after sessionStorage cleared', async ({
     page,
   }) => {
-    const householdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID
-    test.skip(!householdId, 'Set PLAYWRIGHT_HOUSEHOLD_ID')
-    test.skip(!process.env.SUPABASE_SERVICE_ROLE_KEY, 'SUPABASE_SERVICE_ROLE_KEY required')
-
-    await deferRestore(householdId!, { person1_longevity_age: null }, async () => {
+    await deferRestore(householdId, { person1_longevity_age: null }, async () => {
       await ensurePromptNotDismissed(page, [SCENARIOS_PROMPT_KEY], '/scenarios')
 
       const card = scenariosPromptCard(page)
