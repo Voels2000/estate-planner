@@ -42,9 +42,9 @@ Canonical source of truth for names: `lib/env/manifest.ts`. Set **all** of these
 **Must differ from prod — set to TEST/STAGING values:**
 
 - Supabase: `NEXT_PUBLIC_SUPABASE_URL` → `https://cmzyxpxfyvdvbsykjvsg.supabase.co` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` (staging) · **`SUPABASE_SERVICE_ROLE_KEY` (staging)** ← the one that was missing; do not skip
-- Stripe keys: `STRIPE_SECRET_KEY` (`sk_test_`) · `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (`pk_test_`) · `STRIPE_WEBHOOK_SECRET` (test webhook on the staging URL)
-- All 11 price IDs (test): `STRIPE_PRICE_FINANCIAL_MONTHLY/ANNUAL`, `STRIPE_PRICE_RETIREMENT_*`, `STRIPE_PRICE_ESTATE_*`, `STRIPE_PRICE_ADVISOR_STARTER/GROWTH/ENTERPRISE_MONTHLY`, `STRIPE_PRICE_ATTORNEY_STARTER/GROWTH_MONTHLY` — set all so the legacy hardcoded fallback never fires
-- `NEXT_PUBLIC_APP_URL` → the staging URL (`https://staging.mywealthmaps.com`), **never** gules
+- Stripe keys: `STRIPE_SECRET_KEY` (`sk_test_`) · `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (`pk_test_`) · `STRIPE_WEBHOOK_SECRET` (test webhook on the staging URL) — **all three from the same Stripe sandbox** (named sandbox keys ≠ default test-mode keys; price IDs are not portable across sandboxes)
+- All 11 price IDs (test): `STRIPE_PRICE_FINANCIAL_MONTHLY/ANNUAL`, `STRIPE_PRICE_RETIREMENT_*`, `STRIPE_PRICE_ESTATE_*`, `STRIPE_PRICE_ADVISOR_STARTER/GROWTH/ENTERPRISE_MONTHLY`, `STRIPE_PRICE_ATTORNEY_STARTER/GROWTH_MONTHLY` — set all so the legacy hardcoded fallback never fires; IDs must match the sandbox that issued the `sk_test_` above
+- `NEXT_PUBLIC_APP_URL` → the staging URL (`https://estate-planner-staging.vercel.app` or `https://staging.mywealthmaps.com`), **never** gules — used for emails, recompute, sitemap; **checkout return URLs use `getOrigin(request)`** (PR #93/#94), not this env var
 - `PUBLIC_SIGNUP_OPEN` = `true` · `REQUIRE_PRIVILEGED_MFA` = `false` (or omit)
 - Email: `RESEND_API_KEY` (sandbox), `EMAIL_FROM` (staging from-address), `COMPLIANCE_EMAIL` (optional)
 
@@ -63,6 +63,19 @@ Canonical source of truth for names: `lib/env/manifest.ts`. Set **all** of these
 **`SIGNUP_SKIP_EMAIL_CONFIRM`** — may be `true` on staging for E2E, but it must NEVER reach prod (`verify-env` asserts unset on prod).
 
 After setting: **redeploy** (env changes don't apply to an already-built deployment — this is the step that was missed).
+
+### After re-keying Stripe (new sandbox or new test keys)
+
+Vercel env is only half the fix — **staging `profiles` rows may still hold `stripe_customer_id` / `stripe_subscription_id` from the old environment.**
+
+```bash
+# Staging Supabase only (ref guard in script)
+npm run reset:staging-stripe
+```
+
+Clears Stripe billing columns on all `@mywealthmaps.test` and canonical E2E emails. Then smoke: log in as `e2e-consumer-tier1@mywealthmaps.test` → `/billing` → Subscribe → `checkout.stripe.com`.
+
+Code guards (deployed with PR #93/#94): `getOrigin(request)` for return URLs; `processConsumerCheckout` self-heals stale customer ids on checkout.
 
 ---
 
@@ -83,15 +96,24 @@ After setting: **redeploy** (env changes don't apply to an already-built deploym
 - `service_role_present` (boolean only — never exposes the key)
 - with `?live=1`: `liveness.supabase` confirms the service role works against that project
 
-First-boot check against the staging URL:
+First-boot check against the staging URL (requires `ADMIN_VERIFY_TOKEN` on **estate-planner-staging** Production scope — without it the route returns 404):
 
 ```bash
 curl -s -H "x-admin-token: $STAGING_ADMIN_VERIFY_TOKEN" \
-  'https://staging.mywealthmaps.com/api/admin/verify-env?live=1' \
-  | jq '{scope, boot, liveness: .liveness | {supabase, supabase_reason}}'
+  'https://estate-planner-staging.vercel.app/api/admin/verify-env?live=1' \
+  | jq '{
+      boot: .boot | {
+        vercel_deployment_id,
+        stripe_secret_key_prefix,
+        stripe_secret_key_last4,
+        stripe_publishable_key_prefix,
+        stripe_price_financial_monthly
+      },
+      stripe: .liveness | {stripe, stripe_reason, financial: (.stripe_prices[] | select(.env_var=="STRIPE_PRICE_FINANCIAL_MONTHLY"))}
+    }'
 ```
 
-Want: `scope:"production"` (of the **staging** Vercel project), `boot.supabase_project_ref:"cmzyxpxfyvdvbsykjvsg"`, `boot.app_url_hostname:"staging.mywealthmaps.com"`, `boot.service_role_present:true`, `liveness.supabase:"LIVE_OK"`.
+Want: `boot.stripe_secret_key_last4` matches the key you curl-verified, `boot.stripe_price_financial_monthly` is `price_1ThKuW…`, and `?live=1` shows that price `active` (not `resource_missing`). Mismatch between dashboard key and `boot.*` → stale deployment or wrong Vercel scope.
 
 ---
 
@@ -116,6 +138,6 @@ When Probe 1 returns `201` + `needsEmailConfirmation:true` with no cookie on thi
 
 You added it to Preview and still got `Missing ... SUPABASE_SERVICE_ROLE_KEY`. On the clean project, rule out all three causes explicitly so it doesn't recur:
 
-1. **Redeploy didn't pick it up** — confirm the deployment you're probing was built *after* the var was added (check the deployment timestamp vs the var's "updated" time). This is the most common.
+1. **Redeploy didn't pick it up** — Vercel **"Redeploy"** on an old deployment replays that build's env snapshot; it does **not** apply env vars you changed in the dashboard afterward. After editing Production env vars, trigger a **new build** (empty commit to `staging`, or **Redeploy** the **latest** deployment with "Use existing Build Cache" off / env refresh). Confirm the deployment aliased to `estate-planner-staging.vercel.app` was created *after* the var's "updated" time. Tiebreaker: `GET /api/admin/verify-env?live=1` → `boot.stripe_secret_key_last4` (requires `ADMIN_VERIFY_TOKEN` on staging).
 2. **Bad paste / wrong scope** — re-paste with no leading/trailing whitespace or newline; confirm it's on the staging project's **Production** scope, not Development.
 3. **Different name in a second code path** — grep for every reader of the service-role key (`SUPABASE_SERVICE_ROLE_KEY` and any alias) in `createAdminClient()` and elsewhere; confirm they all read the same var name. The verify-env `boot` block makes this self-evident — it reports whether the running deployment sees the key at all.

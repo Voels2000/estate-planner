@@ -143,7 +143,7 @@ export default function UpgradeBanner({
     )
 
   return (
-    <div className="mb-6 flex flex-col gap-3">
+    <div className="mb-6 flex flex-col gap-3" data-testid="upgrade-banner">
       {hasTaxExposure && householdContext?.grossEstate != null && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
           <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-red-500">

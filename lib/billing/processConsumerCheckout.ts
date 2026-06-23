@@ -7,7 +7,7 @@ import {
 } from '@/lib/billing/b2b2cBillingPolicy'
 
 export type ConsumerCheckoutStripe = {
-  customers: Pick<Stripe['customers'], 'create'>
+  customers: Pick<Stripe['customers'], 'create' | 'retrieve'>
   checkout: Pick<Stripe['checkout'], 'sessions'>
 }
 
@@ -45,6 +45,24 @@ export async function processConsumerCheckout(
   }
 
   let stripeCustomerId = input.billingProfile?.stripe_customer_id ?? null
+
+  if (stripeCustomerId) {
+    try {
+      const customer = await input.stripe.customers.retrieve(stripeCustomerId)
+      if (customer.deleted) stripeCustomerId = null
+    } catch (error) {
+      const code =
+        error && typeof error === 'object' && 'code' in error
+          ? (error as { code?: string }).code
+          : undefined
+      if (code === 'resource_missing') {
+        stripeCustomerId = null
+      } else {
+        throw error
+      }
+    }
+  }
+
   if (!stripeCustomerId) {
     const customer = await input.stripe.customers.create({
       email: input.user.email ?? undefined,
@@ -82,6 +100,15 @@ export async function processConsumerCheckout(
         ? `${input.baseUrl}/profile?checkout=success&session_id={CHECKOUT_SESSION_ID}`
         : `${input.baseUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`
     }
+  }
+
+  if (
+    !input.baseUrl.startsWith('http://') &&
+    !input.baseUrl.startsWith('https://')
+  ) {
+    throw new Error(
+      `Invalid checkout baseUrl (expected absolute http(s) URL): ${input.baseUrl}`,
+    )
   }
 
   const session = await input.stripe.checkout.sessions.create({

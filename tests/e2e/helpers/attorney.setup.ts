@@ -2,7 +2,7 @@ import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import { resolveE2eEmail, resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
 
-setup('authenticate attorney portal @production', async ({ page }) => {
+setup('authenticate attorney portal', async ({ page }) => {
   const email = resolveE2eEmail(
     process.env.PLAYWRIGHT_ATTORNEY_EMAIL,
     E2E_IDENTITIES.attorneyPortal.email,

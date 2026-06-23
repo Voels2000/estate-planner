@@ -90,7 +90,9 @@ Schema parity script (emergency full schema clone): `bash scripts/two-db-schema-
 | `NEXT_PUBLIC_SUPABASE_URL` | Staging (`cmzyxpxfyvdvbsykjvsg`) | Prod (`fnzvlmrqwcqwiqueevux`) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Staging — legacy `eyJ…` or `sb_publishable_…` | Prod — same dual formats accepted by verifier |
 | `SUPABASE_SERVICE_ROLE_KEY` | Staging — `eyJ…` or `sb_secret_…` | Prod |
-| Stripe keys | Test mode (`sk_test_` / `pk_test_`) | Live mode (`sk_live_` / `pk_live_`) |
+| Stripe keys | Test mode (`sk_test_` / `pk_test_`) — **same sandbox as all 11 `STRIPE_PRICE_*`** | Live mode (`sk_live_` / `pk_live_`) |
+
+After staging Stripe re-key: redeploy `estate-planner-staging`, then `npm run reset:staging-stripe` — [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md).
 | `E2E_CANARY_PASSWORD` | — | Prod canary login for `canary-consumer@mywealthmaps.com` (not in git) |
 | `ADMIN_VERIFY_TOKEN` | Optional (Preview smoke) | Gate-2 env audit (`/api/admin/verify-env`) |
 

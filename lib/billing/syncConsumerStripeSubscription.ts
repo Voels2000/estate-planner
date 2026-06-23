@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { getTierFromPriceId } from '@/lib/billing/stripePrices'
 import { getAttorneyTierFromPriceId } from '@/lib/tiers'
+import { mapConsumerSubscriptionStatus } from '@/lib/stripe/consumerSubscriptionStatus'
 import { subscriptionPeriodEndIso } from '@/lib/stripe/subscriptionPeriod'
 
 export type StripeSyncResult = {
@@ -88,7 +89,7 @@ export async function syncConsumerStripeSubscription(
     const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
 
     update = {
-      subscription_status: activeSub.cancel_at_period_end ? 'canceling' : activeSub.status,
+      subscription_status: mapConsumerSubscriptionStatus(activeSub),
       ...(renewalIso != null ? { subscription_period_end: renewalIso } : {}),
       stripe_subscription_id: activeSub.id,
       ...(priceId ? { subscription_plan: priceId } : {}),

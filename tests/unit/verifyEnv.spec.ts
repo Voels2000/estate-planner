@@ -12,6 +12,7 @@ import {
   parseSupabaseProjectRef,
   parseAppUrlHostname,
   buildBootIdentity,
+  stripeKeyFingerprint,
 } from '../../lib/env/verifyEnv'
 
 const CONSUMER_PRICE = 'STRIPE_PRICE_FINANCIAL_MONTHLY'
@@ -97,7 +98,7 @@ test.describe('Stripe liveness key mode', () => {
     expect(inferStripeKeyMode('bad')).toBe('unknown')
   })
 
-  test('production + sk_test_ fails liveness before balance.retrieve', async () => {
+  test('production + sk_test_ warns but still attempts Stripe liveness (staging)', async () => {
     const report = await verifyEnvironment({
       live: true,
       env: {
@@ -110,11 +111,13 @@ test.describe('Stripe liveness key mode', () => {
 
     expect(report.liveness?.stripe_key_mode).toBe('test')
     expect(report.liveness?.stripe).toBe('LIVE_FAIL')
-    expect(report.liveness?.stripe_reason).toContain('test mode')
+    expect(
+      report.flags.some((f) => f.name === 'STRIPE_SECRET_KEY' && f.level === 'WARN'),
+    ).toBe(true)
     expect(report.vars.STRIPE_SECRET_KEY).toBe('WRONG_SHAPE')
   })
 
-  test('preview + sk_live_ fails liveness before balance.retrieve', async () => {
+  test('preview + sk_live_ warns but still attempts Stripe liveness', async () => {
     const report = await verifyEnvironment({
       live: true,
       env: {
@@ -127,7 +130,9 @@ test.describe('Stripe liveness key mode', () => {
 
     expect(report.liveness?.stripe_key_mode).toBe('live')
     expect(report.liveness?.stripe).toBe('LIVE_FAIL')
-    expect(report.liveness?.stripe_reason).toContain('live mode')
+    expect(
+      report.flags.some((f) => f.name === 'STRIPE_SECRET_KEY' && f.level === 'WARN'),
+    ).toBe(true)
     expect(report.vars.STRIPE_SECRET_KEY).toBe('WRONG_SHAPE')
   })
 
@@ -288,9 +293,14 @@ test.describe('boot identity', () => {
     expect(boot).toEqual({
       scope: 'production',
       vercel_env: 'production',
+      vercel_deployment_id: null,
       supabase_project_ref: 'cmzyxpxfyvdvbsykjvsg',
       app_url_hostname: 'staging.mywealthmaps.com',
       service_role_present: true,
+      stripe_secret_key_prefix: null,
+      stripe_secret_key_last4: null,
+      stripe_publishable_key_prefix: null,
+      stripe_price_financial_monthly: null,
     })
   })
 
@@ -305,5 +315,21 @@ test.describe('boot identity', () => {
     expect(report.boot.scope).toBe('preview')
     expect(report.boot.supabase_project_ref).toBe('cmzyxpxfyvdvbsykjvsg')
     expect(report.boot.service_role_present).toBe(false)
+  })
+
+  test('buildBootIdentity exposes non-secret Stripe fingerprints', () => {
+    const boot = buildBootIdentity({
+      VERCEL_ENV: 'production',
+      VERCEL_DEPLOYMENT_ID: 'dpl_abc123',
+      STRIPE_SECRET_KEY: 'sk_test_51TAIt0ENTkKmTNa3wIKn00f6JZ4K88',
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_51TAIt0ENTkKmTNa3example',
+      STRIPE_PRICE_FINANCIAL_MONTHLY: 'price_1ThKuWENTkKmTNa3YI866TqT',
+    })
+    expect(boot.vercel_deployment_id).toBe('dpl_abc123')
+    expect(boot.stripe_secret_key_prefix).toBe('sk_test_51TA')
+    expect(boot.stripe_secret_key_last4).toBe('4K88')
+    expect(boot.stripe_publishable_key_prefix).toBe('pk_test_51TA')
+    expect(boot.stripe_price_financial_monthly).toBe('price_1ThKuWENTkKmTNa3YI866TqT')
+    expect(stripeKeyFingerprint('')).toEqual({ prefix: null, last4: null })
   })
 })

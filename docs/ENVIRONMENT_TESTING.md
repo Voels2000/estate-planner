@@ -81,6 +81,8 @@ Paths are indicative; when in doubt, run the heavier column.
 | **API routes** (`app/api/`) | `npm run release:preflight -- --workers=1` | `npm run release:post-deploy` |
 | **Auth, middleware, RLS policies** (`middleware.ts`, `supabase/migrations/*`, `lib/supabase/`) | `release:preflight` + `npm run test:e2e:security-isolation -- --workers=1` | **`npm run release:post-deploy`** (required) |
 | **Billing / Stripe** (`app/billing/`, `lib/billing/`, `lib/tiers.ts`, webhooks) | `release:preflight` + `npm run test:e2e:billing -- --workers=1` | `release:post-deploy` + `npm run test:e2e:prod:billing -- --workers=1` |
+
+**After re-keying staging Stripe** (new sandbox / new `sk_test_` / new price IDs): update Vercel `estate-planner-staging` env (keys + all 11 `STRIPE_PRICE_*` from the **same** sandbox), redeploy, then `npm run reset:staging-stripe` — see [STAGING_PROJECT_RUNBOOK.md](./STAGING_PROJECT_RUNBOOK.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md).
 | **Estate / tax / MC math** (`lib/estate/`, `lib/tax/`, projections) | `release:preflight` + `npm run verify:estate:voels` (or `--preset e2e` if E2E data changed) | **`npm run release:post-deploy`** (Voels gate) |
 | **Advisor / attorney / cross-role** | `release:preflight` + `npm run test:e2e:cross-role -- --workers=1` | Optional `npm run test:e2e:prod:smoke -- --workers=1` |
 | **Profile / onboarding / signup** | `release:preflight` + `npm run test:e2e:go-live-profile -- --workers=1` | `release:post-deploy` if signup defaults or triggers changed |

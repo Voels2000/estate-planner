@@ -10,6 +10,23 @@ One-time migration from legacy Playwright accounts to canonical **`@mywealthmaps
 
 ---
 
+## Stripe re-key on staging (after new sandbox / new `sk_test_`)
+
+When staging Stripe keys or price IDs change, **null dangling Stripe columns** on test profiles before billing E2E — otherwise checkout fails with HTTP 500 (`No such customer` / `No such price`) even when Vercel env is correct.
+
+```bash
+# Requires .env.local → staging Supabase (ref cmzyxpxfyvdvbsykjvsg)
+npm run reset:staging-stripe
+```
+
+Clears on every `@mywealthmaps.test` + canonical E2E email: `stripe_customer_id`, `stripe_subscription_id`, `subscription_status` → `none`, `subscription_plan`, `subscription_period_end`.
+
+**Checkout guards (code):** `lib/app-url.ts` `getOrigin()` · `lib/billing/processConsumerCheckout.ts` customer retrieve-or-create · see [DECISION_LOG.md § Stripe checkout cross-environment guards](./DECISION_LOG.md).
+
+**Smoke:** `PLAYWRIGHT_BASE_URL=https://estate-planner-staging.vercel.app npx playwright test tests/e2e/consumer/consumer-tier1-billing-checkout.spec.ts --project=consumer-tier1-setup --project=consumer-tier1 --workers=1`
+
+---
+
 ## Canonical accounts (keep forever)
 
 | Role | Login email | Password | Notes |

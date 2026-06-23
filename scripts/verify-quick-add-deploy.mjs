@@ -5,20 +5,27 @@
 import { chromium } from '@playwright/test'
 import { readFileSync } from 'fs'
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'https://estate-planner-gules.vercel.app'
+import { existsSync, readFileSync } from 'fs'
+
+const envFile =
+  ['.env.test.local', '.env.test.staging', '.env.test.production'].find((file) =>
+    existsSync(file),
+  ) ?? '.env.test.local'
+
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000'
 const env = Object.fromEntries(
-  readFileSync('.env.test', 'utf8')
+  readFileSync(envFile, 'utf8')
     .split('\n')
     .filter((l) => l && !l.startsWith('#'))
     .map((l) => l.split('='))
     .map(([k, ...v]) => [k, v.join('=')]),
 )
 
-const email = env.PLAYWRIGHT_CONSUMER_TIER1_EMAIL
-const password = env.PLAYWRIGHT_CONSUMER_TIER1_PASSWORD
+const email = env.E2E_TIER1_EMAIL ?? env.PLAYWRIGHT_CONSUMER_TIER1_EMAIL
+const password = env.E2E_TIER1_PASSWORD ?? env.PLAYWRIGHT_CONSUMER_TIER1_PASSWORD
 
 if (!email || !password) {
-  console.error('Missing tier-1 credentials in .env.test')
+  console.error(`Missing tier-1 credentials in ${envFile}`)
   process.exit(1)
 }
 

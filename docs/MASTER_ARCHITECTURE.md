@@ -762,16 +762,33 @@ Two layers — do not conflate them:
 
 | Script | Purpose |
 |--------|---------|
-| **`scripts/seed-e2e-fixtures.ts`** | **Canonical go-live reset** — all `@mywealthmaps.test` users, households, directory listings, `.env.test` output ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)) |
+| **`scripts/seed-e2e-fixtures.ts`** | **Canonical go-live reset** — all `@mywealthmaps.test` users, households, directory listings, `.env.test.local` output ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)) |
 | `scripts/e2e-test-identities.ts` | Single source of truth for E2E emails, passwords, referral codes |
 | `scripts/prune-e2e-household-artifacts.ts` | Removes Playwright-named rows without deleting users |
 | *(removed 2026-06-12)* | Legacy one-off seeds (`seed-test-*`, `seed-michael-johnson-*`, `seed-advisor2-*`) — use **`seed:e2e` only** |
 
 ```bash
 npm run seed:e2e
-# copy printed block → .env.test
+# copy printed block → .env.test.local (or .env.test.staging for remote staging runs)
 npm run test:e2e:complete -- --workers=1
 ```
+
+### E2E environment resolution & guard
+
+<!-- Added 2026-06-23 — TEST_ENV single-switch + globalSetup guard -->
+
+Single source of truth: `scripts/testEnv.ts` — exports `TestEnv`, `ENVIRONMENTS`, `STAGING_SUPABASE_PROJECT_REF`, `PRODUCTION_SUPABASE_PROJECT_REF`, `resolveTestEnv()`, `getTestEnvConfig()`, `assertPlaywrightEnvGuard()`, `stripLeakedProductionSecrets()`.
+
+- `ENVIRONMENTS[env]` declares `baseURL` and `envFile` for local / staging / production and is the **only** source of the test base URL. Base URL is never read from an env file.
+- `playwright.config.ts` resolves base URL from `TEST_ENV` via the map and registers `tests/e2e/globalSetup.ts` as `globalSetup`, which runs `assertPlaywrightEnvGuard()` before any browser test.
+- Per-environment secrets live in `.env.test.local`, `.env.test.staging`, `.env.test.production` (gitignored; `.example` committed). Secrets only — never `PLAYWRIGHT_BASE_URL`.
+- Run commands: `npm run test:e2e` (local), `npm run test:e2e:staging`, `npm run test:e2e:prod:smoke`.
+- Supabase refs enforced per environment: local & staging → `cmzyxpxfyvdvbsykjvsg` (`STAGING_SUPABASE_PROJECT_REF`); production → `fnzvlmrqwcqwiqueevux` (`PRODUCTION_SUPABASE_PROJECT_REF`). Guard asserts loaded secrets match the active `TEST_ENV` (all three locked).
+- `.env.test.local` intentionally pairs a localhost app URL with the staging Supabase ref — same model as `.env.local` for day-to-day dev. A chosen config, locked by the guard, not an accident.
+- Production is smoke-only: anon/browser creds, no service-role key, no live Stripe API key; requires `I_KNOW_THIS_IS_PRODUCTION=yes`. Real canary credentials are used as-is (not remapped) under `TEST_ENV=production`; non-prod environments remap to `.test` addresses via `resolveE2eEmail` in `tests/e2e/helpers/e2e-auth.ts`.
+- Constraint: prod smoke tests depending on password-sync require a service-role key, which production intentionally lacks — such tests must use real provisioned canary creds or be scoped to staging.
+
+Files: `scripts/testEnv.ts`, `tests/e2e/globalSetup.ts`, `playwright.config.ts`, `tests/e2e/helpers/e2e-auth.ts`, `.env.test.local.example`, `.env.test.staging.example`, `.env.test.production.example`
 
 See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE_TEST.md#test-data-setup-staging--pre-sprint-14).
 
@@ -802,7 +819,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 **Consumer coverage highlights:** route regression (full CONSUMER_NAV_MAP), sidebar/footer contract, estate-tier gates, profile save, UI asset save, health-check wizard, family CRUD, titling on real assets, billing, digital assets, life events, terms accept, import access, strategy recommendation panel (when advisor linked). **`consumer-core-recompute.spec.ts`** automates CONSUMER_RELEASE_SMOKE_TEST §2.4.
 
-**Required env (`.env.test`):** `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_HOUSEHOLD_ID`, `PLAYWRIGHT_ADVISOR_EMAIL`, `PLAYWRIGHT_ADVISOR_PASSWORD`, `SUPABASE_SERVICE_ROLE_KEY` (profile + referral asserts), `NEXT_PUBLIC_SUPABASE_ANON_KEY` (recompute poll). Optional: `PLAYWRIGHT_CONSUMER_TIER1_*`, `PLAYWRIGHT_ATTORNEY_*`, `PLAYWRIGHT_ADVISOR_REFERRAL_CODE`, `PLAYWRIGHT_ATTORNEY_REFERRAL_CODE`.
+**Required env (`.env.test.local` / `.env.test.staging`):** `PLAYWRIGHT_CONSUMER_EMAIL`, `PLAYWRIGHT_CONSUMER_PASSWORD`, `PLAYWRIGHT_HOUSEHOLD_ID`, `PLAYWRIGHT_ADVISOR_EMAIL`, `PLAYWRIGHT_ADVISOR_PASSWORD`, `SUPABASE_SERVICE_ROLE_KEY` (profile + referral asserts), `NEXT_PUBLIC_SUPABASE_ANON_KEY` (recompute poll). Optional: `PLAYWRIGHT_CONSUMER_TIER1_*` / `E2E_TIER1_*`, `PLAYWRIGHT_ATTORNEY_*`, `PLAYWRIGHT_ADVISOR_REFERRAL_CODE`, `PLAYWRIGHT_ATTORNEY_REFERRAL_CODE`. Production smoke: `.env.test.production` only — see E2E environment resolution above.
 
 **Advisor client seed:** included in `npm run seed:e2e` (`e2e-advisor-client@mywealthmaps.test`).
 
@@ -819,13 +836,13 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Plan display shared by billing and public pricing: `lib/billing/consumerPlanCatalog.ts` (names/descriptions from `TIER_NAMES` / `TIER_DESCRIPTIONS` in `lib/tiers.ts`).
 - **Public `/pricing` (2026-06-10):** Consumer plans via `_pricing-consumer-plans.tsx`; advisor **per-seat** Starter/Growth/Enterprise from `ADVISOR_FIRM_SEAT_RATES` + `ADVISOR_FIRM_SEAT_RANGES`; attorney Free/Starter/Growth from `ATTORNEY_PLAN_LIMITS`. Advisor checkout: `_pricing-advisor-checkout.tsx` → `POST /api/stripe/firm-checkout`.
 - **Advisor firm billing (2026-06-10, hardened 2026-06-09):** `POST /api/stripe/firm-checkout` — `{ priceId, seatCount }`; tier-band validation (Starter ≤10, Growth ≤50, Enterprise ≤250); **Enterprise self-serve returns 403**. Webhook `checkout.session.completed` writes `firms.seat_count` from Stripe subscription quantity; `subscription.updated` syncs quantity + tier; `payment_failed` → firm + owner `past_due`. **Seat count increments on firm join (accept), not invite send** (`lib/firm/firmRoster.ts`). Invite/remove syncs Stripe via `syncFirmStripeQuantity`. Firm owner pre-subscribe seat picker + Starter-at-cap upgrade CTA on `/billing` (`_firm-billing-client.tsx`).
-- **Consumer checkout (2026-06-10, hardened 2026-06-09):** `POST /api/stripe/checkout` is **consumer-only** — rejects non-consumer price IDs; reuses/creates `stripe_customer_id`; blocks checkout when subscription is `active` / `trialing` / `canceling`. Advisor/attorney use firm-checkout and attorney-checkout respectively.
+- **Consumer checkout (2026-06-10, hardened 2026-06-23):** `POST /api/stripe/checkout` is **consumer-only** — rejects non-consumer price IDs; **`getOrigin(req)`** for return URLs (not `NEXT_PUBLIC_APP_URL`); **`processConsumerCheckout`** retrieves `stripe_customer_id` and self-heals stale/deleted ids (`resource_missing`) before create; blocks checkout when subscription is `active` / `trialing` / `canceling`. Advisor/attorney use firm-checkout and attorney-checkout respectively.
 - **Attorney checkout (2026-06-09):** `POST /api/stripe/attorney-checkout` — `is_attorney || role === 'attorney'` guard; reuses `stripe_customer_id`; 503 if `TODO_*` price placeholders.
 - **Cancel / portal (2026-06-09):** `POST /api/stripe/cancel` — consumer profile sub only; firm owners directed to portal. `POST /api/stripe/portal` — firm customer when firm sub is active/trialing/canceling/past_due.
 - **Access (2026-06-09):** `getAccessContext` — `hasActiveSubscription` includes `canceling`; firm-owner `past_due` blocks access. `advisorClientLimits` — unlimited consumer clients when firm sub active (B2B2C policy).
 - **Admin MRR (2026-06-09):** `lib/billing/computeAdminMrr.ts` — annual-aware consumer + attorney tier + firm seat MRR.
 - Billing page (`/billing`) and public pricing (`/pricing`) include **monthly/annual toggle** (`components/billing/BillingPeriodToggle.tsx`) when `isAnnualBillingConfigured()` is true (all three `STRIPE_PRICE_*_ANNUAL` env vars set server-side). Toggle hidden otherwise; monthly plans only.
-- **Go-live:** [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) — Phase 1 test mode, then Phase 2 live keys; never mix test price IDs with live secret key.
+- **Go-live:** [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) — Phase 1 test mode, then Phase 2 live keys; never mix test price IDs with live secret key. **After re-keying staging Stripe:** run `npm run reset:staging-stripe` (see [E2E_TEST_RESET.md](./E2E_TEST_RESET.md)) so dangling `profiles.stripe_*` columns do not block checkout.
 - Checkout (`POST /api/stripe/checkout`) accepts `priceId` + `period` or `plan` query param; Estate subscriptions get `subscription_data.trial_period_days: 14`.
 - **Post-checkout success URL (2026-05-29):** consumers → `/dashboard?checkout=success` or `/profile?checkout=success`; advisors → `/advisor?checkout=success`. `/terms/accept` retained for legacy checkout flows.
 - **Terms acceptance (2026-05-27):** TERMS-1 signup checkbox sets `terms_accepted_at` + `terms_version`; email-confirm users synced in `/auth/callback` from signup metadata. Section F soft banner on dashboard for users without `terms_accepted_at` (dismissible, non-blocking).

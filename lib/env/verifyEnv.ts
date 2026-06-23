@@ -106,9 +106,15 @@ export type EnvSource = Record<string, string | undefined>
 export interface BootIdentity {
   scope: EnvScope
   vercel_env: string | undefined
+  vercel_deployment_id: string | null
   supabase_project_ref: string | null
   app_url_hostname: string | null
   service_role_present: boolean
+  /** Non-secret Stripe wiring — tiebreaker for "dashboard vs running deployment". */
+  stripe_secret_key_prefix: string | null
+  stripe_secret_key_last4: string | null
+  stripe_publishable_key_prefix: string | null
+  stripe_price_financial_monthly: string | null
 }
 
 /** Parse `cmzyxpxfyvdvbsykjvsg` from `https://cmzyxpxfyvdvbsykjvsg.supabase.co`. */
@@ -134,14 +140,32 @@ export function parseAppUrlHostname(url: string | undefined): string | null {
   }
 }
 
+export function stripeKeyFingerprint(
+  key: string | undefined,
+): { prefix: string | null; last4: string | null } {
+  const trimmed = key?.trim() ?? ''
+  if (!trimmed || trimmed.length < 8) return { prefix: null, last4: null }
+  return {
+    prefix: trimmed.slice(0, 12),
+    last4: trimmed.slice(-4),
+  }
+}
+
 export function buildBootIdentity(env: EnvSource = process.env): BootIdentity {
   const scope = resolveEnvScope(env)
+  const secretFp = stripeKeyFingerprint(env.STRIPE_SECRET_KEY)
+  const publishableFp = stripeKeyFingerprint(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
   return {
     scope,
     vercel_env: env.VERCEL_ENV,
+    vercel_deployment_id: env.VERCEL_DEPLOYMENT_ID?.trim() || null,
     supabase_project_ref: parseSupabaseProjectRef(env.NEXT_PUBLIC_SUPABASE_URL),
     app_url_hostname: parseAppUrlHostname(env.NEXT_PUBLIC_APP_URL),
     service_role_present: Boolean(env.SUPABASE_SERVICE_ROLE_KEY?.trim()),
+    stripe_secret_key_prefix: secretFp.prefix,
+    stripe_secret_key_last4: secretFp.last4,
+    stripe_publishable_key_prefix: publishableFp.prefix,
+    stripe_price_financial_monthly: env.STRIPE_PRICE_FINANCIAL_MONTHLY?.trim() || null,
   }
 }
 
@@ -458,8 +482,16 @@ async function runLivenessChecks(
   } else {
     const mismatch = stripeKeyScopeMismatch(scope, keyMode)
     if (mismatch) {
-      result.stripe_reason = mismatch
-    } else {
+      livenessFlags.push({
+        name: 'STRIPE_SECRET_KEY',
+        level: 'WARN',
+        reason: mismatch,
+        action:
+          'Expected on estate-planner-staging (sk_test_ on Production scope). Must be sk_live_ on www.mywealthmaps.com before flip.',
+      })
+    }
+
+    if (keyMode === 'live' || keyMode === 'test') {
       try {
         const stripe = createStripeClient(stripeKey)
         await stripe.balance.retrieve()
@@ -484,6 +516,8 @@ async function runLivenessChecks(
         if (badPrice) {
           result.stripe = 'LIVE_FAIL'
           result.stripe_reason = `Stripe price ${badPrice.env_var}: ${badPrice.reason ?? badPrice.status}`
+        } else if (mismatch) {
+          result.stripe_reason = mismatch
         }
 
         const webhookCheck = await verifyLiveStripeWebhook(stripe, keyMode)

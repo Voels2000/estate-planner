@@ -1,4 +1,7 @@
 import type { ProfileSavePayload } from '../../../lib/profile/buildHouseholdPayload'
+import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { initSupabaseEnv } from '../../../scripts/seed-e2e-lib'
 
 function supabaseRestConfig(): { url: string; key: string } | null {
   const url =
@@ -110,6 +113,146 @@ export async function restoreHouseholdDeferredFields(
   snapshot: HouseholdDeferredFields,
 ): Promise<boolean> {
   return patchHouseholdById(householdId, { ...snapshot })
+}
+
+/** Fields that gate /social-security (tier 2+) via getUserAccess. */
+export type ProfileAccessFields = {
+  consumer_tier: number | null
+  subscription_status: string | null
+  subscription_plan: string | null
+}
+
+export async function fetchProfileAccessFields(
+  userId: string,
+): Promise<ProfileAccessFields | null> {
+  return restGet<ProfileAccessFields>(
+    'profiles',
+    `id=eq.${userId}&select=consumer_tier,subscription_status,subscription_plan`,
+  )
+}
+
+export async function patchProfileAccessFields(
+  userId: string,
+  fields: Partial<ProfileAccessFields>,
+): Promise<boolean> {
+  const cfg = supabaseRestConfig()
+  if (!cfg) return false
+  const res = await fetch(`${cfg.url}/rest/v1/profiles?id=eq.${userId}`, {
+    method: 'PATCH',
+    headers: {
+      apikey: cfg.key,
+      Authorization: `Bearer ${cfg.key}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify({ ...fields, updated_at: new Date().toISOString() }),
+  })
+  return res.ok
+}
+
+/** /social-security requires tier ≥ 2; inactive subs resolve to tier 1 in getUserAccess. */
+export const SOCIAL_SECURITY_PROMPT_ACCESS: ProfileAccessFields = {
+  consumer_tier: 3,
+  subscription_status: 'active',
+  subscription_plan: null,
+}
+
+/** Mirrors reset-staging-stripe-test-users.ts — tier-1 gate path on /social-security. */
+export const SOCIAL_SECURITY_GATE_ACCESS: ProfileAccessFields = {
+  consumer_tier: 1,
+  subscription_status: 'none',
+  subscription_plan: null,
+}
+
+export async function restoreProfileAccessFields(
+  userId: string,
+  snapshot: ProfileAccessFields,
+): Promise<void> {
+  const ok = await patchProfileAccessFields(userId, snapshot)
+  if (!ok) {
+    throw new Error(
+      `Failed to restore profile access for ${userId} — staging cast may be stranded at tier 3`,
+    )
+  }
+}
+
+/**
+ * Patch profile tier/subscription for a test, then always restore the prior snapshot.
+ * Throws if restore fails so CI cannot pass while leaving staging cast mutated.
+ */
+export async function deferProfileAccessRestore(
+  userId: string,
+  patch: Partial<ProfileAccessFields>,
+  run: () => Promise<void>,
+): Promise<void> {
+  const snapshot = await fetchProfileAccessFields(userId)
+  if (!snapshot) {
+    throw new Error(`Could not load profile access fields for ${userId}`)
+  }
+  const patched = await patchProfileAccessFields(userId, patch)
+  if (!patched) {
+    throw new Error(`Could not patch profile access fields for ${userId}`)
+  }
+  try {
+    await run()
+  } finally {
+    await restoreProfileAccessFields(userId, snapshot)
+  }
+}
+
+/**
+ * Suspend a connected advisor→client link so getUserAccess follows subscription/tier.
+ * e2e-consumer is advisor-linked in seed; without this, tier-gate tests see tier 3 regardless of profile patch.
+ */
+export async function deferConnectedAdvisorClientLinkSuspended(
+  clientUserId: string,
+  run: () => Promise<void>,
+): Promise<void> {
+  initSupabaseEnv()
+  const admin = createAdminClient()
+  const { data: link, error: fetchError } = await admin
+    .from('advisor_clients')
+    .select('id, status, client_status')
+    .eq('client_id', clientUserId)
+    .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
+    .maybeSingle()
+
+  if (fetchError) {
+    throw new Error(`advisor_clients lookup failed: ${fetchError.message}`)
+  }
+  if (!link) {
+    await run()
+    return
+  }
+
+  const snapshot = {
+    id: link.id,
+    status: link.status,
+    client_status: link.client_status ?? null,
+  }
+
+  const { error: suspendError } = await admin
+    .from('advisor_clients')
+    .update({ status: 'removed', client_status: 'inactive' })
+    .eq('id', link.id)
+  if (suspendError) {
+    throw new Error(`advisor_clients suspend failed: ${suspendError.message}`)
+  }
+
+  try {
+    await run()
+  } finally {
+    const { error: restoreError } = await admin
+      .from('advisor_clients')
+      .update({
+        status: snapshot.status,
+        client_status: snapshot.client_status,
+      })
+      .eq('id', snapshot.id)
+    if (restoreError) {
+      throw new Error(`advisor_clients restore failed: ${restoreError.message}`)
+    }
+  }
 }
 
 export async function fetchHouseholdPlanningFields(

@@ -1,6 +1,48 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-21 (client Stripe price resolution — server-only)
+# Last updated: 2026-06-23 (E2E environment resolution — TEST_ENV + globalSetup guard)
+
+---
+
+## E2E environment resolution: single switch + enforced guard (2026-06-23)
+
+**Decision.** E2E target selected by one variable, `TEST_ENV` (`local` | `staging` | `production`). Base URL derived in code from `ENVIRONMENTS` (`scripts/testEnv.ts`), never read from an env file. `.env.test.<env>` files hold secrets only — no base URL.
+
+**Why.** A multi-day "staging checkout broken" investigation root-caused not to Stripe but to test-target misdirection: `dotenv -o` promoted `.env.test`'s pinned `PLAYWRIGHT_BASE_URL=127.0.0.1` over the staging URL passed on the command line, so "staging" runs silently hit localhost — a different Stripe account. Every "No such customer/price" error was accurate but described the wrong environment, which is why config checks kept passing while runs kept failing.
+
+**Enforcement.** `assertPlaywrightEnvGuard()` runs in Playwright `globalSetup` before any test and hard-fails on: (1) resolved base URL ≠ `ENVIRONMENTS[TEST_ENV]`; (2) remote env resolving to localhost; (3) Supabase project ref ≠ the ref mandated per environment (all three locked); (4) production without `I_KNOW_THIS_IS_PRODUCTION=yes`. `stripLeakedProductionSecrets()` prevents a shell `STRIPE_SECRET_KEY` / service-role key (e.g. from `.env.local`) leaking into prod smoke.
+
+**Prod auth.** `resolveE2eEmail` (`tests/e2e/helpers/e2e-auth.ts`) previously remapped any non-`.test` address to a canonical `.test` fallback in every environment, which silently broke production canary login. Now gated: under `TEST_ENV=production` the real address is used as-is; non-prod keeps the `.test`-only remap.
+
+**Local note.** `.env.test.local` intentionally uses the staging Supabase ref (`cmzyxpxfyvdvbsykjvsg`) with a localhost app URL — same model as `.env.local` for day-to-day dev. Documented in `.env.test.local.example`; guard locks it as a chosen config, not an accident.
+
+**Proven.** Deliberate break (`staging.baseURL` → `127.0.0.1`) produced a guard failure at `globalSetup`, not a silent run. Reverted. Staging tier-1 billing 3/3. Prod consumer canary authenticated path green.
+
+**Principle.** Structure over memory — target/environment match enforced by failing code, not by remembering the right flags.
+
+**Files:** `scripts/testEnv.ts` · `tests/e2e/globalSetup.ts` · `playwright.config.ts` · `tests/e2e/helpers/e2e-auth.ts` · `.env.test.local.example` · `.env.test.staging.example` · `.env.test.production.example` · legacy `.env.test` / `.env.test.prod` retired.
+
+**Follow-up (provisioning):** Closed 2026-06-23 — non-consumer role auth stays **staging-only** (`npm run test:e2e:staging` + `seed:e2e`). Prod smoke `@production` = consumer canary + public/read-only checks only; no prod role canary creds. Same deploy artifact on staging and production; role login/billing/isolation certified before promote. Consumer canary on prod remains the live “real auth on production” spot-check.
+
+**Staging cast subscription drift (2026-06-23):** `npm run reset:staging-stripe` sets `subscription_status: 'none'` on all `@mywealthmaps.test` profiles (Stripe re-key hygiene). That drops CI consumer to tier 1 on `/social-security` (UpgradeBanner, no ProfileFieldPrompt). Fix class: re-seed (`npm run seed:e2e`) after stripe reset; fix failure: `deferProfileAccessRestore` in go-live-profile SS tests with throw-on-failed-restore + explicit tier-gate test in the same file.
+
+**CI household ID drift (2026-06-23):** Stale `PLAYWRIGHT_HOUSEHOLD_ID` in GitHub secrets (pre-`seed:e2e`) pointed at a household the advisor could access → cross-household isolation saw HTTP 200 instead of 403/404. Fix: `append-ci-e2e-household-ids.ts` patches `.env.test.local` from canonical `e2e-consumer` / `e2e-advisor-client` emails; `cross-household-isolation` beforeAll prefers canonical lookup when service role is present.
+
+---
+
+## Stripe checkout cross-environment guards (2026-06-23)
+
+**Decision:** Consumer checkout must survive Stripe re-keys (new sandbox, new `sk_test_`, new price catalog) without manual per-user DB surgery. Three layers:
+
+1. **`getOrigin(request)`** (`lib/app-url.ts`) — Stripe `success_url` / `cancel_url` hosts come from request `Origin` → `Host` → `NEXT_PUBLIC_APP_URL` fallback. **`assertAbsoluteHttpUrl`** throws if the resolved value is not `http(s)://` (clear local error vs cryptic Stripe 400).
+2. **`processConsumerCheckout`** — before session create: `customers.retrieve(stripe_customer_id)`; clear id on `deleted` or `resource_missing`; create + persist new customer in current environment. Validate `baseUrl` is absolute before `checkout.sessions.create`.
+3. **Staging DB reset after re-key** — `scripts/reset-staging-stripe-test-users.ts` nulls `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `subscription_plan`, `subscription_period_end` on all `@mywealthmaps.test` / canonical E2E profiles (staging Supabase ref guard). Run after every Stripe sandbox/key rotation on staging.
+
+**Symptom pattern (three instances, same root cause):** live price ID + `sk_test_`; old-sandbox price + new sandbox key; old-sandbox `stripe_customer_id` + new sandbox key → checkout HTTP 500 / Stripe `No such price` / `No such customer`.
+
+**Rule:** Stripe API keys, webhook secrets, price env vars, and profile `stripe_customer_id` must all belong to the **same** Stripe environment (default test-mode sandbox vs named sandbox vs live). `NEXT_PUBLIC_APP_URL` is for emails/recompute/sitemap — **not** checkout return URLs.
+
+**Prod note:** Self-heal (2) prevents recurrence when a user’s stored customer id is from a prior environment; prod re-key still requires `reset-staging-stripe-test-users` equivalent discipline for test accounts only — never bulk-null prod consumer profiles.
 
 ---
 

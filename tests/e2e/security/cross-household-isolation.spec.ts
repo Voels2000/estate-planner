@@ -1,6 +1,6 @@
 /**
  * Cross-household IDOR matrix — consumer and advisor must not read foreign households.
- * Requires PLAYWRIGHT_HOUSEHOLD_ID (e2e-consumer) and seeded E2E advisor client.
+ * e2e-consumer is not advisor-linked (pending rec only); advisor-client + tier1 are linked.
  */
 import { test, expect } from '@playwright/test'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
@@ -10,7 +10,7 @@ import {
   fetchHouseholdIdByOwnerEmail,
 } from '../helpers/e2e-households'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { findUserIdByEmail, initSupabaseEnv } from '../../../scripts/seed-e2e-lib'
+import { findUserIdByEmail, initSupabaseEnv, pruneStrayE2eAdvisorClientLinks } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
 
 const API_TIMEOUT_MS = 30_000
@@ -39,32 +39,62 @@ test.beforeAll(async ({}, testInfo) => {
   consumerHouseholdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID?.trim() ?? ''
   advisorClientHouseholdId = process.env.PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID?.trim() ?? ''
 
-  if (!consumerHouseholdId && canAdminLookup) {
-    consumerHouseholdId =
+  if (canAdminLookup) {
+    initSupabaseEnv()
+    const canonicalConsumer =
       (await fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.consumer.email)) ?? ''
-  }
-  if (!advisorClientHouseholdId && canAdminLookup) {
-    advisorClientHouseholdId = (await fetchAdvisorClientHouseholdId()) ?? ''
+    const canonicalAdvisorClient = (await fetchAdvisorClientHouseholdId()) ?? ''
+
+    if (canonicalConsumer) {
+      if (consumerHouseholdId && consumerHouseholdId !== canonicalConsumer) {
+        console.warn(
+          `[e2e] PLAYWRIGHT_HOUSEHOLD_ID (${consumerHouseholdId}) ≠ canonical consumer (${canonicalConsumer}); using canonical`,
+        )
+      }
+      consumerHouseholdId = canonicalConsumer
+    } else if (!consumerHouseholdId) {
+      consumerHouseholdId = ''
+    }
+
+    if (canonicalAdvisorClient) {
+      if (
+        advisorClientHouseholdId &&
+        advisorClientHouseholdId !== canonicalAdvisorClient
+      ) {
+        console.warn(
+          `[e2e] PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID (${advisorClientHouseholdId}) ≠ canonical (${canonicalAdvisorClient}); using canonical`,
+        )
+      }
+      advisorClientHouseholdId = canonicalAdvisorClient
+    } else if (!advisorClientHouseholdId) {
+      advisorClientHouseholdId = ''
+    }
+
+    consumerOwnerUserId = (await findUserIdByEmail(E2E_IDENTITIES.consumer.email)) ?? ''
+    advisorClientOwnerUserId =
+      (await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)) ?? ''
+
+    const advisorId = (await findUserIdByEmail(E2E_IDENTITIES.advisor.email)) ?? ''
+    const tier1UserId = (await findUserIdByEmail(E2E_IDENTITIES.consumerTier1.email)) ?? ''
+    if (advisorId) {
+      await pruneStrayE2eAdvisorClientLinks(advisorId, [
+        advisorClientOwnerUserId,
+        tier1UserId,
+      ].filter(Boolean))
+    }
   }
 
   if (!consumerHouseholdId || !advisorClientHouseholdId) {
     testInfo.skip(
       true,
-      'Missing household IDs — create .env.test.prod (see .env.test.prod.example): copy PLAYWRIGHT_HOUSEHOLD_ID and PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID from .env.test, or add Supabase service role for lookup',
+      'Missing household IDs — run npm run seed:e2e on staging, or set PLAYWRIGHT_HOUSEHOLD_ID / service role for lookup',
     )
     return
   }
   expect(consumerHouseholdId).not.toBe(advisorClientHouseholdId)
-
-  if (canAdminLookup) {
-    initSupabaseEnv()
-    consumerOwnerUserId = (await findUserIdByEmail(E2E_IDENTITIES.consumer.email)) ?? ''
-    advisorClientOwnerUserId = (await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)) ?? ''
-  }
 })
 
-test.describe('@production', () => {
-test.describe('Consumer isolation', () => {
+test.describe('Consumer isolation @production', () => {
   test.use({ storageState: '.auth/consumer.json' })
 
   test('POST gifting-summary on foreign household returns 403 or 404', async ({ request }) => {
@@ -234,10 +264,9 @@ test.describe('Advisor-empty isolation (unlinked book)', () => {
     expectAccessDenied(res.status())
   })
 })
-})
 
 /** SECURITY DEFINER views with public grants bypass table RLS — must not be PostgREST-readable. */
-test.describe('PostgREST view isolation', () => {
+test.describe('PostgREST view isolation @production', () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
 

@@ -1,14 +1,33 @@
 import { defineConfig, devices, type Project } from '@playwright/test'
-import { E2E_DEFAULT_BASE_URL } from './scripts/e2e-test-identities'
+import { ENVIRONMENTS, getTestEnvConfig } from './scripts/testEnv'
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? E2E_DEFAULT_BASE_URL
+function loadTestEnvConfig(): { baseURL: string; envFile: string } {
+  if (!process.env.TEST_ENV) {
+    process.env.TEST_ENV = 'local'
+  }
+  try {
+    const config = getTestEnvConfig()
+    process.env.PLAYWRIGHT_BASE_URL = config.baseURL
+    return config
+  } catch {
+    const config = ENVIRONMENTS.local
+    process.env.PLAYWRIGHT_BASE_URL = config.baseURL
+    return config
+  }
+}
+
+const { baseURL, envFile } = loadTestEnvConfig()
 
 const useLocalWebServer =
   baseURL.includes('127.0.0.1') || baseURL.includes('localhost')
 
 const hasTier1Consumer =
-  Boolean(process.env.PLAYWRIGHT_CONSUMER_TIER1_EMAIL) &&
-  Boolean(process.env.PLAYWRIGHT_CONSUMER_TIER1_PASSWORD)
+  Boolean(
+    (process.env.E2E_TIER1_EMAIL ?? process.env.PLAYWRIGHT_CONSUMER_TIER1_EMAIL)?.trim(),
+  ) &&
+  Boolean(
+    (process.env.E2E_TIER1_PASSWORD ?? process.env.PLAYWRIGHT_CONSUMER_TIER1_PASSWORD)?.trim(),
+  )
 
 const setupTimeout = 120_000
 
@@ -66,7 +85,7 @@ const projects: Project[] = [
   {
     name: 'import-unit',
     testDir: './tests/unit',
-    testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|simpleRateLimit|waitlist-mode|signupAdmission|signupPolicy|roth-analysis|tax-year-selection|privilegedMfaPolicy|verifyEnv|stripeWebhookVerify|stripePricesProdGuard|deleteUserSchema|waRegime|attorneyClientCap|consumerCheckoutBlockReason|processConsumerCheckout|internalApiAuth|applyEmailUnsubscribe|monteCarloAssumptionsFromRow|estateHouseholdAlerts|cronDripEligibility|readGpcOptOut|promotionSchemaVerification).*\.spec\.ts/,
+    testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|simpleRateLimit|waitlist-mode|signupAdmission|signupPolicy|roth-analysis|tax-year-selection|privilegedMfaPolicy|verifyEnv|stripeWebhookVerify|stripePricesProdGuard|deleteUserSchema|waRegime|attorneyClientCap|consumerCheckoutBlockReason|processConsumerCheckout|app-url|internalApiAuth|applyEmailUnsubscribe|monteCarloAssumptionsFromRow|estateHouseholdAlerts|cronDripEligibility|readGpcOptOut|promotionSchemaVerification|consumerSubscriptionStatus|subscriptionPeriod|stripeIds|activateConsumerSubscription).*\.spec\.ts/,
     use: {
       baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     },
@@ -91,6 +110,7 @@ if (hasTier1Consumer) {
 
 export default defineConfig({
   testDir: './tests/e2e',
+  globalSetup: require.resolve('./tests/e2e/globalSetup'),
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -104,10 +124,11 @@ export default defineConfig({
     ...devices['Desktop Chrome'],
   },
   projects,
-  webServer: useLocalWebServer
-    ? {
-        // Load .env.test so E2E_SKIP_RECOMPUTE reaches the Next server (not just Playwright).
-        command: 'dotenv -o -e .env.local -e .env.test -- npm run start',
+  webServer:
+    useLocalWebServer && process.env.PLAYWRIGHT_SKIP_WEBSERVER !== '1'
+      ? {
+        // Load the test env file so E2E_SKIP_RECOMPUTE reaches the Next server (not just Playwright).
+        command: `dotenv -o -e .env.local -e ${envFile} -- npm run start`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
