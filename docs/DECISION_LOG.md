@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-23 (E2E environment resolution — TEST_ENV + globalSetup guard)
+# Last updated: 2026-06-18 (Plan & Export SKU + 7-day Estate trial)
+
+---
+
+## Plan & Export one-time SKU + credit-on-subscribe (2026-06-18)
+
+**Decision.** One-time **Plan & Export** SKU at **$1,490** (derived from `estate_annual.annualTotal × 100`), Stripe `mode: payment`. Generated deliverable (estate-plan PDF) gated via **extended `hasPaidDownloadAccess`** — active Tier 3 **or** completed `one_time_purchases` row; **`trialing` excluded** (unchanged). Raw personal data: **`canExportRawData() → true`** policy stub; self-serve portability endpoint deferred to a separate PR (manual `/api/consumer/privacy-request` remains).
+
+**Credit-on-subscribe.** Full purchase amount credited via Stripe customer balance on **`customer.subscription.created` only**, with `UPDATE … WHERE credit_applied_at IS NULL` consume-once guard. `checkout.session.completed` (subscription) does **not** apply credit.
+
+**Trial.** Estate trial shortened **14 → 7 days** in `PRICE_META` (`trial_period_days` at checkout). Marketing/billing copy reads trial length from `getConsumerPlanDisplay(3, 'monthly').trialDays`.
+
+**Deliverable scope.** One-time purchase grants **indefinite download** of generated artifacts; **plan editing** (update/generate) is included for **`PLAN_EXPORT_EDIT_WINDOW_DAYS` (90)** from purchase, then requires subscription. Warning emails at 14d/3d via daily `/api/cron/plan-export-warnings`.
+
+**Files:** `one_time_purchases` migration · `lib/billing/stripePrices.ts` (`ONE_TIME_SKU_META`) · `lib/billing/oneTimePurchases.ts` · `lib/access/requirePaidDownloadAccess.ts` · `lib/billing/exportAccess.ts` · checkout/webhook branches · `/print` UI alignment.
 
 ---
 

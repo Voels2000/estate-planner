@@ -1,5 +1,15 @@
 import { getUserAccess } from '@/lib/get-user-access'
+import {
+  hasDeliverableDownloadAccess,
+  hasDeliverableUpdateAccess,
+} from '@/lib/access/requirePaidDownloadAccess'
+import {
+  getUserPlanExportPurchase,
+  toPlanExportPurchaseContext,
+} from '@/lib/billing/oneTimePurchases'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { DELIVERABLE_MIN_TIER } from '@/lib/tiers'
 import { PrintClient } from './_print-client'
 
 export default async function PrintPage() {
@@ -16,11 +26,38 @@ export default async function PrintPage() {
 
   if (!household) return null
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, consumer_tier, subscription_status')
+    .eq('id', user.id)
+    .single()
+
+  const planExportPurchase = toPlanExportPurchaseContext(
+    await getUserPlanExportPurchase(createAdminClient(), user.id),
+  )
+
+  const profileAccess = {
+    role: profile?.role ?? 'consumer',
+    consumer_tier: profile?.consumer_tier ?? access.tier,
+    subscription_status: profile?.subscription_status ?? access.subscriptionStatus,
+  }
+
+  const accessOptions = { planExportPurchase }
+
+  const canUpdateDeliverable =
+    access.isAdvisor ||
+    hasDeliverableUpdateAccess(profileAccess, DELIVERABLE_MIN_TIER, accessOptions)
+
+  const canDownloadDeliverable =
+    access.isAdvisor ||
+    hasDeliverableDownloadAccess(profileAccess, DELIVERABLE_MIN_TIER, accessOptions)
+
   return (
     <PrintClient
       householdId={household.id}
       isAdvisor={access.isAdvisor}
-      tier={access.tier}
+      canUpdateDeliverable={canUpdateDeliverable}
+      canDownloadDeliverable={canDownloadDeliverable}
     />
   )
 }

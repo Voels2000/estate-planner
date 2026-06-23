@@ -2,7 +2,9 @@
 
 import {
   CONSUMER_STRIPE_PRICE_ENV_VARS,
+  ONE_TIME_STRIPE_PRICE_ENV_VARS,
   type ConsumerStripePriceEnvVar,
+  type OneTimeStripePriceEnvVar,
 } from '@/lib/env/manifest'
 
 export type BillingPeriod = 'monthly' | 'annual'
@@ -73,7 +75,7 @@ const PRICE_META: Record<string, PriceMeta> = {
     period: 'monthly',
     monthlyEquivalent: 149,
     annualTotal: 0,
-    trialDays: 14,
+    trialDays: 7,
   },
   estate_annual: {
     envVar: 'STRIPE_PRICE_ESTATE_ANNUAL',
@@ -82,9 +84,33 @@ const PRICE_META: Record<string, PriceMeta> = {
     period: 'annual',
     monthlyEquivalent: 124,
     annualTotal: 1490,
-    trialDays: 14,
+    trialDays: 7,
   },
 }
+
+export const PLAN_AND_EXPORT_SKU = 'plan_and_export' as const
+
+export type OneTimeSkuKey = keyof typeof ONE_TIME_SKU_META
+
+type OneTimeSkuMeta = {
+  sku: typeof PLAN_AND_EXPORT_SKU
+  envVar: OneTimeStripePriceEnvVar
+  legacyFallback: string
+  /** Derived from estate_annual.annualTotal — never hardcode cents elsewhere. */
+  get amountCents(): number
+}
+
+/** One-time SKUs — never add to buildPriceIdToTierMap / PRICE_ID_TO_TIER. */
+export const ONE_TIME_SKU_META = {
+  PLAN_AND_EXPORT: {
+    sku: PLAN_AND_EXPORT_SKU,
+    envVar: 'STRIPE_PRICE_PLAN_AND_EXPORT',
+    legacyFallback: '',
+    get amountCents() {
+      return PRICE_META.estate_annual.annualTotal * 100
+    },
+  },
+} satisfies Record<string, OneTimeSkuMeta>
 
 const TIER_PERIOD_KEYS: Record<PlanTier, Record<BillingPeriod, string>> = {
   1: { monthly: 'financial_monthly', annual: 'financial_annual' },
@@ -97,7 +123,7 @@ let priceIdToTierMap: Record<string, PlanTier> | null = null
 
 /** Resolve-time guard: refuse fallback IDs in Vercel production. */
 export function resolveConsumerPriceId(
-  envVarName: ConsumerStripePriceEnvVar,
+  envVarName: ConsumerStripePriceEnvVar | OneTimeStripePriceEnvVar,
   legacyFallback: string,
 ): string {
   const trimmed = process.env[envVarName]?.trim()
@@ -123,7 +149,10 @@ function getResolvedPriceId(key: string): string {
 }
 
 /** Non-throwing snapshot for tier maps at import (no checkout path). */
-function snapshotPriceIdForMap(envVarName: ConsumerStripePriceEnvVar, legacyFallback: string): string {
+function snapshotPriceIdForMap(
+  envVarName: ConsumerStripePriceEnvVar | OneTimeStripePriceEnvVar,
+  legacyFallback: string,
+): string {
   const trimmed = process.env[envVarName]?.trim()
   if (trimmed) return trimmed
   if (process.env.VERCEL_ENV === 'production') return ''
@@ -187,8 +216,48 @@ export function buildPriceIdToTierMap(): Record<string, PlanTier> {
     if (priceId) map[priceId] = meta.tier
   }
   map['price_1TAlJjCaljka9gJthGTMogQb'] = 2
+  // Guard: one-time prices must never map to subscription tiers (webhook uses getTierFromPriceId).
+  for (const skuMeta of Object.values(ONE_TIME_SKU_META)) {
+    const oneTimePriceId = snapshotPriceIdForMap(skuMeta.envVar, skuMeta.legacyFallback)
+    if (oneTimePriceId && map[oneTimePriceId] !== undefined) {
+      throw new Error(
+        `One-time price ${skuMeta.envVar} must not appear in PRICE_ID_TO_TIER`,
+      )
+    }
+  }
   priceIdToTierMap = map
   return map
+}
+
+export function resolveOneTimePriceId(envVarName: OneTimeStripePriceEnvVar, legacyFallback: string): string {
+  return resolveConsumerPriceId(envVarName, legacyFallback)
+}
+
+export function getOneTimeSkuConfig(key: OneTimeSkuKey): {
+  sku: typeof PLAN_AND_EXPORT_SKU
+  priceId: string
+  amountCents: number
+} {
+  const meta = ONE_TIME_SKU_META[key]
+  const priceId = resolveOneTimePriceId(meta.envVar, meta.legacyFallback)
+  if (!priceId) {
+    throw new Error(
+      `No Stripe price configured for one-time SKU ${meta.sku}. Set ${meta.envVar}.`,
+    )
+  }
+  return { sku: meta.sku, priceId, amountCents: meta.amountCents }
+}
+
+export function isPlanAndExportSku(value: string | null | undefined): boolean {
+  return value === PLAN_AND_EXPORT_SKU
+}
+
+export function isPlanAndExportPriceId(priceId: string): boolean {
+  try {
+    return getOneTimeSkuConfig('PLAN_AND_EXPORT').priceId === priceId
+  } catch {
+    return false
+  }
 }
 
 export function getTierFromPriceId(priceId: string): PlanTier | null {
@@ -221,4 +290,4 @@ export function __resetStripePriceCachesForTests(): void {
 }
 
 /** Re-export for drift checks — guard and verifier share this list. */
-export { CONSUMER_STRIPE_PRICE_ENV_VARS }
+export { CONSUMER_STRIPE_PRICE_ENV_VARS, ONE_TIME_STRIPE_PRICE_ENV_VARS }

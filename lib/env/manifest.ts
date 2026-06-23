@@ -46,9 +46,15 @@ export const CONSUMER_STRIPE_PRICE_ENV_VARS = [
 
 export type ConsumerStripePriceEnvVar = (typeof CONSUMER_STRIPE_PRICE_ENV_VARS)[number]
 
+/** One-time consumer SKUs — tracked alongside subscription prices; not in PRICE_ID_TO_TIER. */
+export const ONE_TIME_STRIPE_PRICE_ENV_VARS = ['STRIPE_PRICE_PLAN_AND_EXPORT'] as const
+
+export type OneTimeStripePriceEnvVar = (typeof ONE_TIME_STRIPE_PRICE_ENV_VARS)[number]
+
 /** All Stripe price ID env vars verified with prices.retrieve when ?live=1 (live or test key). */
 export const STRIPE_PRICE_ENV_VARS = [
   ...CONSUMER_STRIPE_PRICE_ENV_VARS,
+  ...ONE_TIME_STRIPE_PRICE_ENV_VARS,
   'STRIPE_PRICE_ADVISOR_STARTER_MONTHLY',
   'STRIPE_PRICE_ADVISOR_GROWTH_MONTHLY',
   'STRIPE_PRICE_ADVISOR_ENTERPRISE_MONTHLY',
@@ -56,7 +62,9 @@ export const STRIPE_PRICE_ENV_VARS = [
   'STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY',
 ] as const
 
-function consumerPrice(name: ConsumerStripePriceEnvVar): EnvVarEntry {
+function consumerPrice(
+  name: ConsumerStripePriceEnvVar | OneTimeStripePriceEnvVar,
+): EnvVarEntry {
   return entry(name, {
     scopes: ALL_SCOPES,
     requiredInScopes: ['production'],
@@ -127,6 +135,7 @@ export const ENV_MANIFEST: EnvVarEntry[] = [
 
   // --- Consumer Stripe prices (preview: warn — legacy fallbacks exist in stripePrices.ts) ---
   ...CONSUMER_STRIPE_PRICE_ENV_VARS.map((name) => consumerPrice(name)),
+  ...ONE_TIME_STRIPE_PRICE_ENV_VARS.map((name) => consumerPrice(name)),
 
   // --- Advisor / attorney firm prices (no safe fallbacks) ---
   entry('STRIPE_PRICE_ADVISOR_STARTER_MONTHLY', {

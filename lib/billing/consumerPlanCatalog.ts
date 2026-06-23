@@ -1,6 +1,10 @@
 import { TIER_DESCRIPTIONS, TIER_FEATURES, TIER_NAMES } from '@/lib/tiers'
 import { getConsumerPlanDisplay, type BillingPeriod, type PlanTier } from '@/lib/billing/stripePrices'
 
+const ESTATE_TRIAL_DAYS = getConsumerPlanDisplay(3, 'monthly').trialDays
+const ESTATE_TRIAL_BADGE =
+  ESTATE_TRIAL_DAYS > 0 ? `${ESTATE_TRIAL_DAYS}-day free trial` : null
+
 export type ConsumerPlanCatalogEntry = {
   tier: PlanTier
   id: 'financial' | 'retirement' | 'estate'
@@ -46,7 +50,7 @@ export const CONSUMER_PLAN_CATALOG: ConsumerPlanCatalogEntry[] = [
       'Estate execution checklist',
     ],
     highlighted: true,
-    badge: '14-day free trial',
+    badge: ESTATE_TRIAL_BADGE,
     accent: '#4a7c6f',
     cta: 'Start free trial',
   },
