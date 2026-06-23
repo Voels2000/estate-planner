@@ -169,7 +169,9 @@ test.describe('deliverable export gate', () => {
       await deferProfileAccessRestore(ownerId, SOCIAL_SECURITY_GATE_ACCESS, async () => {
         await page.goto('/settings/security')
         await expect(page.getByRole('heading', { name: 'Privacy rights' })).toBeVisible()
-        await expect(page.getByLabel(/Export my data \(portability\)/i)).toBeVisible()
+        await expect(page.getByRole('combobox', { name: 'Request type' })).toContainText(
+          'Export my data (portability)',
+        )
       })
     })
   })
