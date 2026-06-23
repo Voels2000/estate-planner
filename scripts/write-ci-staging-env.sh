@@ -36,8 +36,8 @@ REQUIRE_PRIVILEGED_MFA=false
 E2E_SKIP_RECOMPUTE=true
 EOF
 
-cat > .env.test <<EOF
-PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000
+cat > .env.test.local <<EOF
+TEST_ENV=local
 NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
 NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
 SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
@@ -51,4 +51,4 @@ REQUIRE_PRIVILEGED_MFA=false
 E2E_SKIP_RECOMPUTE=true
 EOF
 
-echo "Wrote .env.local and .env.test for CI (staging ref check passed)."
+echo "Wrote .env.local and .env.test.local for CI (staging ref check passed)."

@@ -118,7 +118,7 @@ async function main() {
   console.log('\n✅ Canary seeded on production.')
   console.log(`   user_id:      ${userId}`)
   console.log(`   household_id: ${householdId}`)
-  console.log('\n=== Add to .env.test.prod (prod smoke) ===\n')
+  console.log('\n=== Add to .env.test.production (prod smoke) ===\n')
   console.log(`PLAYWRIGHT_CONSUMER_EMAIL=${PROD_CANARY.email}`)
   console.log('PLAYWRIGHT_CONSUMER_PASSWORD=<E2E_CANARY_PASSWORD — do not commit>')
   console.log(`PLAYWRIGHT_HOUSEHOLD_ID=${householdId}`)

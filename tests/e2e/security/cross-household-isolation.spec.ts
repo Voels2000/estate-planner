@@ -50,7 +50,7 @@ test.beforeAll(async ({}, testInfo) => {
   if (!consumerHouseholdId || !advisorClientHouseholdId) {
     testInfo.skip(
       true,
-      'Missing household IDs — create .env.test.prod (see .env.test.prod.example): copy PLAYWRIGHT_HOUSEHOLD_ID and PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID from .env.test, or add Supabase service role for lookup',
+      'Missing household IDs — set PLAYWRIGHT_HOUSEHOLD_ID in .env.test.production (see .env.test.production.example), or add Supabase service role for lookup',
     )
     return
   }

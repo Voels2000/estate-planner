@@ -27,6 +27,19 @@ const LEGACY_EMAIL_MAP = new Map<string, string>([
   ['test-attorney@mywealthmaps.test', E2E_IDENTITIES.attorneyPortal.email],
 ])
 
+/** Tier-1 consumer credentials — prefers lean E2E_TIER1_* staging names. */
+export function resolveTier1Credentials(): { email: string; password: string } {
+  const email = resolveE2eEmail(
+    process.env.E2E_TIER1_EMAIL ?? process.env.PLAYWRIGHT_CONSUMER_TIER1_EMAIL,
+    E2E_IDENTITIES.consumerTier1.email,
+  )
+  const password = resolveE2ePassword(
+    email,
+    process.env.E2E_TIER1_PASSWORD ?? process.env.PLAYWRIGHT_CONSUMER_TIER1_PASSWORD,
+  )
+  return { email, password }
+}
+
 /** Prefer canonical identity; remap retired rolobe / pre-v2 addresses from stale env. */
 export function resolveE2eEmail(
   envEmail: string | undefined,
@@ -34,6 +47,11 @@ export function resolveE2eEmail(
 ): string {
   const trimmed = envEmail?.trim()
   if (!trimmed) return canonicalEmail
+
+  // Production smoke uses real canary / prod accounts — never remap to @mywealthmaps.test.
+  if (process.env.TEST_ENV === 'production') {
+    return trimmed
+  }
 
   const mapped = LEGACY_EMAIL_MAP.get(trimmed.toLowerCase())
   if (mapped) {

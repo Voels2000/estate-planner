@@ -1,6 +1,28 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-23 (Stripe checkout cross-environment self-heal)
+# Last updated: 2026-06-23 (E2E environment resolution — TEST_ENV + globalSetup guard)
+
+---
+
+## E2E environment resolution: single switch + enforced guard (2026-06-23)
+
+**Decision.** E2E target selected by one variable, `TEST_ENV` (`local` | `staging` | `production`). Base URL derived in code from `ENVIRONMENTS` (`scripts/testEnv.ts`), never read from an env file. `.env.test.<env>` files hold secrets only — no base URL.
+
+**Why.** A multi-day "staging checkout broken" investigation root-caused not to Stripe but to test-target misdirection: `dotenv -o` promoted `.env.test`'s pinned `PLAYWRIGHT_BASE_URL=127.0.0.1` over the staging URL passed on the command line, so "staging" runs silently hit localhost — a different Stripe account. Every "No such customer/price" error was accurate but described the wrong environment, which is why config checks kept passing while runs kept failing.
+
+**Enforcement.** `assertPlaywrightEnvGuard()` runs in Playwright `globalSetup` before any test and hard-fails on: (1) resolved base URL ≠ `ENVIRONMENTS[TEST_ENV]`; (2) remote env resolving to localhost; (3) Supabase project ref ≠ the ref mandated per environment (all three locked); (4) production without `I_KNOW_THIS_IS_PRODUCTION=yes`. `stripLeakedProductionSecrets()` prevents a shell `STRIPE_SECRET_KEY` / service-role key (e.g. from `.env.local`) leaking into prod smoke.
+
+**Prod auth.** `resolveE2eEmail` (`tests/e2e/helpers/e2e-auth.ts`) previously remapped any non-`.test` address to a canonical `.test` fallback in every environment, which silently broke production canary login. Now gated: under `TEST_ENV=production` the real address is used as-is; non-prod keeps the `.test`-only remap.
+
+**Local note.** `.env.test.local` intentionally uses the staging Supabase ref (`cmzyxpxfyvdvbsykjvsg`) with a localhost app URL — same model as `.env.local` for day-to-day dev. Documented in `.env.test.local.example`; guard locks it as a chosen config, not an accident.
+
+**Proven.** Deliberate break (`staging.baseURL` → `127.0.0.1`) produced a guard failure at `globalSetup`, not a silent run. Reverted. Staging tier-1 billing 3/3. Prod consumer canary authenticated path green.
+
+**Principle.** Structure over memory — target/environment match enforced by failing code, not by remembering the right flags.
+
+**Files:** `scripts/testEnv.ts` · `tests/e2e/globalSetup.ts` · `playwright.config.ts` · `tests/e2e/helpers/e2e-auth.ts` · `.env.test.local.example` · `.env.test.staging.example` · `.env.test.production.example` · legacy `.env.test` / `.env.test.prod` retired.
+
+**Follow-up (provisioning, not code):** Prod smoke `@production` setup for advisor, attorney, advisor-empty, and advisor-client — provision real canary creds on production (like `canary-consumer@mywealthmaps.com`) or scope those four roles to `TEST_ENV=staging`. Confirmed 2026-06-23 rerun: consumer-setup green; four non-consumer setups fail at login timeout (`.test` accounts, no service-role password-sync in prod).
 
 ---
 

@@ -138,6 +138,6 @@ When Probe 1 returns `201` + `needsEmailConfirmation:true` with no cookie on thi
 
 You added it to Preview and still got `Missing ... SUPABASE_SERVICE_ROLE_KEY`. On the clean project, rule out all three causes explicitly so it doesn't recur:
 
-1. **Redeploy didn't pick it up** — confirm the deployment you're probing was built *after* the var was added (check the deployment timestamp vs the var's "updated" time). This is the most common.
+1. **Redeploy didn't pick it up** — Vercel **"Redeploy"** on an old deployment replays that build's env snapshot; it does **not** apply env vars you changed in the dashboard afterward. After editing Production env vars, trigger a **new build** (empty commit to `staging`, or **Redeploy** the **latest** deployment with "Use existing Build Cache" off / env refresh). Confirm the deployment aliased to `estate-planner-staging.vercel.app` was created *after* the var's "updated" time. Tiebreaker: `GET /api/admin/verify-env?live=1` → `boot.stripe_secret_key_last4` (requires `ADMIN_VERIFY_TOKEN` on staging).
 2. **Bad paste / wrong scope** — re-paste with no leading/trailing whitespace or newline; confirm it's on the staging project's **Production** scope, not Development.
 3. **Different name in a second code path** — grep for every reader of the service-role key (`SUPABASE_SERVICE_ROLE_KEY` and any alias) in `createAdminClient()` and elsewhere; confirm they all read the same var name. The verify-env `boot` block makes this self-evident — it reports whether the running deployment sees the key at all.
