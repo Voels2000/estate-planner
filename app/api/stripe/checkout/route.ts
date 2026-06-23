@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createStripeClient } from '@/lib/stripe/config'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import { getOrigin } from '@/lib/app-url'
 import { processConsumerCheckout } from '@/lib/billing/processConsumerCheckout'
 import {
   getPriceConfig,
@@ -116,7 +117,7 @@ export async function POST(req: Request) {
       returnTo,
       billingProfile,
       isAdvisorClient: !!clientRow,
-      baseUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      baseUrl: getOrigin(req),
       stripe,
       supabase,
       admin: createAdminClient(),
