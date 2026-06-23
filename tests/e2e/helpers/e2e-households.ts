@@ -20,6 +20,11 @@ export async function fetchAdvisorClientHouseholdId(): Promise<string | null> {
   return fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.advisorClient.email)
 }
 
+/** Canonical e2e-consumer household — prefer over PLAYWRIGHT_HOUSEHOLD_ID (CI secret can drift). */
+export async function resolveConsumerHouseholdId(): Promise<string | null> {
+  return fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.consumer.email)
+}
+
 export async function fetchAttorneyListingId(): Promise<string | null> {
   initSupabaseEnv()
   const profileId = await findUserIdByEmail(E2E_IDENTITIES.attorneyPortal.email)
