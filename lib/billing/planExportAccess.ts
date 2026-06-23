@@ -28,7 +28,7 @@ export function daysUntilPlanExportLock(
   now: Date = new Date(),
 ): number {
   const msRemaining = new Date(editWindowEndsAt).getTime() - now.getTime()
-  return Math.ceil(msRemaining / (24 * 60 * 60 * 1000))
+  return Math.ceil(msRemaining / (24 * 60 * 60 * 1000)) // stripe-dates-ok — edit window math, not Stripe unix timestamps
 }
 
 export function isWithinPlanExportFinalWarning(
