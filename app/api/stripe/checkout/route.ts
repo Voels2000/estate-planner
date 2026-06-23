@@ -131,8 +131,12 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ url: result.url })
-  } catch (error) {
-    console.error('Stripe checkout error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (err: unknown) {
+    console.error('Stripe checkout error:', err)
+    const error = err as { message?: string; code?: string; param?: string }
+    return NextResponse.json(
+      { error: error?.message ?? 'Internal server error', code: error?.code, param: error?.param },
+      { status: 500 },
+    )
   }
 }
