@@ -26,6 +26,8 @@ test.describe('deliverable export gate', () => {
         await page.goto('/print')
         await expect(page.getByTestId('deliverable-export-gated')).toBeVisible()
         await expect(page.getByTestId('deliverable-export-ready')).toHaveCount(0)
+        await expect(page.getByTestId('plan-and-export-cta')).toBeVisible()
+        await expect(page.getByText(/counts toward your subscription/i)).toBeVisible()
       })
     })
   })
@@ -68,6 +70,7 @@ test.describe('deliverable export gate', () => {
           async () => {
             await page.goto('/print')
             await expect(page.getByTestId('deliverable-export-ready')).toBeVisible()
+            await expect(page.getByTestId('plan-and-export-cta')).toHaveCount(0)
           },
         )
       })
@@ -160,6 +163,35 @@ test.describe('deliverable export gate', () => {
           },
           { purchasedAt },
         )
+      })
+    })
+  })
+
+  test('plan export buy CTA POSTs sku and opens Stripe checkout', async ({ page }) => {
+    await withConsumerOwner(async (ownerId) => {
+      await deferProfileAccessRestore(ownerId, SOCIAL_SECURITY_GATE_ACCESS, async () => {
+        await page.goto('/print')
+        await expect(page.getByTestId('plan-and-export-cta')).toBeVisible()
+
+        const checkoutResponse = page.waitForResponse(
+          (res) =>
+            res.url().includes('/api/stripe/checkout') && res.request().method() === 'POST',
+        )
+        await page.getByRole('button', { name: /Buy Plan & Export/i }).click()
+        const res = await checkoutResponse
+        const body = res.request().postDataJSON() as Record<string, unknown>
+        expect(body).toMatchObject({ sku: 'plan_and_export', returnTo: '/print' })
+
+        if (!res.ok()) {
+          const detail = await res.text()
+          test.skip(
+            detail.includes('No Stripe price configured'),
+            'STRIPE_PRICE_PLAN_AND_EXPORT not set on this deployment',
+          )
+          expect(res.ok(), detail).toBeTruthy()
+        }
+
+        await page.waitForURL(/checkout\.stripe\.com/, { timeout: 20_000 })
       })
     })
   })

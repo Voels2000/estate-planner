@@ -41,11 +41,7 @@ export async function POST(req: Request) {
     let priceId: string | undefined
     let returnTo: string | undefined
     let trialDays = 0
-    let body: Record<string, unknown> = {}
-
-    if (!planParam && !skuParam) {
-      body = await req.json().catch(() => ({}))
-    }
+    const body: Record<string, unknown> = await req.json().catch(() => ({}))
 
     const skuRequest =
       skuParam ?? (typeof body.sku === 'string' ? body.sku : undefined)

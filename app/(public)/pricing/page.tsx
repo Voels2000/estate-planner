@@ -3,6 +3,7 @@ import { EMAIL_REPLY_TO } from '@/lib/email/config'
 import { getSignupHref } from '@/lib/waitlist-mode'
 import { getConsumerPlanDisplay, isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
 import { PricingConsumerPlans } from './_pricing-consumer-plans'
+import { PricingPlanAndExportSection } from './_pricing-plan-and-export-section'
 import { PricingAdvisorCheckout } from './_pricing-advisor-checkout'
 import { PricingAttorneyCheckout } from './_pricing-attorney-checkout'
 import {
@@ -218,6 +219,8 @@ export default async function PricingPage() {
             signupHref={signupHref}
             annualBillingAvailable={annualBillingAvailable}
           />
+
+          <PricingPlanAndExportSection />
         </div>
 
         <div

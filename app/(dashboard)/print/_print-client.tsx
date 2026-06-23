@@ -3,12 +3,14 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ExportPDFButton } from '@/components/pdf/ExportPDFButton'
+import { PlanAndExportCta } from '@/components/billing/PlanAndExportCta'
 
 interface Props {
   householdId: string
   isAdvisor: boolean
   canUpdateDeliverable: boolean
   canDownloadDeliverable: boolean
+  showPlanAndExportOffer?: boolean
 }
 
 type ExportMode = 'full' | 'attorney'
@@ -18,6 +20,7 @@ export function PrintClient({
   isAdvisor,
   canUpdateDeliverable,
   canDownloadDeliverable,
+  showPlanAndExportOffer = false,
 }: Props) {
   const [mode, setMode] = useState<ExportMode>('full')
 
@@ -28,10 +31,11 @@ export function PrintClient({
         data-testid="deliverable-export-gated"
       >
         <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)] mb-2">Export Estate Plan</h1>
-        <p className="text-neutral-500">
+        <p className="text-neutral-500 mb-8">
           Export a full estate plan summary — including conflicts, asset titling, and estate
-          tax exposure — for your attorney or advisor review. Available with the Estate plan.
+          tax exposure — for your attorney or advisor review.
         </p>
+        {showPlanAndExportOffer && <PlanAndExportCta returnTo="/print" variant="gated" />}
       </div>
     )
   }
