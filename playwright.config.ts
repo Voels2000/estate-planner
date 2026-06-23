@@ -124,8 +124,9 @@ export default defineConfig({
     ...devices['Desktop Chrome'],
   },
   projects,
-  webServer: useLocalWebServer
-    ? {
+  webServer:
+    useLocalWebServer && process.env.PLAYWRIGHT_SKIP_WEBSERVER !== '1'
+      ? {
         // Load the test env file so E2E_SKIP_RECOMPUTE reaches the Next server (not just Playwright).
         command: `dotenv -o -e .env.local -e ${envFile} -- npm run start`,
         url: baseURL,
