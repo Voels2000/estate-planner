@@ -6,6 +6,17 @@ const DEBOUNCE_MS = 3000
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const inFlight = new Set<string>()
 
+/** Test-only: record trigger invocations (PLAYWRIGHT_SKIP_ENV_GUARD=1 in unit tests). */
+const triggerCallsForTests: string[] = []
+
+export function __resetTriggerCallsForTests(): void {
+  triggerCallsForTests.length = 0
+}
+
+export function __getTriggerCallsForTests(): readonly string[] {
+  return [...triggerCallsForTests]
+}
+
 async function runBaseCaseAndRecompute(householdId: string): Promise<void> {
   if (inFlight.has(householdId)) return
   inFlight.add(householdId)
@@ -26,6 +37,9 @@ async function runBaseCaseAndRecompute(householdId: string): Promise<void> {
  */
 export function triggerBackgroundBaseCaseAndRecompute(householdId: string): void {
   if (!householdId) return
+  if (process.env.PLAYWRIGHT_SKIP_ENV_GUARD === '1') {
+    triggerCallsForTests.push(householdId)
+  }
   if (process.env.E2E_SKIP_RECOMPUTE === 'true') return
 
   const schedule = () => {

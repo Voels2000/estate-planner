@@ -48,6 +48,8 @@ import { buildEstateExecutionChecklist } from '@/lib/dashboard/buildEstateExecut
 import type { EstateExecutionItem } from '@/lib/dashboard/buildEstateExecutionChecklist'
 import { determinePlanStage, getDashboardState } from '@/lib/dashboard/determinePlanStage'
 import { getUserAccess } from '@/lib/get-user-access'
+import { shouldUseTier0Dashboard } from '@/lib/dashboard/shouldUseTier0Dashboard'
+import { Tier0DashboardBody } from './_tier0-dashboard-body'
 import type { OnboardingPersona } from '@/lib/onboarding/personaConfig'
 import { sortOpenAlerts } from '@/lib/dashboard/scoreDisplayHelpers'
 
@@ -97,10 +99,16 @@ export async function DashboardBody({
   userId: string
   userEmail: string
 }) {
+  const access = await getUserAccess()
+  if (shouldUseTier0Dashboard(access)) {
+    return (
+      <Tier0DashboardBody household={household} userId={userId} userEmail={userEmail} />
+    )
+  }
+
   const supabase = await createClient()
   const user = { id: userId, email: userEmail }
   const admin = createAdminClient()
-  const access = await getUserAccess()
 
   const bundle = await loadDashboardBundle(supabase, admin, {
     userId: user!.id,
@@ -190,8 +198,9 @@ export async function DashboardBody({
 
   // ── Financial calculations (legacy fallback path) ────────────────────────
   const financialAssetsFallback = assetRows.reduce((s, a) => s + Number(a.value), 0)
-  const realEstateEquityFallback = realEstateRows.reduce(
-    (s, r) => s + Number(r.current_value) - Number(r.mortgage_balance ?? 0), 0,
+  const realEstateFmvFallback = realEstateRows.reduce(
+    (s, r) => s + Number(r.current_value ?? 0),
+    0,
   )
   const businessValueFallback = computeBusinessOwnershipValue(businesses ?? [], businessInterests ?? [])
   const insuranceValueFallback = insuranceRows
@@ -295,7 +304,7 @@ export async function DashboardBody({
   } = buildNetWorthSummaryFromDashboardInput({
     composition,
     financialAssetsFallback,
-    realEstateValueFallback: realEstateEquityFallback,
+    realEstateValueFallback: realEstateFmvFallback,
     businessValueFallback,
     insuranceValueFallback,
     mortgageBalance: totalMortgageBalance,
