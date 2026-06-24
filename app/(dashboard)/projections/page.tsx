@@ -5,6 +5,10 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getUserAccess } from '@/lib/get-user-access'
+import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
+import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
+import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import { loadProjectionData } from '@/lib/projections/loadProjectionData'
 import { mapProjectionRows } from '@/lib/projections/mappers/mapProjectionRows'
 import type { HouseholdProjectionProfile } from '@/lib/projections/types'
@@ -20,6 +24,22 @@ export default async function ProjectionsPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const access = await getUserAccess()
+  if (!hasFeatureAccess('projections', access.tier, access.isAdvisor, access.isTrial)) {
+    const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Projections</h1>
+        <UpgradeBanner
+          requiredTier={featureUpgradeTier('projections')}
+          moduleName="Forward Projections"
+          valueProposition="See where your finances are headed with a clear forward projection and what-if modeling."
+          householdContext={householdContext}
+        />
+      </div>
+    )
+  }
 
   const projectionLoad = await loadProjectionData(supabase, user.id)
 
