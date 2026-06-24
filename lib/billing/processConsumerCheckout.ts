@@ -6,6 +6,7 @@ import {
   type ConsumerCheckoutBlock,
   type ConsumerCheckoutProfile,
 } from '@/lib/billing/b2b2cBillingPolicy'
+import { normalizeAbsoluteOrigin } from '@/lib/app-url'
 import {
   getOneTimeSkuConfig,
   PLAN_AND_EXPORT_SKU,
@@ -71,10 +72,16 @@ async function ensureStripeCustomerId(input: CheckoutCustomerInput): Promise<str
     })
     stripeCustomerId = customer.id
 
-    await input.admin
+    const { error: persistError } = await input.admin
       .from('profiles')
       .update({ stripe_customer_id: stripeCustomerId })
       .eq('id', input.user.id)
+
+    if (persistError) {
+      throw new Error(
+        `Failed to persist stripe_customer_id for user ${input.user.id}: ${persistError.message}`,
+      )
+    }
   }
 
   return stripeCustomerId
@@ -109,12 +116,8 @@ async function buildConsumerCheckoutSuccessUrl(
     : `${input.baseUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`
 }
 
-function assertAbsoluteBaseUrl(baseUrl: string) {
-  if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
-    throw new Error(
-      `Invalid checkout baseUrl (expected absolute http(s) URL): ${baseUrl}`,
-    )
-  }
+function assertAbsoluteBaseUrl(baseUrl: string): string {
+  return normalizeAbsoluteOrigin(baseUrl, 'checkout baseUrl')
 }
 
 export type ProcessPlanAndExportCheckoutInput = Omit<
@@ -134,11 +137,10 @@ export async function processPlanAndExportCheckout(
     return { ok: false, block }
   }
 
-  assertAbsoluteBaseUrl(input.baseUrl)
-
+  const baseUrl = assertAbsoluteBaseUrl(input.baseUrl)
   const stripeCustomerId = await ensureStripeCustomerId(input)
   const { priceId } = getOneTimeSkuConfig('PLAN_AND_EXPORT')
-  const successUrl = await buildConsumerCheckoutSuccessUrl(input)
+  const successUrl = await buildConsumerCheckoutSuccessUrl({ ...input, baseUrl })
 
   const session = await input.stripe.checkout.sessions.create({
     mode: 'payment',
@@ -148,8 +150,8 @@ export async function processPlanAndExportCheckout(
     billing_address_collection: 'required',
     success_url: successUrl,
     cancel_url: input.returnTo
-      ? `${input.baseUrl}/billing?canceled=true&returnTo=${encodeURIComponent(input.returnTo)}`
-      : `${input.baseUrl}/billing?canceled=true`,
+      ? `${baseUrl}/billing?canceled=true&returnTo=${encodeURIComponent(input.returnTo)}`
+      : `${baseUrl}/billing?canceled=true`,
     metadata: { userId: input.user.id, sku: PLAN_AND_EXPORT_SKU },
   })
 
@@ -168,10 +170,9 @@ export async function processConsumerCheckout(
     return { ok: false, block }
   }
 
-  assertAbsoluteBaseUrl(input.baseUrl)
-
+  const baseUrl = assertAbsoluteBaseUrl(input.baseUrl)
   const stripeCustomerId = await ensureStripeCustomerId(input)
-  const successUrl = await buildConsumerCheckoutSuccessUrl(input)
+  const successUrl = await buildConsumerCheckoutSuccessUrl({ ...input, baseUrl })
 
   const session = await input.stripe.checkout.sessions.create({
     mode: 'subscription',
@@ -181,8 +182,8 @@ export async function processConsumerCheckout(
     billing_address_collection: 'required',
     success_url: successUrl,
     cancel_url: input.returnTo
-      ? `${input.baseUrl}/billing?canceled=true&returnTo=${encodeURIComponent(input.returnTo)}`
-      : `${input.baseUrl}/billing?canceled=true`,
+      ? `${baseUrl}/billing?canceled=true&returnTo=${encodeURIComponent(input.returnTo)}`
+      : `${baseUrl}/billing?canceled=true`,
     metadata: { userId: input.user.id },
     subscription_data:
       input.trialDays > 0 ? { trial_period_days: input.trialDays } : undefined,
