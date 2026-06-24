@@ -20,7 +20,7 @@
 
 **In flight:** Billing matrix UI + trial banner resolver + Plan & Export section below ladder · docs: BILLING_PAGE_COPY_SPEC, MASTER_ARCHITECTURE, DECISION_LOG.
 
-**Next (enforcement):** [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md) — PR 1 (schema + `resolveEffectiveTier`) → PR 2/3 (gates + Tier 0 dashboard) → PR 4 (projections split) → PR 5 (retire Stripe trial). **Launch gate:** PRs 2–5 required before consumer flip. PR 6 (free inputs export) parallelizable after PR 1.
+**Next (enforcement):** [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md) — **PR 1 spec locked** (`has_ever_subscribed` write path + `resolveEffectiveTier` order + grep acceptance). Implementation: PR 1 → PR 2/3 → PR 4 → PR 5. **Launch gate:** PRs 2–5 before consumer flip. PR 6 parallel after PR 1 but shares PR 2 input/computed boundary.
 
 **Still open (pre-flip):** [LAUNCH.md](./LAUNCH.md) Bucket B — real-card smoke, C-4 walkthrough, counsel/email aliases, B&O ruling (Bucket A). Promotion runbook for staging→main: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
 
