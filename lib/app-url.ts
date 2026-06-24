@@ -1,17 +1,41 @@
-/** Canonical public app URL for emails, links, and redirects. */
-export function getAppUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    'https://mywealthmaps.com'
-  )
+/** Trim and validate an absolute http(s) origin (no path). Fails loud on whitespace or malformed URLs. */
+export function normalizeAbsoluteOrigin(url: string, label: string): string {
+  const trimmed = url.trim()
+  if (!trimmed) {
+    throw new Error(`Invalid ${label}: empty URL`)
+  }
+
+  let parsed: URL
+  try {
+    parsed = new URL(trimmed)
+  } catch {
+    throw new Error(`Invalid ${label} (malformed URL): ${JSON.stringify(url)}`)
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`Invalid ${label} (expected http(s) protocol): ${JSON.stringify(url)}`)
+  }
+
+  if (/\s/.test(parsed.host)) {
+    throw new Error(`Invalid ${label} (whitespace in host): ${JSON.stringify(url)}`)
+  }
+
+  if (parsed.pathname !== '/' || parsed.search || parsed.hash) {
+    throw new Error(
+      `Invalid ${label} (expected origin only, no path/query/hash): ${JSON.stringify(url)}`,
+    )
+  }
+
+  return `${parsed.protocol}//${parsed.host}`
 }
 
-function assertAbsoluteHttpUrl(url: string, label: string): string {
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    throw new Error(`Invalid ${label} (expected absolute http(s) URL): ${url}`)
-  }
-  return url
+/** Canonical public app URL for emails, links, and redirects. */
+export function getAppUrl(): string {
+  const raw =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    'https://mywealthmaps.com'
+  return normalizeAbsoluteOrigin(raw, 'app URL')
 }
 
 /**
@@ -19,16 +43,16 @@ function assertAbsoluteHttpUrl(url: string, label: string): string {
  * Prefer browser Origin; then Host; then env so Stripe never gets a bad absolute URL.
  */
 export function getOrigin(request: Request): string {
-  const origin = request.headers.get('origin')
-  if (origin) return assertAbsoluteHttpUrl(origin, 'checkout origin')
+  const origin = request.headers.get('origin')?.trim()
+  if (origin) return normalizeAbsoluteOrigin(origin, 'checkout origin')
 
-  const host = request.headers.get('host')
+  const host = request.headers.get('host')?.trim()
   if (host) {
     const proto = host.startsWith('localhost') ? 'http' : 'https'
-    return assertAbsoluteHttpUrl(`${proto}://${host}`, 'checkout origin')
+    return normalizeAbsoluteOrigin(`${proto}://${host}`, 'checkout origin')
   }
 
   const fallback =
-    process.env.NEXT_PUBLIC_APP_URL ?? 'https://estate-planner-staging.vercel.app'
-  return assertAbsoluteHttpUrl(fallback, 'checkout origin fallback')
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ?? 'https://estate-planner-staging.vercel.app'
+  return normalizeAbsoluteOrigin(fallback, 'checkout origin fallback')
 }
