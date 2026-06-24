@@ -67,7 +67,7 @@ The audit found a live divergence: **sidebar reads raw `consumer_tier`** (`app/(
 
 PR 1 fixes this by routing **both** through `resolveEffectiveTier()` (and `getUserAccess` becomes a thin wrapper that calls it).
 
-**PR 1 acceptance test (real, not optional):** after merge, grep the codebase and confirm **no access decision** still reads raw `profiles.consumer_tier` or `subscription_status` outside the resolver layer. Allowed exceptions: billing display, admin user detail, Stripe webhook writes, analytics. If even one gate/banner/sidebar path bypasses the resolver, the divergence bug survives in a new form.
+**PR 1 acceptance test (real, not optional):** after merge, grep the codebase and confirm **no access decision** still reads raw `profiles.consumer_tier` or `subscription_status` outside the resolver layer. Allowed exceptions: **display-only** reads (current-plan badge, matrix column labels, admin user detail, analytics labels), Stripe webhook **writes**, admin override forms. **The test is the verb:** *display* reads are fine; *access/gating* reads must go through the resolver even when the file lives under `billing/` — a component that unlocks or hides features based on raw `consumer_tier` is not "billing display" and must not be allowlisted.
 
 Suggested grep targets before merge:
 
@@ -89,6 +89,8 @@ Every hit in layout, sidebar, `getUserAccess`, `hasFeatureAccess` callers, and A
 **Scope:** Migration adds `trial_ends_at`, `has_ever_subscribed`. Signup trigger sets `trial_ends_at = now()+7d`. New `resolveEffectiveTier()` — see **load-bearing decisions** above for write path, evaluation order, and acceptance grep. Wire `getUserAccess` and dashboard layout sidebar through the resolver (inactive → **0**, not 1). Fix `trial_start` → correct column name. Admin override must allow tier **0**.
 
 **Depends on:** nothing. **Unblocks:** everything.
+
+**Branching (operational):** PR 1 has **no code dependency** on the billing presentation PR (#112 — `BillingCapabilityMatrix`, trial banner UI). They touch different layers (migration / `resolveEffectiveTier` / `getUserAccess` vs billing components). Branch off `staging` **now in parallel** if #112 is still in review; serialize only if you prefer linear history.
 
 **PR 1 ships (not PR 8):** `resolveEffectiveTier` unit matrix including subscribe-then-cancel → Tier 0; grep audit documented in PR.
 
