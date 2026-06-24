@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-19 (Sprint E dead-code sweep)
+# Last updated: 2026-06-24 (billing capability matrix)
 
 ---
 
@@ -18,6 +18,17 @@
 ---
 
 ## Current sprint
+
+### Consumer billing capability matrix (2026-06-24) `[~]` **PR → staging**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Four-column cumulative matrix on `/billing` | `[~]` | Free + Financial + Retirement + Estate; mobile compare pattern |
+| Trial banner resolver | `[~]` | `trial_ends_at` + Stripe `trialing` fallback |
+| Plan & Export below ladder | `[~]` | Unchanged SKU; new section component |
+| Docs | `[~]` | BILLING_PAGE_COPY_SPEC · MASTER_ARCHITECTURE · DECISION_LOG |
+
+---
 
 ### Sprint E — Dead-code sweep (2026-06-19) `[~]` **closing out**
 

@@ -833,7 +833,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 **Current (as built):**
 
-- Consumer pricing (Sprint 4, 2026-05-28): **Financial $29/mo** · **Retirement $79/mo** · **Estate $149/mo**; annual billing at **$290 / $790 / $1,490** (2 months free). **14-day free trial on Estate tier only.**
+- Consumer pricing (Sprint 4, 2026-05-28; trial 7-day from 2026-06-18): **Financial $29/mo** · **Retirement $79/mo** · **Estate $149/mo**; annual billing at **$290 / $790 / $1,490** (2 months free). **7-day free trial on Estate tier only** (`PRICE_META.trialDays` → Stripe `trial_period_days`).
 - Single source of truth for Stripe price IDs: `lib/billing/stripePrices.ts` (`getPriceConfig(tier, period)`, `getTierFromPriceId(priceId)`). Env vars: `STRIPE_PRICE_FINANCIAL_MONTHLY`, `_ANNUAL`, etc.
 - Plan display shared by billing and public pricing: `lib/billing/consumerPlanCatalog.ts` (names/descriptions from `TIER_NAMES` / `TIER_DESCRIPTIONS` in `lib/tiers.ts`).
 - **Public `/pricing` (2026-06-10):** Consumer plans via `_pricing-consumer-plans.tsx`; advisor **per-seat** Starter/Growth/Enterprise from `ADVISOR_FIRM_SEAT_RATES` + `ADVISOR_FIRM_SEAT_RANGES`; attorney Free/Starter/Growth from `ATTORNEY_PLAN_LIMITS`. Advisor checkout: `_pricing-advisor-checkout.tsx` → `POST /api/stripe/firm-checkout`.
@@ -845,17 +845,14 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - **Admin MRR (2026-06-09):** `lib/billing/computeAdminMrr.ts` — annual-aware consumer + attorney tier + firm seat MRR.
 - Billing page (`/billing`) and public pricing (`/pricing`) include **monthly/annual toggle** (`components/billing/BillingPeriodToggle.tsx`) when `isAnnualBillingConfigured()` is true (all three `STRIPE_PRICE_*_ANNUAL` env vars set server-side). Toggle hidden otherwise; monthly plans only.
 - **Go-live:** [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) — Phase 1 test mode, then Phase 2 live keys; never mix test price IDs with live secret key. **After re-keying staging Stripe:** run `npm run reset:staging-stripe` (see [E2E_TEST_RESET.md](./E2E_TEST_RESET.md)) so dangling `profiles.stripe_*` columns do not block checkout.
-- Checkout (`POST /api/stripe/checkout`) accepts `priceId` + `period` or `plan` query param; Estate subscriptions get `subscription_data.trial_period_days: 14`.
+- Checkout (`POST /api/stripe/checkout`) accepts `{ tier, period }`; Estate subscriptions get `subscription_data.trial_period_days` from `getConsumerPlanDisplay(3, period).trialDays` (currently **7**).
 - **Post-checkout success URL (2026-05-29):** consumers → `/dashboard?checkout=success` or `/profile?checkout=success`; advisors → `/advisor?checkout=success`. `/terms/accept` retained for legacy checkout flows.
 - **Terms acceptance (2026-05-27):** TERMS-1 signup checkbox sets `terms_accepted_at` + `terms_version`; email-confirm users synced in `/auth/callback` from signup metadata. Section F soft banner on dashboard for users without `terms_accepted_at` (dismissible, non-blocking).
 - **Single ToS source (2026-05-27, B8 2026-06-18):** Canonical Terms of Service = `lib/legal/terms-of-service-sections.ts` (`TERMS_OF_SERVICE_VERSION` `2026-06-02`). `/terms`, `/terms/accept`, `GET /api/terms/content`, and `recordTermsAcceptance` all use `getCanonicalTerms()`. Admin **Re-gate users** (`POST /api/admin/terms/regate`) clears stale `profiles.terms_accepted_at` only — no `app_config` write. Legacy `app_config.terms_*` keys are unused.
 - Webhook sets `consumer_tier` via `getTierFromPriceId()` on checkout complete and subscription updated; `subscription_status` reflects Stripe status (including `trialing`).
 - **Dashboard access:** `app/(dashboard)/layout.tsx` — consumers with `subscription_status = 'none'` get free Tier 1 access; Estate trial (`trialing`) only from Stripe checkout; banner uses `subscription_period_end`.
 - **Dashboard tier (2026-05-28):** `_dashboard-body.tsx` passes `getUserAccess().tier` to `DashboardClient` / `determinePlanStage` — not raw `profiles.consumer_tier` (fixes advisor-connected client Stage 1 split).
-- Consumer billing page shows all three subscription tiers at initial purchase entry:
-  - Financial
-  - Retirement
-  - Estate
+- **Consumer `/billing` (2026-06-24):** Four-column **cumulative capability matrix** (Free + three paid tiers) — `lib/billing/billingCapabilityMatrix.ts` · `billingTierPresentation.ts` · `BillingCapabilityMatrix.tsx`. Desktop: full table with tier headers (question + price from `getConsumerPlanDisplay`); mobile: focused column + **Compare all plans** accordion. Estate column gets subtle navy highlight only (no “For estate households” tag). Trial banner: `resolveBillingTrialBanner` (`trial_ends_at` when present, else Stripe `trialing` + `subscription_period_end`). **Plan & Export** one-time SKU block below matrix (`BillingPlanAndExportSection`) when `shouldOfferPlanAndExportPurchase`. Subscribe CTAs per paid column; monthly/annual toggle unchanged.
 - Tier-based feature gating remains enforced by `lib/tiers.ts` (`FEATURE_TIERS`, `hasFeatureAccess`, `featureUpgradeTier`) and matching checks in each gated `page.tsx` plus sidebar `isLocked()`.
 - Missing-data guardrails remain in place across core planning surfaces (generate/retry flows, unavailable-state banners, and horizon-missing telemetry).
 
@@ -1515,7 +1512,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Sprint C-4 (code complete 2026-06-02):** Billing disclosures — `lib/compliance/billing-disclosures.ts`; pre-checkout copy; self-serve cancel; `invoice.upcoming` renewal reminders (`462bda9`). Manual Stripe Dashboard verify remains — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md).
 
-**Sprint 4 consumer pricing (2026-05-28):** $29/$79/$149 monthly + annual option; 14-day Estate trial; `lib/billing/stripePrices.ts`; billing + `/pricing` period toggle; checkout/webhook tier wiring. Stripe Dashboard price creation + env vars + functional verify — [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
+**Sprint 4 consumer pricing (2026-05-28):** $29/$79/$149 monthly + annual option; Estate trial **7 days** (was 14); `lib/billing/stripePrices.ts`; billing + `/pricing` period toggle; checkout/webhook tier wiring. Stripe Dashboard price creation + env vars + functional verify — [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
 
 **Sprint P-1 (closed 2026-06-02):** Performance quick wins — dashboard `Promise.all`, advisor conflict cache read, 3s recompute debounce, server-fetched notification count, `next/font`, owner_id indexes on `assets`/`liabilities` (`5c24160`). Production indexes verified. Diagnostics: [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql).
 
