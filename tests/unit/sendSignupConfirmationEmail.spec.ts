@@ -10,10 +10,13 @@ test.describe('sendSignupConfirmationEmail', () => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon-test-key'
 
     globalThis.fetch = async (input, init) => {
-      calls.push({
-        url: typeof input === 'string' ? input : input.url,
-        init,
-      })
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url
+      calls.push({ url, init })
       return new Response('{}', { status: 200 })
     }
 
