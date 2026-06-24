@@ -9,7 +9,7 @@ export async function sendSignupConfirmationEmail(opts: {
 }): Promise<void> {
   const { to, confirmUrl, name } = opts
   const greeting = name ? `Hi ${escapeHtml(name)},` : 'Hi,'
-  const safeUrl = escapeHtml(confirmUrl)
+  const safeUrlText = escapeHtml(confirmUrl)
 
   const { error } = await resend.emails.send({
     from: EMAIL_FROM,
@@ -28,12 +28,12 @@ export async function sendSignupConfirmationEmail(opts: {
           Confirm your email to activate your account:
         </p>
         <div style="text-align:center;margin:32px 0">
-          <a href="${safeUrl}" style="background:#1f3a5f;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold;display:inline-block">Confirm my email</a>
+          <a href="${confirmUrl}" style="background:#1f3a5f;color:#ffffff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold;display:inline-block">Confirm my email</a>
         </div>
         <p style="color:#6b7280;font-size:13px;line-height:20px">
           If the button doesn&apos;t work, paste this link into your browser:
         </p>
-        <p style="color:#1f3a5f;font-size:13px;word-break:break-all">${safeUrl}</p>
+        <p style="color:#1f3a5f;font-size:13px;word-break:break-all">${safeUrlText}</p>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0" />
         <p style="color:#6b7280;font-size:12px;line-height:18px">
           You&apos;re receiving this because this address was used to sign up for My Wealth Maps.
