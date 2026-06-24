@@ -7,6 +7,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createStripeClient } from '@/lib/stripe/config'
 import { activateConsumerProfileFromSubscription } from '@/lib/stripe/activateConsumerSubscription'
 import { resolveCheckoutSubscription } from '@/lib/stripe/checkoutSubscription'
+import { withHasEverSubscribed } from '@/lib/access/hasEverSubscribed'
 import { mapConsumerSubscriptionStatus } from '@/lib/stripe/consumerSubscriptionStatus'
 import {
   applyPlanAndExportCreditIfEligible,
@@ -560,16 +561,17 @@ export async function POST(req: NextRequest) {
         const consumerTier = priceId ? getTierFromPriceId(priceId) : null
         const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
         const status = mapConsumerSubscriptionStatus(subscription)
+        const consumerUpdate = withHasEverSubscribed({
+          subscription_status: status,
+          stripe_subscription_id: subscription.id,
+          ...(renewalIso != null ? { subscription_period_end: renewalIso } : {}),
+          ...(priceId ? { subscription_plan: priceId } : {}),
+          ...(consumerTier ? { consumer_tier: consumerTier } : {}),
+          ...(attorneyTier > 0 ? { attorney_tier: attorneyTier } : {}),
+        })
         const { error: consumerUpdateError } = await supabase
           .from('profiles')
-          .update({
-            subscription_status: status,
-            stripe_subscription_id: subscription.id,
-            ...(renewalIso != null ? { subscription_period_end: renewalIso } : {}),
-            ...(priceId ? { subscription_plan: priceId } : {}),
-            ...(consumerTier ? { consumer_tier: consumerTier } : {}),
-            ...(attorneyTier > 0 ? { attorney_tier: attorneyTier } : {}),
-          })
+          .update(consumerUpdate)
           .eq('stripe_customer_id', customerId)
         if (consumerUpdateError) {
           console.error(

@@ -1,36 +1,51 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { resolveConsumerTier } from '@/lib/tiers'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { isManagedSubscriptionStatus } from '@/lib/billing/b2b2cBillingPolicy'
+import {
+  resolveConsumerIsTrial,
+  resolveEffectiveTier,
+} from '@/lib/access/resolveEffectiveTier'
 import { cache } from 'react'
 
 export type UserAccess = {
+  /** Effective feature tier (0–3) — single source via resolveEffectiveTier. */
   tier: number
   isAdvisor: boolean
   isAdvisorClient: boolean
   isAdmin: boolean
   isTrial: boolean
   subscriptionStatus: string | null
+  /** App-managed trial end or Stripe period end for banner display. */
+  trialEndsAt: string | null
 }
 
 export const getUserAccess = cache(async (): Promise<UserAccess> => {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) {
-    return { tier: 0, isAdvisor: false, isAdvisorClient: false, isAdmin: false, isTrial: false, subscriptionStatus: null }
+    return {
+      tier: 0,
+      isAdvisor: false,
+      isAdvisorClient: false,
+      isAdmin: false,
+      isTrial: false,
+      subscriptionStatus: null,
+      trialEndsAt: null,
+    }
   }
-
 
   const admin = createAdminClient()
   const { data: profile } = await admin
     .from('profiles')
-    .select('role, subscription_status, subscription_plan, consumer_tier, trial_start, is_admin, is_superuser')
+    .select(
+      'role, subscription_status, subscription_plan, consumer_tier, trial_ends_at, has_ever_subscribed, subscription_period_end, is_admin, is_superuser',
+    )
     .eq('id', user.id)
     .single()
 
-  // Superuser bypasses all subscription and tier checks.
-  // Role is preserved (e.g. 'advisor') so primary identity is correct.
   if (profile?.is_superuser === true) {
     return {
       tier: 3,
@@ -39,17 +54,13 @@ export const getUserAccess = cache(async (): Promise<UserAccess> => {
       isAdmin: true,
       isTrial: false,
       subscriptionStatus: 'active',
+      trialEndsAt: null,
     }
   }
 
   const isAdvisor = profile?.role === 'advisor'
   const isAdmin = profile?.is_admin === true
   const subscriptionStatus = profile?.subscription_status ?? null
-  const isTrial = subscriptionStatus === 'trialing'
-  const isActive =
-    subscriptionStatus === 'active' ||
-    isTrial ||
-    subscriptionStatus === 'canceling'
   const isProfessionallyManaged = isManagedSubscriptionStatus(subscriptionStatus)
 
   let isAdvisorClient = false
@@ -63,20 +74,43 @@ export const getUserAccess = cache(async (): Promise<UserAccess> => {
     isAdvisorClient = !!clientRow
   }
 
-  if (isAdvisor || isAdvisorClient || isProfessionallyManaged) {
-    const tier = isProfessionallyManaged
-      ? (profile?.consumer_tier ?? 3)
-      : 3
-    return { tier, isAdvisor, isAdvisorClient, isAdmin, isTrial, subscriptionStatus }
-  }
-
-  if (!isActive) {
-    return { tier: 1, isAdvisor: false, isAdvisorClient: false, isAdmin: false, isTrial: false, subscriptionStatus }
-  }
-
-  const tier = resolveConsumerTier(
-    profile?.subscription_plan ?? null,
-    profile?.consumer_tier ?? null,
+  const tier = resolveEffectiveTier(
+    {
+      role: profile?.role,
+      consumer_tier: profile?.consumer_tier,
+      subscription_status: subscriptionStatus,
+      subscription_plan: profile?.subscription_plan,
+      trial_ends_at: profile?.trial_ends_at,
+      has_ever_subscribed: profile?.has_ever_subscribed,
+      is_superuser: profile?.is_superuser,
+    },
+    {
+      isAdvisor,
+      isAdvisorClient,
+      isProfessionallyManaged,
+    },
   )
-  return { tier, isAdvisor, isAdvisorClient, isAdmin, isTrial, subscriptionStatus }
+
+  const isTrial = resolveConsumerIsTrial(
+    {
+      trial_ends_at: profile?.trial_ends_at,
+      has_ever_subscribed: profile?.has_ever_subscribed,
+    },
+    subscriptionStatus,
+  )
+
+  const trialEndsAt =
+    subscriptionStatus === 'trialing' && profile?.subscription_period_end
+      ? profile.subscription_period_end
+      : profile?.trial_ends_at ?? null
+
+  return {
+    tier,
+    isAdvisor,
+    isAdvisorClient,
+    isAdmin,
+    isTrial,
+    subscriptionStatus,
+    trialEndsAt,
+  }
 })

@@ -7,6 +7,7 @@ import { PlanExportEditWindowBanner } from './_components/plan-export-edit-windo
 import { InviteAdvisorOnboardingGate } from './_components/invite-advisor-gate'
 import { WizardOnboardingGate } from './_components/wizard-onboarding-gate'
 import { getDashboardLayoutContext } from '@/lib/access/getDashboardLayoutContext'
+import { getUserAccess } from '@/lib/get-user-access'
 import {
   isMinimumViableProfile,
   isWizardComplete,
@@ -66,6 +67,7 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   const layoutContext = await getDashboardLayoutContext()
+  const userAccess = await getUserAccess()
 
   if (!layoutContext) redirect('/login')
 
@@ -158,10 +160,6 @@ export default async function DashboardLayout({
   const isProfessionallyManaged = isAdvisorManaged || isAttorneyManaged
   const needsBillingRedirect = subscriptionStatus === 'past_due' || subscriptionStatus === 'unpaid'
 
-  const stripeTrialEndsAt = profileFull?.subscription_period_end
-    ? new Date(profileFull.subscription_period_end)
-    : null
-
   // Check if user is an advisor client
   let isAdvisorClient = false
   if (!isAdvisorResolved) {
@@ -188,23 +186,21 @@ export default async function DashboardLayout({
 
   if (!hasAccess) redirect('/billing')
 
-  const tier =
-    isAdvisorResolved || isAdvisorClient || isProfessionallyManaged || isAdminResolved
-      ? isProfessionallyManaged
-        ? (profileFull?.consumer_tier ?? 3)
-        : 3
-      : (profileFull?.consumer_tier ?? 1)
+  const tier = userAccess.tier
+  const isTrial = userAccess.isTrial
 
-  const showStripeTrialBanner =
-    isStripeTrial &&
+  const trialEndsAtDate = userAccess.trialEndsAt
+    ? new Date(userAccess.trialEndsAt)
+    : null
+
+  const showTrialBanner =
+    isTrial &&
     !isAdminResolved &&
     !isAdvisorResolved &&
     !isAdvisorClient &&
     !isAdvisorManaged &&
-    stripeTrialEndsAt != null &&
-    stripeTrialEndsAt.getTime() > Date.now()
-
-  const isTrial = isStripeTrial
+    trialEndsAtDate != null &&
+    trialEndsAtDate.getTime() > Date.now()
 
   let planExportEditWindowEndsAt: string | null = null
   if (isConsumer && !isAdvisorClient && subscriptionStatus !== 'active') {
@@ -239,8 +235,8 @@ export default async function DashboardLayout({
     >
       <AnnualBillingProvider available={annualBillingAvailable}>
         <DashboardMain
-          showBanner={showStripeTrialBanner}
-          trialExpiry={stripeTrialEndsAt ?? undefined}
+          showBanner={showTrialBanner}
+          trialExpiry={trialEndsAtDate ?? undefined}
           planExportEditWindowEndsAt={planExportEditWindowEndsAt}
           needsWizardOnboarding={needsWizardOnboarding}
           needsInviteAdvisorOnboarding={needsInviteAdvisorOnboarding}
