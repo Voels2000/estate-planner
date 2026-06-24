@@ -124,13 +124,14 @@ Want: `boot.stripe_secret_key_last4` matches the key you curl-verified, `boot.st
 POST https://cmzyxpxfyvdvbsykjvsg.supabase.co/auth/v1/signup
 
 # Probe 1 — bright open_consumer: expect 201 + needsEmailConfirmation:true, NO Set-Cookie
+# AND confirmation email delivered (Supabase /auth/v1/resend on server after createUser — not just API shape)
 POST https://staging.mywealthmaps.com/api/auth/signup  (open_consumer, PUBLIC_SIGNUP_OPEN=true)
 
 # Probe 4 — valid beta token: expect 201 + session
 # plus the rest of the §10 matrix — WAITLIST_HARDENING_SPEC.md §10
 ```
 
-When Probe 1 returns `201` + `needsEmailConfirmation:true` with no cookie on this URL, the signup-hardening gate is **closed** on the deployed artifact.
+When Probe 1 returns `201` + `needsEmailConfirmation:true` with no cookie on this URL **and** the signup address receives the Supabase confirmation mail, the signup-hardening gate is **closed** on the deployed artifact.
 
 ---
 

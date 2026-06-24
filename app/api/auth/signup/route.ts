@@ -13,6 +13,8 @@ import {
   type SignupRole,
 } from '@/lib/auth/signupAdmission'
 import { sanitizeSignupRedirect, validateSignupPassword } from '@/lib/auth/signupPolicy'
+import { sendSignupConfirmationEmail } from '@/lib/auth/sendSignupConfirmationEmail'
+import { getOrigin } from '@/lib/app-url'
 import { isSignupExplicitlyOpen } from '@/lib/waitlist-mode'
 import { getRequestCountry, isBlockedNonUsCountry } from '@/lib/geo/usOnlyAccess'
 
@@ -178,6 +180,13 @@ export async function POST(request: NextRequest) {
   }
 
   if (!emailConfirm) {
+    const sendResult = await sendSignupConfirmationEmail(
+      email,
+      `${getOrigin(request)}/auth/callback`,
+    )
+    if (!sendResult.ok) {
+      console.error('signup confirmation email:', sendResult.error)
+    }
     return NextResponse.json(
       { userId, needsEmailConfirmation: true, nextPath },
       { status: 201 },

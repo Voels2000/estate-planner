@@ -751,11 +751,13 @@ Two layers — do not conflate them:
 
 **Server-gated signup (2026-06, PR #25):** Client `supabase.auth.signUp()` removed. All account creation flows through `POST /api/auth/signup` with admission validated in `lib/auth/signupAdmission.ts` **before** `admin.auth.admin.createUser()` (`lib/auth/completeSignup.ts` for side effects). Checkout routes remain auth-only — they do not check `PUBLIC_SIGNUP_OPEN`; blocking anon signup at Supabase + server admission is the containment model.
 
+**Signup confirmation email (2026-06-24):** `admin.createUser()` does **not** send mail (unlike client `signUp()`). When `email_confirm: false`, the signup route calls `lib/auth/sendSignupConfirmationEmail.ts` → Supabase `/auth/v1/resend` (`type: signup`) with `emailRedirectTo: {origin}/auth/callback` — same path as `/auth/confirm-email` Resend. Regression introduced in `3b7f3cb6` (server-route hardening); Probe 1 only asserted `201` + `needsEmailConfirmation`, not delivery.
+
 | Layer | Mechanism | Status |
 |-------|-----------|--------|
 | **0 — Supabase** | Disable anon/public signups on prod (`fnzvlmrqwcqwiqueevux`) | Attested (prod safe while dark) |
 | **1 — Server route** | `signupAdmission` + `createUser`; open_consumer requires `PUBLIC_SIGNUP_OPEN` | Shipped on `main` |
-| **2 — Email confirm** | Bright consumer: `email_confirm: false` → `201` + `needsEmailConfirmation`, no session cookie | Unit + local/staging-DB matrix pass |
+| **2 — Email confirm** | `email_confirm: false` → `201` + `needsEmailConfirmation`, no session; server sends confirmation via `sendSignupConfirmationEmail` | Unit + staging delivery |
 | **§10 hosted matrix** | Probes 1/2/4/5/7/8 on staging URL | **Closed** 2026-06-16 — [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md) |
 
 **Test account seed scripts (staging / local, not Vercel env):**

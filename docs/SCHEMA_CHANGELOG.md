@@ -1441,6 +1441,17 @@ All `@rolobe.resend.app` accounts deleted; soft-deleted scrambled accounts hard-
 
 ---
 
+## Signup confirmation email — server send after admin createUser (2026-06-24)
+
+**No schema change.**
+
+- **Root cause:** `3b7f3cb6` (PR #25) moved signup from client `signUp()` to `admin.createUser()`; admin API does not trigger Supabase auth mail.
+- **Fix:** `lib/auth/sendSignupConfirmationEmail.ts`; `POST /api/auth/signup` calls it when `email_confirm: false`.
+- **Tests:** `tests/unit/sendSignupConfirmationEmail.spec.ts`
+- **Docs:** [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md), [DECISION_LOG.md](./DECISION_LOG.md), [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md)
+
+---
+
 ## Sprint C-3 Phase 1b + Phase 3 — Auth + security (2026-06-02)
 
 **No schema change.**

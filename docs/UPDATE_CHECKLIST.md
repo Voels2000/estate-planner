@@ -105,6 +105,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **#37** — `applyEmailUnsubscribe` attorney routing; migration `20260718120000_attorney_drip_unsubscribed_at.sql`; per-env migration gate in DEPLOYMENT
 - [x] **#38** — [NOTIFICATION_HYGIENE.md](./NOTIFICATION_HYGIENE.md)
 - [x] **#39** — [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) + master-doc cross-links (15 files)
+- [x] **Signup confirmation email** — `sendSignupConfirmationEmail` after `admin.createUser` when `email_confirm: false` (regression from PR #25 `3b7f3cb6`; Probe 1 now includes delivery). Docs: MASTER_ARCHITECTURE, DECISION_LOG, WAITLIST_HARDENING_SPEC, STAGING_PROJECT_RUNBOOK, PRE_FLIP_CHECKLIST, CONSUMER_FLOWS, SCHEMA_CHANGELOG.
 - [ ] **Prod promote** — open staging→`main` PR; follow promotion runbook (secrets, migration verify, passive post-deploy smoke)
 
 ## Homepage CI lint fix (2026-06-12) — shipped

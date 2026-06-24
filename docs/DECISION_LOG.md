@@ -3420,6 +3420,20 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Signup confirmation email after server-route hardening
+
+**Decision:** When `POST /api/auth/signup` creates an unconfirmed user (`email_confirm: false`), the server must call `sendSignupConfirmationEmail` (Supabase `/auth/v1/resend`, `type: signup`) immediately after `admin.createUser` — same delivery path as `/auth/confirm-email` Resend.
+
+**Reasoning:** PR #25 (`3b7f3cb6`, 2026-06-15) replaced client `supabase.auth.signUp()` with `admin.auth.admin.createUser()`. Supabase documents that admin `createUser` does **not** send confirmation mail; it only sets whether `email_confirmed_at` is pre-populated. The confirm-email page copy said “We sent a confirmation link” but nothing triggered send until the user clicked Resend. Probe 1 (§10 matrix) validated `201` + `needsEmailConfirmation` only — not inbox delivery — so the regression shipped unnoticed until manual staging signup (2026-06-23, `avoels@outlook.com`).
+
+**Alternatives considered:** Revert to client `signUp()` for open_consumer (rejected — breaks admission gate and anon-signup containment). `generateLink` + Resend app mailer (rejected — duplicates Supabase auth templates; resend endpoint is already proven).
+
+**Implication:** Any future admin-created unconfirmed users need an explicit send step. Invite/token admissions keep `email_confirm: true` and are unaffected.
+
+**Attestation:** Al / 2026-06-24 — manual `/auth/v1/resend` delivered to `avoels@outlook.com` on staging; fix + unit tests in PR to `staging`.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]
