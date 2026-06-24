@@ -108,6 +108,17 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **Signup confirmation email** — `sendSignupConfirmationEmail` after `admin.createUser` when `email_confirm: false` (regression from PR #25 `3b7f3cb6`; Probe 1 now includes delivery). Docs: MASTER_ARCHITECTURE, DECISION_LOG, WAITLIST_HARDENING_SPEC, STAGING_PROJECT_RUNBOOK, PRE_FLIP_CHECKLIST, CONSUMER_FLOWS, SCHEMA_CHANGELOG.
 - [ ] **Prod promote** — open staging→`main` PR; follow promotion runbook (secrets, migration verify, passive post-deploy smoke)
 
+## Tier restructure PR 1 — effective tier foundation (2026-06-24) — shipped
+
+- [x] Migration `20260724120000` — `trial_ends_at`, `has_ever_subscribed`; signup `trial_ends_at = now()+7d`; backfill
+- [x] `resolveEffectiveTier` + `getUserAccess` + dashboard sidebar via effective tier
+- [x] `has_ever_subscribed` on webhook activation (`withHasEverSubscribed`)
+- [x] Admin tier override allows **0**
+- [x] Unit tests — `resolveEffectiveTier` (subscribe→cancel→0), `hasEverSubscribed`
+- [x] **Docs** — SCHEMA_CHANGELOG, MASTER_ARCHITECTURE
+- [ ] **Staging:** apply migration before merge (`scripts/apply-migration.sh staging supabase/migrations/20260724120000_tier_restructure_pr1_trial_columns.sql`)
+- [ ] **Follow-on:** PRs 2–5 per tier restructure sequence (gates, dashboard slice, projections split, retire Stripe trial)
+
 ## Homepage CI lint fix (2026-06-12) — shipped
 
 - [x] `app/(public)/page.tsx` — replace internal `<a href>` with `next/link` (`/learn`, `/login`, `/events`, `/assess`, signup) — fixes `@next/next/no-html-link-for-pages` CI build failure

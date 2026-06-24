@@ -47,8 +47,8 @@ export default async function PrintPage() {
 
   const profileAccess = {
     role: profile?.role ?? 'consumer',
-    consumer_tier: profile?.consumer_tier ?? access.tier,
-    subscription_status: profile?.subscription_status ?? access.subscriptionStatus,
+    consumer_tier: profile?.consumer_tier ?? 0,
+    subscription_status: profile?.subscription_status ?? 'none',
   }
 
   const accessOptions = { planExportPurchase }

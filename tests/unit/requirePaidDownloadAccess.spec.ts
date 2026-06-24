@@ -41,6 +41,21 @@ test.describe('hasDeliverableUpdateAccess', () => {
     ).toBe(false)
   })
 
+  test('app trial shape (tier 0, none) → false even though effective tier would be 3', () => {
+    expect(
+      hasDeliverableDownloadAccess(
+        { role: 'consumer', consumer_tier: 0, subscription_status: 'none' },
+        3,
+      ),
+    ).toBe(false)
+    expect(
+      hasDeliverableUpdateAccess(
+        { role: 'consumer', consumer_tier: 0, subscription_status: 'none' },
+        3,
+      ),
+    ).toBe(false)
+  })
+
   test('tier 2 active → false for deliverable', () => {
     expect(
       hasDeliverableUpdateAccess(
@@ -105,6 +120,24 @@ test.describe('hasDeliverableUpdateAccess', () => {
 })
 
 test.describe('hasDeliverableDownloadAccess', () => {
+  test('tier 3 active stored profile → download allowed (/print path)', () => {
+    expect(
+      hasDeliverableDownloadAccess(
+        { role: 'consumer', consumer_tier: 3, subscription_status: 'active' },
+        3,
+      ),
+    ).toBe(true)
+  })
+
+  test('tier 3 active but nullish stored tier → download blocked (mirror risk of ?? 0)', () => {
+    expect(
+      hasDeliverableDownloadAccess(
+        { role: 'consumer', consumer_tier: null, subscription_status: 'active' },
+        3,
+      ),
+    ).toBe(false)
+  })
+
   test('one-time day 91 → download still allowed', () => {
     const purchasedAt = new Date('2026-01-01T12:00:00.000Z')
     const planExportPurchase = {

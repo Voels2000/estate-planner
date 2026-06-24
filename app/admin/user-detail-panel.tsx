@@ -20,6 +20,7 @@ type UserDetail = {
 }
 
 const TIER_LABELS: Record<number, string> = {
+  0: 'Free (0)',
   1: 'Financial (1)',
   2: 'Retirement (2)',
   3: 'Estate (3)',
@@ -58,7 +59,7 @@ export default function UserDetailPanel({ userId, onClose }: Props) {
 
   const [syncing, setSyncing] = useState(false)
   const [resetting, setResetting] = useState(false)
-  const [overrideTier, setOverrideTier] = useState<1 | 2 | 3>(1)
+  const [overrideTier, setOverrideTier] = useState<0 | 1 | 2 | 3>(0)
   const [overrideReason, setOverrideReason] = useState('')
   const [overriding, setOverriding] = useState(false)
   const [showOverride, setShowOverride] = useState(false)
@@ -72,7 +73,7 @@ export default function UserDetailPanel({ userId, onClose }: Props) {
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed to load user')
       setUser(json.data as UserDetail)
-      setOverrideTier((json.data.consumer_tier as 1 | 2 | 3) ?? 1)
+      setOverrideTier((json.data.consumer_tier as 0 | 1 | 2 | 3) ?? 0)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load user')
       setUser(null)
@@ -158,7 +159,7 @@ export default function UserDetailPanel({ userId, onClose }: Props) {
 
   if (!userId) return null
 
-  const tierLabel = TIER_LABELS[user?.consumer_tier ?? 1] ?? `Tier ${user?.consumer_tier ?? '—'}`
+  const tierLabel = TIER_LABELS[user?.consumer_tier ?? 0] ?? `Tier ${user?.consumer_tier ?? '—'}`
   const stripeUrl = user?.stripe_customer_id
     ? `https://dashboard.stripe.com/customers/${user.stripe_customer_id}`
     : null
@@ -326,9 +327,10 @@ export default function UserDetailPanel({ userId, onClose }: Props) {
                       </label>
                       <select
                         value={overrideTier}
-                        onChange={(e) => setOverrideTier(Number(e.target.value) as 1 | 2 | 3)}
+                        onChange={(e) => setOverrideTier(Number(e.target.value) as 0 | 1 | 2 | 3)}
                         className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
                       >
+                        <option value={0}>Free / Tier 0</option>
                         <option value={1}>Financial / Tier 1</option>
                         <option value={2}>Retirement / Tier 2</option>
                         <option value={3}>Estate / Tier 3</option>

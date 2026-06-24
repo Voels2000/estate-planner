@@ -6,6 +6,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { displayPersonFirstName } from '@/lib/display-person-name'
+import { getUserAccess } from '@/lib/get-user-access'
 import { isWizardComplete } from '@/lib/estate/profileGate'
 import { IncomeClient } from './_income-client'
 
@@ -19,12 +20,12 @@ export default async function IncomePage() {
     supabase.from('income').select('*').eq('owner_id', user.id).neq('source', 'social_security').order('created_at', { ascending: false }),
     supabase.from('households').select('person1_name, person2_name, has_spouse').eq('owner_id', user.id).single(),
     supabase.from('income_types').select('value, label').eq('is_active', true).order('sort_order'),
-    supabase.from('profiles').select('onboarding_wizard_completed_at, consumer_tier').eq('id', user.id).single(),
+    supabase.from('profiles').select('onboarding_wizard_completed_at').eq('id', user.id).single(),
   ])
 
+  const access = await getUserAccess()
   const wizardComplete = isWizardComplete(profile)
-  const consumerTier = profile?.consumer_tier ?? 1
-  const showImportCta = !wizardComplete && consumerTier < 2
+  const showImportCta = !wizardComplete && access.tier < 2
 
   return (
     <IncomeClient
