@@ -23,6 +23,13 @@ WHERE role = 'consumer'
     OR (stripe_subscription_id IS NOT NULL AND btrim(stripe_subscription_id) <> '')
   );
 
+-- Prior subscribers should not carry a stray app-trial window (resolver ignores it, but confusing in ops).
+UPDATE public.profiles
+SET trial_ends_at = NULL
+WHERE role = 'consumer'
+  AND has_ever_subscribed = true
+  AND trial_ends_at IS NOT NULL;
+
 -- Free-floor consumers without subscription history: grant app trial window + tier 0 storage.
 UPDATE public.profiles
 SET
