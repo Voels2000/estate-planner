@@ -112,7 +112,7 @@ if (hasTier1Consumer) {
 projects.push({
   name: 'consumer-tier0',
   dependencies: ['consumer-canceled-setup'],
-  testMatch: /consumer-tier0-gates\.spec\.ts/,
+  testMatch: /consumer-tier0-gates\.spec\.ts|consumer-tier0-dashboard\.spec\.ts/,
   use: { storageState: '.auth/consumer-canceled.json' },
 })
 

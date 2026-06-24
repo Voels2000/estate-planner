@@ -105,4 +105,9 @@ PR 2 put `UpgradeBanner` on `/projections` and `/scenarios`. Confirmed: gates
 - Direct visit to `/projections` and `/scenarios` → banner, **no** recompute fired.
 - Entry pages all accept input.
 
+**Gate 1 verify:** `npm run verify:tier0-no-recompute` — snapshots
+`estate_health_scores` / `estate_composition_cache` timestamps before and after
+`/dashboard` load (6s debounce window). Expect `Tier 0 slice UI detected: true`
+after PR 3 is deployed to staging.
+
 See also `docs/INPUT_COMPUTED_BOUNDARY.md` staging spot-check table.
