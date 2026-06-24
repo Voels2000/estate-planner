@@ -29,6 +29,8 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Human release smoke checklist |
 | [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) | Compliance language policy — education vs. advice framing |
 | [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) | Auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
+| [BILLING_PAGE_COPY_SPEC.md](./BILLING_PAGE_COPY_SPEC.md) | Consumer `/billing` matrix copy and layout |
+| [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md) | **Tier 0 + app-trial enforcement** — 8-PR sequence after billing page presentation |
 | [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | Privacy deletion SOP, C-6/C-7 automated checks, privacy request + appeals SOP |
 | [legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md) | Counsel Q1–Q10 → conditional engineering scope |
 

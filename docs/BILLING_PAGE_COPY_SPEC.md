@@ -55,3 +55,4 @@ Copy and CTA in `BillingPlanAndExportSection.tsx`. Shown when `shouldOfferPlanAn
 
 - [MASTER_ARCHITECTURE.md § Consumer Billing](./MASTER_ARCHITECTURE.md)
 - [DECISION_LOG.md § Consumer billing capability matrix](./DECISION_LOG.md)
+- [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md) — enforcement PRs after this presentation layer

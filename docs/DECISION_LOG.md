@@ -12,7 +12,7 @@
 
 **Plan & Export.** One-time SKU block stays **below** the subscription ladder (not a matrix column).
 
-**Matrix vs gates.** Rows align with `FEATURE_TIERS` where keys exist; Tier 0 rows (`net-worth-view`, `data-export`) are matrix-only until tier-restructure gates ship — not added to `FEATURE_TIERS` (would break `DELIVERABLE_MIN_TIER` typing).
+**Matrix vs gates.** Rows align with `FEATURE_TIERS` where keys exist; Tier 0 rows (`net-worth-view`, `data-export`) are matrix-only until tier-restructure gates ship — not added to `FEATURE_TIERS` (would break `DELIVERABLE_MIN_TIER` typing). **Enforcement plan:** [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md).
 
 **Files:** `lib/billing/billingCapabilityMatrix.ts` · `billingTierPresentation.ts` · `resolveBillingTrialBanner.ts` · `components/billing/BillingCapabilityMatrix.tsx` · `BillingPageTrialBanner.tsx` · `BillingPlanAndExportSection.tsx` · `app/billing/_billing-client.tsx` · unit specs · [BILLING_PAGE_COPY_SPEC.md](./BILLING_PAGE_COPY_SPEC.md).
 

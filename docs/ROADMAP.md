@@ -28,6 +28,23 @@
 | Plan & Export below ladder | `[~]` | Unchanged SKU; new section component |
 | Docs | `[~]` | BILLING_PAGE_COPY_SPEC · MASTER_ARCHITECTURE · DECISION_LOG |
 
+### Tier restructure — enforcement sequence (2026-06-24) `[ ]` **queued**
+
+Canonical plan: [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md). Billing page = presentation only; enforcement is PRs 1–8 below.
+
+| PR | Status | Scope |
+|----|--------|-------|
+| 1 Foundation | `[ ]` | `trial_ends_at`, `has_ever_subscribed`, `resolveEffectiveTier`, sidebar fix |
+| 2 Gates | `[ ]` | `FEATURE_TIERS` reclass; gate `/projections`, `/scenarios`; input vs computed split |
+| 3 Dashboard | `[ ]` | Tier 0 net-worth slice; no composition/MC/recompute |
+| 4 Projections | `[ ]` | Strip MC fan + estate overlay from Tier 1 view |
+| 5 Stripe trial | `[ ]` | `trialDays: 0`; Estate CTA copy |
+| 6 Export API | `[ ]` | Free inputs-only export (parallel after PR 1) |
+| 7 Plan & Export | `[ ]` | Trial exclusion rules |
+| 8 Tests/docs | `[ ]` | Seeds, E2E, LAUNCH.md |
+
+**Launch blocker:** PRs 2–5 before consumer gate flip.
+
 ---
 
 ### Sprint E — Dead-code sweep (2026-06-19) `[~]` **closing out**
