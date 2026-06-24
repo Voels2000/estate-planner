@@ -1,4 +1,5 @@
 -- Tier restructure PR 1: app-managed trial columns + signup defaults.
+-- File: 20260724120000_tier_restructure_pr1_trial_columns.sql
 -- trial_ends_at: 7-day universal trial window (replaces signup use of trial_started_at).
 -- has_ever_subscribed: blocks re-entry to app trial after first paid subscription.
 

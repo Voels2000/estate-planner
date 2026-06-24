@@ -41,6 +41,21 @@ test.describe('hasDeliverableUpdateAccess', () => {
     ).toBe(false)
   })
 
+  test('app trial shape (tier 0, none) → false even though effective tier would be 3', () => {
+    expect(
+      hasDeliverableDownloadAccess(
+        { role: 'consumer', consumer_tier: 0, subscription_status: 'none' },
+        3,
+      ),
+    ).toBe(false)
+    expect(
+      hasDeliverableUpdateAccess(
+        { role: 'consumer', consumer_tier: 0, subscription_status: 'none' },
+        3,
+      ),
+    ).toBe(false)
+  })
+
   test('tier 2 active → false for deliverable', () => {
     expect(
       hasDeliverableUpdateAccess(

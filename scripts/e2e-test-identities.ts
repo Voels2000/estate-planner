@@ -69,6 +69,13 @@ export const E2E_IDENTITIES = {
     fullName: 'E2E Consumer Tier1',
     householdName: 'E2E Tier1 Household',
   },
+  /** Subscribe-then-cancel persona — has_ever_subscribed + canceled → effective tier 0 */
+  consumerCanceled: {
+    email: 'e2e-consumer-canceled@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Consumer Canceled',
+    householdName: 'E2E Canceled Household',
+  },
   /** Stage 1 golden-path smoke — wizard done, 1 of 5 financial sections, tier 1 */
   goldenPathStage1: {
     email: 'e2e-golden-path@mywealthmaps.test',

@@ -55,7 +55,7 @@ test.describe('resolveEffectiveTier', () => {
     ).toBe(0)
   })
 
-  test('subscribe then cancel resolves to Tier 0, not trial', () => {
+  test('subscribe then cancel (canceled) resolves to Tier 0, not trial', () => {
     expect(
       resolveEffectiveTier(
         {
@@ -80,6 +80,49 @@ test.describe('resolveEffectiveTier', () => {
           trial_ends_at: '2026-06-25T12:00:00Z',
         },
         { ...noBypass, now },
+      ),
+    ).toBe(0)
+  })
+
+  test('canceling mid-period keeps paid tier', () => {
+    expect(
+      resolveEffectiveTier(
+        {
+          ...baseProfile,
+          has_ever_subscribed: true,
+          subscription_status: 'canceling',
+          consumer_tier: 2,
+          trial_ends_at: futureIso(),
+        },
+        noBypass,
+      ),
+    ).toBe(2)
+  })
+
+  test('past_due resolves to Tier 0', () => {
+    expect(
+      resolveEffectiveTier(
+        {
+          ...baseProfile,
+          has_ever_subscribed: true,
+          subscription_status: 'past_due',
+          consumer_tier: 3,
+        },
+        noBypass,
+      ),
+    ).toBe(0)
+  })
+
+  test('unpaid resolves to Tier 0', () => {
+    expect(
+      resolveEffectiveTier(
+        {
+          ...baseProfile,
+          has_ever_subscribed: true,
+          subscription_status: 'unpaid',
+          consumer_tier: 3,
+        },
+        noBypass,
       ),
     ).toBe(0)
   })

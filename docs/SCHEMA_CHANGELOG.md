@@ -14,7 +14,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ## Tier restructure PR 1 — `trial_ends_at`, `has_ever_subscribed`, `resolveEffectiveTier` (2026-06-24)
 
-**Migration:** `20260618120000_tier_restructure_pr1_trial_columns.sql`
+**Migration:** `20260724120000_tier_restructure_pr1_trial_columns.sql`
 
 **Columns:**
 - `profiles.trial_ends_at` — app-managed 7-day trial end (set at signup)
@@ -24,7 +24,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 **App:** `lib/access/resolveEffectiveTier.ts` — single source for feature tier (0–3). `getUserAccess()` and dashboard sidebar route through it. `has_ever_subscribed` checked before trial window. Webhook activation sets `has_ever_subscribed` via `withHasEverSubscribed`.
 
-**Apply staging:** `bash scripts/apply-migration.sh staging supabase/migrations/20260618120000_tier_restructure_pr1_trial_columns.sql`
+**Apply staging:** `bash scripts/apply-migration.sh staging supabase/migrations/20260724120000_tier_restructure_pr1_trial_columns.sql`
 
 **Tests:** `tests/unit/resolveEffectiveTier.spec.ts` · `tests/unit/hasEverSubscribed.spec.ts`
 

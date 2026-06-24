@@ -110,13 +110,13 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 
 ## Tier restructure PR 1 — effective tier foundation (2026-06-24) — shipped
 
-- [x] Migration `20260618120000` — `trial_ends_at`, `has_ever_subscribed`; signup `trial_ends_at = now()+7d`; backfill
+- [x] Migration `20260724120000` — `trial_ends_at`, `has_ever_subscribed`; signup `trial_ends_at = now()+7d`; backfill
 - [x] `resolveEffectiveTier` + `getUserAccess` + dashboard sidebar via effective tier
 - [x] `has_ever_subscribed` on webhook activation (`withHasEverSubscribed`)
 - [x] Admin tier override allows **0**
 - [x] Unit tests — `resolveEffectiveTier` (subscribe→cancel→0), `hasEverSubscribed`
 - [x] **Docs** — SCHEMA_CHANGELOG, MASTER_ARCHITECTURE
-- [ ] **Staging:** apply migration before merge (`scripts/apply-migration.sh staging …`)
+- [ ] **Staging:** apply migration before merge (`scripts/apply-migration.sh staging supabase/migrations/20260724120000_tier_restructure_pr1_trial_columns.sql`)
 - [ ] **Follow-on:** PRs 2–5 per tier restructure sequence (gates, dashboard slice, projections split, retire Stripe trial)
 
 ## Homepage CI lint fix (2026-06-12) — shipped
