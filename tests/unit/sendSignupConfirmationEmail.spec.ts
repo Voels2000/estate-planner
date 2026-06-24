@@ -1,70 +1,72 @@
+process.env.RESEND_API_KEY = process.env.RESEND_API_KEY ?? 're_test_key'
+
 import { test, expect } from '@playwright/test'
-import { sendSignupConfirmationEmail } from '@/lib/auth/sendSignupConfirmationEmail'
+import { resend } from '@/lib/resend'
+import { sendSignupConfirmationEmail } from '@/lib/email/sendSignupConfirmationEmail'
+import { buildSignupConfirmUrl, getSiteUrl } from '@/lib/site-url'
+
+test.describe('site-url', () => {
+  test('getSiteUrl normalizes NEXT_PUBLIC_SITE_URL', () => {
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://estate-planner-staging.vercel.app/'
+    expect(getSiteUrl()).toBe('https://estate-planner-staging.vercel.app')
+  })
+
+  test('buildSignupConfirmUrl points at prefetch-safe confirm page', () => {
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://estate-planner-staging.vercel.app'
+    const url = buildSignupConfirmUrl('abc123hash')
+    expect(url).toBe(
+      'https://estate-planner-staging.vercel.app/auth/confirm?token_hash=abc123hash&type=signup',
+    )
+  })
+})
 
 test.describe('sendSignupConfirmationEmail', () => {
-  test('calls Supabase resend with signup type and redirect', async () => {
-    const originalFetch = globalThis.fetch
-    const calls: Array<{ url: string; init?: RequestInit }> = []
+  test('sends branded Resend mail with confirm URL', async () => {
+    const originalSend = resend.emails.send
+    const calls: Parameters<typeof resend.emails.send>[] = []
 
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon-test-key'
-
-    globalThis.fetch = async (input, init) => {
-      const url =
-        typeof input === 'string'
-          ? input
-          : input instanceof URL
-            ? input.href
-            : input.url
-      calls.push({ url, init })
-      return new Response('{}', { status: 200 })
-    }
+    resend.emails.send = (async (...args) => {
+      calls.push(args)
+      return { data: { id: 'test-id' }, error: null }
+    }) as typeof resend.emails.send
 
     try {
-      const result = await sendSignupConfirmationEmail(
-        'user@example.com',
-        'https://staging.example.com/auth/callback',
-      )
+      await sendSignupConfirmationEmail({
+        to: 'user@example.com',
+        confirmUrl: 'https://staging.example.com/auth/confirm?token_hash=x&type=signup',
+        name: 'Alan',
+      })
 
-      expect(result).toEqual({ ok: true })
       expect(calls).toHaveLength(1)
-      expect(calls[0]?.url).toBe('https://example.supabase.co/auth/v1/resend')
-      expect(calls[0]?.init?.method).toBe('POST')
-      expect(calls[0]?.init?.headers).toMatchObject({
-        apikey: 'anon-test-key',
-        Authorization: 'Bearer anon-test-key',
+      expect(calls[0]?.[0]).toMatchObject({
+        from: 'My Wealth Maps <noreply@mywealthmaps.com>',
+        to: 'user@example.com',
+        subject: 'Confirm your email to start your My Wealth Maps estate plan',
       })
-
-      const body = JSON.parse(String(calls[0]?.init?.body))
-      expect(body).toEqual({
-        type: 'signup',
-        email: 'user@example.com',
-        options: { emailRedirectTo: 'https://staging.example.com/auth/callback' },
-      })
+      expect(String(calls[0]?.[0]?.html)).toContain('My Wealth Maps')
+      expect(String(calls[0]?.[0]?.html)).toContain('auth/confirm')
     } finally {
-      globalThis.fetch = originalFetch
+      resend.emails.send = originalSend
     }
   })
 
-  test('returns error when resend fails', async () => {
-    const originalFetch = globalThis.fetch
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon-test-key'
+  test('throws when Resend fails', async () => {
+    const originalSend = resend.emails.send
 
-    globalThis.fetch = async () =>
-      new Response('{"msg":"rate limited"}', { status: 429 })
+    resend.emails.send = (async () => ({
+      data: null,
+      error: { message: 'rate limited', name: 'rate_limit' },
+    })) as unknown as typeof resend.emails.send
 
     try {
-      const result = await sendSignupConfirmationEmail(
-        'user@example.com',
-        'https://staging.example.com/auth/callback',
-      )
-      expect(result.ok).toBe(false)
-      if (!result.ok) {
-        expect(result.error).toContain('rate limited')
-      }
+      await expect(
+        sendSignupConfirmationEmail({
+          to: 'user@example.com',
+          confirmUrl: 'https://staging.example.com/auth/confirm?token_hash=x&type=signup',
+        }),
+      ).rejects.toThrow(/rate limited/)
     } finally {
-      globalThis.fetch = originalFetch
+      resend.emails.send = originalSend
     }
   })
 })

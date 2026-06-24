@@ -13,8 +13,8 @@ import {
   type SignupRole,
 } from '@/lib/auth/signupAdmission'
 import { sanitizeSignupRedirect, validateSignupPassword } from '@/lib/auth/signupPolicy'
-import { sendSignupConfirmationEmail } from '@/lib/auth/sendSignupConfirmationEmail'
-import { getOrigin } from '@/lib/app-url'
+import { sendSignupConfirmationEmail } from '@/lib/email/sendSignupConfirmationEmail'
+import { buildSignupConfirmUrl } from '@/lib/site-url'
 import { isSignupExplicitlyOpen } from '@/lib/waitlist-mode'
 import { getRequestCountry, isBlockedNonUsCountry } from '@/lib/geo/usOnlyAccess'
 
@@ -132,15 +132,93 @@ export async function POST(request: NextRequest) {
   const effectiveRole = resolveEffectiveSignupRole(role, admission)
   const emailConfirm = resolveEmailConfirmForCreateUser(admission, hostname)
 
+  const userMetadata = {
+    full_name: fullName,
+    role: effectiveRole,
+    terms_accepted_at: termsAcceptedAt,
+  }
+
+  let userId: string
+
+  if (!emailConfirm) {
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: 'signup',
+      email,
+      password,
+      options: {
+        data: userMetadata,
+      },
+    })
+
+    if (linkError || !linkData?.user) {
+      const message = linkError?.message ?? 'Failed to create account'
+      if (isExistingUserError(message) || linkError?.status === 422) {
+        return NextResponse.json(
+          { error: 'An account with this email already exists.' },
+          { status: 409 },
+        )
+      }
+      console.error('admin generateLink signup error:', linkError)
+      return NextResponse.json({ error: 'Failed to create account' }, { status: 500 })
+    }
+
+    const hashedToken = linkData.properties?.hashed_token
+    if (!hashedToken) {
+      console.error('admin generateLink signup: missing hashed_token')
+      return NextResponse.json({ error: 'Failed to create account' }, { status: 500 })
+    }
+
+    userId = linkData.user.id
+
+    const completion = await completeSignupAfterCreate({
+      userId,
+      email,
+      fullName,
+      role: effectiveRole,
+      termsAcceptedAt,
+      admission,
+      referralCode: body.referralCode,
+      referralSlug: body.referralSlug,
+      attorneyReferralCode: body.attorneyReferralCode,
+      attorneyReferralSlug: body.attorneyReferralSlug,
+      betaLabel: body.betaLabel,
+      betaAccessActive: body.betaAccessActive,
+    })
+
+    let nextPath = completion.nextPath
+    const redirectTo = sanitizeSignupRedirect(body.redirectTo)
+    if (
+      redirectTo &&
+      !nextPath.startsWith('/invite/') &&
+      !nextPath.startsWith('/advisor/connect/')
+    ) {
+      nextPath = redirectTo
+    }
+
+    try {
+      await sendSignupConfirmationEmail({
+        to: email,
+        confirmUrl: buildSignupConfirmUrl(hashedToken),
+        name: fullName.split(' ')[0],
+      })
+    } catch (err) {
+      console.error(
+        'signup confirmation email:',
+        err instanceof Error ? err.message : err,
+      )
+    }
+
+    return NextResponse.json(
+      { userId, needsEmailConfirmation: true, nextPath },
+      { status: 201 },
+    )
+  }
+
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,
     password,
     email_confirm: emailConfirm,
-    user_metadata: {
-      full_name: fullName,
-      role: effectiveRole,
-      terms_accepted_at: termsAcceptedAt,
-    },
+    user_metadata: userMetadata,
   })
 
   if (createError || !created.user) {
@@ -152,7 +230,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create account' }, { status: 500 })
   }
 
-  const userId = created.user.id
+  userId = created.user.id
 
   const completion = await completeSignupAfterCreate({
     userId,
@@ -177,20 +255,6 @@ export async function POST(request: NextRequest) {
     !nextPath.startsWith('/advisor/connect/')
   ) {
     nextPath = redirectTo
-  }
-
-  if (!emailConfirm) {
-    const sendResult = await sendSignupConfirmationEmail(
-      email,
-      `${getOrigin(request)}/auth/callback`,
-    )
-    if (!sendResult.ok) {
-      console.error('signup confirmation email:', sendResult.error)
-    }
-    return NextResponse.json(
-      { userId, needsEmailConfirmation: true, nextPath },
-      { status: 201 },
-    )
   }
 
   const cookieStore = await cookies()
