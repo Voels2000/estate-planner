@@ -32,7 +32,11 @@ export const EXPORT_INPUT_TABLES = [
 
 export type ExportInputTable = (typeof EXPORT_INPUT_TABLES)[number]
 
-/** Explicit denylist for PR 6 export — never serialize computed artifacts. */
+/**
+ * Explicit denylist for PR 6 export — never serialize computed artifacts.
+ * Distinct from PAGE_INPUT_COMPUTED_SPLIT: those are runtime derivations from
+ * EXPORT_INPUT_TABLES rows; this list is persisted engine/cache outputs.
+ */
 export const EXPORT_COMPUTED_DENYLIST = [
   'projections',
   'projection_rows',
@@ -46,7 +50,8 @@ export const EXPORT_COMPUTED_DENYLIST = [
 
 /**
  * Per-page split: fields users type (Tier 0) vs derived readouts (paid).
- * Used by UI gates and documentation — not a DB column list.
+ * UI gates use computedFeature → COMPUTED_ANALYSIS_FEATURES (via hasFeatureAccess).
+ * PR 6 export serializes inputs from EXPORT_INPUT_TABLES only.
  */
 export const PAGE_INPUT_COMPUTED_SPLIT = {
   insurance: {
