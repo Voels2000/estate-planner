@@ -751,11 +751,13 @@ Two layers — do not conflate them:
 
 **Server-gated signup (2026-06, PR #25):** Client `supabase.auth.signUp()` removed. All account creation flows through `POST /api/auth/signup` with admission validated in `lib/auth/signupAdmission.ts` **before** `admin.auth.admin.createUser()` (`lib/auth/completeSignup.ts` for side effects). Checkout routes remain auth-only — they do not check `PUBLIC_SIGNUP_OPEN`; blocking anon signup at Supabase + server admission is the containment model.
 
+**Signup confirmation email (2026-06-24):** Open-consumer signups use `admin.generateLink({ type: 'signup' })` + branded Resend mail (`lib/email/sendSignupConfirmationEmail.ts`) with a prefetch-safe link to `/auth/confirm?token_hash=…&type=signup`. Verification runs only on a human button POST (`app/auth/confirm/actions.ts`) so Outlook Safe Links cannot burn the token. Invite/token admissions keep `createUser` + immediate session. Staging Supabase should still enable custom Resend SMTP for auth emails Supabase sends itself (email-change, etc.).
+
 | Layer | Mechanism | Status |
 |-------|-----------|--------|
 | **0 — Supabase** | Disable anon/public signups on prod (`fnzvlmrqwcqwiqueevux`) | Attested (prod safe while dark) |
 | **1 — Server route** | `signupAdmission` + `createUser`; open_consumer requires `PUBLIC_SIGNUP_OPEN` | Shipped on `main` |
-| **2 — Email confirm** | Bright consumer: `email_confirm: false` → `201` + `needsEmailConfirmation`, no session cookie | Unit + local/staging-DB matrix pass |
+| **2 — Email confirm** | `generateLink` + branded Resend; `/auth/confirm` button POST (prefetch-safe) | Unit + staging Outlook smoke |
 | **§10 hosted matrix** | Probes 1/2/4/5/7/8 on staging URL | **Closed** 2026-06-16 — [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md) |
 
 **Test account seed scripts (staging / local, not Vercel env):**

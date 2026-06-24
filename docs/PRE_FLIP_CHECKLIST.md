@@ -33,7 +33,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 ### Signup correctness (on PROD)
 - ✅ **Waitlist hardening (staging §10)** — Layer 0 on prod + staging. Code on `main` (PR #25). **§10 matrix 6/6 PASS** on `https://estate-planner-staging.vercel.app` (2026-06-16) — [WAITLIST_HARDENING_SPEC §10 attestation](./WAITLIST_HARDENING_SPEC.md#10-attestation--closed-2026-06-16).
 - ⬜ **`verify-env` prod gates** — `GET /api/admin/verify-env?live=1` on production must show **CRITICAL** if `SIGNUP_SKIP_EMAIL_CONFIRM` is set (auto-confirms self-serve signups); `PUBLIC_SIGNUP_OPEN` must be `false` until flip.
-- ✅ **Open-consumer email confirm (staging)** — Probe 1: `201` + `needsEmailConfirmation: true`, no session cookie (`delivered@resend.dev`). **Prod:** verify at flip with fresh email.
+- ✅ **Open-consumer email confirm (staging)** — Probe 1: `201` + `needsEmailConfirmation: true`, no session cookie (`delivered@resend.dev`). **Delivery:** server `sendSignupConfirmationEmail` after `createUser` (fix 2026-06-24 — admin API does not send mail). **Prod:** verify at flip with fresh email.
 - 🔄 **`handle_new_user` / signup defaults verified on prod** — fresh signup → `subscription_status='none'`, `consumer_tier=1`. (B8)
 - ⬜ **Apply WA estate migrations on prod** — Regime D + CST parity in timestamp order (`20260613120000`, `20260613130000`, `20260613140000`) if not already applied.
 

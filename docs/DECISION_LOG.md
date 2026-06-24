@@ -3420,6 +3420,20 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### June 2026 — Signup confirmation email after server-route hardening
+
+**Decision:** Open-consumer signup sends **branded** confirmation via Resend (`generateLink` + `sendSignupConfirmationEmail`), linking to `/auth/confirm` where verification runs only on a human button POST (Outlook Safe Links prefetch hardening). Invite admissions unchanged (`createUser` + session).
+
+**Reasoning:** Supabase default mailer on staging looked generic after the two-DB split; product mail already uses Resend. `createUser` + `/auth/v1/resend` fixed delivery but not branding. GET-verify links are burned by Microsoft Defender prefetch.
+
+**Alternatives considered:** Supabase dashboard template parity only (rejected as sole fix — still generic sender on staging without SMTP). GET `/auth/confirm` verify (rejected — burned tokens on Outlook).
+
+**Implication:** Branded resend for already-registered unconfirmed users stays on existing `/auth/confirm-email` Supabase resend (follow-up PR). Enable custom Resend SMTP on staging Supabase for non-signup auth emails.
+
+**Attestation:** Al / pending — staging Outlook prefetch test after deploy.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]
