@@ -163,6 +163,37 @@ test.describe('resolveEffectiveTier', () => {
       }),
     ).toBe(3)
   })
+
+  test('advisor role bypass resolves to Tier 3 regardless of stored tier', () => {
+    expect(
+      resolveEffectiveTier(
+        { ...baseProfile, consumer_tier: 1, subscription_status: 'none' },
+        { ...noBypass, isAdvisor: true },
+      ),
+    ).toBe(3)
+  })
+
+  test('professionally managed uses stored paid tier when valid', () => {
+    expect(
+      resolveEffectiveTier(
+        {
+          ...baseProfile,
+          consumer_tier: 2,
+          subscription_status: 'none',
+        },
+        { ...noBypass, isProfessionallyManaged: true },
+      ),
+    ).toBe(2)
+  })
+
+  test('professionally managed defaults to Tier 3 when stored tier is absent', () => {
+    expect(
+      resolveEffectiveTier(
+        { ...baseProfile, consumer_tier: 0 },
+        { ...noBypass, isProfessionallyManaged: true },
+      ),
+    ).toBe(3)
+  })
 })
 
 test.describe('resolveConsumerIsTrial', () => {
