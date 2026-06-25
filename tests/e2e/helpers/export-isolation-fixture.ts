@@ -33,7 +33,7 @@ async function deleteMarkerRow(
     return
   }
   if (table === 'insurance_policies') {
-    await admin.from('insurance_policies').delete().eq('user_id', ownerId).eq('description', marker)
+    await admin.from('insurance_policies').delete().eq('user_id', ownerId).eq('policy_name', marker)
     return
   }
   if (table === 'expenses') {
@@ -101,8 +101,8 @@ async function insertMarkerRow(
     case 'insurance_policies':
       ({ error } = await admin.from('insurance_policies').insert({
         user_id: ownerId,
-        description: marker,
-        policy_type: 'term',
+        policy_name: marker,
+        insurance_type: 'life',
         death_benefit: MARKER_VALUE,
       }))
       break
