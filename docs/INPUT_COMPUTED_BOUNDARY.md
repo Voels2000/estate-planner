@@ -2,7 +2,7 @@
 
 **Owner:** Tier restructure PR 2 (authoritative for PR 6 export serializer).
 
-**Canonical index:** [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md)
+**Canonical index:** [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md) · **Test audit:** [TEST_COVERAGE_AUDIT_SPEC.md](./TEST_COVERAGE_AUDIT_SPEC.md) → [Pass 1 map](./TEST_COVERAGE_AUDIT_PASS1.md)
 
 ## Code source of truth
 
