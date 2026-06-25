@@ -116,11 +116,13 @@ export async function restoreHouseholdDeferredFields(
   return patchHouseholdById(householdId, { ...snapshot })
 }
 
-/** Fields that gate /social-security (tier 2+) via getUserAccess. */
+/** Fields that gate access paths via stored profile + trial columns. */
 export type ProfileAccessFields = {
   consumer_tier: number | null
   subscription_status: string | null
   subscription_plan: string | null
+  trial_ends_at?: string | null
+  has_ever_subscribed?: boolean | null
 }
 
 export async function fetchProfileAccessFields(
@@ -128,7 +130,7 @@ export async function fetchProfileAccessFields(
 ): Promise<ProfileAccessFields | null> {
   return restGet<ProfileAccessFields>(
     'profiles',
-    `id=eq.${userId}&select=consumer_tier,subscription_status,subscription_plan`,
+    `id=eq.${userId}&select=consumer_tier,subscription_status,subscription_plan,trial_ends_at,has_ever_subscribed`,
   )
 }
 
@@ -163,6 +165,24 @@ export const SOCIAL_SECURITY_GATE_ACCESS: ProfileAccessFields = {
   consumer_tier: 1,
   subscription_status: 'none',
   subscription_plan: null,
+}
+
+/** App-managed trial: effective tier 3 via trial_ends_at; stored sub inactive (PR 7 deliverable gate). */
+export const APP_MANAGED_TRIAL_ACCESS: ProfileAccessFields = {
+  consumer_tier: 0,
+  subscription_status: 'none',
+  subscription_plan: null,
+  trial_ends_at: '2030-06-01T00:00:00.000Z',
+  has_ever_subscribed: false,
+}
+
+/** Paid Estate subscriber — deliverable PDF allowed. */
+export const DELIVERABLE_ACTIVE_TIER3_ACCESS: ProfileAccessFields = {
+  consumer_tier: 3,
+  subscription_status: 'active',
+  subscription_plan: null,
+  trial_ends_at: null,
+  has_ever_subscribed: true,
 }
 
 export async function restoreProfileAccessFields(

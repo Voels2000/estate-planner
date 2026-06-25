@@ -83,4 +83,32 @@ test.describe('shouldOfferPlanAndExportPurchase', () => {
       }),
     ).toBe(false)
   })
+
+  test('shows buy for app-managed trial user (effective tier 3, no deliverable access)', () => {
+    expect(
+      shouldOfferPlanAndExportPurchase({
+        profile: {
+          role: 'consumer',
+          consumer_tier: 0,
+          subscription_status: 'none',
+        },
+        canDownloadDeliverable: false,
+        isAdvisorClient: false,
+      }),
+    ).toBe(true)
+  })
+
+  test('hides buy for Plan & Export purchaser (canDownloadDeliverable true, no active sub)', () => {
+    expect(
+      shouldOfferPlanAndExportPurchase({
+        profile: {
+          role: 'consumer',
+          consumer_tier: 1,
+          subscription_status: 'none',
+        },
+        canDownloadDeliverable: true,
+        isAdvisorClient: false,
+      }),
+    ).toBe(false)
+  })
 })

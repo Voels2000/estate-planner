@@ -5,6 +5,8 @@ import { computePlanExportEditWindowEndsAt } from '@/lib/billing/planExportAcces
 import {
   deferPlanAndExportPurchase,
   deferProfileAccessRestore,
+  APP_MANAGED_TRIAL_ACCESS,
+  DELIVERABLE_ACTIVE_TIER3_ACCESS,
   fetchHouseholdById,
   SOCIAL_SECURITY_GATE_ACCESS,
 } from '../helpers/supabase-fixture'
@@ -54,6 +56,46 @@ test.describe('deliverable export gate', () => {
           expect(res.status()).toBe(403)
         },
       )
+    })
+  })
+
+  test('app-managed trial (effective tier 3, stored none) gated on /print with offer; API 403s PDF', async ({
+    page,
+    request,
+  }) => {
+    await withConsumerOwner(async (ownerId, householdId) => {
+      await deferProfileAccessRestore(ownerId, APP_MANAGED_TRIAL_ACCESS, async () => {
+        await page.goto('/print')
+        await expect(page.getByTestId('deliverable-export-gated')).toBeVisible()
+        await expect(page.getByTestId('deliverable-export-ready')).toHaveCount(0)
+        await expect(page.getByTestId('plan-and-export-cta')).toBeVisible()
+
+        const res = await request.get(
+          `/api/export-estate-plan?household_id=${encodeURIComponent(householdId)}`,
+        )
+        expect(res.status()).toBe(403)
+        const body = await res.json()
+        expect(body.error).toMatch(/subscription|Plan & Export purchase/i)
+      })
+    })
+  })
+
+  test('active tier-3 subscriber sees ready /print and API allows PDF generate', async ({
+    page,
+    request,
+  }) => {
+    await withConsumerOwner(async (ownerId, householdId) => {
+      await deferProfileAccessRestore(ownerId, DELIVERABLE_ACTIVE_TIER3_ACCESS, async () => {
+        await page.goto('/print')
+        await expect(page.getByTestId('deliverable-export-ready')).toBeVisible()
+        await expect(page.getByTestId('deliverable-export-gated')).toHaveCount(0)
+        await expect(page.getByTestId('plan-and-export-cta')).toHaveCount(0)
+
+        const res = await request.get(
+          `/api/export-estate-plan?household_id=${encodeURIComponent(householdId)}`,
+        )
+        expect(res.status(), await res.text()).toBe(200)
+      })
     })
   })
 
