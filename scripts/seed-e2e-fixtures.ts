@@ -36,6 +36,7 @@ import {
   seedE2eAdvisorClientHousehold,
   seedE2eConsumerHousehold,
   seedE2eConsumerEnrichments,
+  seedE2eLowScoreHousehold,
   fetchHouseholdIdByOwnerId,
   verifyE2eAccounts,
 } from './seed-e2e-lib'
@@ -110,6 +111,8 @@ async function main() {
       1,
       { fullName: E2E_IDENTITIES.consumerTier1.fullName },
     )
+    // Persona-matrix seeds tier1 without advisor — decouples low-score fixture from advisor enrichments (B4 playbook "Needs attention").
+    await seedE2eLowScoreHousehold(tier1HouseholdId, 40)
     console.log('')
   }
 
