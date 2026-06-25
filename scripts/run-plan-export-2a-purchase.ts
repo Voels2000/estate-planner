@@ -126,7 +126,7 @@ async function fillStripeCheckout(page: import('playwright').Page) {
 }
 
 async function main() {
-  assertStagingMoneyPathGuard()
+  await assertStagingMoneyPathGuard()
   const base = stagingMoneyPathBaseUrl()
   const userId = await findUserId()
   const profileSnapshot = await snapshotProfile(userId)

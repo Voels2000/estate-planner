@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-24 (Tier restructure PR 5 — retire Stripe Estate trial)
+# Last updated: 2026-06-18 (Stripe account guard — mode + source + account)
+
+---
+
+## Stripe account guard — mode, source, and account at startup (2026-06-18)
+
+**Problem.** Two independent failures produced the same symptom (`resource_missing` / “wrong key”): (1) a shell-exported `STRIPE_SECRET_KEY` overriding `.env.test.staging` because `dotenv -e` does not override an already-set var without `-o`; (2) a key from the wrong Stripe test sandbox while Vercel staging creates objects in the main account (`acct_1TAIt0ENTkKmTNa3`). Mode alone cannot distinguish staging-test from prod-live (same account); account alone cannot distinguish main test mode from a separate test sandbox.
+
+**Enforcement.** `assertStripeAccountGuard(testEnv)` in `scripts/testEnv.ts` runs at startup before any Stripe call: **Check A** — `sk_test_` vs `sk_live_` per `ENVIRONMENTS[testEnv].stripeMode`; **Check B** — active key last4 must match `STRIPE_SECRET_KEY` read directly from `.env.test.<env>` (shell override fails loud); **Check C** — `stripe.accounts.retrieve()` must return `ENVIRONMENTS[testEnv].stripeAccountId` (fail-closed on API error). Guard runs whenever a key is **present** in `process.env` (any source) — not only when "we loaded" it; must run **before** `stripLeakedProductionSecrets()` so production shell exports fail instead of being stripped and skipped. `runPlaywrightStartupGuards()` orders Stripe guard → Playwright guard. Wired into Playwright `globalSetup` and staging money-path scripts. Call-site tests in `stripeAccountGuardCallSite.spec.ts` prove callers halt (not just that the guard throws in isolation).
+
+**Principle.** When a config value can come from multiple sources, the runtime must prove which source and which target it resolved to — loudly, at the boundary, at startup — never infer it from a downstream failure. Same habit as Supabase project-ref guards.
+
+**Files:** `scripts/testEnv.ts` · `tests/e2e/globalSetup.ts` · `scripts/verify-pr5-staging-gate.ts`
 
 ---
 
