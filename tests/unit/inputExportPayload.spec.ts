@@ -79,14 +79,36 @@ test.describe('loadInputExportPayload', () => {
 })
 
 test.describe('input export boundary audit', () => {
-  test('loader imports EXPORT_INPUT_TABLES from inputComputedBoundary — no parallel list', () => {
+  test('loader queries exactly EXPORT_INPUT_TABLES — no hardcoded extra tables', () => {
     const src = readFileSync(
       join(process.cwd(), 'lib/export/loadInputExportPayload.ts'),
       'utf8',
     )
-    expect(src).toContain("from '@/lib/access/inputComputedBoundary'")
-    expect(src).toContain('EXPORT_INPUT_TABLES')
-    expect(src).not.toMatch(/const\s+EXPORT_TABLES\s*=/)
+
+    const literalTables = [...src.matchAll(/\.from\(\s*['"]([^'"]+)['"]/g)].map((m) => m[1])
+    expect(
+      literalTables,
+      `hardcoded .from('…') tables must be empty — use EXPORT_INPUT_TABLES loop only: ${literalTables.join(', ')}`,
+    ).toEqual([])
+
+    expect(src).toMatch(/for\s*\(\s*const table of EXPORT_INPUT_TABLES\s*\)/)
+    expect(src).not.toMatch(/const\s+(EXPORT_TABLES|INPUT_TABLES)\s*=/)
+  })
+
+  test('runtime query set equals EXPORT_INPUT_TABLES with no additions', async () => {
+    const touched = new Set<string>()
+    const supabase = {
+      from: (table: string) => {
+        touched.add(table)
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [], error: null }),
+          }),
+        }
+      },
+    }
+    await loadInputExportPayload(supabase as never, 'audit-user')
+    expect([...touched].sort()).toEqual([...EXPORT_INPUT_TABLES].sort())
   })
 
   test('route has no household id parameter — auth.uid() scope only', () => {
