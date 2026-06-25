@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-19 (tier restructure PRs 2–5 on staging; Gate 2 code gate closed; persona matrix in `seed:e2e`)
+**Last updated:** 2026-06-25 (tier restructure PRs 1–8 + audit on staging; Gate 2 code gate closed; persona matrix in `seed:e2e`)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -181,7 +181,7 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 **Rule:** Do NOT set `PUBLIC_SIGNUP_OPEN=true` until every Bucket B box is checked.
 
-### Tier restructure code gate — **CLOSED on staging** (2026-06-19)
+### Tier restructure code gate — **CLOSED on staging** (2026-06-25)
 
 Consumer billing enforcement PRs are merged to **`staging`** and verified. This gate is **not** the same as `PUBLIC_SIGNUP_OPEN` — it means the restructured tier model is safe to cut over on production **before** the signup flip.
 
@@ -190,29 +190,54 @@ Consumer billing enforcement PRs are merged to **`staging`** and verified. This 
 - [x] **PR 3** — Tier 0 dashboard slice ([TIER0_DASHBOARD_PR3.md](./TIER0_DASHBOARD_PR3.md))
 - [x] **PR 4** — projections split (Tier 1 modeling gate)
 - [x] **PR 5** — `trialDays: 0` + Subscribe CTA; `npm run verify:pr5-staging-gate` green on staging
+- [x] **PR 6** — inputs-only consumer data export (#120)
+- [x] **PR 7** — Plan & Export deliverable rules (#123)
 - [x] **PR 8** — E2E persona matrix in `npm run seed:e2e` (tiers 0–3, app trial, Plan & Export purchaser) — see [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md)
+- [x] **Audit Pass 2** — resolver G1/G2, deliverable B2–B5 migrations, Stripe Check C (#126, #127); E2E break-gates confirmed on staging
 
-**Still trailing staging (lower launch risk):** PR 6 (input export), PR 7 (deliverable rules). Do not block prod tier cutover on these; land before `PUBLIC_SIGNUP_OPEN` when possible.
+**Hard ordering (tier restructure):** The **prod cutover** (steps 0–5 below) is **not** the signup gate flip. It gets tier-restructure code safely onto production. `PUBLIC_SIGNUP_OPEN=true` is Gate 2 — a separate day, still blocked on B&O-READY and real-card smoke. Do not compress cutover and flip into one session.
 
-**Hard ordering (tier restructure):** Execute the prod cutover below **in this order on production** — do not reorder under launch pressure.
+**Principle (PR 4.5 / #117 lesson):** Migrations and config reach prod **before** the code that depends on them — with a **verify-the-schema-is-present** gate between migration and deploy. Not "apply migration, deploy code" — "apply migration, **prove** columns/tables exist on the prod DB, **then** deploy code."
 
-### Tier restructure prod cutover (before Gate 2 flip)
+**Before step 1:** Confirm Supabase PITR/backups ON and you have a written rollback path for a bad prod migration ([PRE_FLIP §A](./PRE_FLIP_CHECKLIST.md#a-hard-blockers--broken-product-or-serious-exposure-if-skipped)). Pre-launch blast radius is tiny (three protected auth users), but know how to undo step 1 before doing it.
 
-1. **Migration** — apply `supabase/migrations/20260724120000_tier_restructure_pr1_trial_columns.sql` to **production** (`trial_ends_at`, `has_ever_subscribed`).
-2. **Verify migration on prod** — before any tier-restructure code deploys, confirm the columns exist (migration "applied" ≠ "present on prod DB"):
-   ```sql
-   SELECT trial_ends_at, has_ever_subscribed FROM profiles LIMIT 1;
-   ```
-   Must succeed without `42703` (undefined column). If it fails, stop — do not deploy code.
-3. **Code** — deploy tier-restructure commits (PRs 1–5 minimum) to production **only after** step 2 passes.
-4. **Flip gate** — tier restructure code gate is **closed on staging** (PRs 2–5 verified). After prod cutover steps 1–3 pass, proceed to Gate 2 below (`PUBLIC_SIGNUP_OPEN=true`) when Bucket B + B&O are ready.
+### Tier restructure prod cutover — steps 0–5 (then stop)
+
+**Step 0 — Land docs reconciliation.** Merge [PR #128](https://github.com/Voels2000/estate-planner/pull/128) (LAUNCH + PRE_FLIP migration runbooks aligned through `20260724120000`). Execute from reconciled docs only — do not reconcile mid-cutover.
+
+**Step 1 — Migrations to prod only (no code).** Apply in timestamp order via `bash scripts/apply-migration.sh production …`:
+- `supabase/migrations/20260624140000_one_time_purchases.sql`
+- `supabase/migrations/20260724120000_tier_restructure_pr1_trial_columns.sql`
+
+Vercel does not run migrations; this is a deliberate manual step against prod Supabase.
+
+**Step 2 — Verify schema present on prod (gate between migration and code).** Run against the **prod** DB — migration "applied" ≠ "present on prod DB":
+```sql
+SELECT trial_ends_at, has_ever_subscribed FROM profiles LIMIT 1;   -- must not 42703
+SELECT 1 FROM one_time_purchases LIMIT 1;                           -- must not "relation does not exist"
+```
+Both must succeed. If either fails, **stop** — deploying code now would drop every consumer to tier 0 (PR 1) or error every deliverable check (PR 7). Do not skip because step 1 "looked like it worked."
+
+**Step 3 — Promote staging → `main` and deploy to prod.** Open the staging→`main` PR; CI green (`verify` + `e2e-smoke` + `rls-verify` per branch protection); merge; let Vercel deploy. Carries the full inventory delta (tier restructure PRs 1–8, export, deliverable rules, guards, audit). Step 2 passed → code lands on schema that supports it.
+
+**Step 4 — Verify on prod immediately (before trusting anything).**
+- `npm run release:post-deploy` — Voels gate + RLS SQL verify (standard Gate 4).
+- `GET /api/admin/verify-env?live=1` on prod → `missing` empty, `liveness.stripe: LIVE_OK`, prices active (re-run even if attested 2026-06-15 — env may have changed).
+- **Prod canary tier-resolution** — sign in as `canary-consumer@mywealthmaps.com`; confirm effective tier resolves correctly and dashboard renders (`getUserAccess` against real prod schema). If step 2 passed but canary resolves to tier 0, stop before any real user sees it.
+- **Stripe account guard (live)** — confirm prod asserts `sk_live_` + correct account; money-path guard must not throw.
+
+**Prod test pass:** same suite as staging for resolver/gate/boundary logic; exclude automated live-charge — replace with step 5 manual real-card smoke.
+
+**Step 5 — Live-money checks (deliberate, real card).** P0: one real-card live smoke (checkout → `checkout.session.completed` → subscription active), smallest tier, refund/cancel after. Plus C-4 billing walkthrough. Proves deliverable/subscription paths on live Stripe now that PR 7 is in the cutover.
+
+**Then stop.** Steps 0–5 complete the cutover. Gate flip (`PUBLIC_SIGNUP_OPEN=true`, fresh-email signup smoke) is Gate 2 below — separate operation when B&O-READY clears.
 
 `getUserAccess` fails loud on profile read errors — but a missing column still means every consumer page errors until step 1 lands (PR 4.5 / #117 lesson).
 
 ### Gate 2 — Go-live day sequence (in order)
 
 1. Verify Bucket B — every checkbox above is checked
-2. Verify tier-restructure prod cutover steps 1–3 above are complete (migration verified on prod before code); confirm staging code gate (PRs 2–5) was green before promoting
+2. Verify tier-restructure prod cutover steps 0–5 above are complete (schema verified on prod **before** code deploy; post-deploy canary tier-resolution green)
 3. **Env pre-check:** `GET /api/admin/verify-env?live=1` with `x-admin-token` → `missing` empty, `liveness.stripe: LIVE_OK`, all live prices `active` — **attested Al / 2026-06-15**; re-run before flip if env changes
 4. Supabase Auth → confirm email-confirm flow is ON for production project
 5. Verify `/auth/callback` works on production (sign in with existing account)
