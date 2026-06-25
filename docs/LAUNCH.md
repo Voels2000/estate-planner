@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-19 (tier restructure PRs 2–5 on staging; Gate 2 code gate closed; persona matrix in `seed:e2e`)
+**Last updated:** 2026-06-25 (tier restructure PRs 1–8 + audit on staging; Gate 2 code gate closed; persona matrix in `seed:e2e`)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -181,7 +181,7 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 **Rule:** Do NOT set `PUBLIC_SIGNUP_OPEN=true` until every Bucket B box is checked.
 
-### Tier restructure code gate — **CLOSED on staging** (2026-06-19)
+### Tier restructure code gate — **CLOSED on staging** (2026-06-25)
 
 Consumer billing enforcement PRs are merged to **`staging`** and verified. This gate is **not** the same as `PUBLIC_SIGNUP_OPEN` — it means the restructured tier model is safe to cut over on production **before** the signup flip.
 
@@ -190,20 +190,24 @@ Consumer billing enforcement PRs are merged to **`staging`** and verified. This 
 - [x] **PR 3** — Tier 0 dashboard slice ([TIER0_DASHBOARD_PR3.md](./TIER0_DASHBOARD_PR3.md))
 - [x] **PR 4** — projections split (Tier 1 modeling gate)
 - [x] **PR 5** — `trialDays: 0` + Subscribe CTA; `npm run verify:pr5-staging-gate` green on staging
+- [x] **PR 6** — inputs-only consumer data export (#120)
+- [x] **PR 7** — Plan & Export deliverable rules (#123)
 - [x] **PR 8** — E2E persona matrix in `npm run seed:e2e` (tiers 0–3, app trial, Plan & Export purchaser) — see [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md)
-
-**Still trailing staging (lower launch risk):** PR 6 (input export), PR 7 (deliverable rules). Do not block prod tier cutover on these; land before `PUBLIC_SIGNUP_OPEN` when possible.
+- [x] **Audit Pass 2** — resolver G1/G2, deliverable B2–B5 migrations, Stripe Check C (#126, #127); E2E break-gates confirmed on staging
 
 **Hard ordering (tier restructure):** Execute the prod cutover below **in this order on production** — do not reorder under launch pressure.
 
 ### Tier restructure prod cutover (before Gate 2 flip)
 
-1. **Migration** — apply `supabase/migrations/20260724120000_tier_restructure_pr1_trial_columns.sql` to **production** (`trial_ends_at`, `has_ever_subscribed`).
-2. **Verify migration on prod** — before any tier-restructure code deploys, confirm the columns exist (migration "applied" ≠ "present on prod DB"):
+1. **Migrations** — apply to **production** in timestamp order:
+   - `supabase/migrations/20260624140000_one_time_purchases.sql`
+   - `supabase/migrations/20260724120000_tier_restructure_pr1_trial_columns.sql` (`trial_ends_at`, `has_ever_subscribed`)
+2. **Verify migrations on prod** — before any tier-restructure code deploys, confirm tables/columns exist (migration "applied" ≠ "present on prod DB"):
    ```sql
    SELECT trial_ends_at, has_ever_subscribed FROM profiles LIMIT 1;
+   SELECT id FROM one_time_purchases LIMIT 1;
    ```
-   Must succeed without `42703` (undefined column). If it fails, stop — do not deploy code.
+   Must succeed without `42703` (undefined column/table). If either fails, stop — do not deploy code.
 3. **Code** — deploy tier-restructure commits (PRs 1–5 minimum) to production **only after** step 2 passes.
 4. **Flip gate** — tier restructure code gate is **closed on staging** (PRs 2–5 verified). After prod cutover steps 1–3 pass, proceed to Gate 2 below (`PUBLIC_SIGNUP_OPEN=true`) when Bucket B + B&O are ready.
 

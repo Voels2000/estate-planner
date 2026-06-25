@@ -31,6 +31,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - ⬜ **PITR / backups confirmed ON before real data exists** — Supabase PITR enabled, retention known, written rollback path for bad prod migration.
 
 ### Signup correctness (on PROD)
+- ⬜ **Prod Supabase SMTP sender** — Authentication → Email → SMTP: Sender name = **My Wealth Maps** (name only); Sender email = **noreply@mywealthmaps.com** (no doubled-from / 422). Verify with a fresh signup confirmation: Resend activity log shows **200** delivery.
 - ✅ **Waitlist hardening (staging §10)** — Layer 0 on prod + staging. Code on `main` (PR #25). **§10 matrix 6/6 PASS** on `https://estate-planner-staging.vercel.app` (2026-06-16) — [WAITLIST_HARDENING_SPEC §10 attestation](./WAITLIST_HARDENING_SPEC.md#10-attestation--closed-2026-06-16).
 - ⬜ **`verify-env` prod gates** — `GET /api/admin/verify-env?live=1` on production must show **CRITICAL** if `SIGNUP_SKIP_EMAIL_CONFIRM` is set (auto-confirms self-serve signups); `PUBLIC_SIGNUP_OPEN` must be `false` until flip.
 - ✅ **Open-consumer email confirm (staging)** — Probe 1: `201` + `needsEmailConfirmation: true`, no session cookie (`delivered@resend.dev`). **Delivery:** server `sendSignupConfirmationEmail` after `createUser` (fix 2026-06-24 — admin API does not send mail). **Prod:** verify at flip with fresh email.
@@ -99,8 +100,9 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 ```
 1. Apply prod migrations in timestamp order through latest:
-   …WA Regime D (20260613120000–140000) → RLS fix (20260713130000) →
-   coverage fixes (20260713140000) → service_role grants (20260713150000)
+   …WA Regime D (20260613120000–140000) → one_time_purchases (20260624140000) →
+   RLS fix (20260713130000) → coverage fixes (20260713140000) →
+   service_role grants (20260713150000) → tier_restructure trial columns (20260724120000)
 2. verify-env on prod (`?live=1`, live key): all `STRIPE_PRICE_*` → `prices.retrieve` active. Preview (`sk_test_`) validates advisor/attorney prices the same way — catches `No such price` before checkout.
 3. npm run release:post-deploy            # Voels + RLS
 4. npm run verify:rls -- --require-sql    # prod: 27/27 + coverage gate PASS
