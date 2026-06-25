@@ -12,6 +12,7 @@ import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBanner
 import { loadMonteCarloPrefill } from '@/lib/monte-carlo/loadMonteCarloPrefill'
 import { loadMonteCarloHistory } from '@/lib/monte-carlo/loadMonteCarloHistory'
 import { loadMonteCarloAdvisorAssumptions } from '@/lib/monte-carlo/loadMonteCarloAdvisorAssumptions'
+import { loadScenarioMonteCarloWithStaleness } from '@/lib/monte-carlo/loadScenarioMonteCarloWithStaleness'
 import { MonteCarloClient } from './_monte-carlo-client'
 
 export const metadata = {
@@ -40,17 +41,34 @@ export default async function MonteCarloPage() {
     )
   }
 
-  const [prefill, history, advisorAssumptions] = await Promise.all([
+  const [prefill, history, advisorAssumptions, householdMcRes] = await Promise.all([
     loadMonteCarloPrefill(user.id),
     loadMonteCarloHistory(user.id),
     loadMonteCarloAdvisorAssumptions(supabase, user.id),
+    supabase.from('households').select('id, base_case_scenario_id, growth_assumptions').eq('owner_id', user.id).maybeSingle(),
   ])
+
+  const mcLoad =
+    householdMcRes.data?.base_case_scenario_id && householdMcRes.data?.id
+      ? await loadScenarioMonteCarloWithStaleness(supabase, {
+          householdId: householdMcRes.data.id,
+          scenarioId: householdMcRes.data.base_case_scenario_id,
+        })
+      : { summary: null, isStale: false, isUpdating: false }
+
+  const growthAssumptions = householdMcRes.data?.growth_assumptions as
+    | { returnMeanPct?: number }
+    | null
+    | undefined
 
   return (
     <MonteCarloClient
       initialPrefill={prefill}
       initialHistory={history}
       initialAdvisorAssumptions={advisorAssumptions}
+      estateOutlookBands={mcLoad.summary?.percentiles_by_year ?? null}
+      estateOutlookUpdating={mcLoad.isUpdating}
+      growthReturnMeanPct={growthAssumptions?.returnMeanPct ?? 7}
     />
   )
 }
