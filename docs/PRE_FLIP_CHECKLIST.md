@@ -96,23 +96,47 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 ---
 
-## D. Flip runbook — run in this order
+## D. Tier-restructure prod cutover — steps 0–5 (then stop)
+
+**Not the signup gate flip.** Gets tier-restructure code safely onto prod. `PUBLIC_SIGNUP_OPEN=true` is §E — separate day when B&O-READY clears.
+
+**Before step 1:** PITR/backups ON; written rollback for a bad prod migration (§A).
 
 ```
-1. Apply prod migrations in timestamp order through latest:
+0. Merge docs reconciliation (PR #128) — LAUNCH + PRE_FLIP migration lists aligned
+1. Apply prod migrations ONLY (no code deploy yet), timestamp order:
    …WA Regime D (20260613120000–140000) → one_time_purchases (20260624140000) →
    RLS fix (20260713130000) → coverage fixes (20260713140000) →
    service_role grants (20260713150000) → tier_restructure trial columns (20260724120000)
-2. verify-env on prod (`?live=1`, live key): all `STRIPE_PRICE_*` → `prices.retrieve` active. Preview (`sk_test_`) validates advisor/attorney prices the same way — catches `No such price` before checkout.
-3. npm run release:post-deploy            # Voels + RLS
-4. npm run verify:rls -- --require-sql    # prod: 27/27 + coverage gate PASS
-5. Deploy app (share page uses get_share_link_display_meta RPC)
-6. Stripe real-card smoke + C-4 walkthrough (manual, card required)
-7. Email: BCC smoke, drip steps 2/3, spam-placement check
-8. Confirm live: PITR/backups · error monitoring · webhook-failure alerting
-9. PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke
-10. ── only when every A item is green AND B&O-ready ──
-    PUBLIC_SIGNUP_OPEN=true → redeploy → fresh-email signup E2E smoke
+   via: bash scripts/apply-migration.sh production <file>
+2. Verify schema on PROD DB (gate — do not skip):
+     SELECT trial_ends_at, has_ever_subscribed FROM profiles LIMIT 1;  -- no 42703
+     SELECT 1 FROM one_time_purchases LIMIT 1;                          -- table exists
+   If either fails → STOP. Do not deploy code.
+3. Promote staging → main; CI green (verify + e2e-smoke + rls-verify); merge; Vercel prod deploy
+4. Verify on prod immediately:
+     npm run release:post-deploy
+     GET /api/admin/verify-env?live=1  → LIVE_OK, prices active
+     Canary sign-in (canary-consumer@mywealthmaps.com) → correct effective tier + dashboard
+     Stripe account guard live (sk_live_ + correct account, no throw)
+     PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke
+       (same resolver/gate/boundary coverage as staging; no automated live charge)
+5. Real-card live smoke (smallest tier, refund/cancel after) + C-4 billing walkthrough
+── STOP. Cutover complete. Gate flip is §E. ──
+```
+
+---
+
+## E. Gate flip runbook — separate day (B&O-READY + cutover §D complete)
+
+```
+1. Every §A hard blocker green (incl. prod SMTP sender + Resend 200)
+2. verify-env on prod (?live=1) — re-run if env changed since cutover
+3. Email: BCC smoke, drip steps 2/3, spam-placement check
+4. Confirm live: PITR/backups · error monitoring · webhook-failure alerting
+5. ── only when Bucket A (B&O) + §D cutover + real-card smoke are done ──
+   PUBLIC_SIGNUP_OPEN=true → redeploy → fresh-email signup E2E smoke
+   (full sequence: LAUNCH.md Bucket C Gate 2)
 ```
 
 ---
