@@ -181,20 +181,34 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 **Rule:** Do NOT set `PUBLIC_SIGNUP_OPEN=true` until every Bucket B box is checked.
 
-**Hard ordering (tier restructure):** Apply migration `20260724120000_tier_restructure_pr1_trial_columns.sql` to **production** before any tier-restructure code that reads `trial_ends_at` / `has_ever_subscribed` ships to production. `getUserAccess` fails loud on profile read errors — but a missing column still means every consumer page errors until the migration lands. Same sequencing family as migration-before-code (PGRST204 / `stripe_subscription_id` lesson).
+**Hard ordering (tier restructure):** Execute the three steps below **in this order on production** — do not reorder under launch pressure.
+
+### Tier restructure prod cutover (before Gate 2 flip)
+
+1. **Migration** — apply `supabase/migrations/20260724120000_tier_restructure_pr1_trial_columns.sql` to **production** (`trial_ends_at`, `has_ever_subscribed`).
+2. **Verify migration on prod** — before any tier-restructure code deploys, confirm the columns exist (migration "applied" ≠ "present on prod DB"):
+   ```sql
+   SELECT trial_ends_at, has_ever_subscribed FROM profiles LIMIT 1;
+   ```
+   Must succeed without `42703` (undefined column). If it fails, stop — do not deploy code.
+3. **Code** — deploy tier-restructure commits (PRs 1–5 minimum) to production **only after** step 2 passes.
+4. **Flip gate** — with PRs 2–5 verified on staging, proceed to Gate 2 below (`PUBLIC_SIGNUP_OPEN=true`).
+
+`getUserAccess` fails loud on profile read errors — but a missing column still means every consumer page errors until step 1 lands (PR 4.5 / #117 lesson).
 
 ### Gate 2 — Go-live day sequence (in order)
 
 1. Verify Bucket B — every checkbox above is checked
-2. **Env pre-check:** `GET /api/admin/verify-env?live=1` with `x-admin-token` → `missing` empty, `liveness.stripe: LIVE_OK`, all live prices `active` — **attested Al / 2026-06-15**; re-run before flip if env changes
-3. Supabase Auth → confirm email-confirm flow is ON for production project
-4. Verify `/auth/callback` works on production (sign in with existing account)
-5. Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production environment variables
-6. Redeploy (trigger Vercel redeploy from dashboard or push empty commit)
-7. Core smoke with a FRESH email address (not a test account):
+2. Verify tier-restructure prod cutover steps 1–3 above are complete (migration verified on prod before code)
+3. **Env pre-check:** `GET /api/admin/verify-env?live=1` with `x-admin-token` → `missing` empty, `liveness.stripe: LIVE_OK`, all live prices `active` — **attested Al / 2026-06-15**; re-run before flip if env changes
+4. Supabase Auth → confirm email-confirm flow is ON for production project
+5. Verify `/auth/callback` works on production (sign in with existing account)
+6. Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production environment variables
+7. Redeploy (trigger Vercel redeploy from dashboard or push empty commit)
+8. Core smoke with a FRESH email address (not a test account):
    - Sign up → confirm email → profile → wizard → dashboard → billing upgrade
-8. `npm run release:post-deploy` (Voels gate + RLS SQL verify)
-9. Check Stripe Dashboard: new subscription appears under the fresh signup customer
+9. `npm run release:post-deploy` (Voels gate + RLS SQL verify)
+10. Check Stripe Dashboard: new subscription appears under the fresh signup customer
 
 ### Expanded flip steps (same order — do not reorder)
 
