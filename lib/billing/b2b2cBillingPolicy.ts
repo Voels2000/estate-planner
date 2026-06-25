@@ -133,6 +133,51 @@ export function consumerCheckoutBlockReason(
   return null
 }
 
+/** Blocks for one-time SKU checkout — allows active tier-1 subscribers (deliverable upsell). */
+export function consumerOneTimeCheckoutBlockReason(
+  profile: ConsumerCheckoutProfile | null | undefined,
+): ConsumerCheckoutBlock | null {
+  if (!profile) return null
+
+  if (isAdvisorManagedConsumer(profile)) {
+    return {
+      code: 'advisor_managed',
+      httpStatus: 403,
+      message:
+        'Your plan is managed by your advisor. Self-serve checkout is not available.',
+    }
+  }
+
+  if (isAttorneyManagedConsumer(profile)) {
+    return {
+      code: 'attorney_managed',
+      httpStatus: 403,
+      message:
+        'Your plan is managed by your attorney. Self-serve checkout is not available.',
+    }
+  }
+
+  if (profile.isAdvisorClient) {
+    return {
+      code: 'advisor_client',
+      httpStatus: 403,
+      message: 'Your plan is managed by your advisor.',
+    }
+  }
+
+  const status = profile.subscription_status ?? 'none'
+
+  if (DELINQUENT_CONSUMER_SUB_STATUSES.has(status)) {
+    return {
+      code: 'past_due',
+      httpStatus: 409,
+      message: 'Resolve your past-due payment before starting checkout.',
+    }
+  }
+
+  return null
+}
+
 export function managedConsumerTier(role: B2b2cProfessionalRole): number {
   if (role === 'advisor') {
     const parsed = parseInt(process.env.B2B2C_ADVISOR_MANAGED_TIER ?? '3', 10)

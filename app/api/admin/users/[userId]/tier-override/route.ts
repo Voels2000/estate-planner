@@ -5,7 +5,7 @@ import { appendAdminUserActionLog, getAdminActorEmail } from '@/lib/admin/adminA
 
 type RouteContext = { params: Promise<{ userId: string }> }
 
-const VALID_TIERS = new Set([1, 2, 3])
+const VALID_TIERS = new Set([0, 1, 2, 3])
 
 export async function POST(request: NextRequest, context: RouteContext) {
   const auth = await requireAdminApi()
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const reason = body.reason?.trim()
 
   if (!VALID_TIERS.has(tier as number)) {
-    return NextResponse.json({ error: 'consumer_tier must be 1, 2, or 3' }, { status: 400 })
+    return NextResponse.json({ error: 'consumer_tier must be 0, 1, 2, or 3' }, { status: 400 })
   }
 
   if (!reason) {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
-  const oldTier = profile.consumer_tier ?? 1
+  const oldTier = profile.consumer_tier ?? 0
 
   const { error: updateErr } = await admin
     .from('profiles')

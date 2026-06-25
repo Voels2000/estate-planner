@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { EMAIL_REPLY_TO } from '@/lib/email/config'
 import { getSignupHref } from '@/lib/waitlist-mode'
-import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
+import { getConsumerPlanDisplay, isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
 import { PricingConsumerPlans } from './_pricing-consumer-plans'
+import { PricingPlanAndExportSection } from './_pricing-plan-and-export-section'
 import { PricingAdvisorCheckout } from './_pricing-advisor-checkout'
 import { PricingAttorneyCheckout } from './_pricing-attorney-checkout'
 import {
@@ -12,6 +13,8 @@ import {
   ATTORNEY_PLAN_LIMITS,
   TIER_PRICES,
 } from '@/lib/tiers'
+
+const ESTATE_TRIAL_DAYS = getConsumerPlanDisplay(3, 'monthly').trialDays
 
 const ADVISOR_PLANS = [
   {
@@ -179,7 +182,11 @@ export default async function PricingPage() {
               lineHeight: 1.6,
             }}
           >
-            {`Starting at $${TIER_PRICES[1]}/month · Estate plan includes a 14-day free trial`}
+            {`Starting at $${TIER_PRICES[1]}/month${
+              ESTATE_TRIAL_DAYS > 0
+                ? ` · Estate plan includes a ${ESTATE_TRIAL_DAYS}-day free trial`
+                : ''
+            }`}
             {annualBillingAvailable ? ' · Annual billing saves 2 months' : ''}
           </p>
           <p
@@ -216,6 +223,8 @@ export default async function PricingPage() {
             signupHref={signupHref}
             annualBillingAvailable={annualBillingAvailable}
           />
+
+          <PricingPlanAndExportSection />
         </div>
 
         <div
@@ -229,7 +238,9 @@ export default async function PricingPage() {
         >
           {[
             '✓ Cancel anytime',
-            '✓ 14-day free trial on Estate',
+            ...(ESTATE_TRIAL_DAYS > 0
+              ? [`✓ ${ESTATE_TRIAL_DAYS}-day free trial on Estate`]
+              : []),
             ...(annualBillingAvailable ? ['✓ Annual billing — 2 months free'] : []),
             '✓ A fraction of annual attorney fees',
           ].map((item) => (
@@ -432,7 +443,10 @@ export default async function PricingPage() {
           {[
             {
               q: 'Can I try before I pay?',
-              a: 'The Estate plan includes a 14-day free trial — full access to estate tax snapshot, strategies, and the execution checklist. Financial and Retirement plans start billing when you subscribe. Attorneys can start free with up to 3 client households.',
+              a:
+                ESTATE_TRIAL_DAYS > 0
+                  ? `The Estate plan includes a ${ESTATE_TRIAL_DAYS}-day free trial — full access to estate tax snapshot, strategies, and the execution checklist. Financial and Retirement plans start billing when you subscribe. Attorneys can start free with up to 3 client households.`
+                  : 'Start free to enter your full financial picture and export your data anytime. Estate, Financial, and Retirement subscriptions bill when you subscribe. Attorneys can start free with up to 3 client households.',
             },
             {
               q: 'Can I change plans later?',

@@ -109,9 +109,10 @@ const EVENT_UPGRADE_COPY: Record<string, Record<2 | 3, string>> = {
 export async function getEventUpgradeValueProp(
   supabase: SupabaseClient,
   userId: string,
-  requiredTier: 2 | 3,
+  requiredTier: 1 | 2 | 3,
   fallback: string,
 ): Promise<string> {
+  if (requiredTier === 1) return fallback
   try {
     const { data } = await supabase
       .from('life_events')

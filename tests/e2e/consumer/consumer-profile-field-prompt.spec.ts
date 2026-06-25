@@ -190,7 +190,7 @@ test.describe('ProfileFieldPrompt — Social Security', () => {
 
   test('inactive subscription shows upgrade banner (tier gate)', async ({ page }) => {
     await withHouseholdOwner(householdId, async (ownerId) => {
-      // e2e-consumer is advisor-linked in seed — isAdvisorClient bypasses subscription tier.
+      // Staging cast may still have a stray advisor→consumer link until re-seed; suspend for tier gate.
       await deferConnectedAdvisorClientLinkSuspended(ownerId, async () => {
         await deferProfileAccessRestore(ownerId, SOCIAL_SECURITY_GATE_ACCESS, async () => {
           await page.goto('/social-security')

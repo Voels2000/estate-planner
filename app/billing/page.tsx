@@ -14,6 +14,14 @@ import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
 import { getSubscribedBillingPeriod } from '@/lib/billing/subscribedBillingPeriod'
 import { consumerCheckoutBlockReason } from '@/lib/billing/b2b2cBillingPolicy'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
+import {
+  getUserPlanExportPurchase,
+  toPlanExportPurchaseContext,
+} from '@/lib/billing/oneTimePurchases'
+import { shouldOfferPlanAndExportPurchase } from '@/lib/billing/shouldOfferPlanAndExportPurchase'
+import { hasDeliverableDownloadAccess } from '@/lib/billing/planExportAccess'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { DELIVERABLE_MIN_TIER } from '@/lib/tiers'
 
 export default async function BillingPage({
   searchParams,
@@ -108,7 +116,9 @@ export default async function BillingPage({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_status, subscription_plan, subscription_period_end, role')
+    .select(
+      'subscription_status, subscription_plan, subscription_period_end, role, consumer_tier',
+    )
     .eq('id', access.user.id)
     .single()
 
@@ -119,6 +129,31 @@ export default async function BillingPage({
     .in('status', [...CONNECTED_ADVISOR_CLIENT_STATUSES])
     .maybeSingle()
   const isAdvisorClient = !!clientRow
+
+  const planExportPurchase = toPlanExportPurchaseContext(
+    await getUserPlanExportPurchase(createAdminClient(), access.user.id),
+  )
+
+  const profileAccess = {
+    role: profile?.role ?? 'consumer',
+    consumer_tier: profile?.consumer_tier ?? 1,
+    subscription_status: profile?.subscription_status ?? 'none',
+  }
+
+  const canDownloadDeliverable = hasDeliverableDownloadAccess(
+    profileAccess,
+    DELIVERABLE_MIN_TIER,
+    { planExportPurchase },
+  )
+
+  const showPlanAndExportOffer =
+    profile?.role === 'consumer' &&
+    shouldOfferPlanAndExportPurchase({
+      profile: profileAccess,
+      canDownloadDeliverable,
+      isAdvisorClient,
+      subscription_plan: profile.subscription_plan,
+    })
 
   const checkoutBlock = consumerCheckoutBlockReason({
     subscription_status: profile?.subscription_status,
@@ -168,6 +203,7 @@ export default async function BillingPage({
       isAdvisorClient={checkoutBlock?.code === 'advisor_client'}
       annualBillingAvailable={isAnnualBillingConfigured()}
       recommendedPlanId={recommendedPlanId}
+      showPlanAndExportOffer={showPlanAndExportOffer}
     />
   )
 }

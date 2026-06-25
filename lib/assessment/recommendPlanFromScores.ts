@@ -1,3 +1,7 @@
+import { getConsumerPlanDisplay } from '@/lib/billing/stripePrices'
+
+const ESTATE_TRIAL_DAYS = getConsumerPlanDisplay(3, 'monthly').trialDays
+
 export type RecommendedPlanId = 'financial' | 'retirement' | 'estate'
 
 export type PlanRecommendation = {
@@ -38,7 +42,11 @@ export function recommendPlanFromScores(
     planName: meta.planName,
     reason: `Your ${meta.label} score (${weakest.pct}%) has the most room to improve — the ${meta.planName} plan includes the tools to address those gaps.`,
     ctaLabel:
-      weakest.planId === 'estate' ? 'Start 14-day Estate trial' : `Get started with ${meta.planName}`,
+      weakest.planId === 'estate'
+        ? ESTATE_TRIAL_DAYS > 0
+          ? `Start ${ESTATE_TRIAL_DAYS}-day Estate trial`
+          : 'Subscribe to Estate'
+        : `Get started with ${meta.planName}`,
   }
 }
 

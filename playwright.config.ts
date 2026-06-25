@@ -35,6 +35,7 @@ const projects: Project[] = [
   { name: 'advisor-setup', testMatch: /helpers\/advisor\.setup\.ts/, timeout: setupTimeout },
   { name: 'advisor-empty-setup', testMatch: /helpers\/advisor-empty\.setup\.ts/, timeout: setupTimeout },
   { name: 'consumer-setup', testMatch: /helpers\/consumer\.setup\.ts/, timeout: setupTimeout },
+  { name: 'consumer-canceled-setup', testMatch: /helpers\/consumer-canceled\.setup\.ts/, timeout: setupTimeout },
   { name: 'attorney-setup', testMatch: /helpers\/attorney\.setup\.ts/, timeout: setupTimeout },
   { name: 'advisor-client-setup', testMatch: /helpers\/advisor-client\.setup\.ts/, timeout: setupTimeout },
   {
@@ -59,7 +60,7 @@ const projects: Project[] = [
     name: 'consumer',
     dependencies: ['consumer-setup'],
     testMatch: /consumer\/.*\.spec\.ts/,
-    testIgnore: /consumer-tier1-gates\.spec\.ts|golden-path-show-all-tools\.spec\.ts|onboarding-persona\.spec\.ts/,
+    testIgnore: /consumer-tier1-gates\.spec\.ts|consumer-tier0-gates\.spec\.ts|golden-path-show-all-tools\.spec\.ts|onboarding-persona\.spec\.ts|consumer-deliverable-persona-matrix\.spec\.ts/,
     use: { storageState: '.auth/consumer.json' },
   },
   {
@@ -85,7 +86,7 @@ const projects: Project[] = [
   {
     name: 'import-unit',
     testDir: './tests/unit',
-    testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|simpleRateLimit|waitlist-mode|signupAdmission|signupPolicy|roth-analysis|tax-year-selection|privilegedMfaPolicy|verifyEnv|stripeWebhookVerify|stripePricesProdGuard|deleteUserSchema|waRegime|attorneyClientCap|consumerCheckoutBlockReason|processConsumerCheckout|app-url|internalApiAuth|applyEmailUnsubscribe|monteCarloAssumptionsFromRow|estateHouseholdAlerts|cronDripEligibility|readGpcOptOut|promotionSchemaVerification|consumerSubscriptionStatus|subscriptionPeriod|stripeIds|activateConsumerSubscription).*\.spec\.ts/,
+    testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|simpleRateLimit|waitlist-mode|signupAdmission|signupPolicy|site-url|roth-analysis|tax-year-selection|privilegedMfaPolicy|verifyEnv|stripeWebhookVerify|stripePricesProdGuard|stripeAccountGuard|stripeAccountGuardCallSite|deleteUserSchema|waRegime|attorneyClientCap|consumerCheckoutBlockReason|processConsumerCheckout|requirePaidDownloadAccess|oneTimePurchases|stripeOneTimeSkus|planExportWarnings|planExportAppTrialDeliverable|shouldOfferPlanAndExportPurchase|app-url|internalApiAuth|applyEmailUnsubscribe|monteCarloAssumptionsFromRow|estateHouseholdAlerts|cronDripEligibility|readGpcOptOut|promotionSchemaVerification|consumerSubscriptionStatus|subscriptionPeriod|stripeIds|activateConsumerSubscription|resolveEffectiveTier|hasEverSubscribed|inputComputedBoundary|inputExportPayload|netWorthSummary|tier0Dashboard|armGate1VerifyFixture|projectionsContentSplit|getUserAccessProfile|retireStripeConsumerTrial|e2ePersonaMatrix).*\.spec\.ts/,
     use: {
       baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     },
@@ -107,6 +108,47 @@ if (hasTier1Consumer) {
     },
   )
 }
+
+projects.push({
+  name: 'consumer-tier0',
+  dependencies: ['consumer-canceled-setup'],
+  testMatch: /consumer-tier0-gates\.spec\.ts|consumer-tier0-dashboard\.spec\.ts/,
+  use: { storageState: '.auth/consumer-canceled.json' },
+})
+
+projects.push(
+  {
+    name: 'consumer-app-trial-setup',
+    testMatch: /helpers\/consumer-app-trial\.setup\.ts/,
+    timeout: setupTimeout,
+  },
+  {
+    name: 'consumer-app-trial',
+    dependencies: ['consumer-app-trial-setup'],
+    testMatch: /consumer-deliverable-persona-matrix\.spec\.ts/,
+    grep: /B4 —/,
+    use: { storageState: '.auth/consumer-app-trial.json' },
+  },
+  {
+    name: 'consumer-plan-export-setup',
+    testMatch: /helpers\/consumer-plan-export\.setup\.ts/,
+    timeout: setupTimeout,
+  },
+  {
+    name: 'consumer-plan-export',
+    dependencies: ['consumer-plan-export-setup'],
+    testMatch: /consumer-deliverable-persona-matrix\.spec\.ts/,
+    grep: /B3 —/,
+    use: { storageState: '.auth/consumer-plan-export.json' },
+  },
+  {
+    name: 'consumer-deliverable-tier3',
+    dependencies: ['consumer-setup'],
+    testMatch: /consumer-deliverable-persona-matrix\.spec\.ts/,
+    grep: /B5 —/,
+    use: { storageState: '.auth/consumer.json' },
+  },
+)
 
 export default defineConfig({
   testDir: './tests/e2e',

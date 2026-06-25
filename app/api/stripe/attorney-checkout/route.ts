@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ATTORNEY_PLAN_PRICE_IDS, type AttorneyPlanKey } from '@/lib/tiers'
 import { createStripeClient } from '@/lib/stripe/config'
+import { getOrigin } from '@/lib/app-url'
 
 export async function POST(req: NextRequest) {
   const stripe = createStripeClient(process.env.STRIPE_SECRET_KEY!)
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
         .eq('id', user.id)
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://mywealthmaps.com'
+    const baseUrl = getOrigin(req)
     const successUrl = `${baseUrl}/attorney/billing?checkout=success&session_id={CHECKOUT_SESSION_ID}`
     const cancelUrl = returnTo
       ? `${baseUrl}/attorney/billing?canceled=true&returnTo=${encodeURIComponent(returnTo)}`

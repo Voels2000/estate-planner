@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-19 (household-alert counsel pass attested; Sprint E closeout on staging)
+**Last updated:** 2026-06-25 (tier restructure PRs 1–8 + audit on staging; Gate 2 code gate closed; persona matrix in `seed:e2e`)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -17,7 +17,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 (B&O-blocked)   wait for WA SaaS/DAS ruling
 ```
 
-**Related (not absorbed):** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md)
+**Related (not absorbed):** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) · [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md) (tier restructure outcomes)
 
 **Working tracker (manual attestations):** [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) — browser UI at `tools/launch-tracker.html` (`npm run launch:tracker`); sync to this file via `npm run sync:launch-tracker`.
 
@@ -181,18 +181,94 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 **Rule:** Do NOT set `PUBLIC_SIGNUP_OPEN=true` until every Bucket B box is checked.
 
+### Tier restructure code gate — **CLOSED on staging** (2026-06-25)
+
+Consumer billing enforcement PRs are merged to **`staging`** and verified. This gate is **not** the same as `PUBLIC_SIGNUP_OPEN` — it means the restructured tier model is safe to cut over on production **before** the signup flip.
+
+- [x] **PR 1** — `trial_ends_at`, `has_ever_subscribed`, `resolveEffectiveTier` (staging + prod migration path documented)
+- [x] **PR 2** — input vs computed boundary ([INPUT_COMPUTED_BOUNDARY.md](./INPUT_COMPUTED_BOUNDARY.md))
+- [x] **PR 3** — Tier 0 dashboard slice ([TIER0_DASHBOARD_PR3.md](./TIER0_DASHBOARD_PR3.md))
+- [x] **PR 4** — projections split (Tier 1 modeling gate)
+- [x] **PR 5** — `trialDays: 0` + Subscribe CTA; `npm run verify:pr5-staging-gate` green on staging
+- [x] **PR 6** — inputs-only consumer data export (#120)
+- [x] **PR 7** — Plan & Export deliverable rules (#123)
+- [x] **PR 8** — E2E persona matrix in `npm run seed:e2e` (tiers 0–3, app trial, Plan & Export purchaser) — see [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md)
+- [x] **Audit Pass 2** — resolver G1/G2, deliverable B2–B5 migrations, Stripe Check C (#126, #127); E2E break-gates confirmed on staging
+
+**Hard ordering (tier restructure):** The **prod cutover** (steps 0–5 below) is **not** the signup gate flip. It gets tier-restructure code safely onto production. `PUBLIC_SIGNUP_OPEN=true` is Gate 2 — a separate day, still blocked on B&O-READY and real-card smoke. Do not compress cutover and flip into one session.
+
+**Principle (PR 4.5 / #117 lesson):** Migrations and config reach prod **before** the code that depends on them — with a **verify-the-schema-is-present** gate between migration and deploy. Not "apply migration, deploy code" — "apply migration, **prove** columns/tables exist on the prod DB, **then** deploy code."
+
+**Before step 1:** Confirm Supabase PITR/backups ON ([PRE_FLIP §A](./PRE_FLIP_CHECKLIST.md#a-hard-blockers--broken-product-or-serious-exposure-if-skipped)). Pre-launch blast radius is tiny (three protected auth users). Know the schema rollback below before applying migrations — pre-flip only; after `PUBLIC_SIGNUP_OPEN`, use PITR not column drops.
+
+**Schema rollback (pre-flip only — verified against forward files 2026-06-25):**
+
+| Forward migration | Creates | Reverse complete? |
+|-------------------|---------|-------------------|
+| `20260624140000_one_time_purchases.sql` | `one_time_purchases` table, 3 indexes, RLS + owner-read policy | Yes — `DROP TABLE` drops table-attached indexes/policies; no standalone types/sequences |
+| `20260724120000_tier_restructure_pr1_trial_columns.sql` | `trial_ends_at`, `has_ever_subscribed` on `profiles`; data UPDATEs; **`handle_new_user()` replaced** | **Partial** — column drops below; also restore prior `handle_new_user()` from `supabase/migrations/20260527130500_fix_signup_subscription_defaults.sql` |
+
+**Reverse order** (opposite of Step 1 apply): `20260724120000` first, then `20260624140000` (habit for dependent migrations; these two are independent today).
+
+```sql
+-- Reverse 20260724120000 (apply first if reversing both)
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS trial_ends_at;
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS has_ever_subscribed;
+-- Then re-run CREATE OR REPLACE FUNCTION handle_new_user() body from
+-- 20260527130500_fix_signup_subscription_defaults.sql (forward file also replaced this).
+
+-- Reverse 20260624140000 (apply second)
+DROP TABLE IF EXISTS public.one_time_purchases;
+```
+
+**When to reverse vs re-apply:** Step 2 query fails → migration may not have applied — diagnose (wrong DB target, permissions) and **re-run forward**; don't reverse. Reverse only when forward **applied but is wrong**. After gate flip, trial column drops destroy real data — PITR is the recovery path.
+
+### Tier restructure prod cutover — steps 0–5 (then stop)
+
+**Step 0 — Land docs reconciliation.** [PR #128](https://github.com/Voels2000/estate-planner/pull/128) merged (LAUNCH + PRE_FLIP migration runbooks aligned through `20260724120000`). Execute from reconciled docs only — do not reconcile mid-cutover.
+
+**Step 1 — Migrations to prod only (no code).** Apply in timestamp order via `bash scripts/apply-migration.sh production …`:
+- `supabase/migrations/20260624140000_one_time_purchases.sql`
+- `supabase/migrations/20260724120000_tier_restructure_pr1_trial_columns.sql`
+
+Vercel does not run migrations; this is a deliberate manual step against prod Supabase.
+
+**Step 2 — Verify schema present on prod (gate between migration and code).** Run against the **prod** DB — migration "applied" ≠ "present on prod DB":
+```sql
+SELECT trial_ends_at, has_ever_subscribed FROM profiles LIMIT 1;   -- must not 42703
+SELECT 1 FROM one_time_purchases LIMIT 1;                           -- must not "relation does not exist"
+```
+Both must succeed. If either fails, **stop** — deploying code now would drop every consumer to tier 0 (PR 1) or error every deliverable check (PR 7). Do not skip because step 1 "looked like it worked."
+
+**Step 3 — Promote staging → `main` and deploy to prod.** Open the staging→`main` PR; CI green (`verify` + `e2e-smoke` + `rls-verify` per branch protection); merge; let Vercel deploy. Carries the full inventory delta (tier restructure PRs 1–8, export, deliverable rules, guards, audit). Step 2 passed → code lands on schema that supports it.
+
+**Step 4 — Verify on prod immediately (before trusting anything).**
+- `npm run release:post-deploy` — Voels gate + RLS SQL verify (standard Gate 4).
+- `GET /api/admin/verify-env?live=1` on prod → `missing` empty, `liveness.stripe: LIVE_OK`, prices active (re-run even if attested 2026-06-15 — env may have changed).
+- **Prod canary tier-resolution** — sign in as `canary-consumer@mywealthmaps.com`; confirm effective tier resolves correctly and dashboard renders (`getUserAccess` against real prod schema). If step 2 passed but canary resolves to tier 0, stop before any real user sees it.
+- **Stripe account guard (live)** — confirm prod asserts `sk_live_` + correct account; money-path guard must not throw.
+
+**Prod test pass:** same suite as staging for resolver/gate/boundary logic; exclude automated live-charge — replace with step 5 manual real-card smoke.
+
+**Step 5 — Live-money checks (deliberate, real card).** P0: one real-card live smoke (checkout → `checkout.session.completed` → subscription active), smallest tier, refund/cancel after. Plus C-4 billing walkthrough. Proves deliverable/subscription paths on live Stripe now that PR 7 is in the cutover.
+
+**Then stop.** Steps 0–5 complete the cutover. Gate flip (`PUBLIC_SIGNUP_OPEN=true`, fresh-email signup smoke) is Gate 2 below — separate operation when B&O-READY clears.
+
+`getUserAccess` fails loud on profile read errors — but a missing column still means every consumer page errors until step 1 lands (PR 4.5 / #117 lesson).
+
 ### Gate 2 — Go-live day sequence (in order)
 
 1. Verify Bucket B — every checkbox above is checked
-2. **Env pre-check:** `GET /api/admin/verify-env?live=1` with `x-admin-token` → `missing` empty, `liveness.stripe: LIVE_OK`, all live prices `active` — **attested Al / 2026-06-15**; re-run before flip if env changes
-3. Supabase Auth → confirm email-confirm flow is ON for production project
-4. Verify `/auth/callback` works on production (sign in with existing account)
-5. Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production environment variables
-6. Redeploy (trigger Vercel redeploy from dashboard or push empty commit)
-7. Core smoke with a FRESH email address (not a test account):
+2. Verify tier-restructure prod cutover steps 0–5 above are complete (schema verified on prod **before** code deploy; post-deploy canary tier-resolution green)
+3. **Env pre-check:** `GET /api/admin/verify-env?live=1` with `x-admin-token` → `missing` empty, `liveness.stripe: LIVE_OK`, all live prices `active` — **attested Al / 2026-06-15**; re-run before flip if env changes
+4. Supabase Auth → confirm email-confirm flow is ON for production project
+5. Verify `/auth/callback` works on production (sign in with existing account)
+6. Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production environment variables
+7. Redeploy (trigger Vercel redeploy from dashboard or push empty commit)
+8. Core smoke with a FRESH email address (not a test account):
    - Sign up → confirm email → profile → wizard → dashboard → billing upgrade
-8. `npm run release:post-deploy` (Voels gate + RLS SQL verify)
-9. Check Stripe Dashboard: new subscription appears under the fresh signup customer
+9. `npm run release:post-deploy` (Voels gate + RLS SQL verify)
+10. Check Stripe Dashboard: new subscription appears under the fresh signup customer
 
 ### Expanded flip steps (same order — do not reorder)
 

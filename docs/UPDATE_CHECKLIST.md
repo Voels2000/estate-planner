@@ -29,6 +29,8 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) | Human release smoke checklist |
 | [UX_LANGUAGE_POLICY.md](./UX_LANGUAGE_POLICY.md) | Compliance language policy — education vs. advice framing |
 | [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) | Auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
+| [BILLING_PAGE_COPY_SPEC.md](./BILLING_PAGE_COPY_SPEC.md) | Consumer `/billing` matrix copy and layout |
+| [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md) | **Tier 0 + app-trial enforcement** — 8-PR sequence after billing page presentation |
 | [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | Privacy deletion SOP, C-6/C-7 automated checks, privacy request + appeals SOP |
 | [legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md) | Counsel Q1–Q10 → conditional engineering scope |
 
@@ -105,7 +107,28 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **#37** — `applyEmailUnsubscribe` attorney routing; migration `20260718120000_attorney_drip_unsubscribed_at.sql`; per-env migration gate in DEPLOYMENT
 - [x] **#38** — [NOTIFICATION_HYGIENE.md](./NOTIFICATION_HYGIENE.md)
 - [x] **#39** — [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) + master-doc cross-links (15 files)
+- [x] **Signup confirmation email (PR #111)** — branded Resend + prefetch-safe `/auth/confirm` button POST (`generateLink` + `sendSignupConfirmationEmail`); supersedes `/auth/v1/resend`-only fix. Docs: MASTER_ARCHITECTURE, DECISION_LOG, WAITLIST_HARDENING_SPEC, STAGING_PROJECT_RUNBOOK, PRE_FLIP_CHECKLIST, CONSUMER_FLOWS, SCHEMA_CHANGELOG.
 - [ ] **Prod promote** — open staging→`main` PR; follow promotion runbook (secrets, migration verify, passive post-deploy smoke)
+
+## Consumer billing capability matrix (2026-06-24) — shipped
+
+- [x] Four-column cumulative matrix on `/billing` (Free + three paid tiers) — `billingCapabilityMatrix.ts` · `BillingCapabilityMatrix.tsx`
+- [x] Tier header copy (questions, one-liners, prices from `getConsumerPlanDisplay`) — `billingTierPresentation.ts`
+- [x] Trial banner resolver (`trial_ends_at` + Stripe `trialing` fallback) — `resolveBillingTrialBanner.ts` · `BillingPageTrialBanner.tsx`
+- [x] Plan & Export block below matrix — `BillingPlanAndExportSection.tsx`
+- [x] Unit tests — `billingCapabilityMatrix.spec.ts` · `resolveBillingTrialBanner.spec.ts`
+- [x] **Docs** — MASTER_ARCHITECTURE · DECISION_LOG · BILLING_PAGE_COPY_SPEC · UPDATE_CHECKLIST · NEXT_SESSION
+- [x] No migration — presentation-only; checkout/webhook unchanged
+## Tier restructure PR 1 — effective tier foundation (2026-06-24) — shipped
+
+- [x] Migration `20260724120000` — `trial_ends_at`, `has_ever_subscribed`; signup `trial_ends_at = now()+7d`; backfill
+- [x] `resolveEffectiveTier` + `getUserAccess` + dashboard sidebar via effective tier
+- [x] `has_ever_subscribed` on webhook activation (`withHasEverSubscribed`)
+- [x] Admin tier override allows **0**
+- [x] Unit tests — `resolveEffectiveTier` (subscribe→cancel→0), `hasEverSubscribed`
+- [x] **Docs** — SCHEMA_CHANGELOG, MASTER_ARCHITECTURE
+- [ ] **Staging:** apply migration before merge (`scripts/apply-migration.sh staging supabase/migrations/20260724120000_tier_restructure_pr1_trial_columns.sql`)
+- [ ] **Follow-on:** PRs 2–5 per tier restructure sequence (gates, dashboard slice, projections split, retire Stripe trial)
 
 ## Homepage CI lint fix (2026-06-12) — shipped
 

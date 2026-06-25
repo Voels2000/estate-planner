@@ -21,9 +21,7 @@ import { ProjectionAssumptions } from '@/app/(dashboard)/projections/_components
 import { formatDollars } from '@/app/(dashboard)/projections/_utils'
 import { buildProjectionSummaryCards } from '@/lib/view-models/projectionSummaryCards'
 import { ScenariosExploreCard } from '@/app/(dashboard)/projections/_components/ScenariosExploreCard'
-import { EstateOutlookChart } from '@/app/(dashboard)/projections/_components/EstateOutlookChart'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
-import type { PercentileByYear } from '@/lib/calculations/estate-monte-carlo'
 import {
   PLANNING_MISSING_PROJECTION_ACTIONS_TIER2,
   PLANNING_MISSING_PROJECTION_DESCRIPTION_PROJECTIONS,
@@ -38,9 +36,6 @@ type ProjectionsClientProps = {
   householdId: string | null
   hasRealEstate?: boolean
   hasBusiness?: boolean
-  mcBands?: PercentileByYear[] | null
-  mcUpdating?: boolean
-  stateExemption?: number | null
 }
 
 export function ProjectionsClient({
@@ -51,9 +46,6 @@ export function ProjectionsClient({
   householdId,
   hasRealEstate = true,
   hasBusiness = true,
-  mcBands = null,
-  mcUpdating = false,
-  stateExemption = null,
 }: ProjectionsClientProps) {
   const [household, setHousehold] = useState<HouseholdProjectionProfile | null>(initialHousehold)
   const [projections, setProjections] = useState<ProjectionYear[]>(initialProjections)
@@ -159,30 +151,6 @@ export function ProjectionsClient({
         p2={p2}
         chartDisclaimer={DISCLAIMER_STRINGS.projectionsChart}
       />
-
-      {mcBands && mcBands.length > 0 ? (
-        <section className="mt-8">
-          {mcUpdating ? (
-            <p className="mb-2 text-xs font-medium text-amber-700">
-              Updating Monte Carlo analysis — showing last saved results.
-            </p>
-          ) : null}
-          <h2 className="mb-1 text-sm font-semibold text-[--mwm-text-primary]">
-            Estate Outlook — Range of Outcomes
-          </h2>
-          <p className="mb-3 text-xs text-[--mwm-text-muted]">
-            Gross estate range across 500 simulated market scenarios. Base case assumes{' '}
-            {initialHousehold?.growth_assumptions
-              ? `${(initialHousehold.growth_assumptions as { returnMeanPct?: number }).returnMeanPct ?? 7}%`
-              : '7%'}{' '}
-            annual growth.
-          </p>
-          <EstateOutlookChart bands={mcBands} stateExemption={stateExemption ?? null} />
-          <p className="mt-2 text-xs text-[--mwm-text-muted]">
-            {DISCLAIMER_STRINGS.projectionsChart}
-          </p>
-        </section>
-      ) : null}
 
       <p className="mt-4 text-xs text-neutral-400">
         * Projection tax estimates include federal income tax, state income tax, capital gains tax,

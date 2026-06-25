@@ -65,7 +65,7 @@ const EstateOutlookChartInner = memo(function EstateOutlookChartInner({
   const xLabelIndices = [0, Math.floor((bands.length - 1) / 2), bands.length - 1]
 
   return (
-    <div className={className}>
+    <div className={className} data-testid="computed-estate-outlook-fan">
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" aria-label="Estate outlook fan chart">
         <path d={bandPath} fill="#3b82f6" fillOpacity="0.15" />
         <path d={bandInner} fill="#3b82f6" fillOpacity="0.25" />

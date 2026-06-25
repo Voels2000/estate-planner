@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { ButtonLink } from '@/components/ui/Button'
+import { getConsumerPlanDisplay } from '@/lib/billing/stripePrices'
+
+const ESTATE_TRIAL_DAYS = getConsumerPlanDisplay(3, 'monthly').trialDays
 
 export function TrialBanner({ expiryTimestamp }: { expiryTimestamp: number }) {
   const [timeLeft, setTimeLeft] = useState(() => Math.max(0, expiryTimestamp - Date.now()))
@@ -21,7 +24,9 @@ export function TrialBanner({ expiryTimestamp }: { expiryTimestamp: number }) {
       ? 'Your Estate trial ends today'
       : daysLeft === 1
         ? 'Your Estate trial ends tomorrow'
-        : `Your 14-day Estate trial ends in ${daysLeft} days`
+        : ESTATE_TRIAL_DAYS > 0
+          ? `Your ${ESTATE_TRIAL_DAYS}-day Estate trial ends in ${daysLeft} days`
+          : `Your Estate trial ends in ${daysLeft} days`
 
   return (
     <div

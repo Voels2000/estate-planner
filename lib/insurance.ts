@@ -157,6 +157,37 @@ export function calcPCGap(profile: HouseholdProfile, policies: InsurancePolicy[]
   }
 }
 
+export function buildInsuranceGapProfile(
+  household: {
+    person1_birth_year?: number | null
+    has_spouse?: boolean | null
+    person2_birth_year?: number | null
+    dependents?: number | null
+  },
+  totals: {
+    annualIncome: number
+    totalAssets: number
+    totalDebts: number
+    monthlyExpenses: number
+  },
+): HouseholdProfile {
+  const year = new Date().getFullYear()
+  const birthYear = household.person1_birth_year ?? year - 45
+  return {
+    annual_income: totals.annualIncome,
+    age: year - birthYear,
+    spouse_age:
+      household.has_spouse && household.person2_birth_year
+        ? year - household.person2_birth_year
+        : undefined,
+    dependents: household.dependents ?? 0,
+    total_assets: totals.totalAssets,
+    total_debts: totals.totalDebts,
+    monthly_expenses: totals.monthlyExpenses,
+    has_spouse: household.has_spouse ?? false,
+  }
+}
+
 export function analyzeGaps(profile: HouseholdProfile, policies: InsurancePolicy[]): InsuranceGapResult[] {
   return [
     calcLifeGap(profile, policies),

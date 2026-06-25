@@ -31,9 +31,10 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - ⬜ **PITR / backups confirmed ON before real data exists** — Supabase PITR enabled, retention known, written rollback path for bad prod migration.
 
 ### Signup correctness (on PROD)
+- ⬜ **Prod Supabase SMTP sender** — Authentication → Email → SMTP: Sender name = **My Wealth Maps** (name only); Sender email = **noreply@mywealthmaps.com** (no doubled-from / 422). Verify with a fresh signup confirmation: Resend activity log shows **200** delivery.
 - ✅ **Waitlist hardening (staging §10)** — Layer 0 on prod + staging. Code on `main` (PR #25). **§10 matrix 6/6 PASS** on `https://estate-planner-staging.vercel.app` (2026-06-16) — [WAITLIST_HARDENING_SPEC §10 attestation](./WAITLIST_HARDENING_SPEC.md#10-attestation--closed-2026-06-16).
 - ⬜ **`verify-env` prod gates** — `GET /api/admin/verify-env?live=1` on production must show **CRITICAL** if `SIGNUP_SKIP_EMAIL_CONFIRM` is set (auto-confirms self-serve signups); `PUBLIC_SIGNUP_OPEN` must be `false` until flip.
-- ✅ **Open-consumer email confirm (staging)** — Probe 1: `201` + `needsEmailConfirmation: true`, no session cookie (`delivered@resend.dev`). **Prod:** verify at flip with fresh email.
+- ✅ **Open-consumer email confirm (staging)** — Probe 1: `201` + `needsEmailConfirmation: true`, no session cookie (`delivered@resend.dev`). **Delivery:** server `sendSignupConfirmationEmail` after `createUser` (fix 2026-06-24 — admin API does not send mail). **Prod:** verify at flip with fresh email.
 - 🔄 **`handle_new_user` / signup defaults verified on prod** — fresh signup → `subscription_status='none'`, `consumer_tier=1`. (B8)
 - ⬜ **Apply WA estate migrations on prod** — Regime D + CST parity in timestamp order (`20260613120000`, `20260613130000`, `20260613140000`) if not already applied.
 
@@ -95,22 +96,56 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 ---
 
-## D. Flip runbook — run in this order
+## D. Tier-restructure prod cutover — steps 0–5 (then stop)
+
+**Not the signup gate flip.** Gets tier-restructure code safely onto prod. `PUBLIC_SIGNUP_OPEN=true` is §E — separate day when B&O-READY clears.
+
+**Before step 1:** PITR/backups ON (§A). Schema rollback snippets below — **pre-flip only**; after `PUBLIC_SIGNUP_OPEN`, PITR not column drops.
+
+**Schema rollback** (verified vs forward files; reverse order = `20260724120000` then `20260624140000`):
+```sql
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS trial_ends_at;
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS has_ever_subscribed;
+-- + restore handle_new_user() from 20260527130500_fix_signup_subscription_defaults.sql
+DROP TABLE IF EXISTS public.one_time_purchases;
+```
+`one_time_purchases` reverse is complete (`DROP TABLE`). `trial_columns` forward also replaced `handle_new_user()` — column drops alone are not a full inverse. Step 2 fail → re-apply forward, don't reverse.
 
 ```
-1. Apply prod migrations in timestamp order through latest:
-   …WA Regime D (20260613120000–140000) → RLS fix (20260713130000) →
-   coverage fixes (20260713140000) → service_role grants (20260713150000)
-2. verify-env on prod (`?live=1`, live key): all `STRIPE_PRICE_*` → `prices.retrieve` active. Preview (`sk_test_`) validates advisor/attorney prices the same way — catches `No such price` before checkout.
-3. npm run release:post-deploy            # Voels + RLS
-4. npm run verify:rls -- --require-sql    # prod: 27/27 + coverage gate PASS
-5. Deploy app (share page uses get_share_link_display_meta RPC)
-6. Stripe real-card smoke + C-4 walkthrough (manual, card required)
-7. Email: BCC smoke, drip steps 2/3, spam-placement check
-8. Confirm live: PITR/backups · error monitoring · webhook-failure alerting
-9. PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke
-10. ── only when every A item is green AND B&O-ready ──
-    PUBLIC_SIGNUP_OPEN=true → redeploy → fresh-email signup E2E smoke
+0. [x] Docs reconciliation (#128 merged)
+1. Apply prod migrations ONLY (no code deploy yet), timestamp order:
+   …WA Regime D (20260613120000–140000) → one_time_purchases (20260624140000) →
+   RLS fix (20260713130000) → coverage fixes (20260713140000) →
+   service_role grants (20260713150000) → tier_restructure trial columns (20260724120000)
+   via: bash scripts/apply-migration.sh production <file>
+2. Verify schema on PROD DB (gate — do not skip):
+     SELECT trial_ends_at, has_ever_subscribed FROM profiles LIMIT 1;  -- no 42703
+     SELECT 1 FROM one_time_purchases LIMIT 1;                          -- table exists
+   If either fails → STOP. Do not deploy code.
+3. Promote staging → main; CI green (verify + e2e-smoke + rls-verify); merge; Vercel prod deploy
+4. Verify on prod immediately:
+     npm run release:post-deploy
+     GET /api/admin/verify-env?live=1  → LIVE_OK, prices active
+     Canary sign-in (canary-consumer@mywealthmaps.com) → correct effective tier + dashboard
+     Stripe account guard live (sk_live_ + correct account, no throw)
+     PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke
+       (same resolver/gate/boundary coverage as staging; no automated live charge)
+5. Real-card live smoke (smallest tier, refund/cancel after) + C-4 billing walkthrough
+── STOP. Cutover complete. Gate flip is §E. ──
+```
+
+---
+
+## E. Gate flip runbook — separate day (B&O-READY + cutover §D complete)
+
+```
+1. Every §A hard blocker green (incl. prod SMTP sender + Resend 200)
+2. verify-env on prod (?live=1) — re-run if env changed since cutover
+3. Email: BCC smoke, drip steps 2/3, spam-placement check
+4. Confirm live: PITR/backups · error monitoring · webhook-failure alerting
+5. ── only when Bucket A (B&O) + §D cutover + real-card smoke are done ──
+   PUBLIC_SIGNUP_OPEN=true → redeploy → fresh-email signup E2E smoke
+   (full sequence: LAUNCH.md Bucket C Gate 2)
 ```
 
 ---

@@ -172,7 +172,8 @@ Middleware may still allow `/signup` to **render** when the page has a well-form
    - Firm join (if firm invite admission)
    - Referral attribution + funnel `account_created`
    - `notify-referral-signup` when applicable
-5. Return session via `admin.auth.admin.generateLink` or sign-in flow — **prefer** matching today: if email confirm off (staging/local), establish session; if on (prod), confirm-email path
+5. When `email_confirm: false` (`open_consumer` on staging/prod marketing): **`sendSignupConfirmationEmail`** — server `POST` to Supabase `/auth/v1/resend` (`type: signup`, `emailRedirectTo: {origin}/auth/callback`). Required because `admin.createUser` does not send mail (regression vs client `signUp()` since `3b7f3cb6`).
+6. Return session via `admin.auth.admin.generateLink` or sign-in flow — **prefer** matching today: if email confirm off (`SIGNUP_SKIP_EMAIL_CONFIRM` E2E only), establish session; if on, confirm-email path (mail already sent in step 5)
 
 **Launch flip (`open_consumer`):** `PUBLIC_SIGNUP_OPEN=true` makes `open_consumer` the public front door. Supabase anon signups stay **off**. `resolveEmailConfirmForCreateUser` sets `email_confirm: false` for `open_consumer` on prod marketing (and by default on staging) so accounts are not usable until email verification. Staging E2E may set `SIGNUP_SKIP_EMAIL_CONFIRM=true` only in Preview env — never Production.
 
@@ -246,7 +247,7 @@ Extract from `_signup-form.tsx` into `lib/auth/completeSignup.ts` (or similar) s
 | Probe | Scenario | Expected | Result (2026-06-16) |
 |-------|----------|----------|----------------------|
 | **7** | Anon `POST …/auth/v1/signup` | **422** `signup_disabled` | **PASS** |
-| **1** | Bright `open_consumer` (`delivered@resend.dev`) | **201** + `needsEmailConfirmation: true`, no cookie | **PASS** |
+| **1** | Bright `open_consumer` (`delivered@resend.dev`) | **201** + `needsEmailConfirmation: true`, no cookie; **confirmation email delivered** (server `sendSignupConfirmationEmail` after `createUser`) | **PASS** (API 2026-06-16; delivery fix 2026-06-24) |
 | **2** | Invalid beta token | **403** | **PASS** |
 | **4** | Valid beta token | **201** + session cookie | **PASS** |
 | **5** | Short password | **400** | **PASS** |
@@ -304,7 +305,7 @@ Parked **hosted Probe 1** while `estate-planner` Preview scope fought env confus
 
 ```bash
 # 1. Staging: PUBLIC_SIGNUP_OPEN=true, anon signups OFF
-# 2. Expect 201 + needsEmailConfirmation (no session cookie):
+# 2. Expect 201 + needsEmailConfirmation (no session cookie) AND inbox delivery:
 curl -sS -X POST https://<staging>/api/auth/signup \
   -H "Content-Type: application/json" \
   -d '{"email":"bright-test@example.com","password":"longenough","fullName":"Bright Test","role":"consumer","termsAcceptedAt":"2026-06-15T00:00:00.000Z","admission":{"type":"open_consumer"}}'

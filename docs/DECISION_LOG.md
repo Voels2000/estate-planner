@@ -1,6 +1,92 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-23 (E2E environment resolution — TEST_ENV + globalSetup guard)
+# Last updated: 2026-06-25 (re-baseline audit; PR 6/7 + PR 8 on staging)
+
+---
+
+## Tier restructure — PR 8 E2E persona matrix (2026-06-19)
+
+**Problem.** Consolidation PRs touch the seed harness — the easiest place to drop a persona that was the only coverage for a resolver branch (`has_ever_subscribed` canceled → 0, app trial window, tier 2, Plan & Export purchaser).
+
+**Decision.** Canonical matrix in `scripts/e2e-persona-matrix.ts`; `npm run seed:e2e` seeds all six consumer branches in one run; `verifyE2eAccounts` calls `verifyE2ePersonaMatrix` post-seed. Do not merge two personas without proving the branch remains exercised.
+
+**Docs.** [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md) maps planning docs → outcomes; [LAUNCH.md](./LAUNCH.md) Bucket C records code gate closed on staging + prod cutover runbook.
+
+**Files:** `scripts/e2e-test-identities.ts` · `scripts/seed-e2e-lib.ts` · `scripts/verify-e2e-persona-matrix.ts` · `tests/unit/e2ePersonaMatrix.spec.ts`
+
+**Ops:** `verify:e2e-persona-matrix` exits **2** with “run seed:e2e first” when profiles are missing (not a resolver bug). CI `e2e-smoke` runs `seed:e2e:persona-matrix` before tests. App-trial `trial_ends_at` refreshes to ~2y on each seed.
+
+---
+
+## Stripe account guard — mode, source, and account at startup (2026-06-18)
+
+**Problem.** Two independent failures produced the same symptom (`resource_missing` / “wrong key”): (1) a shell-exported `STRIPE_SECRET_KEY` overriding `.env.test.staging` because `dotenv -e` does not override an already-set var without `-o`; (2) a key from the wrong Stripe test sandbox while Vercel staging creates objects in the main account (`acct_1TAIt0ENTkKmTNa3`). Mode alone cannot distinguish staging-test from prod-live (same account); account alone cannot distinguish main test mode from a separate test sandbox.
+
+**Enforcement.** `assertStripeAccountGuard(testEnv)` in `scripts/testEnv.ts` runs at startup before any Stripe call: **Check A** — `sk_test_` vs `sk_live_` per `ENVIRONMENTS[testEnv].stripeMode`; **Check B** — active key last4 must match `STRIPE_SECRET_KEY` read directly from `.env.test.<env>` (shell override fails loud); **Check C** — `stripe.accounts.retrieve()` must return `ENVIRONMENTS[testEnv].stripeAccountId` (fail-closed on API error). Guard runs whenever a key is **present** in `process.env` (any source) — not only when "we loaded" it; must run **before** `stripLeakedProductionSecrets()` so production shell exports fail instead of being stripped and skipped. `runPlaywrightStartupGuards()` orders Stripe guard → Playwright guard. Wired into Playwright `globalSetup` and staging money-path scripts. Call-site tests in `stripeAccountGuardCallSite.spec.ts` prove callers halt (not just that the guard throws in isolation).
+
+**Principle.** When a config value can come from multiple sources, the runtime must prove which source and which target it resolved to — loudly, at the boundary, at startup — never infer it from a downstream failure. Same habit as Supabase project-ref guards.
+
+**Files:** `scripts/testEnv.ts` · `tests/e2e/globalSetup.ts` · `scripts/verify-pr5-staging-gate.ts`
+
+---
+
+## Tests must match production call-site wiring (2026-06-25)
+
+**Problem.** Green unit tests that invoke a guard or gate with different arguments than production callers prove nothing about production — same false-pass family as un-awaited async guards, empty isolation fixtures, and shell-export overrides misread as "wrong key."
+
+**Rule.** A test of `hasDeliverableDownloadAccess`, `assertStripeAccountGuard`, export isolation, etc. must use the **same wiring shape** as the call site: e.g. purchase context via `toPlanExportPurchaseContext(getUserPlanExportPurchase(...))`, not a hand-built option the route never passes; guards `await`ed at the caller; isolation seeds both personas with data in every exported table.
+
+**Instances.** PR-A caller-halt tests · PR 6 A/B marker sweep · PR 7 deliverable matrix (`planExportAppTrialDeliverable.spec.ts`).
+
+**Principle.** Companion to the multi-source-config rule: prove resolution at the boundary **the way production resolves it**.
+
+---
+
+## Tier restructure — PR 5 retire Stripe consumer trial (2026-06-24)
+
+**Decision.** Ship atomically: `PRICE_META` Estate `trialDays: 0` (immediate charge at checkout) **and** consumer CTA/marketing copy that no longer promises “Start free trial.” App-managed trial (`trial_ends_at`, PR 1) is separate from Stripe `trialing` status.
+
+**Legacy.** Existing `subscription_status = 'trialing'` rows remain valid; `consumerCheckoutBlockReason`, `resolveEffectiveTier`, webhook status mapping, and `resolveBillingTrialBanner` Stripe fallback intentionally retain `trialing` reads. New Estate checkouts write `active` directly.
+
+**Launch gate.** PR 5 completes the billing-page → prod blocker (with PRs 2–4).
+
+---
+
+## Tier restructure — PR 1 load-bearing spec (2026-06-24)
+
+**Decision.** Before PR 1 code: (1) `has_ever_subscribed` flips **true** on first successful `customer.subscription.created` or first `active`/`canceling` status — evaluated **before** trial window in `resolveEffectiveTier`, so subscribe-then-cancel never re-enters trial; (2) `resolveEffectiveTier` is the **single source of truth** for tier — `getUserAccess` and dashboard sidebar must call it (fixes raw `consumer_tier` vs `getUserAccess().tier` divergence); (3) PR 1 ships unit test for subscribe-then-cancel → Tier 0 and a grep audit — **display** reads of raw tier OK, **access/gating** reads must use resolver even in billing code.
+
+**PR 6 boundary.** Export serializer shares PR 2's input/computed boundary — same list, two consumers; PR 2 authoritative.
+
+**Canonical sequence:** [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md). **Launch gate:** PRs 2–5 before consumer flip.
+
+---
+
+## Consumer billing page — cumulative capability matrix (2026-06-24)
+
+**Decision.** Replace three side-by-side plan cards on `/billing` with a **four-column cumulative matrix** (Free + Financial + Retirement + Estate). Rows group capabilities (finances / planning / confidence / estate); checks are cumulative (`minTier` ≤ column tier). Copy: tier **questions** + **one-liners** in column headers; Free shows **$0 always**. Estate column: subtle navy tint only — **no** “For estate households” marketing tag. Mobile: single focused column + **Compare all plans** expander (default focus Estate unless user has active paid tier).
+
+**Trial banner.** `resolveBillingTrialBanner` — prefer app `trial_ends_at` when set (future tier-restructure trial); fallback Stripe `trialing` + `subscription_period_end` (legacy subs only after PR 5). Financial/Retirement subscribe immediately; Estate checkout charges immediately (`trialDays: 0`).
+
+**Plan & Export.** One-time SKU block stays **below** the subscription ladder (not a matrix column).
+
+**Matrix vs gates.** Rows align with `FEATURE_TIERS` where keys exist; Tier 0 rows (`net-worth-view`, `data-export`) are matrix-only until tier-restructure gates ship — not added to `FEATURE_TIERS` (would break `DELIVERABLE_MIN_TIER` typing). **Enforcement plan:** [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md).
+
+**Files:** `lib/billing/billingCapabilityMatrix.ts` · `billingTierPresentation.ts` · `resolveBillingTrialBanner.ts` · `components/billing/BillingCapabilityMatrix.tsx` · `BillingPageTrialBanner.tsx` · `BillingPlanAndExportSection.tsx` · `app/billing/_billing-client.tsx` · unit specs · [BILLING_PAGE_COPY_SPEC.md](./BILLING_PAGE_COPY_SPEC.md).
+
+---
+
+## Plan & Export one-time SKU + credit-on-subscribe (2026-06-18)
+
+**Decision.** One-time **Plan & Export** SKU at **$1,490** (derived from `estate_annual.annualTotal × 100`), Stripe `mode: payment`. Generated deliverable (estate-plan PDF) gated via **extended `hasPaidDownloadAccess`** — active Tier 3 **or** completed `one_time_purchases` row; **`trialing` excluded** (unchanged). Raw personal data: **`canExportRawData() → true`** policy stub; self-serve portability endpoint deferred to a separate PR (manual `/api/consumer/privacy-request` remains).
+
+**Credit-on-subscribe.** Full purchase amount credited via Stripe customer balance on **`customer.subscription.created` only**, with `UPDATE … WHERE credit_applied_at IS NULL` consume-once guard. `checkout.session.completed` (subscription) does **not** apply credit.
+
+**Trial.** Estate trial shortened **14 → 7 days** in `PRICE_META` (`trial_period_days` at checkout). Marketing/billing copy reads trial length from `getConsumerPlanDisplay(3, 'monthly').trialDays`.
+
+**Deliverable scope.** One-time purchase grants **indefinite download** of generated artifacts; **plan editing** (update/generate) is included for **`PLAN_EXPORT_EDIT_WINDOW_DAYS` (90)** from purchase, then requires subscription. Warning emails at 14d/3d via daily `/api/cron/plan-export-warnings`.
+
+**Files:** `one_time_purchases` migration · `lib/billing/stripePrices.ts` (`ONE_TIME_SKU_META`) · `lib/billing/oneTimePurchases.ts` · `lib/access/requirePaidDownloadAccess.ts` · `lib/billing/exportAccess.ts` · checkout/webhook branches · `/print` UI alignment.
 
 ---
 
@@ -3403,6 +3489,20 @@ Pass = at least one row with referral code matching a test signup.
 **Decision:** **Not in B8 scope.** B8 fixed ToS source-of-truth (code constants, admin read-only). H5 = when to **hard-gate** re-acceptance vs soft banner on routine version bumps. Decide **material-change trigger** before first post-launch ToS edit; implement when a material change ships.
 
 **Alternatives considered:** Hard gate on every `TERMS_OF_SERVICE_VERSION` bump (rejected for launch — too friction-heavy for immaterial fixes).
+
+---
+
+### June 2026 — Signup confirmation email after server-route hardening
+
+**Decision:** Open-consumer signup sends **branded** confirmation via Resend (`generateLink` + `sendSignupConfirmationEmail`), linking to `/auth/confirm` where verification runs only on a human button POST (Outlook Safe Links prefetch hardening). Invite admissions unchanged (`createUser` + session).
+
+**Reasoning:** Supabase default mailer on staging looked generic after the two-DB split; product mail already uses Resend. `createUser` + `/auth/v1/resend` fixed delivery but not branding. GET-verify links are burned by Microsoft Defender prefetch.
+
+**Alternatives considered:** Supabase dashboard template parity only (rejected as sole fix — still generic sender on staging without SMTP). GET `/auth/confirm` verify (rejected — burned tokens on Outlook).
+
+**Implication:** Branded resend for already-registered unconfirmed users stays on existing `/auth/confirm-email` Supabase resend (follow-up PR). Enable custom Resend SMTP on staging Supabase for non-signup auth emails.
+
+**Attestation:** Al / 2026-06-24 — staging Outlook prefetch test passed (`avoels@outlook.com` confirm flow).
 
 ---
 

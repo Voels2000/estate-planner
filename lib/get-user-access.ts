@@ -1,57 +1,34 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { resolveConsumerTier } from '@/lib/tiers'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
-import { isManagedSubscriptionStatus } from '@/lib/billing/b2b2cBillingPolicy'
+import { buildUserAccessFromProfile } from '@/lib/access/buildUserAccessFromProfile'
+import { loadProfileForUserAccess } from '@/lib/access/loadProfileForUserAccess'
+import type { UserAccess } from '@/lib/access/userAccess'
 import { cache } from 'react'
 
-export type UserAccess = {
-  tier: number
-  isAdvisor: boolean
-  isAdvisorClient: boolean
-  isAdmin: boolean
-  isTrial: boolean
-  subscriptionStatus: string | null
-}
+export type { UserAccess } from '@/lib/access/userAccess'
 
 export const getUserAccess = cache(async (): Promise<UserAccess> => {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) {
-    return { tier: 0, isAdvisor: false, isAdvisorClient: false, isAdmin: false, isTrial: false, subscriptionStatus: null }
-  }
-
-
-  const admin = createAdminClient()
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('role, subscription_status, subscription_plan, consumer_tier, trial_start, is_admin, is_superuser')
-    .eq('id', user.id)
-    .single()
-
-  // Superuser bypasses all subscription and tier checks.
-  // Role is preserved (e.g. 'advisor') so primary identity is correct.
-  if (profile?.is_superuser === true) {
     return {
-      tier: 3,
-      isAdvisor: profile.role === 'advisor',
+      tier: 0,
+      isAdvisor: false,
       isAdvisorClient: false,
-      isAdmin: true,
+      isAdmin: false,
       isTrial: false,
-      subscriptionStatus: 'active',
+      subscriptionStatus: null,
+      trialEndsAt: null,
     }
   }
 
-  const isAdvisor = profile?.role === 'advisor'
-  const isAdmin = profile?.is_admin === true
-  const subscriptionStatus = profile?.subscription_status ?? null
-  const isTrial = subscriptionStatus === 'trialing'
-  const isActive =
-    subscriptionStatus === 'active' ||
-    isTrial ||
-    subscriptionStatus === 'canceling'
-  const isProfessionallyManaged = isManagedSubscriptionStatus(subscriptionStatus)
+  const admin = createAdminClient()
+  const profile = await loadProfileForUserAccess(admin, user.id)
 
+  const isAdvisor = profile?.role === 'advisor'
   let isAdvisorClient = false
   if (!isAdvisor) {
     const { data: clientRow } = await admin
@@ -63,20 +40,5 @@ export const getUserAccess = cache(async (): Promise<UserAccess> => {
     isAdvisorClient = !!clientRow
   }
 
-  if (isAdvisor || isAdvisorClient || isProfessionallyManaged) {
-    const tier = isProfessionallyManaged
-      ? (profile?.consumer_tier ?? 3)
-      : 3
-    return { tier, isAdvisor, isAdvisorClient, isAdmin, isTrial, subscriptionStatus }
-  }
-
-  if (!isActive) {
-    return { tier: 1, isAdvisor: false, isAdvisorClient: false, isAdmin: false, isTrial: false, subscriptionStatus }
-  }
-
-  const tier = resolveConsumerTier(
-    profile?.subscription_plan ?? null,
-    profile?.consumer_tier ?? null,
-  )
-  return { tier, isAdvisor, isAdvisorClient, isAdmin, isTrial, subscriptionStatus }
+  return buildUserAccessFromProfile(profile, isAdvisorClient)
 })

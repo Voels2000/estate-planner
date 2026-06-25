@@ -3,25 +3,61 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ExportPDFButton } from '@/components/pdf/ExportPDFButton'
+import { PlanAndExportCta } from '@/components/billing/PlanAndExportCta'
 
 interface Props {
   householdId: string
   isAdvisor: boolean
-  tier: number
+  canUpdateDeliverable: boolean
+  canDownloadDeliverable: boolean
+  showPlanAndExportOffer?: boolean
 }
 
 type ExportMode = 'full' | 'attorney'
 
-export function PrintClient({ householdId, isAdvisor, tier }: Props) {
+export function PrintClient({
+  householdId,
+  isAdvisor,
+  canUpdateDeliverable,
+  canDownloadDeliverable,
+  showPlanAndExportOffer = false,
+}: Props) {
   const [mode, setMode] = useState<ExportMode>('full')
 
-  if (!isAdvisor && tier < 3) {
+  if (!isAdvisor && !canDownloadDeliverable) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
+      <div
+        className="mx-auto max-w-2xl px-4 py-12"
+        data-testid="deliverable-export-gated"
+      >
+        <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)] mb-2">Export Estate Plan</h1>
+        <p className="text-neutral-500 mb-8">
+          Export a full estate plan summary — including conflicts, asset titling, and estate
+          tax exposure — for your attorney or advisor review.
+        </p>
+        {showPlanAndExportOffer && <PlanAndExportCta returnTo="/print" variant="gated" />}
+      </div>
+    )
+  }
+
+  if (!isAdvisor && canDownloadDeliverable && !canUpdateDeliverable) {
+    return (
+      <div
+        className="mx-auto max-w-2xl px-4 py-12"
+        data-testid="deliverable-export-download-only"
+      >
         <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)] mb-2">Export Estate Plan</h1>
         <p className="text-neutral-500">
-          Export a full estate plan summary — including conflicts, asset titling, and estate
-          tax exposure — for your attorney or advisor review. Available with the Estate plan.
+          Your Plan &amp; Export editing window has ended. Plans you already generated remain
+          downloadable; updating your plan requires an Estate subscription.
+        </p>
+        <p className="mt-4">
+          <Link
+            href="/billing?plan=estate"
+            className="text-sm font-medium text-[color:var(--mwm-navy)] underline underline-offset-2"
+          >
+            Subscribe to keep your plan current →
+          </Link>
         </p>
       </div>
     )
@@ -55,7 +91,10 @@ export function PrintClient({ householdId, isAdvisor, tier }: Props) {
   ]
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
+    <div
+      className="mx-auto max-w-2xl px-4 py-12"
+      data-testid="deliverable-export-ready"
+    >
       <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)] mb-2">
         {isAdvisor ? 'Advisor Estate Plan Report' : 'Export Estate Plan'}
       </h1>

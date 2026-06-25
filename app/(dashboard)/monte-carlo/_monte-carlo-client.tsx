@@ -18,6 +18,8 @@ import {
   defaultConsumerMCAssumptions,
 } from '@/lib/monte-carlo/applyConsumerAssumptionInputs'
 import type { ConsumerMCAssumptionSet } from '@/lib/monte-carlo/consumerAssumptionScenarios'
+import type { PercentileByYear } from '@/lib/calculations/estate-monte-carlo'
+import { EstateOutlookSection } from '@/app/(dashboard)/projections/_components/EstateOutlookSection'
 import { MONTE_CARLO_SYSTEM_DEFAULTS } from '@/lib/calculations/monteCarlo'
 
 interface SavedRun {
@@ -410,10 +412,16 @@ export function MonteCarloClient({
   initialPrefill = null,
   initialHistory = null,
   initialAdvisorAssumptions = null,
+  estateOutlookBands = null,
+  estateOutlookUpdating = false,
+  growthReturnMeanPct = 7,
 }: {
   initialPrefill?: MonteCarloPrefillPayload | null
   initialHistory?: SavedRun[] | null
   initialAdvisorAssumptions?: MonteCarloAdvisorAssumptionsPayload | null
+  estateOutlookBands?: PercentileByYear[] | null
+  estateOutlookUpdating?: boolean
+  growthReturnMeanPct?: number
 }) {
   const initialState = buildInitialMonteCarloState(initialPrefill, initialAdvisorAssumptions)
 
@@ -614,6 +622,16 @@ export function MonteCarloClient({
           <button onClick={() => setActiveTab('compare')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeTab === 'compare' ? 'bg-white shadow text-[color:var(--mwm-navy)]' : 'text-gray-500 hover:text-gray-700'}`}>Compare {history.length >= 2 ? `(${history.length})` : ''}</button>
         </div>
       </div>
+
+      {estateOutlookBands && estateOutlookBands.length > 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <EstateOutlookSection
+            bands={estateOutlookBands}
+            growthReturnMeanPct={growthReturnMeanPct}
+            mcUpdating={estateOutlookUpdating}
+          />
+        </div>
+      ) : null}
 
       {latestSharedAdvisorScenario && !acceptedAdvisorScenario && (
         <div className="rounded-xl border border-[color:var(--mwm-border)] bg-[var(--mwm-gold-pale)] p-4">

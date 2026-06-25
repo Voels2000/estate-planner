@@ -751,11 +751,13 @@ Two layers — do not conflate them:
 
 **Server-gated signup (2026-06, PR #25):** Client `supabase.auth.signUp()` removed. All account creation flows through `POST /api/auth/signup` with admission validated in `lib/auth/signupAdmission.ts` **before** `admin.auth.admin.createUser()` (`lib/auth/completeSignup.ts` for side effects). Checkout routes remain auth-only — they do not check `PUBLIC_SIGNUP_OPEN`; blocking anon signup at Supabase + server admission is the containment model.
 
+**Signup confirmation email (2026-06-24):** Open-consumer signups use `admin.generateLink({ type: 'signup' })` + branded Resend mail (`lib/email/sendSignupConfirmationEmail.ts`) with a prefetch-safe link to `/auth/confirm?token_hash=…&type=signup`. Verification runs only on a human button POST (`app/auth/confirm/actions.ts`) so Outlook Safe Links cannot burn the token. Invite/token admissions keep `createUser` + immediate session. Staging Supabase should still enable custom Resend SMTP for auth emails Supabase sends itself (email-change, etc.).
+
 | Layer | Mechanism | Status |
 |-------|-----------|--------|
 | **0 — Supabase** | Disable anon/public signups on prod (`fnzvlmrqwcqwiqueevux`) | Attested (prod safe while dark) |
 | **1 — Server route** | `signupAdmission` + `createUser`; open_consumer requires `PUBLIC_SIGNUP_OPEN` | Shipped on `main` |
-| **2 — Email confirm** | Bright consumer: `email_confirm: false` → `201` + `needsEmailConfirmation`, no session cookie | Unit + local/staging-DB matrix pass |
+| **2 — Email confirm** | `generateLink` + branded Resend; `/auth/confirm` button POST (prefetch-safe) | Unit + staging Outlook smoke |
 | **§10 hosted matrix** | Probes 1/2/4/5/7/8 on staging URL | **Closed** 2026-06-16 — [WAITLIST_HARDENING_SPEC.md](./WAITLIST_HARDENING_SPEC.md) |
 
 **Test account seed scripts (staging / local, not Vercel env):**
@@ -831,7 +833,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 
 **Current (as built):**
 
-- Consumer pricing (Sprint 4, 2026-05-28): **Financial $29/mo** · **Retirement $79/mo** · **Estate $149/mo**; annual billing at **$290 / $790 / $1,490** (2 months free). **14-day free trial on Estate tier only.**
+- Consumer pricing (Sprint 4, 2026-05-28; Stripe Estate trial retired PR 5 2026-06-24): **Financial $29/mo** · **Retirement $79/mo** · **Estate $149/mo**; annual billing at **$290 / $790 / $1,490** (2 months free). **App trial** via `trial_ends_at` (PR 1); Estate checkout charges immediately (`PRICE_META.trialDays: 0`).
 - Single source of truth for Stripe price IDs: `lib/billing/stripePrices.ts` (`getPriceConfig(tier, period)`, `getTierFromPriceId(priceId)`). Env vars: `STRIPE_PRICE_FINANCIAL_MONTHLY`, `_ANNUAL`, etc.
 - Plan display shared by billing and public pricing: `lib/billing/consumerPlanCatalog.ts` (names/descriptions from `TIER_NAMES` / `TIER_DESCRIPTIONS` in `lib/tiers.ts`).
 - **Public `/pricing` (2026-06-10):** Consumer plans via `_pricing-consumer-plans.tsx`; advisor **per-seat** Starter/Growth/Enterprise from `ADVISOR_FIRM_SEAT_RATES` + `ADVISOR_FIRM_SEAT_RANGES`; attorney Free/Starter/Growth from `ATTORNEY_PLAN_LIMITS`. Advisor checkout: `_pricing-advisor-checkout.tsx` → `POST /api/stripe/firm-checkout`.
@@ -843,17 +845,15 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - **Admin MRR (2026-06-09):** `lib/billing/computeAdminMrr.ts` — annual-aware consumer + attorney tier + firm seat MRR.
 - Billing page (`/billing`) and public pricing (`/pricing`) include **monthly/annual toggle** (`components/billing/BillingPeriodToggle.tsx`) when `isAnnualBillingConfigured()` is true (all three `STRIPE_PRICE_*_ANNUAL` env vars set server-side). Toggle hidden otherwise; monthly plans only.
 - **Go-live:** [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue) — Phase 1 test mode, then Phase 2 live keys; never mix test price IDs with live secret key. **After re-keying staging Stripe:** run `npm run reset:staging-stripe` (see [E2E_TEST_RESET.md](./E2E_TEST_RESET.md)) so dangling `profiles.stripe_*` columns do not block checkout.
-- Checkout (`POST /api/stripe/checkout`) accepts `priceId` + `period` or `plan` query param; Estate subscriptions get `subscription_data.trial_period_days: 14`.
+- Checkout (`POST /api/stripe/checkout`) accepts `{ tier, period }`; `subscription_data.trial_period_days` only when `getConsumerPlanDisplay(tier, period).trialDays > 0` (Estate **0** since PR 5).
 - **Post-checkout success URL (2026-05-29):** consumers → `/dashboard?checkout=success` or `/profile?checkout=success`; advisors → `/advisor?checkout=success`. `/terms/accept` retained for legacy checkout flows.
 - **Terms acceptance (2026-05-27):** TERMS-1 signup checkbox sets `terms_accepted_at` + `terms_version`; email-confirm users synced in `/auth/callback` from signup metadata. Section F soft banner on dashboard for users without `terms_accepted_at` (dismissible, non-blocking).
 - **Single ToS source (2026-05-27, B8 2026-06-18):** Canonical Terms of Service = `lib/legal/terms-of-service-sections.ts` (`TERMS_OF_SERVICE_VERSION` `2026-06-02`). `/terms`, `/terms/accept`, `GET /api/terms/content`, and `recordTermsAcceptance` all use `getCanonicalTerms()`. Admin **Re-gate users** (`POST /api/admin/terms/regate`) clears stale `profiles.terms_accepted_at` only — no `app_config` write. Legacy `app_config.terms_*` keys are unused.
 - Webhook sets `consumer_tier` via `getTierFromPriceId()` on checkout complete and subscription updated; `subscription_status` reflects Stripe status (including `trialing`).
-- **Dashboard access:** `app/(dashboard)/layout.tsx` — consumers with `subscription_status = 'none'` get free Tier 1 access; Estate trial (`trialing`) only from Stripe checkout; banner uses `subscription_period_end`.
+- **Dashboard access:** `app/(dashboard)/layout.tsx` — consumers with `subscription_status = 'none'` retain dashboard entry; **effective tier** from `resolveEffectiveTier()` (2026-06-24): inactive → **0**; app trial (`trial_ends_at`, 7d) → Tier 3; paid/`trialing`/`canceling` → plan tier. `has_ever_subscribed` blocks trial re-grant after first subscription.
+- **Effective tier (2026-06-24):** `lib/access/resolveEffectiveTier.ts` — single source for feature tier; `getUserAccess()` and sidebar use it (not raw `consumer_tier`). Evaluation order documented in `docs/TIER_RESTRUCTURE_PR_SEQUENCE.md` (when present on branch).
 - **Dashboard tier (2026-05-28):** `_dashboard-body.tsx` passes `getUserAccess().tier` to `DashboardClient` / `determinePlanStage` — not raw `profiles.consumer_tier` (fixes advisor-connected client Stage 1 split).
-- Consumer billing page shows all three subscription tiers at initial purchase entry:
-  - Financial
-  - Retirement
-  - Estate
+- **Consumer `/billing` (2026-06-24):** Four-column **cumulative capability matrix** (Free + three paid tiers) — `lib/billing/billingCapabilityMatrix.ts` · `billingTierPresentation.ts` · `BillingCapabilityMatrix.tsx`. Desktop: full table with tier headers (question + price from `getConsumerPlanDisplay`); mobile: focused column + **Compare all plans** accordion. Estate column gets subtle navy highlight only (no “For estate households” tag). Trial banner: `resolveBillingTrialBanner` (`trial_ends_at` when present, else Stripe `trialing` + `subscription_period_end`). **Plan & Export** one-time SKU block below matrix (`BillingPlanAndExportSection`) when `shouldOfferPlanAndExportPurchase`. Subscribe CTAs per paid column; monthly/annual toggle unchanged.
 - Tier-based feature gating remains enforced by `lib/tiers.ts` (`FEATURE_TIERS`, `hasFeatureAccess`, `featureUpgradeTier`) and matching checks in each gated `page.tsx` plus sidebar `isLocked()`.
 - Missing-data guardrails remain in place across core planning surfaces (generate/retry flows, unavailable-state banners, and horizon-missing telemetry).
 
@@ -863,7 +863,7 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Trial users **cannot** download exports/PDF artifacts.
 - Download endpoints must require paid-active subscription state (not `trialing`), with minimum paid tier checks applied per surface.
 - Enforcement now wired in:
-  - `app/api/export-estate-plan/route.ts` requires paid-active consumer status and Tier 3 for PDF export. Tax figures use Engine B via `loadEstatePlanPdfTaxPayload` (composition cache + federal brackets + state rules — no legacy `calculate_*_estate_tax` RPCs).
+  - `app/api/export-estate-plan/route.ts` requires paid-active Tier 3 **or** completed Plan & Export purchase (`one_time_purchases`) for PDF export; `trialing` excluded. Tax figures use Engine B via `loadEstatePlanPdfTaxPayload` (composition cache + federal brackets + state rules — no legacy `calculate_*_estate_tax` RPCs).
   - `app/api/documents/download/[document_id]/route.ts` requires paid-active consumer status for document downloads.
   - `app/api/documents/household/[household_id]/route.ts` lists household documents; aligns `can_download` metadata with paid-active consumer status so trial users are not shown downloadable actions.
   - `app/api/documents/[id]/status/route.ts` — attorney PATCH for doc status (must not share dynamic segment name with household list route — see DECISION_LOG 2026-05-30).
@@ -1035,7 +1035,7 @@ Badges: Ops home (overdue + due-today tasks + stale crons); Directories (pending
 | Surface | Route | Purpose |
 |---------|-------|---------|
 | My Advisor | `/my-advisor` | Accepted `advisor_clients` + `advisor_directory` listing (`profile_id`); invite-via-email when no connection; pending requests; access log; revoke |
-| Print / export | `/print` | Tier 3+ consumers; paid-active gate via `hasPaidDownloadAccess` on `/api/export-estate-plan`. `ExportPDFButton` → `ConsumerEstatePlanPDF` / `AttorneyEstatePlanPDF` (`components/pdf/EstatePlanPDF.tsx`). Cover: **Estate Planning Preparation Report** + `DISCLAIMER_STRINGS.pdfCover`. **Client Summary:** `MY WEALTH MAPS — CLIENT ESTATE SUMMARY` header, gold purpose callout, household profile grid, readiness without letter grade, Document Status (**Not on file**). **Attorney Summary:** `MY WEALTH MAPS — ATTORNEY INTAKE SUMMARY` + green attorney-review banner (unchanged). Both use `prepared_by_name` from export API (not "Your Advisor" for consumers). Consumer exports include Engine B tax payload + assets summary for profile figures. |
+| Print / export | `/print` | Tier 3+ active consumers **or** Plan & Export purchase; `hasPaidDownloadAccess` + `one_time_purchases` on `/api/export-estate-plan`. `/print` UI uses same gate (hides CTA for `trialing`). Raw portability: manual privacy request (self-serve export deferred). `ExportPDFButton` → `ConsumerEstatePlanPDF` / `AttorneyEstatePlanPDF` (`components/pdf/EstatePlanPDF.tsx`). Cover: **Estate Planning Preparation Report** + `DISCLAIMER_STRINGS.pdfCover`. **Client Summary:** `MY WEALTH MAPS — CLIENT ESTATE SUMMARY` header, gold purpose callout, household profile grid, readiness without letter grade, Document Status (**Not on file**). **Attorney Summary:** `MY WEALTH MAPS — ATTORNEY INTAKE SUMMARY` + green attorney-review banner (unchanged). Both use `prepared_by_name` from export API (not "Your Advisor" for consumers). Consumer exports include Engine B tax payload + assets summary for profile figures. |
 | My Attorney | `/my-attorney` | Active `attorney_clients` rows (household-scoped) + pending attorney `connection_requests`; revoke via `/api/attorney/revoke-access` |
 | Attorney access settings | `/settings/attorney-access` | PDF download toggles and per-attorney revoke; cross-links to `/my-attorney` for pending/connection details |
 | Cancel pending request | `POST /api/connection-requests/cancel` | Consumer cancels own pending row (`status → cancelled`) via admin client after ownership check |
@@ -1513,7 +1513,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 
 **Sprint C-4 (code complete 2026-06-02):** Billing disclosures — `lib/compliance/billing-disclosures.ts`; pre-checkout copy; self-serve cancel; `invoice.upcoming` renewal reminders (`462bda9`). Manual Stripe Dashboard verify remains — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md).
 
-**Sprint 4 consumer pricing (2026-05-28):** $29/$79/$149 monthly + annual option; 14-day Estate trial; `lib/billing/stripePrices.ts`; billing + `/pricing` period toggle; checkout/webhook tier wiring. Stripe Dashboard price creation + env vars + functional verify — [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
+**Sprint 4 consumer pricing (2026-05-28):** $29/$79/$149 monthly + annual option; Estate trial **7 days** (was 14); `lib/billing/stripePrices.ts`; billing + `/pricing` period toggle; checkout/webhook tier wiring. Stripe Dashboard price creation + env vars + functional verify — [LAUNCH_CHECKLIST.md § Stripe Setup](./LAUNCH_CHECKLIST.md#stripe-setup-required-before-public_signup_opentrue).
 
 **Sprint P-1 (closed 2026-06-02):** Performance quick wins — dashboard `Promise.all`, advisor conflict cache read, 3s recompute debounce, server-fetched notification count, `next/font`, owner_id indexes on `assets`/`liabilities` (`5c24160`). Production indexes verified. Diagnostics: [scripts/perf-diagnostic.sql](../scripts/perf-diagnostic.sql).
 

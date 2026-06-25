@@ -12,6 +12,13 @@ import {
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findUserIdByEmail, initSupabaseEnv, pruneStrayE2eAdvisorClientLinks } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
+import {
+  EXPORT_ISOLATION_MARKER_A,
+  EXPORT_ISOLATION_MARKER_B,
+  expectExportPayloadContainsMarker,
+  expectExportPayloadExcludesMarker,
+  seedExportIsolationMarkers,
+} from '../helpers/export-isolation-fixture'
 
 const API_TIMEOUT_MS = 30_000
 
@@ -92,6 +99,10 @@ test.beforeAll(async ({}, testInfo) => {
     return
   }
   expect(consumerHouseholdId).not.toBe(advisorClientHouseholdId)
+
+  if (consumerOwnerUserId && advisorClientOwnerUserId) {
+    await seedExportIsolationMarkers(consumerOwnerUserId, advisorClientOwnerUserId)
+  }
 })
 
 test.describe('Consumer isolation @production', () => {
@@ -124,6 +135,19 @@ test.describe('Consumer isolation @production', () => {
   test('GET documents on foreign household returns 403 or 404', async ({ request }) => {
     const res = await request.get(`/api/documents/household/${advisorClientHouseholdId}`, apiOpts())
     expectAccessDenied(res.status())
+  })
+
+  test('GET data-export is scoped to caller — foreign rows absent when both have data', async ({
+    request,
+  }) => {
+    const res = await request.get('/api/consumer/data-export', apiOpts())
+    expect(res.status()).toBe(200)
+    const body = await res.text()
+    const payload = JSON.parse(body) as { household_id: string | null; tables: Record<string, unknown[]> }
+    expect(payload.household_id).toBe(consumerHouseholdId)
+    expectExportPayloadContainsMarker(body, EXPORT_ISOLATION_MARKER_A)
+    expectExportPayloadExcludesMarker(body, payload, EXPORT_ISOLATION_MARKER_B)
+    expect(body).not.toContain(advisorClientHouseholdId)
   })
 })
 

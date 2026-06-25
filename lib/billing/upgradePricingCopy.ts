@@ -3,16 +3,28 @@ import { TIER_PRICES } from '@/lib/tiers'
 
 /** Short upgrade pricing lines for UpgradeBanner and gated modules. */
 export function upgradePricingLine(
-  requiredTier: 2 | 3,
+  requiredTier: 1 | 2 | 3,
   annualBillingAvailable = false,
 ): string {
+  if (requiredTier === 1) {
+    const monthly = TIER_PRICES[1]
+    if (annualBillingAvailable) {
+      const annual = getConsumerPlanDisplay(1, 'annual')
+      return `Upgrade to Financial — $${monthly}/month or $${annual.annualTotal.toLocaleString()}/year (2 months free).`
+    }
+    return `Upgrade to Financial — $${monthly}/month.`
+  }
+
   if (requiredTier === 3) {
     const monthly = TIER_PRICES[3]
+    const trialDays = getConsumerPlanDisplay(3, 'monthly').trialDays
+    const trialLabel =
+      trialDays > 0 ? `${trialDays}-day free trial, then ` : ''
     if (annualBillingAvailable) {
       const annual = getConsumerPlanDisplay(3, 'annual')
-      return `Upgrade to Estate — 14-day free trial, then $${monthly}/month or $${annual.annualTotal.toLocaleString()}/year (2 months free).`
+      return `Upgrade to Estate — ${trialLabel}$${monthly}/month or $${annual.annualTotal.toLocaleString()}/year (2 months free).`
     }
-    return `Upgrade to Estate — 14-day free trial, then $${monthly}/month.`
+    return `Upgrade to Estate — ${trialLabel}$${monthly}/month.`
   }
 
   const monthly = TIER_PRICES[2]
