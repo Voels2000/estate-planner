@@ -26,7 +26,7 @@ function LockIcon({ className }: { className?: string }) {
 }
 
 interface UpgradeBannerProps {
-  requiredTier: 2 | 3
+  requiredTier: 1 | 2 | 3
   moduleName: string
   valueProposition: string
   ctaLabel?: string
@@ -103,7 +103,17 @@ export default function UpgradeBanner({
   const hasTaxExposure = totalTax > 0
 
   const tierContext =
-    requiredTier === 2 ? (
+    requiredTier === 1 ? (
+      <div className="mb-4 text-sm leading-relaxed text-[color:var(--mwm-text-secondary)]">
+        <p className="mb-1 font-medium text-[color:var(--mwm-navy)]">
+          Financial planning starts with your full picture
+        </p>
+        <p>
+          Import your data, run forward projections, and compare what-if scenarios — the modeling
+          layer that turns entries into decisions.
+        </p>
+      </div>
+    ) : requiredTier === 2 ? (
       <div className="mb-4 text-sm leading-relaxed text-[color:var(--mwm-text-secondary)]">
         <p className="mb-1 font-medium text-[color:var(--mwm-navy)]">
           Retirement planning at your asset level
@@ -179,7 +189,11 @@ export default function UpgradeBanner({
           {upgradePricingLine(requiredTier, annualBillingAvailable)}
         </p>
         <p className="mt-1 text-xs text-amber-800/90">
-          {requiredTier === 2 ? 'Included with the Retirement plan.' : 'Included with the Estate plan.'}
+          {requiredTier === 1
+            ? 'Included with the Financial plan.'
+            : requiredTier === 2
+              ? 'Included with the Retirement plan.'
+              : 'Included with the Estate plan.'}
         </p>
       </div>
       <Link

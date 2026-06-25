@@ -37,5 +37,6 @@ test.describe('buildConsumerActivationFields', () => {
     expect(fields?.subscription_status).toBe('active')
     expect(fields?.stripe_subscription_id).toBe('sub_active')
     expect(fields?.subscription_period_end).toBeTruthy()
+    expect(fields?.has_ever_subscribed).toBe(true)
   })
 })

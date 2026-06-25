@@ -28,6 +28,7 @@ import {
   ensureAuthUser,
   ensureAdvisorFirmForE2e,
   ensureAdvisorEmptyForE2e,
+  ensureE2eCanceledSubscriber,
   ensureE2eSuperuser,
   initSupabaseEnv,
   seedE2eAdvisorClientHousehold,
@@ -105,6 +106,12 @@ async function main() {
       E2E_IDENTITIES.consumerTier1.householdName,
       1,
     )
+    console.log('')
+  }
+
+  if (run('canceled')) {
+    console.log('2b. Consumer canceled (subscribe→cancel → tier 0)')
+    await ensureE2eCanceledSubscriber()
     console.log('')
   }
 

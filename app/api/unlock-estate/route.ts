@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getUserAccess } from '@/lib/get-user-access'
 import { getCompletionScore } from '@/lib/get-completion-score'
 
 export const dynamic = 'force-dynamic'
@@ -14,18 +15,19 @@ export async function POST() {
   }
 
   // 2. Confirm they're a consumer (not advisor)
+  const access = await getUserAccess()
+  if (!access.isAdvisor && access.tier >= 3) {
+    return NextResponse.json({ already_unlocked: true })
+  }
+
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, consumer_tier')
+    .select('role')
     .eq('id', user.id)
     .single()
 
   if (!profile || profile.role !== 'consumer') {
     return NextResponse.json({ error: 'Not applicable' }, { status: 400 })
-  }
-
-  if (profile.consumer_tier >= 3) {
-    return NextResponse.json({ already_unlocked: true })
   }
 
   // 3. Re-run completion check server-side
@@ -39,7 +41,7 @@ export async function POST() {
     }, { status: 400 })
   }
 
-  // 4. Upgrade to Tier 3
+  // 4. Upgrade stored tier (legacy unlock-estate milestone; effective access uses resolver)
   const admin = createAdminClient()
   const { error: updateError } = await admin
     .from('profiles')

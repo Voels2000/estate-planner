@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
+import { withHasEverSubscribed } from '@/lib/access/hasEverSubscribed'
 import { getTierFromPriceId } from '@/lib/billing/stripePrices'
 import { getAttorneyTierFromPriceId } from '@/lib/tiers'
 import { mapConsumerSubscriptionStatus } from '@/lib/stripe/consumerSubscriptionStatus'
@@ -66,7 +67,7 @@ export async function syncConsumerStripeSubscription(
   if (!activeSub) {
     update = {
       subscription_status: 'none',
-      consumer_tier: 1,
+      consumer_tier: 0,
       subscription_plan: null,
       subscription_period_end: null,
       stripe_subscription_id: null,
@@ -88,14 +89,14 @@ export async function syncConsumerStripeSubscription(
     const consumerTier = priceId ? getTierFromPriceId(priceId) : null
     const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
 
-    update = {
+    update = withHasEverSubscribed({
       subscription_status: mapConsumerSubscriptionStatus(activeSub),
       ...(renewalIso != null ? { subscription_period_end: renewalIso } : {}),
       stripe_subscription_id: activeSub.id,
       ...(priceId ? { subscription_plan: priceId } : {}),
       ...(consumerTier ? { consumer_tier: consumerTier } : {}),
       ...(attorneyTier > 0 ? { attorney_tier: attorneyTier } : {}),
-    }
+    })
   }
 
   const { error: updateErr } = await admin.from('profiles').update(update).eq('id', userId)

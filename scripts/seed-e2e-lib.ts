@@ -130,6 +130,7 @@ export async function seedE2eConsumerHousehold(
       full_name: id.fullName,
       consumer_tier: tier,
       subscription_status: 'active',
+      has_ever_subscribed: true,
       is_superuser: false,
       role: 'consumer',
       terms_accepted_at: now,
@@ -1190,6 +1191,59 @@ export async function ensureE2eSuperuser(): Promise<string | null> {
   await admin.from('assets').delete().eq('owner_id', userId)
 
   console.log(`  superuser: ${su.email} (is_superuser, no household)`)
+  return userId
+}
+
+/** Former subscriber — canceled, no app-trial re-grant (tier restructure PR 1). */
+export async function ensureE2eCanceledSubscriber(): Promise<string> {
+  const admin = createAdminClient()
+  const id = E2E_IDENTITIES.consumerCanceled
+  const now = new Date().toISOString()
+
+  const userId = await ensureAuthUser({
+    email: id.email,
+    password: id.password,
+    fullName: id.fullName,
+    role: 'consumer',
+  })
+
+  await admin
+    .from('profiles')
+    .update({
+      full_name: id.fullName,
+      role: 'consumer',
+      email: id.email,
+      consumer_tier: 0,
+      subscription_status: 'canceled',
+      has_ever_subscribed: true,
+      trial_ends_at: null,
+      subscription_plan: null,
+      stripe_subscription_id: null,
+      terms_accepted_at: now,
+      terms_version: '2026-06-02',
+      updated_at: now,
+    })
+    .eq('id', userId)
+
+  const { data: existing } = await admin
+    .from('households')
+    .select('id')
+    .eq('owner_id', userId)
+    .maybeSingle()
+
+  if (!existing?.id) {
+    const { error } = await admin.from('households').insert({
+      owner_id: userId,
+      name: id.householdName,
+      state_primary: 'WA',
+      filing_status: 'single',
+      person1_birth_year: 1970,
+      updated_at: now,
+    })
+    if (error) throw new Error(`canceled household insert: ${error.message}`)
+  }
+
+  console.log(`  canceled subscriber: ${id.email} (has_ever_subscribed, tier 0)`)
   return userId
 }
 

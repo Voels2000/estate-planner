@@ -59,30 +59,39 @@ export const TIER_FEATURES = {
     'Business succession planning',
   ],
 } as const
-// Feature gating map — minimum tier required for each feature
-export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
-  // Tier 1 — Financial Planning (all paid users)
+// Feature gating map — minimum tier required for each feature (0 = free data entry)
+export type FeatureTier = 0 | 1 | 2 | 3
+
+export const FEATURE_TIERS: Record<string, FeatureTier> = {
+  // Tier 0 — free data entry + net worth / export (matrix + PR 6 export)
+  'net-worth-view':      0,
+  'data-export':         0,
+  profile:               0,
+  assets:                0,
+  liabilities:           0,
+  income:                0,
+  expenses:              0,
+  businesses:            0,
+  'property-casualty':   0,
+  insurance:             0,
+  // Tier 1 — Financial Planning (modeling)
   dashboard:             1,
-  profile:               1,
-  assets:                1,
-  liabilities:           1,
-  income:                1,
-  expenses:              1,
   projections:           1,
-  allocation:            2,
-  'real-estate':         2,
-  businesses:            1,
   scenarios:             1,
-  'social-security':     2,
+  import:                1,
   // Tier 2 — Retirement Planning
+  allocation:            2,
+  'real-estate':         0,
+  'social-security':     2,
   complete:              2,
   rmd:                   2,
   roth:                  2,
   'monte-carlo':         2,
-  // Friction-reduction sprint (2026-05-27): was 2 — Tier 1 upload+commit intentional for
-  // spreadsheet-first onboarding. Import job *history* UI stays Tier 2+ (import/page.tsx).
-  import:                1,
-  insurance:             1,
+  'digital-assets':      2,
+  // Computed analysis on shared pages (see inputComputedBoundary.ts)
+  'insurance-gap-analysis': 2,
+  'real-estate-analysis':   2,
+  'business-succession-analysis': 3,
   // Tier 3 — Estate Planning
   'estate-tax':          3,
   titling:               3,
@@ -92,8 +101,6 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
   gifting:               3,
   charitable:            3,
   'business-succession': 3,
-  'digital-assets':      2,
-  'property-casualty':   1,
   'my-family':           3,
   'my-estate-strategy':  3,
   'my-estate-trust-strategy': 3,
@@ -101,7 +108,7 @@ export const FEATURE_TIERS: Record<string, 1 | 2 | 3> = {
 }
 
 /** Minimum tier for generated deliverable (estate-plan PDF). Aliased to estate-tax gate. */
-export const DELIVERABLE_MIN_TIER = FEATURE_TIERS['estate-tax']
+export const DELIVERABLE_MIN_TIER = FEATURE_TIERS['estate-tax'] as 1 | 2 | 3
 // Stripe Estate trial (subscription_status = 'trialing' from webhook) unlocks tier-3 features.
 export const TRIAL_TIER = 3
 /** Resolve which consumer tier a profile maps to */
@@ -136,10 +143,12 @@ export function hasFeatureAccess(
   return userTier >= required
 }
 
-/** Tier shown on UpgradeBanner (gated modules are always tier 2+). */
-export function featureUpgradeTier(feature: string): 2 | 3 {
+/** Tier shown on UpgradeBanner (gated modules are tier 1+). */
+export function featureUpgradeTier(feature: string): 1 | 2 | 3 {
   const required = FEATURE_TIERS[feature] ?? 1
-  return required >= 3 ? 3 : 2
+  if (required >= 3) return 3
+  if (required >= 2) return 2
+  return 1
 }
 
 // Price ID → tier number map — used in webhook and terms page (includes annual prices)

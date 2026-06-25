@@ -1,6 +1,7 @@
 import type Stripe from 'stripe'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { PostgrestError } from '@supabase/supabase-js'
+import { withHasEverSubscribed } from '@/lib/access/hasEverSubscribed'
 import { mapConsumerSubscriptionStatus } from '@/lib/stripe/consumerSubscriptionStatus'
 import { subscriptionPeriodEndIso } from '@/lib/stripe/subscriptionPeriod'
 import { getTierFromPriceId } from '@/lib/billing/stripePrices'
@@ -14,6 +15,7 @@ export type ConsumerActivationFields = {
   consumer_tier?: number
   attorney_tier?: number
   subscription_period_end?: string
+  has_ever_subscribed?: boolean
 }
 
 export function buildConsumerActivationFields(
@@ -30,7 +32,7 @@ export function buildConsumerActivationFields(
   const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
   const renewalIso = subscriptionPeriodEndIso(subscription)
 
-  return {
+  return withHasEverSubscribed({
     subscription_status: subscriptionStatus,
     stripe_customer_id: stripeCustomerId,
     stripe_subscription_id: subscription.id,
@@ -38,7 +40,7 @@ export function buildConsumerActivationFields(
     ...(consumerTier ? { consumer_tier: consumerTier } : {}),
     ...(attorneyTier > 0 ? { attorney_tier: attorneyTier } : {}),
     ...(renewalIso ? { subscription_period_end: renewalIso } : {}),
-  }
+  })
 }
 
 export async function activateConsumerProfileFromSubscription(

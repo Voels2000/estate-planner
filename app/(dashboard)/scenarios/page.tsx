@@ -5,6 +5,10 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getUserAccess } from '@/lib/get-user-access'
+import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
+import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
+import { loadUpgradeBannerHouseholdContext } from '@/lib/dashboard/upgradeBannerHouseholdContext'
 import { loadProjectionData } from '@/lib/projections/loadProjectionData'
 import { summarizeScenario } from '@/lib/scenarios/summarizeScenario'
 import ScenariosClient from './_scenarios-client'
@@ -16,6 +20,22 @@ export default async function ScenariosPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const access = await getUserAccess()
+  if (!hasFeatureAccess('scenarios', access.tier, access.isAdvisor, access.isTrial)) {
+    const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-4 text-2xl font-bold text-[color:var(--mwm-navy)]">Scenarios</h1>
+        <UpgradeBanner
+          requiredTier={featureUpgradeTier('scenarios')}
+          moduleName="What-If Scenarios"
+          valueProposition="Compare what-if scenarios and state-move income tax side by side."
+          householdContext={householdContext}
+        />
+      </div>
+    )
+  }
 
   const { data: household } = await supabase
     .from('households')

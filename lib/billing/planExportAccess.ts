@@ -72,7 +72,9 @@ function isActivePaidSubscriber(
   profile: DeliverableAccessProfile,
   minimumTier: 1 | 2 | 3,
 ): boolean {
-  const tier = profile.consumer_tier ?? 1
+  // Deliverable gates intentionally use stored profile fields — NOT resolveEffectiveTier.
+  // App-trial users have effective tier 3 but subscription_status 'none' and consumer_tier 0.
+  const tier = profile.consumer_tier ?? 0
   return profile.subscription_status === 'active' && tier >= minimumTier
 }
 
