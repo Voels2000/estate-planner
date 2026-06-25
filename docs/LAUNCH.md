@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-19 (household-alert counsel pass attested; Sprint E closeout on staging)
+**Last updated:** 2026-06-19 (tier restructure PRs 2–5 on staging; Gate 2 code gate closed; persona matrix in `seed:e2e`)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -17,7 +17,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 (B&O-blocked)   wait for WA SaaS/DAS ruling
 ```
 
-**Related (not absorbed):** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md)
+**Related (not absorbed):** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) · [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md) (tier restructure outcomes)
 
 **Working tracker (manual attestations):** [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) — browser UI at `tools/launch-tracker.html` (`npm run launch:tracker`); sync to this file via `npm run sync:launch-tracker`.
 
@@ -181,7 +181,20 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 **Rule:** Do NOT set `PUBLIC_SIGNUP_OPEN=true` until every Bucket B box is checked.
 
-**Hard ordering (tier restructure):** Execute the three steps below **in this order on production** — do not reorder under launch pressure.
+### Tier restructure code gate — **CLOSED on staging** (2026-06-19)
+
+Consumer billing enforcement PRs are merged to **`staging`** and verified. This gate is **not** the same as `PUBLIC_SIGNUP_OPEN` — it means the restructured tier model is safe to cut over on production **before** the signup flip.
+
+- [x] **PR 1** — `trial_ends_at`, `has_ever_subscribed`, `resolveEffectiveTier` (staging + prod migration path documented)
+- [x] **PR 2** — input vs computed boundary ([INPUT_COMPUTED_BOUNDARY.md](./INPUT_COMPUTED_BOUNDARY.md))
+- [x] **PR 3** — Tier 0 dashboard slice ([TIER0_DASHBOARD_PR3.md](./TIER0_DASHBOARD_PR3.md))
+- [x] **PR 4** — projections split (Tier 1 modeling gate)
+- [x] **PR 5** — `trialDays: 0` + Subscribe CTA; `npm run verify:pr5-staging-gate` green on staging
+- [x] **PR 8** — E2E persona matrix in `npm run seed:e2e` (tiers 0–3, app trial, Plan & Export purchaser) — see [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md)
+
+**Still trailing staging (lower launch risk):** PR 6 (input export), PR 7 (deliverable rules). Do not block prod tier cutover on these; land before `PUBLIC_SIGNUP_OPEN` when possible.
+
+**Hard ordering (tier restructure):** Execute the prod cutover below **in this order on production** — do not reorder under launch pressure.
 
 ### Tier restructure prod cutover (before Gate 2 flip)
 
@@ -192,14 +205,14 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
    ```
    Must succeed without `42703` (undefined column). If it fails, stop — do not deploy code.
 3. **Code** — deploy tier-restructure commits (PRs 1–5 minimum) to production **only after** step 2 passes.
-4. **Flip gate** — with PRs 2–5 verified on staging, proceed to Gate 2 below (`PUBLIC_SIGNUP_OPEN=true`).
+4. **Flip gate** — tier restructure code gate is **closed on staging** (PRs 2–5 verified). After prod cutover steps 1–3 pass, proceed to Gate 2 below (`PUBLIC_SIGNUP_OPEN=true`) when Bucket B + B&O are ready.
 
 `getUserAccess` fails loud on profile read errors — but a missing column still means every consumer page errors until step 1 lands (PR 4.5 / #117 lesson).
 
 ### Gate 2 — Go-live day sequence (in order)
 
 1. Verify Bucket B — every checkbox above is checked
-2. Verify tier-restructure prod cutover steps 1–3 above are complete (migration verified on prod before code)
+2. Verify tier-restructure prod cutover steps 1–3 above are complete (migration verified on prod before code); confirm staging code gate (PRs 2–5) was green before promoting
 3. **Env pre-check:** `GET /api/admin/verify-env?live=1` with `x-admin-token` → `missing` empty, `liveness.stripe: LIVE_OK`, all live prices `active` — **attested Al / 2026-06-15**; re-run before flip if env changes
 4. Supabase Auth → confirm email-confirm flow is ON for production project
 5. Verify `/auth/callback` works on production (sign in with existing account)

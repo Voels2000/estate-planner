@@ -11,7 +11,7 @@
  * Options:
  *   --write-example        Write docs/.env.test.example (no secrets except placeholders)
  *   --skip-advisor-client  Skip linked advisor client household (faster)
- *   --only=consumer,advisor,attorney,tier1,superuser
+ *   --only=consumer,advisor,attorney,tier1,tier2,app-trial,plan-export,canceled,superuser
  */
 
 import { writeFileSync } from 'fs'
@@ -28,7 +28,9 @@ import {
   ensureAuthUser,
   ensureAdvisorFirmForE2e,
   ensureAdvisorEmptyForE2e,
+  ensureE2eAppTrialConsumer,
   ensureE2eCanceledSubscriber,
+  ensureE2ePlanExportPurchaser,
   ensureE2eSuperuser,
   initSupabaseEnv,
   seedE2eAdvisorClientHousehold,
@@ -89,6 +91,7 @@ async function main() {
       consumerUserId,
       E2E_IDENTITIES.consumer.householdName,
       3,
+      { fullName: E2E_IDENTITIES.consumer.fullName },
     )
     console.log('')
   }
@@ -105,12 +108,42 @@ async function main() {
       tier1UserId,
       E2E_IDENTITIES.consumerTier1.householdName,
       1,
+      { fullName: E2E_IDENTITIES.consumerTier1.fullName },
     )
     console.log('')
   }
 
+  if (run('tier2')) {
+    console.log('2a. Consumer tier-2 (retirement active)')
+    const tier2UserId = await ensureAuthUser({
+      email: E2E_IDENTITIES.consumerTier2.email,
+      password: E2E_IDENTITIES.consumerTier2.password,
+      fullName: E2E_IDENTITIES.consumerTier2.fullName,
+      role: 'consumer',
+    })
+    await seedE2eConsumerHousehold(
+      tier2UserId,
+      E2E_IDENTITIES.consumerTier2.householdName,
+      2,
+      { fullName: E2E_IDENTITIES.consumerTier2.fullName },
+    )
+    console.log('')
+  }
+
+  if (run('app-trial')) {
+    console.log('2b. Consumer app-managed trial (effective tier 3)')
+    await ensureE2eAppTrialConsumer()
+    console.log('')
+  }
+
+  if (run('plan-export')) {
+    console.log('2c. Consumer Plan & Export purchaser (no active sub)')
+    await ensureE2ePlanExportPurchaser()
+    console.log('')
+  }
+
   if (run('canceled')) {
-    console.log('2b. Consumer canceled (subscribe→cancel → tier 0)')
+    console.log('2d. Consumer canceled (subscribe→cancel → tier 0)')
     await ensureE2eCanceledSubscriber()
     console.log('')
   }
