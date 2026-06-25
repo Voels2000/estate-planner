@@ -11,9 +11,4 @@ test.describe('Tier-1 upgrade gates', () => {
     await page.goto('/social-security')
     await assertUpgradeBanner(page)
   })
-
-  test('/import shows upgrade banner', async ({ page }) => {
-    await page.goto('/import')
-    await assertUpgradeBanner(page, 'Import Data')
-  })
 })

@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { RefSelect } from '@/components/ui/RefSelect'
+import { ComputedAnalysisSection } from '@/components/billing/ComputedAnalysisSection'
 import type { RefOption } from '@/lib/ref-data-fetchers'
 
 /** Matches `real_estate` table columns */
@@ -189,6 +190,8 @@ type RealEstateClientProps = {
   filingStatus: string
   titlingTypes: RefOption[]
   propertyTypes: RefOption[]
+  /** Tier 2+ computed readouts (equity, proceeds, Section 121). Entry fields stay editable at Tier 0. */
+  showComputedAnalysis: boolean
 }
 
 export default function RealEstateClient({
@@ -198,6 +201,7 @@ export default function RealEstateClient({
   filingStatus,
   titlingTypes,
   propertyTypes,
+  showComputedAnalysis,
 }: RealEstateClientProps) {
   const router = useRouter()
   const [rows, setRows] = useState<RealEstate[]>(initialProperties)
@@ -264,7 +268,9 @@ export default function RealEstateClient({
         <div>
           <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Real Estate</h1>
           <p className="mt-1 text-sm text-neutral-600">
-            Properties and estimated sale proceeds after costs.
+            {showComputedAnalysis
+              ? 'Properties and estimated sale proceeds after costs.'
+              : 'Track property values, mortgages, and sale plans. Upgrade to see equity and proceeds analysis.'}
           </p>
         </div>
         <button
@@ -279,32 +285,38 @@ export default function RealEstateClient({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <SummaryCard label="Total value" value={formatDollars(totalValue)} sub="Current estimated value" />
-        <SummaryCard label="Total equity" value={formatDollars(totalEquity)} sub="Value − mortgage" />
-        <SummaryCard
-          label="Est. net proceeds"
-          value={formatDollars(totalNetProceeds)}
-          sub="After selling costs & payoff"
-          highlight="green"
-        />
-      </div>
-
-      {/* Section 121 info banner */}
-      {primaryResidences.length > 0 && (
-        <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50/40 px-4 py-3 flex items-start gap-3">
-          <span className="text-blue-500 mt-0.5">ℹ️</span>
-          <div>
-            <p className="text-sm font-medium text-blue-800">Section 121 Exclusion</p>
-            <p className="text-xs text-blue-600 mt-0.5">
-              Based on your <strong>{isMfj ? 'Married Filing Jointly' : 'Single / Other'}</strong> filing status,
-              your primary residence exclusion is{' '}
-              <strong>{formatDollars(exclusionAmount)}</strong>.
-              {' '}IRS rules generally require living in the home 2 of the last 5 years to qualify.
-            </p>
-          </div>
+      <ComputedAnalysisSection
+        canAccess={showComputedAnalysis}
+        feature="real-estate-analysis"
+        moduleName="Real estate analysis"
+        valueProposition="Analyze equity, estimated net proceeds, and Section 121 exclusion for your properties."
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <SummaryCard label="Total value" value={formatDollars(totalValue)} sub="Current estimated value" />
+          <SummaryCard label="Total equity" value={formatDollars(totalEquity)} sub="Value − mortgage" />
+          <SummaryCard
+            label="Est. net proceeds"
+            value={formatDollars(totalNetProceeds)}
+            sub="After selling costs & payoff"
+            highlight="green"
+          />
         </div>
-      )}
+
+        {primaryResidences.length > 0 && (
+          <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50/40 px-4 py-3 flex items-start gap-3">
+            <span className="text-blue-500 mt-0.5">ℹ️</span>
+            <div>
+              <p className="text-sm font-medium text-blue-800">Section 121 Exclusion</p>
+              <p className="text-xs text-blue-600 mt-0.5">
+                Based on your <strong>{isMfj ? 'Married Filing Jointly' : 'Single / Other'}</strong> filing status,
+                your primary residence exclusion is{' '}
+                <strong>{formatDollars(exclusionAmount)}</strong>.
+                {' '}IRS rules generally require living in the home 2 of the last 5 years to qualify.
+              </p>
+            </div>
+          </div>
+        )}
+      </ComputedAnalysisSection>
 
       {error && (
         <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>
@@ -343,30 +355,34 @@ export default function RealEstateClient({
                         <span className="text-neutral-500">Mortgage:</span>{' '}
                         <span className="font-medium text-neutral-900">{formatDollars(num(row.mortgage_balance))}</span>
                       </p>
-                      <p className="text-sm text-neutral-600">
-                        <span className="text-neutral-500">Equity:</span>{' '}
-                        <span className="font-medium text-neutral-900">{formatDollars(equity(row))}</span>
-                      </p>
-                      <p className="text-sm text-neutral-600">
-                        <span className="text-neutral-500">Sec. 121 Excl.:</span>{' '}
-                        {excl > 0 ? (
-                          <span className="font-medium text-green-600">{formatDollars(excl)}</span>
-                        ) : (
-                          <span className="text-neutral-400">—</span>
-                        )}
-                      </p>
-                      <p className="text-sm text-neutral-600">
-                        <span className="text-neutral-500">Est. Taxable Gain:</span>{' '}
-                        {row.purchase_price != null ? (
-                          gain > 0 ? (
-                            <span className="font-medium text-amber-600">{formatDollars(gain)}</span>
-                          ) : (
-                            <span className="font-medium text-green-600">$0 (fully excluded)</span>
-                          )
-                        ) : (
-                          <span className="text-neutral-400">—</span>
-                        )}
-                      </p>
+                      {showComputedAnalysis && (
+                        <>
+                          <p className="text-sm text-neutral-600">
+                            <span className="text-neutral-500">Equity:</span>{' '}
+                            <span className="font-medium text-neutral-900">{formatDollars(equity(row))}</span>
+                          </p>
+                          <p className="text-sm text-neutral-600">
+                            <span className="text-neutral-500">Sec. 121 Excl.:</span>{' '}
+                            {excl > 0 ? (
+                              <span className="font-medium text-green-600">{formatDollars(excl)}</span>
+                            ) : (
+                              <span className="text-neutral-400">—</span>
+                            )}
+                          </p>
+                          <p className="text-sm text-neutral-600">
+                            <span className="text-neutral-500">Est. Taxable Gain:</span>{' '}
+                            {row.purchase_price != null ? (
+                              gain > 0 ? (
+                                <span className="font-medium text-amber-600">{formatDollars(gain)}</span>
+                              ) : (
+                                <span className="font-medium text-green-600">$0 (fully excluded)</span>
+                              )
+                            ) : (
+                              <span className="text-neutral-400">—</span>
+                            )}
+                          </p>
+                        </>
+                      )}
                       <p className="text-sm text-neutral-600">
                         <span className="text-neutral-500">Sale year:</span>{' '}
                         <span className="font-medium text-neutral-900">
