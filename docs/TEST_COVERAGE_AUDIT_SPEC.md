@@ -120,4 +120,7 @@ test. A lying test is worse than no test — it costs maintenance and pays nothi
 
 The map is the product. The count change, if any, falls out of it.
 
-**Pass 1 map:** [TEST_COVERAGE_AUDIT_PASS1.md](./TEST_COVERAGE_AUDIT_PASS1.md)
+**Pass 1 map:** [TEST_COVERAGE_AUDIT_PASS1.md](./TEST_COVERAGE_AUDIT_PASS1.md) (re-baselined against staging + #120 + #123)  
+**Pass 2:** [TEST_COVERAGE_AUDIT_PASS2.md](./TEST_COVERAGE_AUDIT_PASS2.md) (List B leads)
+
+**Step zero:** Merge #120 and #123 before execution. Map labels: **COVERED-PENDING-MERGE** (tests exist on branch) vs **GAP** (real after merge) vs **CORRECT-FIDELITY** (42703 / deploy ordering).

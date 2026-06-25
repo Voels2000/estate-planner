@@ -1,10 +1,10 @@
-# Test-Coverage Audit — Pass 1 Map
+# Test-Coverage Audit — Pass 1 Map (re-baselined)
 
-**Baseline:** `staging` @ PR 8 merged (`8cfe0701`) · persona matrix in `scripts/e2e-persona-matrix.ts`  
-**Status:** Review-only — no test changes in this document.  
-**Next:** Approve map → Pass 2 (List A + List B) → execution PR(s).
+**Baseline:** `staging` + **#120** (PR 6 export) + **#123** (PR 7 deliverable) — tests exist on those branches; merge conflicts resolved and pushed (`e99a127a`, `31e02b27`). Draw the map against this baseline, not “staging @ PR 8 only.”
 
-**Legend:** GAP · SINGLE · MULTI-SAME-PATH · MULTI-DIFF-PATH
+**Persona ground-truth:** `scripts/e2e-persona-matrix.ts` (`E2E_PERSONA_MATRIX`)
+
+**Coverage labels:** SINGLE · MULTI-SAME-PATH · MULTI-DIFF-PATH · **COVERED-PENDING-MERGE** · **CORRECT-FIDELITY** · **GAP**
 
 **Call-path tags:** `unit-direct` · `unit-wrapper` · `e2e-route` · `e2e-patch` · `script-integration` · `static`
 
@@ -12,69 +12,53 @@
 
 ## 1. `resolveEffectiveTier` (+ persona matrix)
 
-| Branch / failure mode | Persona (`E2E_PERSONA_MATRIX`) | Tests | Call path | Coverage |
-|----------------------|----------------------------------|-------|-----------|----------|
-| Inactive / none → 0 | — | `resolveEffectiveTier.spec` “inactive consumer with no trial” | unit-direct | SINGLE |
-| Expired `trial_ends_at` → 0 | — | `resolveEffectiveTier.spec` “expired app trial” | unit-direct | SINGLE |
-| App trial (`trial_ends_at` future, `!has_ever_subscribed`) → 3 | `app-managed-trial` | `resolveEffectiveTier.spec` “app trial window”; `isAppManagedTrialActive`; `resolveConsumerIsTrial` | unit-direct | MULTI-SAME-PATH (3 unit tests, same resolver fn) |
-| App trial → 3 (runtime / session) | `app-managed-trial` | `verify-pr5-staging-gate --personas` | script-integration via `buildUserAccessFromProfile` + login | MULTI-DIFF-PATH |
-| App trial → 3 (browser) | `app-managed-trial` | — | — | **GAP** (seed exists; no dedicated E2E project/spec yet) |
-| `has_ever_subscribed` + no active sub → 0 (incl. canceled) | `tier-0-canceled-has_ever_subscribed` | `resolveEffectiveTier.spec` subscribe-then-cancel; order test; `resolveConsumerIsTrial` | unit-direct | MULTI-SAME-PATH |
-| `has_ever_subscribed` → 0 (E2E gates) | `tier-0-canceled-has_ever_subscribed` | `consumer-tier0-gates.spec` (project `consumer-tier0` / canceled auth) | e2e-route | MULTI-DIFF-PATH |
-| `past_due` → 0 | — | `resolveEffectiveTier.spec` | unit-direct | SINGLE |
-| `unpaid` → 0 | — | `resolveEffectiveTier.spec` | unit-direct | SINGLE |
-| Active paid → `consumer_tier` 1 | `active-tier-1` | `resolveEffectiveTier.spec` “active subscription”; `getUserAccessProfile` tier-3 active | unit-direct / unit-wrapper | MULTI-DIFF-PATH |
-| Active paid → tier 2 | `active-tier-2` | `resolveEffectiveTier.spec` (tier 2 active); `verify-pr5 --personas` | unit-direct + script-integration | MULTI-DIFF-PATH |
-| Active paid → tier 3 | `active-tier-3` | `resolveEffectiveTier.spec`; `verify-pr5 --personas`; default `consumer` E2E cast | unit + script + e2e-default | MULTI-DIFF-PATH |
-| `canceling` → paid tier retained | — | `resolveEffectiveTier.spec` | unit-direct | SINGLE |
-| Stripe `trialing` → paid path | — | `resolveEffectiveTier.spec`; `resolveConsumerIsTrial` | unit-direct | MULTI-SAME-PATH |
-| `is_superuser` → 3 | — | — (implicit in prod) | — | **GAP** |
+| Branch / failure mode | Persona | Tests (post–#120/#123 baseline) | Call path | Coverage |
+|----------------------|---------|----------------------------------|-----------|----------|
+| Inactive / none → 0 | — | `resolveEffectiveTier.spec` | unit-direct | SINGLE |
+| Expired `trial_ends_at` → 0 | — | `resolveEffectiveTier.spec` | unit-direct | SINGLE |
+| App trial → 3 | `app-managed-trial` | `resolveEffectiveTier.spec` + helpers; `verify-pr5 --personas` | unit + script-integration | MULTI-DIFF-PATH |
+| `has_ever_subscribed` → 0 (canceled) | `tier-0-canceled-*` | `resolveEffectiveTier.spec`; `consumer-tier0-gates` (canceled auth) | unit + e2e-route | MULTI-DIFF-PATH |
+| `past_due` / `unpaid` → 0 | — | `resolveEffectiveTier.spec` | unit-direct | SINGLE |
+| Active paid tiers 1–3 | `active-tier-*` | `resolveEffectiveTier.spec`; `verify-pr5 --personas`; default consumer E2E | unit + script + e2e | MULTI-DIFF-PATH |
+| `canceling` → paid tier | — | `resolveEffectiveTier.spec` | unit-direct | SINGLE |
+| Stripe `trialing` → paid path | — | `resolveEffectiveTier.spec` | unit-direct | SINGLE |
+| `isAdvisorClient` → 3 | — | `resolveEffectiveTier.spec`; `getUserAccessProfile` | unit + unit-wrapper | MULTI-DIFF-PATH |
 | `isAdvisor` → 3 | — | — | — | **GAP** |
-| `isAdvisorClient` → 3 | — | `resolveEffectiveTier.spec`; `getUserAccessProfile` advisor-client bypass | unit-direct / unit-wrapper | MULTI-DIFF-PATH |
-| `isProfessionallyManaged` → stored tier or 3 | — (advisor-client household is managed path) | — | — | **GAP** (no unit case for `isProfessionallyManaged: true`) |
-| Persona seed contract (DB columns) | all 6 rows | `e2ePersonaMatrix.spec`; `verify:e2e-persona-matrix` | static / script | MULTI-DIFF-PATH (seed contract, not tier resolve) |
-
-**Pass-1 notes (resolver):** Unit matrix is strong for consumer paths pinned by PR 8. Main GAPs: browser-level app-trial persona, advisor/professionally-managed bypasses, superuser. `MULTI-SAME-PATH` on app-trial unit helpers is a Pass-2 List A candidate only if we keep one canonical unit case.
+| `isProfessionallyManaged` → stored/3 | — | — | — | **GAP** |
+| `is_superuser` → 3 | — | — | — | **GAP** (low prod risk; admin path) |
+| Persona seed contract | all 6 rows | `e2ePersonaMatrix.spec`; `verify:e2e-persona-matrix` | static / script | MULTI-DIFF-PATH |
 
 ---
 
 ## 2. Deliverable OR-gate (`hasDeliverableDownloadAccess`)
 
-Production wiring: `print/page.tsx` and `export-estate-plan/route.ts` load purchase via `getUserPlanExportPurchase` → `toPlanExportPurchaseContext`.
+Production wiring: `getUserPlanExportPurchase` → `toPlanExportPurchaseContext` → gate (see `print/page.tsx`, `export-estate-plan/route.ts`).
 
-| Cell / failure mode | Persona | Tests | Call path | Coverage |
-|--------------------|---------|-------|-----------|----------|
-| Active tier-3 sub → allow | `active-tier-3` | `requirePaidDownloadAccess.spec` “tier 3 active stored profile” | unit-direct on gate | SINGLE |
-| Active sub → allow (route) | `active-tier-3` | — (`consumer-deliverable-export` uses tier-1 patch, not tier-3 sub) | — | **GAP** (no E2E “active tier-3 /print ready” on seeded persona) |
-| Completed purchase → allow (download) | `plan-export-purchaser-no-sub` | `requirePaidDownloadAccess.spec` “one-time day 91 → download still allowed” | unit-direct; **hand-built** `{ editWindowEndsAt }` | SINGLE — **List B candidate** (not `toPlanExportPurchaseContext`) |
-| Purchase → allow (/print UI) | — | `consumer-deliverable-export.spec` “completed Plan & Export unlocks /print” | e2e-patch via `deferPlanAndExportPurchase` on **tier-3 consumer**, not `consumerPlanExport` persona | MULTI-DIFF-PATH — **List B candidate** (patch ≠ production loader) |
-| App trial alone → refuse | `app-managed-trial` | `requirePaidDownloadAccess.spec` “app trial shape → false” | unit-direct | SINGLE |
-| App trial → refuse (E2E) | `app-managed-trial` | — (E2E uses Stripe `trialing` patch, not app-managed trial columns) | — | **GAP** |
-| No sub, no purchase → refuse | `plan-export-purchaser-no-sub` (inverted) | `requirePaidDownloadAccess.spec` “tier 1 no sub”; `consumer-deliverable-export` gated /print | unit + e2e-patch | MULTI-DIFF-PATH |
-| Purchase OR active (offer hidden) | — | `shouldOfferPlanAndExportPurchase.spec` passes `canDownloadDeliverable: true/false` **as input** | unit-direct on CTA helper, not gate+wiring | **GAP** for faithful OR-cell — **List B** (pre-computed boolean) |
-| Four-cell matrix + loader shape | — | PR **#123** `planExportAppTrialDeliverable.spec` (open, not on staging) | unit with `toPlanExportPurchaseContext` | **GAP on staging** until #123 merges |
-
-**Pass-1 notes (deliverable):** Unit gate logic is covered; faithful **production call-site** coverage for purchaser + app-trial cells is thin on staging. #123 is the intended fix for List B class; until merge, treat purchaser/app-trial deliverable cells as GAP at production fidelity.
+| Cell / failure mode | Persona | Tests (post–#123 baseline) | Call path | Coverage |
+|--------------------|---------|----------------------------|-----------|----------|
+| Four-cell matrix + `/print` wiring | all cells | `planExportAppTrialDeliverable.spec` (#123) | unit; loader row → `toPlanExportPurchaseContext` | **COVERED-PENDING-MERGE** |
+| App trial → refuse (unit) | `app-managed-trial` | cell 1 in #123 matrix; `requirePaidDownloadAccess.spec` “app trial shape” | unit-direct | MULTI-SAME-PATH — List A tidying only |
+| Active tier-3 → allow (unit) | `active-tier-3` | cell 2 #123; `requirePaidDownloadAccess.spec` | unit-direct | MULTI-SAME-PATH |
+| Purchaser → allow (faithful) | `plan-export-purchaser-no-sub` | cell 3 #123 (loader row) | unit; production shape | **COVERED-PENDING-MERGE** |
+| App trial + purchase OR | — | cell 4 #123 | unit | **COVERED-PENDING-MERGE** |
+| App trial → refuse (browser) | `app-managed-trial` | `consumer-deliverable-export` “app-managed trial” (#123); `APP_MANAGED_TRIAL_ACCESS` patch | e2e-patch | **COVERED-PENDING-MERGE** — List B: migrate to seeded persona auth |
+| Active tier-3 → allow (browser) | `active-tier-3` | `consumer-deliverable-export` + `DELIVERABLE_ACTIVE_TIER3_ACCESS` (#123) | e2e-patch | **COVERED-PENDING-MERGE** — List B: seeded `e2e-consumer` preferred |
+| Purchase → /print unlock (browser) | `plan-export-purchaser-no-sub` | `consumer-deliverable-export` `deferPlanAndExportPurchase` on **tier-3 consumer** | e2e-patch | **COVERED-PENDING-MERGE** — List B: use `consumerPlanExport` persona |
+| Legacy unit purchase shape | — | `requirePaidDownloadAccess.spec` hand-built `{ editWindowEndsAt }` | unit-direct | MULTI-SAME-PATH with #123 — **List B: cut or rewire** |
+| CTA offer visibility | — | `shouldOfferPlanAndExportPurchase.spec` feeds `canDownloadDeliverable` boolean | unit on helper | **GAP** at production fidelity — **List B: match #123 `printPageDeliverableFlags` pattern** |
 
 ---
 
-## 3. Input / computed boundary (`inputComputedBoundary`)
+## 3. Input / computed boundary
 
-| Branch / failure mode | Tests | Call path | Coverage |
-|----------------------|-------|-----------|----------|
-| Data-entry `FEATURE_TIERS` keys at tier 0 | `inputComputedBoundary.spec` | unit-static on registry | SINGLE |
-| Computed features align with `FEATURE_TIERS` | `inputComputedBoundary.spec` | unit-static | SINGLE |
-| Page split documents computed feature | `inputComputedBoundary.spec` | unit-static | SINGLE |
-| Export input ∩ computed denylist = ∅ | `inputComputedBoundary.spec` | unit-static | SINGLE |
-| Tier-0 shared pages: input visible, computed gated | `consumer-tier0-gates.spec` (/insurance, /real-estate) | e2e-route (canceled persona) | SINGLE |
-| Tier-0 modeling routes gated | `consumer-tier0-gates.spec` (/import, /projections, /scenarios) | e2e-route | SINGLE |
-| Tier-0 dashboard: no background recompute | `verify-tier0-dashboard-no-recompute.ts`; `consumer-tier0-dashboard.spec` | script + e2e | MULTI-DIFF-PATH |
-| Tier-0 net worth from inputs not cache | `netWorthSummary.spec` | unit-direct | SINGLE |
-| Per `EXPORT_INPUT_TABLES` row in export body | PR **#120** `inputExportPayload.spec` + E2E (open) | — | **GAP on staging** |
-| Export isolation negative (cross-user) | PR **#120** `export-isolation-fixture` (open) | — | **GAP on staging** |
-| Projections deterministic-only at tier 1 | `projectionsContentSplit.spec` (if on staging) | unit | verify on branch |
-
-**Pass-1 notes (boundary):** PR 2/3 enforcement is well covered on staging. PR 6 export contract tests are the main staging GAP for “inputs only in export.”
+| Branch / failure mode | Tests (post–#120 baseline) | Call path | Coverage |
+|----------------------|----------------------------|-----------|----------|
+| Registry / denylist / page splits | `inputComputedBoundary.spec` | unit-static | SINGLE |
+| Tier-0 page gates | `consumer-tier0-gates.spec` | e2e-route | SINGLE |
+| Tier-0 dashboard / recompute | `verify-tier0-no-recompute`; `consumer-tier0-dashboard` | script + e2e | MULTI-DIFF-PATH |
+| Net worth from inputs | `netWorthSummary.spec` | unit-direct | SINGLE |
+| Export serializer = `EXPORT_INPUT_TABLES` only | `inputExportPayload.spec` (#120) | unit-direct | **COVERED-PENDING-MERGE** |
+| Export E2E + cross-household isolation | `consumer-data-export.spec`; `export-isolation-fixture` (#120) | e2e-route | **COVERED-PENDING-MERGE** |
 
 ---
 
@@ -82,51 +66,42 @@ Production wiring: `print/page.tsx` and `export-estate-plan/route.ts` load purch
 
 | Branch / failure mode | Tests | Call path | Coverage |
 |----------------------|-------|-----------|----------|
-| Profile read error → throw (`ProfileAccessError`), not tier 0 | `getUserAccessProfile.spec` `loadProfileForUserAccess` | unit-mock admin | SINGLE |
-| No profile row → null → tier 0 | `getUserAccessProfile.spec` | unit-mock + `buildUserAccessFromProfile(null)` | SINGLE |
-| Legitimate inactive → tier 0 | `getUserAccessProfile.spec` | unit-wrapper | SINGLE |
-| Active tier 3 → correct tier | `getUserAccessProfile.spec` | unit-wrapper | SINGLE |
-| Callers must not catch → default tier 0 | `getUserAccessProfile.spec` grep audit | static | SINGLE |
-| Missing DB column at runtime (42703) | `loadProfileForUserAccess` mock only | unit-mock | SINGLE — production path untested in E2E |
+| Read error → throw, not tier 0 | `getUserAccessProfile.spec` `loadProfileForUserAccess` mock 42703 | unit-mock | **CORRECT-FIDELITY** |
+| No row → tier 0 | `getUserAccessProfile.spec` | unit-mock + wrapper | SINGLE |
+| Callers must not swallow → tier 0 | grep audit in `getUserAccessProfile.spec` | static | SINGLE |
+
+**42703 note:** Not a fillable GAP. Unit-mock is the right test fidelity; production proof is **migration-before-code** in [LAUNCH.md](./LAUNCH.md) Bucket C — deliberately breaking prod schema for E2E would be higher risk than the gap.
 
 ---
 
-## 5. Stripe account guard (`assertStripeAccountGuard`)
+## 5. Stripe account guard
 
-| Check / failure mode | Tests | Call path | Coverage |
-|---------------------|-------|-----------|----------|
-| A: mode mismatch (`sk_live` on staging) | `stripeAccountGuard.spec`; `stripeAccountGuardCallSite` | unit + call-site | MULTI-DIFF-PATH |
-| B: shell override vs env file | `stripeAccountGuard.spec` | unit with temp env file | SINGLE |
-| C: account ID mismatch | — | — | **GAP** (no mocked `accounts.retrieve` wrong-id test) |
-| C: API error fail-closed | — | — | **GAP** |
-| Guard before `stripLeakedProductionSecrets` | `stripeAccountGuardCallSite` seam 1 | call-site ordering | SINGLE |
-| Money-path scripts invoke guard | `stripeAccountGuardCallSite` file grep + `assertStagingMoneyPathGuard` | static / integration | SINGLE |
-
----
-
-## 6. Summary — GAPs to prioritize (staging @ PR 8)
-
-| Priority | GAP | Likely fill |
-|----------|-----|-------------|
-| P0 | Deliverable cells without `toPlanExportPurchaseContext` / loader wiring | Merge **#123**; E2E on `consumerPlanExport` + `consumerAppTrial` personas |
-| P0 | Export `EXPORT_INPUT_TABLES` sweep + isolation | Merge **#120** |
-| P1 | App-managed trial E2E (not Stripe `trialing` patch) | New spec using `consumerAppTrial` auth project |
-| P1 | Stripe guard Check C (account mismatch + API fail-closed) | Unit tests with mocked Stripe |
-| P2 | `isProfessionallyManaged` / `isAdvisor` resolver branches | Unit cases in `resolveEffectiveTier.spec` |
-| P2 | Active tier-3 /print deliverable allowed (E2E) | Spec on default `e2e-consumer` without patch |
+| Check | Tests | Coverage |
+|-------|-------|----------|
+| A: mode mismatch | `stripeAccountGuard.spec`; call-site | MULTI-DIFF-PATH |
+| B: shell override | `stripeAccountGuard.spec` | SINGLE |
+| C: wrong `account.id` | — | **GAP** |
+| C: API error fail-closed | — | **GAP** |
+| Call-site ordering / halt | `stripeAccountGuardCallSite.spec` | SINGLE |
 
 ---
 
-## 7. Pass 2 preview (do not execute until map approved)
+## 6. Post–merge GAP set (real work only)
 
-**List A candidates (MULTI-SAME-PATH only):** collapse overlapping `resolveEffectiveTier` + `isAppManagedTrialActive` + `resolveConsumerIsTrial` cases if one case per branch remains.
+After #120 + #123 land, these remain:
 
-**List B candidates (false confidence):**
-- `requirePaidDownloadAccess.spec` purchase tests use hand-built `planExportPurchase` object
-- `shouldOfferPlanAndExportPurchase.spec` feeds `canDownloadDeliverable` boolean instead of computing from profile + loader row
-- `consumer-deliverable-export.spec` uses `deferProfileAccessRestore` / `deferPlanAndExportPurchase` patches on tier-3 consumer, not seeded matrix personas or production loader
-- Stripe Check C untested → guard can regress without CI signal
+| Priority | GAP | Action |
+|----------|-----|--------|
+| **P0** | Stripe Check C (wrong account + API fail-closed) | Add 2 mocked unit tests in `stripeAccountGuard.spec` |
+| **P1** | `isAdvisor` / `isProfessionallyManaged` resolver branches | Add unit cases in `resolveEffectiveTier.spec` |
+| **P1** | Deliverable E2E still on patches, not matrix personas | List B: migrate specs to `consumerAppTrial` / `consumerPlanExport` / `e2e-consumer` auth (template = #123) |
+| **P1** | `shouldOfferPlanAndExportPurchase.spec` boolean-input pattern | List B: rewire to compute `canDownloadDeliverable` like #123 `/print` wiring |
+| **P2** | `requirePaidDownloadAccess.spec` hand-built purchase objects | List B: cut if redundant with #123 matrix, else rewire |
+| **P2** | `is_superuser` → 3 | Optional unit case |
+| **P3** | Resolver app-trial unit helper overlap | List A tidying only — last priority |
+
+**Evaporated on re-baseline (do not schedule fill work):** export boundary sweep (#120), deliverable four-cell faithful unit matrix (#123), app-trial + tier-3 deliverable E2E at patch fidelity (#123).
 
 ---
 
-**Approve this map** → Pass 2 produces List A + List B with per-entry cut/fix/keep rationale.
+**Next:** [Pass 2 — List B + List A](./TEST_COVERAGE_AUDIT_PASS2.md)
