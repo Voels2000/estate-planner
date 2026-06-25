@@ -97,4 +97,18 @@ test.describe('shouldOfferPlanAndExportPurchase', () => {
       }),
     ).toBe(true)
   })
+
+  test('hides buy for Plan & Export purchaser (canDownloadDeliverable true, no active sub)', () => {
+    expect(
+      shouldOfferPlanAndExportPurchase({
+        profile: {
+          role: 'consumer',
+          consumer_tier: 1,
+          subscription_status: 'none',
+        },
+        canDownloadDeliverable: true,
+        isAdvisorClient: false,
+      }),
+    ).toBe(false)
+  })
 })
