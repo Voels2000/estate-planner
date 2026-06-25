@@ -24,7 +24,9 @@ export function TrialBanner({ expiryTimestamp }: { expiryTimestamp: number }) {
       ? 'Your Estate trial ends today'
       : daysLeft === 1
         ? 'Your Estate trial ends tomorrow'
-        : `Your ${ESTATE_TRIAL_DAYS}-day Estate trial ends in ${daysLeft} days`
+        : ESTATE_TRIAL_DAYS > 0
+          ? `Your ${ESTATE_TRIAL_DAYS}-day Estate trial ends in ${daysLeft} days`
+          : `Your Estate trial ends in ${daysLeft} days`
 
   return (
     <div

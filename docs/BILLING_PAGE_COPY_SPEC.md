@@ -45,7 +45,7 @@ Resolved by `resolveBillingTrialBanner`:
 1. `trial_ends_at` on profile (future app-managed trial)
 2. Else Stripe `subscription_status === 'trialing'` + `subscription_period_end`
 
-Estate checkout: **7-day** Stripe trial (`PRICE_META.trialDays`). Financial and Retirement charge immediately.
+Estate checkout: **immediate charge** (`PRICE_META.trialDays: 0` since PR 5). App trial via `trial_ends_at` when set. Financial and Retirement charge immediately.
 
 ## Plan & Export block
 

@@ -1,6 +1,16 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-24 (Tier restructure PR 1 pre-code spec)
+# Last updated: 2026-06-24 (Tier restructure PR 5 — retire Stripe Estate trial)
+
+---
+
+## Tier restructure — PR 5 retire Stripe consumer trial (2026-06-24)
+
+**Decision.** Ship atomically: `PRICE_META` Estate `trialDays: 0` (immediate charge at checkout) **and** consumer CTA/marketing copy that no longer promises “Start free trial.” App-managed trial (`trial_ends_at`, PR 1) is separate from Stripe `trialing` status.
+
+**Legacy.** Existing `subscription_status = 'trialing'` rows remain valid; `consumerCheckoutBlockReason`, `resolveEffectiveTier`, webhook status mapping, and `resolveBillingTrialBanner` Stripe fallback intentionally retain `trialing` reads. New Estate checkouts write `active` directly.
+
+**Launch gate.** PR 5 completes the billing-page → prod blocker (with PRs 2–4).
 
 ---
 
@@ -18,7 +28,7 @@
 
 **Decision.** Replace three side-by-side plan cards on `/billing` with a **four-column cumulative matrix** (Free + Financial + Retirement + Estate). Rows group capabilities (finances / planning / confidence / estate); checks are cumulative (`minTier` ≤ column tier). Copy: tier **questions** + **one-liners** in column headers; Free shows **$0 always**. Estate column: subtle navy tint only — **no** “For estate households” marketing tag. Mobile: single focused column + **Compare all plans** expander (default focus Estate unless user has active paid tier).
 
-**Trial banner.** `resolveBillingTrialBanner` — prefer app `trial_ends_at` when set (future tier-restructure trial); fallback Stripe `trialing` + `subscription_period_end`. Financial/Retirement subscribe immediately; Estate retains 7-day Stripe trial at checkout.
+**Trial banner.** `resolveBillingTrialBanner` — prefer app `trial_ends_at` when set (future tier-restructure trial); fallback Stripe `trialing` + `subscription_period_end` (legacy subs only after PR 5). Financial/Retirement subscribe immediately; Estate checkout charges immediately (`trialDays: 0`).
 
 **Plan & Export.** One-time SKU block stays **below** the subscription ladder (not a matrix column).
 

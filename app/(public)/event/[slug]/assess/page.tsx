@@ -6,9 +6,6 @@ import { getEventContent } from '@/lib/events/content'
 import { getSignupHref } from '@/lib/waitlist-mode'
 import type { EventContent, EventAssessmentQuestion } from '@/lib/events/types'
 import { createClient } from '@/lib/supabase/client'
-import { getConsumerPlanDisplay } from '@/lib/billing/stripePrices'
-
-const ESTATE_TRIAL_DAYS = getConsumerPlanDisplay(3, 'monthly').trialDays
 
 const MAX_SCORE_PER_Q = 3
 
@@ -484,7 +481,7 @@ function ResultsScreen({
             Build my plan
           </div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
-            Start your estate and financial plan — free Tier 1, or try Estate with a {ESTATE_TRIAL_DAYS}-day trial.
+            Start your estate and financial plan — free data entry, or subscribe to Estate when you are ready.
           </div>
         </a>
       </div>
