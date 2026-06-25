@@ -75,7 +75,7 @@ const PRICE_META: Record<string, PriceMeta> = {
     period: 'monthly',
     monthlyEquivalent: 149,
     annualTotal: 0,
-    trialDays: 7,
+    trialDays: 0,
   },
   estate_annual: {
     envVar: 'STRIPE_PRICE_ESTATE_ANNUAL',
@@ -84,7 +84,7 @@ const PRICE_META: Record<string, PriceMeta> = {
     period: 'annual',
     monthlyEquivalent: 124,
     annualTotal: 1490,
-    trialDays: 7,
+    trialDays: 0,
   },
 }
 

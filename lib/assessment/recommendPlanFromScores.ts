@@ -43,7 +43,9 @@ export function recommendPlanFromScores(
     reason: `Your ${meta.label} score (${weakest.pct}%) has the most room to improve — the ${meta.planName} plan includes the tools to address those gaps.`,
     ctaLabel:
       weakest.planId === 'estate'
-        ? `Start ${ESTATE_TRIAL_DAYS}-day Estate trial`
+        ? ESTATE_TRIAL_DAYS > 0
+          ? `Start ${ESTATE_TRIAL_DAYS}-day Estate trial`
+          : 'Subscribe to Estate'
         : `Get started with ${meta.planName}`,
   }
 }

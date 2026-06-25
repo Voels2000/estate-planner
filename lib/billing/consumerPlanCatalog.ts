@@ -52,7 +52,7 @@ export const CONSUMER_PLAN_CATALOG: ConsumerPlanCatalogEntry[] = [
     highlighted: true,
     badge: ESTATE_TRIAL_BADGE,
     accent: '#4a7c6f',
-    cta: 'Start free trial',
+    cta: 'Subscribe',
   },
 ]
 

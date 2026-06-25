@@ -38,7 +38,7 @@ Canonical plan: [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE
 | 2 Gates | `[ ]` | `FEATURE_TIERS` reclass; gate `/projections`, `/scenarios`; input vs computed split |
 | 3 Dashboard | `[ ]` | Tier 0 net-worth slice; no composition/MC/recompute |
 | 4 Projections | `[ ]` | Strip MC fan + estate overlay from Tier 1 view |
-| 5 Stripe trial | `[ ]` | `trialDays: 0`; Estate CTA copy |
+| 5 Stripe trial | `[~]` | `trialDays: 0`; Estate CTA → Subscribe |
 | 6 Export API | `[ ]` | Free inputs-only export · **same boundary as PR 2** |
 | 7 Plan & Export | `[ ]` | Trial exclusion rules |
 | 8 Tests/docs | `[ ]` | Seeds, E2E, LAUNCH.md |

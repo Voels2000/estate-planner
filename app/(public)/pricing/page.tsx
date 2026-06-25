@@ -182,7 +182,11 @@ export default async function PricingPage() {
               lineHeight: 1.6,
             }}
           >
-            {`Starting at $${TIER_PRICES[1]}/month · Estate plan includes a ${ESTATE_TRIAL_DAYS}-day free trial`}
+            {`Starting at $${TIER_PRICES[1]}/month${
+              ESTATE_TRIAL_DAYS > 0
+                ? ` · Estate plan includes a ${ESTATE_TRIAL_DAYS}-day free trial`
+                : ''
+            }`}
             {annualBillingAvailable ? ' · Annual billing saves 2 months' : ''}
           </p>
           <p
@@ -234,7 +238,9 @@ export default async function PricingPage() {
         >
           {[
             '✓ Cancel anytime',
-            `✓ ${ESTATE_TRIAL_DAYS}-day free trial on Estate`,
+            ...(ESTATE_TRIAL_DAYS > 0
+              ? [`✓ ${ESTATE_TRIAL_DAYS}-day free trial on Estate`]
+              : []),
             ...(annualBillingAvailable ? ['✓ Annual billing — 2 months free'] : []),
             '✓ A fraction of annual attorney fees',
           ].map((item) => (
@@ -437,7 +443,10 @@ export default async function PricingPage() {
           {[
             {
               q: 'Can I try before I pay?',
-              a: `The Estate plan includes a ${ESTATE_TRIAL_DAYS}-day free trial — full access to estate tax snapshot, strategies, and the execution checklist. Financial and Retirement plans start billing when you subscribe. Attorneys can start free with up to 3 client households.`,
+              a:
+                ESTATE_TRIAL_DAYS > 0
+                  ? `The Estate plan includes a ${ESTATE_TRIAL_DAYS}-day free trial — full access to estate tax snapshot, strategies, and the execution checklist. Financial and Retirement plans start billing when you subscribe. Attorneys can start free with up to 3 client households.`
+                  : 'Start free to enter your full financial picture and export your data anytime. Estate, Financial, and Retirement subscriptions bill when you subscribe. Attorneys can start free with up to 3 client households.',
             },
             {
               q: 'Can I change plans later?',

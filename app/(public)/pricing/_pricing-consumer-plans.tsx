@@ -291,7 +291,7 @@ export function PricingConsumerPlans({
                     boxSizing: 'border-box',
                   }}
                 >
-                  {isEstate ? 'Start free trial' : plan.cta}
+                  {plan.cta}
                 </a>
               )}
             </div>
