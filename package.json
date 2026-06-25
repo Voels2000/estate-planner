@@ -49,6 +49,7 @@
     "validate:plan-export-staging": "TEST_ENV=staging dotenv -e .env.test.staging -- npx tsx scripts/validate-plan-export-staging-money.ts",
     "validate:plan-export-staging:purchase": "TEST_ENV=staging dotenv -e .env.test.staging -- npx tsx scripts/run-plan-export-2a-purchase.ts",
     "verify:tier0-no-recompute": "TEST_ENV=staging dotenv -e .env.test.staging -- npx tsx scripts/verify-tier0-dashboard-no-recompute.ts",
+    "verify:pr5-staging-gate": "TEST_ENV=staging dotenv -e .env.test.staging -- npx tsx scripts/verify-pr5-staging-gate.ts",
     "seed:e2e": "dotenv -o -e .env.local -e .env.test.local -- npx tsx scripts/seed-e2e-fixtures.ts",
     "verify:e2e-auth": "dotenv -o -e .env.local -e .env.test.local -- npx tsx scripts/verify-e2e-auth.ts",
     "seed:e2e:fast": "dotenv -o -e .env.local -e .env.test.local -- npx tsx scripts/seed-e2e-fixtures.ts --skip-advisor-client",
