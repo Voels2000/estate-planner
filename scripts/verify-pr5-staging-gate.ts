@@ -94,9 +94,35 @@ async function retrieveCheckoutSession(
       recent.data.map((s) => s.id),
     )
     throw new Error(
-      `${message} — local Stripe key may not match staging Vercel STRIPE_SECRET_KEY`,
+      `${message}\n` +
+        `[check 1] Target mismatch — not a malformed key. Session ${sessionId} was created by ` +
+        `${stagingMoneyPathBaseUrl()} (Vercel staging STRIPE_SECRET_KEY). Local retrieve used ` +
+        `STRIPE_SECRET_KEY account ${stripeAccountLabel(process.env.STRIPE_SECRET_KEY ?? '')}. ` +
+        `If both are sk_test_* with similar suffixes, this is usually a Stripe sandbox rotation: ` +
+        `open the session in the Stripe dashboard sandbox that served staging checkout, and align ` +
+        `.env.test.staging to that same sandbox. Hosted-page Check 1 still passes without retrieve.`,
     )
   }
+}
+
+/** Human-readable Stripe test account fragment — not a secret. */
+function stripeAccountLabel(key: string): string {
+  const trimmed = key.trim()
+  const m = trimmed.match(/^sk_test_([a-zA-Z0-9]+)/)
+  return m ? `sk_test_${m[1].slice(0, 8)}…` : '(unset or non-test)'
+}
+
+function logGateTargets() {
+  const base = stagingMoneyPathBaseUrl()
+  const ref =
+    (process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').match(
+      /https:\/\/([^.]+)\.supabase\.co/,
+    )?.[1] ?? 'unset'
+  console.log(
+    `[gate targets] TEST_ENV=${process.env.TEST_ENV} baseURL=${base} supabaseRef=${ref} ` +
+      `stripeLocal=${stripeAccountLabel(process.env.STRIPE_SECRET_KEY ?? '')} ` +
+      `(checkout POST → Vercel staging; retrieve → local .env.test.staging — must be same sandbox)`,
+  )
 }
 
 async function signIn(page: Page, email: string, password: string) {
@@ -180,7 +206,7 @@ async function postEstateCheckout(page: Page): Promise<{ url: string; sessionId:
 }
 
 async function verifyCheckoutPageNoTrial(page: Page, checkoutUrl: string) {
-  console.log('[check 1] Stripe API key mismatch — verifying hosted Checkout page instead')
+  console.log('[check 1] Stripe retrieve missed — using hosted Checkout page (sandbox/target mismatch)')
   await page.goto(checkoutUrl)
   await page.waitForLoadState('domcontentloaded')
   await page.waitForTimeout(3000)
@@ -226,7 +252,7 @@ async function check1StripeArtifact(page: Page): Promise<{ checkoutUrl: string; 
     return { checkoutUrl, onCheckoutPage: false }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    if (!message.includes('local Stripe key may not match')) throw err
+    if (!message.includes('Target mismatch')) throw err
     await verifyCheckoutPageNoTrial(page, checkoutUrl)
     return { checkoutUrl, onCheckoutPage: true }
   }
@@ -277,7 +303,7 @@ async function check2EndToEndCharge(
       const message = err instanceof Error ? err.message : String(err)
       if (message.includes('No such subscription')) {
         console.warn(
-          '[check 2] Skipping Stripe subscription retrieve — local key does not match staging Vercel',
+          '[check 2] Skipping Stripe subscription retrieve — sandbox/target mismatch (see Check 1 note)',
         )
       } else {
         throw err
@@ -456,6 +482,7 @@ async function fivePersonaPass(page: Page) {
 
 async function main() {
   assertStagingMoneyPathGuard()
+  logGateTargets()
   const base = stagingMoneyPathBaseUrl()
 
   console.log('Preparing canceled persona for Estate checkout...')
