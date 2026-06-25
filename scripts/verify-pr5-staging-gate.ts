@@ -7,17 +7,20 @@
  *   npm run verify:pr5-staging-gate -- --personas
  */
 import { chromium, type Page } from 'playwright'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { buildUserAccessFromProfile } from '../lib/access/buildUserAccessFromProfile'
 import { ensureE2eCanceledSubscriber } from './seed-e2e-lib'
 import { E2E_IDENTITIES } from './e2e-test-identities'
-import { assertStagingMoneyPathGuard, stagingMoneyPathBaseUrl } from './testEnv'
+import { assertStagingMoneyPathGuard, ENVIRONMENTS, printStripeAccountInfo, stagingMoneyPathBaseUrl } from './testEnv'
 
 const CANCELED = E2E_IDENTITIES.consumerCanceled
 const TIER1 = E2E_IDENTITIES.consumerTier1
 const TIER3 = E2E_IDENTITIES.consumer
 const runPersonas = process.argv.includes('--personas')
+const printAccount = process.argv.includes('--print-account')
 
 function admin() {
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -68,15 +71,91 @@ function sessionIdFromCheckoutUrl(url: string): string {
   return match[1]
 }
 
+function formatStripeError(err: unknown): string {
+  if (err instanceof Stripe.errors.StripeError) {
+    return `type=${err.type} code=${err.code ?? 'n/a'} statusCode=${err.statusCode} message=${err.message}`
+  }
+  if (err instanceof Error) return `message=${err.message}`
+  return String(err)
+}
+
+function logEnvAndStripeKeyLoaded(): void {
+  const envFile = ENVIRONMENTS.staging.envFile
+  const envPath = join(process.cwd(), envFile)
+  const key = (process.env.STRIPE_SECRET_KEY ?? '').trim()
+  console.log('[env loaded]', {
+    npmInvokes: 'TEST_ENV=staging dotenv -e .env.test.staging (see package.json verify:pr5-staging-gate)',
+    expectedEnvFile: envPath,
+    envFileExists: existsSync(envPath),
+    STRIPE_SECRET_KEY_set: key.length > 0,
+    STRIPE_SECRET_KEY_len: key.length,
+    STRIPE_SECRET_KEY_last4: key.length >= 4 ? key.slice(-4) : '(unset/short)',
+    account_prefix_after_sk_test_: keyAccountPrefix(key),
+    note: 'Compare last4 to the key you edited — if different, this process did not load your file',
+  })
+}
+
+async function probeStripeAuth(stripe: Stripe): Promise<void> {
+  try {
+    await stripe.balance.retrieve()
+    console.log('[stripe probe] balance.retrieve: OK — key is valid and authenticated')
+  } catch (err) {
+    console.log(`[stripe probe] balance.retrieve FAILED — ${formatStripeError(err)}`)
+    if (err instanceof Stripe.errors.StripeAuthenticationError) {
+      console.log(
+        '[stripe probe] diagnosis: authentication_error → STRIPE_SECRET_KEY missing, wrong, or not loaded from .env.test.staging',
+      )
+    }
+  }
+}
+
+function keyAccountPrefix(key: string): string {
+  const m = key.trim().match(/^sk_(?:test|live)_([A-Za-z0-9]+)/)
+  return m ? m[1].slice(0, 12) : '(unparsed)'
+}
+
+function stripeKeyAtRetrieve(stripe: Stripe): string {
+  try {
+    const fromClient = stripe.getApiField('apiKey')
+    if (typeof fromClient === 'string' && fromClient.length > 0) return fromClient
+  } catch {
+    // fall through
+  }
+  return process.env.STRIPE_SECRET_KEY?.trim() ?? ''
+}
+
+function logKeyPrefixAtRetrieve(stripe: Stripe, label: string): void {
+  const key = stripeKeyAtRetrieve(stripe)
+  const fileKey = process.env.STRIPE_SECRET_KEY?.trim() ?? ''
+  console.log(`[${label}] key at Stripe call:`, {
+    account_prefix: keyAccountPrefix(key),
+    last4: key.length >= 4 ? key.slice(-4) : '(unset)',
+    matches_env_STRIPE_SECRET_KEY: key === fileKey,
+  })
+}
+
 async function retrieveCheckoutSession(
   stripe: Stripe,
   checkoutUrl: string,
   sessionId: string,
 ): Promise<Stripe.Checkout.Session> {
+  logKeyPrefixAtRetrieve(stripe, 'stripe retrieve')
   try {
     return await stripe.checkout.sessions.retrieve(sessionId)
   } catch (err) {
+    console.error(`[stripe retrieve] raw error: ${formatStripeError(err)}`)
+    if (err instanceof Stripe.errors.StripeInvalidRequestError) {
+      if (err.code === 'resource_missing') {
+        console.error(
+          '[stripe retrieve] diagnosis: resource_missing → key authenticated but cs_test not in THIS account/sandbox (not "wrong key")',
+        )
+      }
+    }
+
     const message = err instanceof Error ? err.message : String(err)
+    if (!message.includes('No such checkout.session') && err instanceof Stripe.errors.StripeError) {
+      if (err.type === 'StripeAuthenticationError') throw err
+    }
     if (!message.includes('No such checkout.session')) throw err
 
     const recent = await stripe.checkout.sessions.list({ limit: 10 })
@@ -90,13 +169,34 @@ async function retrieveCheckoutSession(
     }
 
     console.error(
-      'Recent sessions visible to local STRIPE_SECRET_KEY:',
+      'Recent sessions visible to loaded STRIPE_SECRET_KEY:',
       recent.data.map((s) => s.id),
     )
     throw new Error(
-      `${message} — local Stripe key may not match staging Vercel STRIPE_SECRET_KEY`,
+      `[check 1] session ${sessionId} not found with loaded key (see raw Stripe error above). ` +
+        `Checkout was created at ${stagingMoneyPathBaseUrl()}. Hosted-page Check 1 still valid.`,
     )
   }
+}
+
+/** Human-readable Stripe test account fragment — not a secret. */
+function stripeAccountLabel(key: string): string {
+  const trimmed = key.trim()
+  const m = trimmed.match(/^sk_test_([a-zA-Z0-9]+)/)
+  return m ? `sk_test_${m[1].slice(0, 8)}…` : '(unset or non-test)'
+}
+
+function logGateTargets() {
+  const base = stagingMoneyPathBaseUrl()
+  const ref =
+    (process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').match(
+      /https:\/\/([^.]+)\.supabase\.co/,
+    )?.[1] ?? 'unset'
+  console.log(
+    `[gate targets] TEST_ENV=${process.env.TEST_ENV} baseURL=${base} supabaseRef=${ref} ` +
+      `stripeLocal=${stripeAccountLabel(process.env.STRIPE_SECRET_KEY ?? '')} ` +
+      `(checkout POST → Vercel staging; retrieve → local .env.test.staging — must be same sandbox)`,
+  )
 }
 
 async function signIn(page: Page, email: string, password: string) {
@@ -180,7 +280,7 @@ async function postEstateCheckout(page: Page): Promise<{ url: string; sessionId:
 }
 
 async function verifyCheckoutPageNoTrial(page: Page, checkoutUrl: string) {
-  console.log('[check 1] Stripe API key mismatch — verifying hosted Checkout page instead')
+  console.log('[check 1] Stripe retrieve missed — using hosted Checkout page (sandbox/target mismatch)')
   await page.goto(checkoutUrl)
   await page.waitForLoadState('domcontentloaded')
   await page.waitForTimeout(3000)
@@ -226,7 +326,7 @@ async function check1StripeArtifact(page: Page): Promise<{ checkoutUrl: string; 
     return { checkoutUrl, onCheckoutPage: false }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    if (!message.includes('local Stripe key may not match')) throw err
+    if (!message.includes('[check 1] session')) throw err
     await verifyCheckoutPageNoTrial(page, checkoutUrl)
     return { checkoutUrl, onCheckoutPage: true }
   }
@@ -277,7 +377,10 @@ async function check2EndToEndCharge(
       const message = err instanceof Error ? err.message : String(err)
       if (message.includes('No such subscription')) {
         console.warn(
-          '[check 2] Skipping Stripe subscription retrieve — local key does not match staging Vercel',
+          `[check 2] subscription retrieve raw: ${formatStripeError(err)}`,
+        )
+        console.warn(
+          '[check 2] diagnosis: resource_missing on subscription — same sandbox split as Check 1; profile webhook state is authoritative',
         )
       } else {
         throw err
@@ -455,7 +558,14 @@ async function fivePersonaPass(page: Page) {
 }
 
 async function main() {
-  assertStagingMoneyPathGuard()
+  await assertStagingMoneyPathGuard()
+  if (printAccount) {
+    await printStripeAccountInfo('staging')
+    return
+  }
+  logEnvAndStripeKeyLoaded()
+  logGateTargets()
+  await probeStripeAuth(stripeClient())
   const base = stagingMoneyPathBaseUrl()
 
   console.log('Preparing canceled persona for Estate checkout...')
