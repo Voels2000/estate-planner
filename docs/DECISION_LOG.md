@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-18 (Stripe account guard — mode + source + account)
+# Last updated: 2026-06-19 (tier restructure PR 8 — E2E persona matrix)
+
+---
+
+## Tier restructure — PR 8 E2E persona matrix (2026-06-19)
+
+**Problem.** Consolidation PRs touch the seed harness — the easiest place to drop a persona that was the only coverage for a resolver branch (`has_ever_subscribed` canceled → 0, app trial window, tier 2, Plan & Export purchaser).
+
+**Decision.** Canonical matrix in `scripts/e2e-persona-matrix.ts`; `npm run seed:e2e` seeds all six consumer branches in one run; `verifyE2eAccounts` calls `verifyE2ePersonaMatrix` post-seed. Do not merge two personas without proving the branch remains exercised.
+
+**Docs.** [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md) maps planning docs → outcomes; [LAUNCH.md](./LAUNCH.md) Bucket C records code gate closed on staging + prod cutover runbook.
+
+**Files:** `scripts/e2e-test-identities.ts` · `scripts/seed-e2e-lib.ts` · `scripts/verify-e2e-persona-matrix.ts` · `tests/unit/e2ePersonaMatrix.spec.ts`
 
 ---
 

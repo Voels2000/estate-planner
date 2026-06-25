@@ -1,5 +1,6 @@
 import { createAdminClient } from '../lib/supabase/admin'
 import { createClient } from '@supabase/supabase-js'
+import { fulfillPlanAndExportPurchase } from '../lib/billing/oneTimePurchases'
 import {
   E2E_DEFAULT_BASE_URL,
   E2E_IDENTITIES,
@@ -7,6 +8,7 @@ import {
   E2E_TEST_PASSWORD,
   DRIP_SMOKE_EMAIL,
 } from './e2e-test-identities'
+import { E2E_PERSONA_MATRIX, verifyE2ePersonaMatrix } from './e2e-persona-matrix'
 
 export function initSupabaseEnv() {
   if (process.env.SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -118,19 +120,22 @@ const CONSUMER_HOUSEHOLD_ROW = {
 export async function seedE2eConsumerHousehold(
   userId: string,
   householdName: string,
-  tier: 1 | 3,
+  tier: 1 | 2 | 3,
+  profile?: { fullName: string },
 ): Promise<string> {
   const admin = createAdminClient()
-  const id = E2E_IDENTITIES.consumer
+  const fullName = profile?.fullName ?? E2E_IDENTITIES.consumer.fullName
 
   const now = new Date().toISOString()
   await admin
     .from('profiles')
     .update({
-      full_name: id.fullName,
+      full_name: fullName,
       consumer_tier: tier,
       subscription_status: 'active',
       has_ever_subscribed: true,
+      trial_ends_at: null,
+      subscription_plan: tier === 2 ? 'retirement_monthly' : null,
       is_superuser: false,
       role: 'consumer',
       terms_accepted_at: now,
@@ -1247,6 +1252,131 @@ export async function ensureE2eCanceledSubscriber(): Promise<string> {
   return userId
 }
 
+/** App-managed trial window — effective tier 3 via resolveEffectiveTier (PR 1 columns). */
+export async function ensureE2eAppTrialConsumer(): Promise<string> {
+  const admin = createAdminClient()
+  const id = E2E_IDENTITIES.consumerAppTrial
+  const now = new Date().toISOString()
+  const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+  const userId = await ensureAuthUser({
+    email: id.email,
+    password: id.password,
+    fullName: id.fullName,
+    role: 'consumer',
+  })
+
+  await admin
+    .from('profiles')
+    .update({
+      full_name: id.fullName,
+      role: 'consumer',
+      email: id.email,
+      consumer_tier: 0,
+      subscription_status: 'none',
+      has_ever_subscribed: false,
+      trial_ends_at: trialEnds,
+      subscription_plan: null,
+      stripe_subscription_id: null,
+      terms_accepted_at: now,
+      terms_version: '2026-06-02',
+      onboarding_wizard_completed_at: now,
+      updated_at: now,
+    })
+    .eq('id', userId)
+
+  const { data: existing } = await admin
+    .from('households')
+    .select('id')
+    .eq('owner_id', userId)
+    .maybeSingle()
+
+  if (!existing?.id) {
+    const { error } = await admin.from('households').insert({
+      owner_id: userId,
+      name: id.householdName,
+      state_primary: 'WA',
+      filing_status: 'single',
+      person1_birth_year: 1985,
+      updated_at: now,
+    })
+    if (error) throw new Error(`app-trial household insert: ${error.message}`)
+  }
+
+  console.log(`  app-trial consumer: ${id.email} (trial_ends_at future, has_ever_subscribed false)`)
+  return userId
+}
+
+/** Completed Plan & Export purchase, no active subscription — deliverable purchaser path. */
+export async function ensureE2ePlanExportPurchaser(): Promise<string> {
+  const admin = createAdminClient()
+  const id = E2E_IDENTITIES.consumerPlanExport
+  const now = new Date().toISOString()
+
+  const userId = await ensureAuthUser({
+    email: id.email,
+    password: id.password,
+    fullName: id.fullName,
+    role: 'consumer',
+  })
+
+  await admin
+    .from('profiles')
+    .update({
+      full_name: id.fullName,
+      role: 'consumer',
+      email: id.email,
+      consumer_tier: 1,
+      subscription_status: 'none',
+      has_ever_subscribed: false,
+      trial_ends_at: null,
+      subscription_plan: null,
+      stripe_subscription_id: null,
+      terms_accepted_at: now,
+      terms_version: '2026-06-02',
+      onboarding_wizard_completed_at: now,
+      updated_at: now,
+    })
+    .eq('id', userId)
+
+  const { data: existing } = await admin
+    .from('households')
+    .select('id')
+    .eq('owner_id', userId)
+    .maybeSingle()
+
+  if (!existing?.id) {
+    const { error } = await admin.from('households').insert({
+      owner_id: userId,
+      name: id.householdName,
+      state_primary: 'WA',
+      filing_status: 'single',
+      person1_birth_year: 1975,
+      updated_at: now,
+    })
+    if (error) throw new Error(`plan-export household insert: ${error.message}`)
+  }
+
+  await admin
+    .from('one_time_purchases')
+    .delete()
+    .eq('user_id', userId)
+    .eq('sku', 'plan_and_export')
+
+  const { error: fulfillErr } = await fulfillPlanAndExportPurchase({
+    admin,
+    userId,
+    sessionId: `e2e_seed_plan_export_${userId.slice(0, 8)}`,
+    paymentIntentId: null,
+    amountCents: 149_000,
+    currency: 'usd',
+  })
+  if (fulfillErr) throw new Error(`plan-export purchase seed: ${fulfillErr.message}`)
+
+  console.log(`  plan-export purchaser: ${id.email} (completed one_time_purchases, no active sub)`)
+  return userId
+}
+
 /** Fail loudly if any @mywealthmaps.test account is in an invalid state. */
 export async function verifyE2eAccounts(): Promise<void> {
   const admin = createAdminClient()
@@ -1296,5 +1426,13 @@ export async function verifyE2eAccounts(): Promise<void> {
     process.exit(1)
   }
 
+  const personaIssues = await verifyE2ePersonaMatrix(admin)
+  if (personaIssues.length > 0) {
+    console.error('E2E persona matrix validation failed:')
+    personaIssues.forEach((i) => console.error(' -', i))
+    process.exit(1)
+  }
+
   console.log(`✓ All ${accounts?.length ?? 0} E2E accounts verified`)
+  console.log(`✓ Tier-restructure persona matrix (${E2E_PERSONA_MATRIX.length} branches) satisfied`)
 }
