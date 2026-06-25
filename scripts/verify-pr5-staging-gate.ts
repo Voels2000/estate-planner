@@ -12,13 +12,15 @@ import { join } from 'node:path'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { buildUserAccessFromProfile } from '../lib/access/buildUserAccessFromProfile'
-import { ensureE2eCanceledSubscriber } from './seed-e2e-lib'
+import { ensureE2eAppTrialConsumer, ensureE2eCanceledSubscriber } from './seed-e2e-lib'
 import { E2E_IDENTITIES } from './e2e-test-identities'
 import { assertStagingMoneyPathGuard, ENVIRONMENTS, printStripeAccountInfo, stagingMoneyPathBaseUrl } from './testEnv'
 
 const CANCELED = E2E_IDENTITIES.consumerCanceled
 const TIER1 = E2E_IDENTITIES.consumerTier1
+const TIER2 = E2E_IDENTITIES.consumerTier2
 const TIER3 = E2E_IDENTITIES.consumer
+const APP_TRIAL = E2E_IDENTITIES.consumerAppTrial
 const runPersonas = process.argv.includes('--personas')
 const printAccount = process.argv.includes('--print-account')
 
@@ -458,8 +460,8 @@ async function effectiveTierForEmail(email: string, password: string, page: Page
   return { email, userId, profile, access }
 }
 
-async function fivePersonaPass(page: Page) {
-  console.log('\n=== Five-persona coherence pass (same staging build) ===')
+async function personaCoherencePass(page: Page) {
+  console.log('\n=== Persona coherence pass (seeded matrix, same staging build) ===')
 
   await ensureE2eCanceledSubscriber()
 
@@ -479,30 +481,11 @@ async function fivePersonaPass(page: Page) {
   }
 
   {
-    const userId = await findUserId(TIER1.email)
-    const snap = await snapshotProfile(userId)
-    await admin()
-      .from('profiles')
-      .update({
-        consumer_tier: 2,
-        subscription_status: 'active',
-        subscription_plan: 'retirement_monthly',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId)
+    const userId = await findUserId(TIER2.email)
     const profile = await snapshotProfile(userId)
     const access = buildUserAccessFromProfile(profile, false)
-    results.push({ label: 'Tier 2 (temp retirement patch on tier1)', expectedTier: 2, actual: access })
-    if (access.tier !== 2) throw new Error(`Tier 2 patch: expected tier 2, got ${access.tier}`)
-    await admin()
-      .from('profiles')
-      .update({
-        consumer_tier: snap.consumer_tier,
-        subscription_status: snap.subscription_status,
-        subscription_plan: snap.subscription_plan,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', userId)
+    results.push({ label: 'Tier 2 (retirement active)', expectedTier: 2, actual: access })
+    if (access.tier !== 2) throw new Error(`Tier 2 persona: expected tier 2, got ${access.tier}`)
   }
 
   {
@@ -512,49 +495,23 @@ async function fivePersonaPass(page: Page) {
   }
 
   {
-    const trialEmail = `e2e-pr5-trial-${Date.now()}@mywealthmaps.test`
-    const trialEnds = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    const { data: created, error: createErr } = await admin().auth.admin.createUser({
-      email: trialEmail,
-      password: E2E_IDENTITIES.consumer.password,
-      email_confirm: true,
-      user_metadata: { full_name: 'E2E PR5 Trial' },
-    })
-    if (createErr || !created.user) throw createErr ?? new Error('createUser failed')
-
-    await admin()
-      .from('profiles')
-      .update({
-        role: 'consumer',
-        consumer_tier: 0,
-        subscription_status: 'none',
-        has_ever_subscribed: false,
-        trial_ends_at: trialEnds,
-        terms_accepted_at: new Date().toISOString(),
-        terms_version: '2026-06-02',
-        onboarding_wizard_completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', created.user.id)
-
-    const { access } = await effectiveTierForEmail(trialEmail, E2E_IDENTITIES.consumer.password, page)
+    await ensureE2eAppTrialConsumer()
+    const { access } = await effectiveTierForEmail(APP_TRIAL.email, APP_TRIAL.password, page)
     results.push({
-      label: 'Fresh signup (app trial)',
+      label: 'App-managed trial (seeded persona)',
       expectedTier: 3,
       expectedTrial: true,
       actual: access,
     })
     if (access.tier !== 3 || !access.isTrial) {
-      throw new Error(`App trial signup: expected tier 3 + isTrial, got ${JSON.stringify(access)}`)
+      throw new Error(`App trial persona: expected tier 3 + isTrial, got ${JSON.stringify(access)}`)
     }
-
-    await admin().auth.admin.deleteUser(created.user.id)
   }
 
   for (const r of results) {
     console.log(`  PASS ${r.label}: tier=${(r.actual as { tier: number }).tier}`)
   }
-  console.log('PASS Five-persona coherence — all tiers resolve as expected')
+  console.log('PASS Persona coherence — tiers 0–3 + app trial resolve as expected')
 }
 
 async function main() {
@@ -583,9 +540,9 @@ async function main() {
     await check3CopySweep(page)
     await check4Tier0Regression(page)
     if (runPersonas) {
-      await fivePersonaPass(page)
+      await personaCoherencePass(page)
     } else {
-      console.log('\n(Skipping five-persona pass — re-run with --personas)')
+      console.log('\n(Skipping persona coherence pass — re-run with --personas)')
     }
     console.log('\n=== PR 5 staging gate: ALL CHECKS PASSED ===')
   } finally {

@@ -40,6 +40,9 @@ jobs:
       - name: Prepare staging env files
         run: bash scripts/write-ci-staging-env.sh
 
+      - name: Seed tier-restructure persona matrix on staging
+        run: npm run seed:e2e:persona-matrix
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
