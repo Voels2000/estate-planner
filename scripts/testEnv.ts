@@ -341,12 +341,21 @@ export function assertStripeKeySource(testEnv: TestEnv, activeKey: string): void
 }
 
 /** Check C — key must belong to the canonical Stripe account for TEST_ENV. Fail-closed on API error. */
-export async function assertStripeAccountIdentity(testEnv: TestEnv, key: string): Promise<void> {
+export async function assertStripeAccountIdentity(
+  testEnv: TestEnv,
+  key: string,
+  deps?: {
+    /** Test seam — mock accounts.retrieve() without live Stripe. Production callers omit. */
+    retrieveAccount?: () => Promise<{ id: string }>
+  },
+): Promise<void> {
   const { stripeAccountId, stripeAccountLabel } = ENVIRONMENTS[testEnv]
   const stripe = new Stripe(key)
   let accountId: string
   try {
-    const account = await stripe.accounts.retrieve()
+    const account = deps?.retrieveAccount
+      ? await deps.retrieveAccount()
+      : await stripe.accounts.retrieve()
     accountId = account.id
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
