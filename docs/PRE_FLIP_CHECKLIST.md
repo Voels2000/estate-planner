@@ -100,10 +100,19 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 
 **Not the signup gate flip.** Gets tier-restructure code safely onto prod. `PUBLIC_SIGNUP_OPEN=true` is §E — separate day when B&O-READY clears.
 
-**Before step 1:** PITR/backups ON; written rollback for a bad prod migration (§A).
+**Before step 1:** PITR/backups ON (§A). Schema rollback snippets below — **pre-flip only**; after `PUBLIC_SIGNUP_OPEN`, PITR not column drops.
+
+**Schema rollback** (verified vs forward files; reverse order = `20260724120000` then `20260624140000`):
+```sql
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS trial_ends_at;
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS has_ever_subscribed;
+-- + restore handle_new_user() from 20260527130500_fix_signup_subscription_defaults.sql
+DROP TABLE IF EXISTS public.one_time_purchases;
+```
+`one_time_purchases` reverse is complete (`DROP TABLE`). `trial_columns` forward also replaced `handle_new_user()` — column drops alone are not a full inverse. Step 2 fail → re-apply forward, don't reverse.
 
 ```
-0. Merge docs reconciliation (PR #128) — LAUNCH + PRE_FLIP migration lists aligned
+0. [x] Docs reconciliation (#128 merged)
 1. Apply prod migrations ONLY (no code deploy yet), timestamp order:
    …WA Regime D (20260613120000–140000) → one_time_purchases (20260624140000) →
    RLS fix (20260713130000) → coverage fixes (20260713140000) →

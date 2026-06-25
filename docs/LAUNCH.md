@@ -199,11 +199,33 @@ Consumer billing enforcement PRs are merged to **`staging`** and verified. This 
 
 **Principle (PR 4.5 / #117 lesson):** Migrations and config reach prod **before** the code that depends on them — with a **verify-the-schema-is-present** gate between migration and deploy. Not "apply migration, deploy code" — "apply migration, **prove** columns/tables exist on the prod DB, **then** deploy code."
 
-**Before step 1:** Confirm Supabase PITR/backups ON and you have a written rollback path for a bad prod migration ([PRE_FLIP §A](./PRE_FLIP_CHECKLIST.md#a-hard-blockers--broken-product-or-serious-exposure-if-skipped)). Pre-launch blast radius is tiny (three protected auth users), but know how to undo step 1 before doing it.
+**Before step 1:** Confirm Supabase PITR/backups ON ([PRE_FLIP §A](./PRE_FLIP_CHECKLIST.md#a-hard-blockers--broken-product-or-serious-exposure-if-skipped)). Pre-launch blast radius is tiny (three protected auth users). Know the schema rollback below before applying migrations — pre-flip only; after `PUBLIC_SIGNUP_OPEN`, use PITR not column drops.
+
+**Schema rollback (pre-flip only — verified against forward files 2026-06-25):**
+
+| Forward migration | Creates | Reverse complete? |
+|-------------------|---------|-------------------|
+| `20260624140000_one_time_purchases.sql` | `one_time_purchases` table, 3 indexes, RLS + owner-read policy | Yes — `DROP TABLE` drops table-attached indexes/policies; no standalone types/sequences |
+| `20260724120000_tier_restructure_pr1_trial_columns.sql` | `trial_ends_at`, `has_ever_subscribed` on `profiles`; data UPDATEs; **`handle_new_user()` replaced** | **Partial** — column drops below; also restore prior `handle_new_user()` from `supabase/migrations/20260527130500_fix_signup_subscription_defaults.sql` |
+
+**Reverse order** (opposite of Step 1 apply): `20260724120000` first, then `20260624140000` (habit for dependent migrations; these two are independent today).
+
+```sql
+-- Reverse 20260724120000 (apply first if reversing both)
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS trial_ends_at;
+ALTER TABLE public.profiles DROP COLUMN IF EXISTS has_ever_subscribed;
+-- Then re-run CREATE OR REPLACE FUNCTION handle_new_user() body from
+-- 20260527130500_fix_signup_subscription_defaults.sql (forward file also replaced this).
+
+-- Reverse 20260624140000 (apply second)
+DROP TABLE IF EXISTS public.one_time_purchases;
+```
+
+**When to reverse vs re-apply:** Step 2 query fails → migration may not have applied — diagnose (wrong DB target, permissions) and **re-run forward**; don't reverse. Reverse only when forward **applied but is wrong**. After gate flip, trial column drops destroy real data — PITR is the recovery path.
 
 ### Tier restructure prod cutover — steps 0–5 (then stop)
 
-**Step 0 — Land docs reconciliation.** Merge [PR #128](https://github.com/Voels2000/estate-planner/pull/128) (LAUNCH + PRE_FLIP migration runbooks aligned through `20260724120000`). Execute from reconciled docs only — do not reconcile mid-cutover.
+**Step 0 — Land docs reconciliation.** [PR #128](https://github.com/Voels2000/estate-planner/pull/128) merged (LAUNCH + PRE_FLIP migration runbooks aligned through `20260724120000`). Execute from reconciled docs only — do not reconcile mid-cutover.
 
 **Step 1 — Migrations to prod only (no code).** Apply in timestamp order via `bash scripts/apply-migration.sh production …`:
 - `supabase/migrations/20260624140000_one_time_purchases.sql`
