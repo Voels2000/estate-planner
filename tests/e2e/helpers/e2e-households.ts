@@ -30,6 +30,24 @@ export async function resolveConsumerHouseholdId(): Promise<string | null> {
   return fetchHouseholdIdByOwnerEmail(email)
 }
 
+/** App-managed trial persona — seeded trial_ends_at future, subscription none. */
+export async function resolveAppTrialHouseholdId(): Promise<string | null> {
+  const email = resolveE2eEmail(
+    process.env.PLAYWRIGHT_CONSUMER_APP_TRIAL_EMAIL,
+    E2E_IDENTITIES.consumerAppTrial.email,
+  )
+  return fetchHouseholdIdByOwnerEmail(email)
+}
+
+/** Plan & Export purchaser persona — seeded completed one_time_purchases, no active sub. */
+export async function resolvePlanExportHouseholdId(): Promise<string | null> {
+  const email = resolveE2eEmail(
+    process.env.PLAYWRIGHT_CONSUMER_PLAN_EXPORT_EMAIL,
+    E2E_IDENTITIES.consumerPlanExport.email,
+  )
+  return fetchHouseholdIdByOwnerEmail(email)
+}
+
 export async function fetchAttorneyListingId(): Promise<string | null> {
   initSupabaseEnv()
   const profileId = await findUserIdByEmail(E2E_IDENTITIES.attorneyPortal.email)
