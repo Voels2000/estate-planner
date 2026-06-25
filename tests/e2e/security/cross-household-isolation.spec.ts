@@ -125,6 +125,17 @@ test.describe('Consumer isolation @production', () => {
     const res = await request.get(`/api/documents/household/${advisorClientHouseholdId}`, apiOpts())
     expectAccessDenied(res.status())
   })
+
+  test('GET data-export is scoped to caller — no foreign household id in payload', async ({
+    request,
+  }) => {
+    const res = await request.get('/api/consumer/data-export', apiOpts())
+    expect(res.status()).toBe(200)
+    const body = await res.text()
+    const payload = JSON.parse(body) as { household_id: string | null }
+    expect(payload.household_id).toBe(consumerHouseholdId)
+    expect(body).not.toContain(advisorClientHouseholdId)
+  })
 })
 
 test.describe('Advisor isolation', () => {
