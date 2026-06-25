@@ -8,7 +8,11 @@ import {
   E2E_TEST_PASSWORD,
   DRIP_SMOKE_EMAIL,
 } from './e2e-test-identities'
-import { E2E_PERSONA_MATRIX, verifyE2ePersonaMatrix } from './e2e-persona-matrix'
+import {
+  E2E_PERSONA_MATRIX,
+  e2eAppTrialEndsAtIso,
+  verifyE2ePersonaMatrixIssues,
+} from './e2e-persona-matrix'
 
 export function initSupabaseEnv() {
   if (process.env.SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
@@ -1257,7 +1261,7 @@ export async function ensureE2eAppTrialConsumer(): Promise<string> {
   const admin = createAdminClient()
   const id = E2E_IDENTITIES.consumerAppTrial
   const now = new Date().toISOString()
-  const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+  const trialEnds = e2eAppTrialEndsAtIso()
 
   const userId = await ensureAuthUser({
     email: id.email,
@@ -1426,7 +1430,7 @@ export async function verifyE2eAccounts(): Promise<void> {
     process.exit(1)
   }
 
-  const personaIssues = await verifyE2ePersonaMatrix(admin)
+  const personaIssues = await verifyE2ePersonaMatrixIssues(admin)
   if (personaIssues.length > 0) {
     console.error('E2E persona matrix validation failed:')
     personaIssues.forEach((i) => console.error(' -', i))

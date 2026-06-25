@@ -73,8 +73,53 @@ export const E2E_PERSONA_MATRIX: readonly E2ePersonaExpectation[] = [
   },
 ] as const
 
-export async function verifyE2ePersonaMatrix(admin: SupabaseClient): Promise<string[]> {
-  const issues: string[] = []
+/** Refreshed on every `seed:e2e` — ~2y horizon so staging gaps never expire the fixture mid-suite. */
+export const E2E_APP_TRIAL_WINDOW_MS = 730 * 24 * 60 * 60 * 1000
+
+export function e2eAppTrialEndsAtIso(from: Date = new Date()): string {
+  return new Date(from.getTime() + E2E_APP_TRIAL_WINDOW_MS).toISOString()
+}
+
+export type PersonaMatrixVerifyResult = {
+  notSeeded: { branch: string; email: string }[]
+  mismatches: string[]
+  queryErrors: string[]
+}
+
+export function personaMatrixHasIssues(result: PersonaMatrixVerifyResult): boolean {
+  return (
+    result.notSeeded.length > 0 ||
+    result.mismatches.length > 0 ||
+    result.queryErrors.length > 0
+  )
+}
+
+export function isPersonaMatrixNotSeededOnly(result: PersonaMatrixVerifyResult): boolean {
+  return (
+    result.notSeeded.length > 0 &&
+    result.mismatches.length === 0 &&
+    result.queryErrors.length === 0
+  )
+}
+
+export function formatPersonaMatrixNotSeededMessage(result: PersonaMatrixVerifyResult): string {
+  const lines = [
+    '',
+    'E2E persona matrix: identities not seeded yet (not a resolver bug).',
+    'Run: npm run seed:e2e',
+    '  or: npm run seed:e2e:persona-matrix   # consumer matrix only',
+    '',
+    'Missing:',
+    ...result.notSeeded.map((r) => `  - ${r.email} (${r.branch})`),
+    '',
+  ]
+  return lines.join('\n')
+}
+
+export async function verifyE2ePersonaMatrix(admin: SupabaseClient): Promise<PersonaMatrixVerifyResult> {
+  const notSeeded: PersonaMatrixVerifyResult['notSeeded'] = []
+  const mismatches: string[] = []
+  const queryErrors: string[] = []
   const now = Date.now()
 
   for (const row of E2E_PERSONA_MATRIX) {
@@ -87,39 +132,39 @@ export async function verifyE2ePersonaMatrix(admin: SupabaseClient): Promise<str
       .maybeSingle()
 
     if (error) {
-      issues.push(`${row.branch}: profile query failed — ${error.message}`)
+      queryErrors.push(`${row.branch}: profile query failed — ${error.message}`)
       continue
     }
     if (!profile?.id) {
-      issues.push(`${row.branch}: missing profile for ${row.email}`)
+      notSeeded.push({ branch: row.branch, email: row.email })
       continue
     }
 
     if (profile.consumer_tier !== row.consumer_tier) {
-      issues.push(
+      mismatches.push(
         `${row.branch}: consumer_tier ${profile.consumer_tier} (expected ${row.consumer_tier})`,
       )
     }
     if (profile.subscription_status !== row.subscription_status) {
-      issues.push(
+      mismatches.push(
         `${row.branch}: subscription_status ${profile.subscription_status} (expected ${row.subscription_status})`,
       )
     }
     if (profile.has_ever_subscribed !== row.has_ever_subscribed) {
-      issues.push(
+      mismatches.push(
         `${row.branch}: has_ever_subscribed ${profile.has_ever_subscribed} (expected ${row.has_ever_subscribed})`,
       )
     }
 
     if (row.trial_ends_at === 'null') {
       if (profile.trial_ends_at != null) {
-        issues.push(`${row.branch}: trial_ends_at should be null, got ${profile.trial_ends_at}`)
+        mismatches.push(`${row.branch}: trial_ends_at should be null, got ${profile.trial_ends_at}`)
       }
     } else {
       if (!profile.trial_ends_at) {
-        issues.push(`${row.branch}: trial_ends_at must be set (app-managed trial window)`)
+        mismatches.push(`${row.branch}: trial_ends_at must be set (app-managed trial window)`)
       } else if (new Date(profile.trial_ends_at).getTime() <= now) {
-        issues.push(`${row.branch}: trial_ends_at ${profile.trial_ends_at} is not in the future`)
+        mismatches.push(`${row.branch}: trial_ends_at ${profile.trial_ends_at} is not in the future`)
       }
     }
 
@@ -132,12 +177,22 @@ export async function verifyE2ePersonaMatrix(admin: SupabaseClient): Promise<str
         .eq('status', 'completed')
 
       if (purchaseErr) {
-        issues.push(`${row.branch}: one_time_purchases query failed — ${purchaseErr.message}`)
+        queryErrors.push(`${row.branch}: one_time_purchases query failed — ${purchaseErr.message}`)
       } else if (!count || count < 1) {
-        issues.push(`${row.branch}: expected completed plan_and_export purchase row`)
+        mismatches.push(`${row.branch}: expected completed plan_and_export purchase row`)
       }
     }
   }
 
-  return issues
+  return { notSeeded, mismatches, queryErrors }
+}
+
+/** Flat issue list for callers that expect legacy string[] (e.g. post-seed hard assert). */
+export async function verifyE2ePersonaMatrixIssues(admin: SupabaseClient): Promise<string[]> {
+  const result = await verifyE2ePersonaMatrix(admin)
+  return [
+    ...result.queryErrors,
+    ...result.notSeeded.map((r) => `${r.branch}: missing profile for ${r.email}`),
+    ...result.mismatches,
+  ]
 }

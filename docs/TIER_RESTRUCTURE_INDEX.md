@@ -24,7 +24,9 @@ Single map from planning artifacts to **shipped outcomes**. Use this instead of 
 |---------|--------|
 | `npm run verify:pr5-staging-gate` | Estate checkout + optional `--personas` coherence (tiers 0–3 + app trial) |
 | `npm run seed:e2e` | Full cast including persona matrix below |
-| `npm run verify:e2e-persona-matrix` | Post-seed DB assert for all matrix rows |
+| `npm run seed:e2e:persona-matrix` | Consumer matrix only (CI + quick staging refresh) |
+| `npm run seed:e2e:staging:persona-matrix` | Same, against `.env.test.staging` |
+| `npm run verify:e2e-persona-matrix` | Post-seed assert; **exit 2** = not seeded yet (run seed first), **exit 1** = wrong state |
 | `npm run verify:tier0-no-recompute` | Tier 0 dashboard does not trigger background recompute |
 
 ---

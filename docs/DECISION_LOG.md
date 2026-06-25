@@ -14,6 +14,8 @@
 
 **Files:** `scripts/e2e-test-identities.ts` · `scripts/seed-e2e-lib.ts` · `scripts/verify-e2e-persona-matrix.ts` · `tests/unit/e2ePersonaMatrix.spec.ts`
 
+**Ops:** `verify:e2e-persona-matrix` exits **2** with “run seed:e2e first” when profiles are missing (not a resolver bug). CI `e2e-smoke` runs `seed:e2e:persona-matrix` before tests. App-trial `trial_ends_at` refreshes to ~2y on each seed.
+
 ---
 
 ## Stripe account guard — mode, source, and account at startup (2026-06-18)
