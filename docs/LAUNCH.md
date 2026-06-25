@@ -181,6 +181,8 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 **Rule:** Do NOT set `PUBLIC_SIGNUP_OPEN=true` until every Bucket B box is checked.
 
+**Hard ordering (tier restructure):** Apply migration `20260724120000_tier_restructure_pr1_trial_columns.sql` to **production** before any tier-restructure code that reads `trial_ends_at` / `has_ever_subscribed` ships to production. `getUserAccess` fails loud on profile read errors — but a missing column still means every consumer page errors until the migration lands. Same sequencing family as migration-before-code (PGRST204 / `stripe_subscription_id` lesson).
+
 ### Gate 2 — Go-live day sequence (in order)
 
 1. Verify Bucket B — every checkbox above is checked
