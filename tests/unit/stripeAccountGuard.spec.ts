@@ -2,7 +2,7 @@
  * Stripe account guard — mode, env-file source, account identity checks.
  * Run: npx playwright test tests/unit/stripeAccountGuard.spec.ts --project=import-unit
  */
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { test, expect } from '@playwright/test'
@@ -105,12 +105,35 @@ test.describe('stripe account guard', () => {
       expect(retrieveCalls).toBe(1)
     })
 
-    test('passes when retrieve returns canonical account id', async () => {
+    test('passes when retrieve returns canonical account id from ENVIRONMENTS map', async () => {
+      expect(expectedAccount).toBe(STRIPE_MAIN_ACCOUNT_ID)
+      const wrongForMap = 'acct_deliberately_not_the_map_value'
+      expect(wrongForMap).not.toBe(expectedAccount)
+
       await expect(
         assertStripeAccountIdentity('staging', stagingKey, {
           retrieveAccount: async () => ({ id: expectedAccount }),
         }),
       ).resolves.toBeUndefined()
+
+      await expect(
+        assertStripeAccountIdentity('staging', stagingKey, {
+          retrieveAccount: async () => ({ id: wrongForMap }),
+        }),
+      ).rejects.toThrow(new RegExp(`expects ${STRIPE_MAIN_ACCOUNT_ID}`))
     })
+  })
+
+  test('production path uses stripe.accounts.retrieve when test deps omitted', () => {
+    const src = readFileSync(join(process.cwd(), 'scripts/testEnv.ts'), 'utf8')
+    const identityBody = src.match(
+      /export async function assertStripeAccountIdentity\([\s\S]*?^}/m,
+    )?.[0]
+    expect(identityBody).toMatch(
+      /deps\?\.retrieveAccount[\s\S]*?: await stripe\.accounts\.retrieve\(\)/,
+    )
+    const guardBody = src.match(/export async function assertStripeAccountGuard\([\s\S]*?^}/m)?.[0]
+    expect(guardBody).toMatch(/await assertStripeAccountIdentity\(testEnv, key, testDeps\)/)
+    expect(src).toMatch(/await assertStripeAccountGuard\(testEnv\)/)
   })
 })

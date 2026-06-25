@@ -228,7 +228,9 @@ export function getTestEnvConfig() {
  * Invoke via: TEST_ENV=staging dotenv -e .env.test.staging -- npx tsx scripts/...
  * Do NOT use dotenv -o — file must not override shell TEST_ENV or inject localhost URLs.
  */
-export async function assertStagingMoneyPathGuard(): Promise<void> {
+export async function assertStagingMoneyPathGuard(
+  testDeps?: StripeAccountIdentityTestDeps,
+): Promise<void> {
   if (process.env.TEST_ENV !== 'staging') {
     throw new Error(
       '[money-path guard] TEST_ENV must be staging (set in shell before dotenv). Got: ' +
@@ -255,7 +257,7 @@ export async function assertStagingMoneyPathGuard(): Promise<void> {
     `[money-path guard] OK — TEST_ENV=staging, Supabase ref=${ref}, baseURL=${expectedBase}`,
   )
 
-  await assertStripeAccountGuard('staging')
+  await assertStripeAccountGuard('staging', testDeps)
 }
 
 export function stagingMoneyPathBaseUrl(): string {
@@ -340,14 +342,16 @@ export function assertStripeKeySource(testEnv: TestEnv, activeKey: string): void
   }
 }
 
+/** Test-only injection for Check C — production callers omit. */
+export type StripeAccountIdentityTestDeps = {
+  retrieveAccount?: () => Promise<{ id: string }>
+}
+
 /** Check C — key must belong to the canonical Stripe account for TEST_ENV. Fail-closed on API error. */
 export async function assertStripeAccountIdentity(
   testEnv: TestEnv,
   key: string,
-  deps?: {
-    /** Test seam — mock accounts.retrieve() without live Stripe. Production callers omit. */
-    retrieveAccount?: () => Promise<{ id: string }>
-  },
+  deps?: StripeAccountIdentityTestDeps,
 ): Promise<void> {
   const { stripeAccountId, stripeAccountLabel } = ENVIRONMENTS[testEnv]
   const stripe = new Stripe(key)
@@ -376,13 +380,16 @@ export async function assertStripeAccountIdentity(
  * Runs whenever a key is present in process.env (any source). Skips only when absent.
  * Must run before stripLeakedProductionSecrets() so shell exports cannot slip through.
  */
-export async function assertStripeAccountGuard(testEnv: TestEnv): Promise<void> {
+export async function assertStripeAccountGuard(
+  testEnv: TestEnv,
+  testDeps?: StripeAccountIdentityTestDeps,
+): Promise<void> {
   const key = activeStripeSecretKey()
   if (!key) return
 
   assertStripeKeyMode(key, testEnv)
   assertStripeKeySource(testEnv, key)
-  await assertStripeAccountIdentity(testEnv, key)
+  await assertStripeAccountIdentity(testEnv, key, testDeps)
 
   console.log(
     `[stripe account guard] OK — TEST_ENV=${testEnv}, mode=${ENVIRONMENTS[testEnv].stripeMode}, account=${ENVIRONMENTS[testEnv].stripeAccountId}`,
