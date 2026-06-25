@@ -60,7 +60,7 @@ const projects: Project[] = [
     name: 'consumer',
     dependencies: ['consumer-setup'],
     testMatch: /consumer\/.*\.spec\.ts/,
-    testIgnore: /consumer-tier1-gates\.spec\.ts|consumer-tier0-gates\.spec\.ts|golden-path-show-all-tools\.spec\.ts|onboarding-persona\.spec\.ts/,
+    testIgnore: /consumer-tier1-gates\.spec\.ts|consumer-tier0-gates\.spec\.ts|golden-path-show-all-tools\.spec\.ts|onboarding-persona\.spec\.ts|consumer-deliverable-persona-matrix\.spec\.ts/,
     use: { storageState: '.auth/consumer.json' },
   },
   {
@@ -115,6 +115,40 @@ projects.push({
   testMatch: /consumer-tier0-gates\.spec\.ts|consumer-tier0-dashboard\.spec\.ts/,
   use: { storageState: '.auth/consumer-canceled.json' },
 })
+
+projects.push(
+  {
+    name: 'consumer-app-trial-setup',
+    testMatch: /helpers\/consumer-app-trial\.setup\.ts/,
+    timeout: setupTimeout,
+  },
+  {
+    name: 'consumer-app-trial',
+    dependencies: ['consumer-app-trial-setup'],
+    testMatch: /consumer-deliverable-persona-matrix\.spec\.ts/,
+    grep: /B4 —/,
+    use: { storageState: '.auth/consumer-app-trial.json' },
+  },
+  {
+    name: 'consumer-plan-export-setup',
+    testMatch: /helpers\/consumer-plan-export\.setup\.ts/,
+    timeout: setupTimeout,
+  },
+  {
+    name: 'consumer-plan-export',
+    dependencies: ['consumer-plan-export-setup'],
+    testMatch: /consumer-deliverable-persona-matrix\.spec\.ts/,
+    grep: /B3 —/,
+    use: { storageState: '.auth/consumer-plan-export.json' },
+  },
+  {
+    name: 'consumer-deliverable-tier3',
+    dependencies: ['consumer-setup'],
+    testMatch: /consumer-deliverable-persona-matrix\.spec\.ts/,
+    grep: /B5 —/,
+    use: { storageState: '.auth/consumer.json' },
+  },
+)
 
 export default defineConfig({
   testDir: './tests/e2e',
