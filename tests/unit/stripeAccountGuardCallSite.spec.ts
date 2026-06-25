@@ -11,7 +11,9 @@ import {
   PRODUCTION_SUPABASE_PROJECT_REF,
   STAGING_SUPABASE_PROJECT_REF,
   assertStagingMoneyPathGuard,
+  assertStripeAccountGuard,
   runPlaywrightStartupGuards,
+  stripLeakedProductionSecrets,
 } from '../../scripts/testEnv'
 
 const MONEY_PATH_GUARD_CALL_SITES = [
@@ -70,6 +72,22 @@ test.describe('stripe guard call sites (PR-A seams)', () => {
 
     await expect(runPlaywrightStartupGuards()).rejects.toThrow(/STRIPE_SECRET_KEY/)
     expect(process.env.STRIPE_SECRET_KEY).toBe('sk_live_stale_shell_export_not_in_file')
+  })
+
+  test('non-prod leaked sk_live_ hard-fails at stripe guard (strip is production-only, distinct role)', async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'stripe-guard-callsite-'))
+    process.chdir(tempDir)
+    stagingEnvForGuard()
+    writeFileSync('.env.test.staging', 'STRIPE_SECRET_KEY=sk_live_leaked_live_mode_key\n')
+    process.env.STRIPE_SECRET_KEY = 'sk_live_leaked_live_mode_key'
+
+    await expect(assertStripeAccountGuard('staging')).rejects.toThrow(/expects test mode/)
+    expect(process.env.STRIPE_SECRET_KEY).toBe('sk_live_leaked_live_mode_key')
+
+    process.env.TEST_ENV = 'production'
+    process.env.STRIPE_SECRET_KEY = 'sk_live_removed_by_strip___'
+    stripLeakedProductionSecrets()
+    expect(process.env.STRIPE_SECRET_KEY).toBeUndefined()
   })
 
   test('seam 2: awaited assertStagingMoneyPathGuard halts verify gate before stripe work', async () => {

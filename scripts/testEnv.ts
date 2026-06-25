@@ -188,7 +188,20 @@ export async function runPlaywrightStartupGuards(): Promise<void> {
   assertPlaywrightEnvGuard()
 }
 
-/** Prod smoke: env file is source of truth — drop privileged keys that leak from the shell. */
+/** Prod smoke: drop privileged keys that leak from the shell into process.env.
+ *
+ * Precedence vs assertStripeAccountGuard (intentional):
+ * - Stripe guard runs FIRST in runPlaywrightStartupGuards(). Any STRIPE_SECRET_KEY
+ *   present in process.env is evaluated (mode, file source, account) and hard-fails
+ *   on mismatch — including sk_live_ on staging/local (Check A) and shell exports
+ *   that differ from the env file (Check B). Do not strip-and-continue for Stripe.
+ * - This strip runs only when TEST_ENV=production, inside prepareTestEnv(), after
+ *   the Stripe guard has already passed or been skipped (no key present).
+ * - Still load-bearing for SUPABASE_SERVICE_ROLE_KEY: the Stripe guard does not
+ *   cover service-role leaks; strip removes them so prod smoke stays browser+anon.
+ * - Stripe keys here are belt-and-suspenders after a guard-skipped prod run (no key
+ *   at guard time); shell-only Stripe leaks never reach this — guard rejects first.
+ */
 export function stripLeakedProductionSecrets(): void {
   if (process.env.TEST_ENV !== 'production') return
   delete process.env.SUPABASE_SERVICE_ROLE_KEY
