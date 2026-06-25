@@ -105,6 +105,26 @@ test.describe('stripe guard call sites (PR-A seams)', () => {
     expect(stripeWorkReached).toBe(false)
   })
 
+  test('seam 3: Check C fail-closed halts money-path guard before stripe work', async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'stripe-guard-callsite-'))
+    process.chdir(tempDir)
+    stagingEnvForGuard()
+    const matchedKey = 'sk_test_checkc_callsite1'
+    writeFileSync('.env.test.staging', `STRIPE_SECRET_KEY=${matchedKey}\n`)
+    process.env.STRIPE_SECRET_KEY = matchedKey
+
+    let stripeWorkReached = false
+    await expect(async () => {
+      await assertStagingMoneyPathGuard({
+        retrieveAccount: async () => {
+          throw new Error('StripeConnectionError: connection reset')
+        },
+      })
+      stripeWorkReached = true
+    }).rejects.toThrow(/\(fail-closed\):/)
+    expect(stripeWorkReached).toBe(false)
+  })
+
   test('seam 2: un-awaited money-path guard lets caller proceed (false-pass shape)', async () => {
     tempDir = mkdtempSync(join(tmpdir(), 'stripe-guard-callsite-'))
     process.chdir(tempDir)
@@ -126,9 +146,29 @@ test.describe('stripe guard call sites (PR-A seams)', () => {
     for (const rel of MONEY_PATH_GUARD_CALL_SITES) {
       const src = readFileSync(join(repoRoot, rel), 'utf8')
       expect(src, `${rel} must await money-path guard`).toMatch(/await assertStagingMoneyPathGuard\(\)/)
+      expect(src, `${rel} must not pass Check C test deps`).not.toMatch(
+        /assertStagingMoneyPathGuard\s*\(\s*\{/,
+      )
     }
     const globalSetup = readFileSync(join(repoRoot, 'tests/e2e/globalSetup.ts'), 'utf8')
     expect(globalSetup).toMatch(/await runPlaywrightStartupGuards\(\)/)
     expect(globalSetup).not.toMatch(/assertPlaywrightEnvGuard\(\)/)
+
+    const testEnvSrc = readFileSync(join(repoRoot, 'scripts/testEnv.ts'), 'utf8')
+    const guardBody = testEnvSrc.match(
+      /export async function assertStripeAccountGuard\([\s\S]*?^}/m,
+    )?.[0]
+    const identityBody = testEnvSrc.match(
+      /export async function assertStripeAccountIdentity\([\s\S]*?^}/m,
+    )?.[0]
+    expect(guardBody).toBeTruthy()
+    expect(identityBody).toBeTruthy()
+    expect(guardBody).toMatch(/await assertStripeAccountIdentity\(testEnv, key, testDeps\)/)
+    expect(identityBody).toMatch(
+      /deps\?\.retrieveAccount[\s\S]*?: await stripe\.accounts\.retrieve\(\)/,
+    )
+    expect(testEnvSrc).toMatch(/await assertStripeAccountGuard\(testEnv\)/)
+    expect(testEnvSrc).toMatch(/await assertStripeAccountGuard\('staging', testDeps\)/)
+    expect(testEnvSrc).not.toMatch(/await assertStripeAccountGuard\([^)]+,\s*\{/)
   })
 })
