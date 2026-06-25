@@ -95,7 +95,7 @@ test.describe('input export boundary audit', () => {
     expect(src).not.toMatch(/const\s+(EXPORT_TABLES|INPUT_TABLES)\s*=/)
   })
 
-  test('runtime query set equals EXPORT_INPUT_TABLES with no additions', async () => {
+  test('runtime query set equals EXPORT_INPUT_TABLES — bidirectional, not subset', async () => {
     const touched = new Set<string>()
     const supabase = {
       from: (table: string) => {
@@ -108,7 +108,47 @@ test.describe('input export boundary audit', () => {
       },
     }
     await loadInputExportPayload(supabase as never, 'audit-user')
-    expect([...touched].sort()).toEqual([...EXPORT_INPUT_TABLES].sort())
+
+    const queried = [...touched].sort()
+    const expected = [...EXPORT_INPUT_TABLES].sort()
+    expect(queried).toEqual(expected)
+    expect(queried.length).toBe(expected.length)
+  })
+
+  test('export omits computed artifacts when DB has computed rows for the user', async () => {
+    const userId = 'user-with-computed-cache'
+    const computedArtifacts = {
+      estate_composition_cache: [{ id: 'ecc-1', household_id: 'hh-1', payload: { leaked: true } }],
+      monte_carlo_summaries: [{ id: 'mc-1', household_id: 'hh-1', p50: 1_000_000 }],
+      projections: [{ id: 'proj-1', household_id: 'hh-1', label: 'base' }],
+    }
+    const supabase = {
+      from: (table: string) => ({
+        select: () => ({
+          eq: async () => ({
+            data:
+              table in computedArtifacts
+                ? computedArtifacts[table as keyof typeof computedArtifacts]
+                : table === 'households'
+                  ? [{ id: 'hh-1', owner_id: userId, name: 'Computed household' }]
+                  : [],
+            error: null,
+          }),
+        }),
+      }),
+    }
+
+    const payload = await loadInputExportPayload(supabase as never, userId)
+    const serialized = JSON.stringify(payload)
+
+    expect(Object.keys(payload.tables).sort()).toEqual([...EXPORT_INPUT_TABLES].sort())
+    for (const denied of EXPORT_COMPUTED_DENYLIST) {
+      expect(payload.tables).not.toHaveProperty(denied)
+    }
+    expect(serialized).not.toContain('ecc-1')
+    expect(serialized).not.toContain('mc-1')
+    expect(serialized).not.toContain('proj-1')
+    expect(serialized).not.toContain('leaked')
   })
 
   test('route has no household id parameter — auth.uid() scope only', () => {

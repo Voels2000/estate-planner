@@ -15,6 +15,8 @@ import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
 import {
   EXPORT_ISOLATION_MARKER_A,
   EXPORT_ISOLATION_MARKER_B,
+  expectExportPayloadContainsMarker,
+  expectExportPayloadExcludesMarker,
   seedExportIsolationMarkers,
 } from '../helpers/export-isolation-fixture'
 
@@ -141,10 +143,10 @@ test.describe('Consumer isolation @production', () => {
     const res = await request.get('/api/consumer/data-export', apiOpts())
     expect(res.status()).toBe(200)
     const body = await res.text()
-    const payload = JSON.parse(body) as { household_id: string | null }
+    const payload = JSON.parse(body) as { household_id: string | null; tables: Record<string, unknown[]> }
     expect(payload.household_id).toBe(consumerHouseholdId)
-    expect(body).toContain(EXPORT_ISOLATION_MARKER_A)
-    expect(body).not.toContain(EXPORT_ISOLATION_MARKER_B)
+    expectExportPayloadContainsMarker(body, EXPORT_ISOLATION_MARKER_A)
+    expectExportPayloadExcludesMarker(body, payload, EXPORT_ISOLATION_MARKER_B)
     expect(body).not.toContain(advisorClientHouseholdId)
   })
 })
