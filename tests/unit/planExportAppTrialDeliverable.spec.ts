@@ -1,10 +1,8 @@
 /**
  * PR 7 — Plan & Export deliverable four-cell matrix.
  *
- * Direct answer: hasDeliverableDownloadAccess is NOT subscription-only.
- * It ORs (1) completed Plan & Export purchase via options.planExportPurchase
- * before (2) isActivePaidSubscriber. Call sites must pass purchase context
- * (print page + export-estate-plan API do).
+ * Purchase context must be derived via toPlanExportPurchaseContext(loader row) —
+ * same as print/page.tsx and export-estate-plan/route.ts after getUserPlanExportPurchase.
  *
  * Run: npx playwright test tests/unit/planExportAppTrialDeliverable.spec.ts --project=import-unit
  */
@@ -15,6 +13,11 @@ import {
   hasDeliverableUpdateAccess,
 } from '@/lib/access/requirePaidDownloadAccess'
 import { computePlanExportEditWindowEndsAt } from '@/lib/billing/planExportAccess'
+import {
+  toPlanExportPurchaseContext,
+  type OneTimePurchaseRow,
+} from '@/lib/billing/oneTimePurchases'
+import { PLAN_AND_EXPORT_SKU } from '@/lib/billing/stripePrices'
 import { shouldOfferPlanAndExportPurchase } from '@/lib/billing/shouldOfferPlanAndExportPurchase'
 import { DELIVERABLE_MIN_TIER } from '@/lib/tiers'
 
@@ -44,31 +47,57 @@ const activeTier3StoredProfile = {
   subscription_status: 'active' as const,
 }
 
-function openPlanExportPurchase() {
+const midWindowNow = new Date('2026-06-15T12:00:00.000Z')
+
+/** Faithful mock of getUserPlanExportPurchase() — completed row shape from one_time_purchases. */
+function mockCompletedPlanExportRow(): OneTimePurchaseRow {
   const purchasedAt = new Date('2026-06-01T12:00:00.000Z')
   return {
-    planExportPurchase: {
-      editWindowEndsAt: computePlanExportEditWindowEndsAt(purchasedAt).toISOString(),
-    },
-    now: new Date('2026-06-15T12:00:00.000Z'),
+    id: 'otp-test-1',
+    user_id: 'user-test',
+    sku: PLAN_AND_EXPORT_SKU,
+    stripe_checkout_session_id: 'cs_test_plan_export',
+    stripe_payment_intent_id: 'pi_test_plan_export',
+    amount_cents: 149_000,
+    currency: 'usd',
+    status: 'completed',
+    credit_applied_at: null,
+    purchased_at: purchasedAt.toISOString(),
+    edit_window_ends_at: computePlanExportEditWindowEndsAt(purchasedAt).toISOString(),
+    warning_14d_sent_at: null,
+    warning_3d_sent_at: null,
+    created_at: purchasedAt.toISOString(),
   }
 }
 
-/** Mirrors app/(dashboard)/print/page.tsx — stored profile + planExportPurchase from DB. */
+/**
+ * Mirrors export-estate-plan/route.ts + print/page.tsx after DB load:
+ *   planExportPurchase = toPlanExportPurchaseContext(await getUserPlanExportPurchase(...))
+ *   accessOptions = { planExportPurchase }
+ */
+function deliverableAccessOptionsFromLoaderRow(
+  row: OneTimePurchaseRow | null,
+  now: Date = midWindowNow,
+) {
+  const planExportPurchase = toPlanExportPurchaseContext(row)
+  return { planExportPurchase, now }
+}
+
+/** Full /print page deliverable wiring — loader row in, not hand-built gate flags. */
 function printPageDeliverableFlags(
   profile: {
     role: string
     consumer_tier: number | null
     subscription_status: string | null
   },
-  planExportPurchase?: { editWindowEndsAt: string } | null,
+  purchaseRow: OneTimePurchaseRow | null,
 ) {
   const profileAccess = {
     role: profile.role,
     consumer_tier: profile.consumer_tier ?? 0,
     subscription_status: profile.subscription_status ?? 'none',
   }
-  const accessOptions = { planExportPurchase }
+  const accessOptions = deliverableAccessOptionsFromLoaderRow(purchaseRow)
   const canDownloadDeliverable = hasDeliverableDownloadAccess(
     profileAccess,
     DELIVERABLE_MIN_TIER,
@@ -96,8 +125,9 @@ test.describe('PR 7 deliverable four-cell matrix', () => {
       consumer_tier: appTrialStoredProfile.consumer_tier,
       subscription_status: appTrialStoredProfile.subscription_status,
     }
-    expect(hasDeliverableDownloadAccess(profile, DELIVERABLE_MIN_TIER)).toBe(false)
-    expect(hasDeliverableUpdateAccess(profile, DELIVERABLE_MIN_TIER)).toBe(false)
+    const accessOptions = deliverableAccessOptionsFromLoaderRow(null)
+    expect(hasDeliverableDownloadAccess(profile, DELIVERABLE_MIN_TIER, accessOptions)).toBe(false)
+    expect(hasDeliverableUpdateAccess(profile, DELIVERABLE_MIN_TIER, accessOptions)).toBe(false)
   })
 
   test('cell 2 — active tier-3 subscription: PDF download and update allowed', () => {
@@ -107,37 +137,44 @@ test.describe('PR 7 deliverable four-cell matrix', () => {
     expect(hasDeliverableUpdateAccess(activeTier3StoredProfile, DELIVERABLE_MIN_TIER)).toBe(true)
   })
 
-  test('cell 3 — Plan & Export purchaser, no active sub: PDF allowed (purchase OR, not subscription-only)', () => {
-    const purchase = openPlanExportPurchase()
-
+  test('cell 3 — Plan & Export purchaser, no active sub: loader row → toPlanExportPurchaseContext → allowed', () => {
+    const noPurchaseOptions = deliverableAccessOptionsFromLoaderRow(null)
     expect(
-      hasDeliverableDownloadAccess(noSubConsumer, DELIVERABLE_MIN_TIER),
-      'same stored shape as trial without purchase context — must not imply access',
+      hasDeliverableDownloadAccess(noSubConsumer, DELIVERABLE_MIN_TIER, noPurchaseOptions),
+      'getUserPlanExportPurchase returned null — same stored shape as trial',
     ).toBe(false)
 
+    const loaderRow = mockCompletedPlanExportRow()
+    const purchaserOptions = deliverableAccessOptionsFromLoaderRow(loaderRow)
+    expect(toPlanExportPurchaseContext(loaderRow)).toEqual(purchaserOptions.planExportPurchase)
+
     expect(
-      hasDeliverableDownloadAccess(noSubConsumer, DELIVERABLE_MIN_TIER, purchase),
-      'completed purchase unlocks download even when subscription_status is none',
+      hasDeliverableDownloadAccess(noSubConsumer, DELIVERABLE_MIN_TIER, purchaserOptions),
+      'route wiring: purchase context from loader, not a hand-built gate flag',
     ).toBe(true)
-    expect(hasDeliverableUpdateAccess(noSubConsumer, DELIVERABLE_MIN_TIER, purchase)).toBe(true)
+    expect(hasDeliverableUpdateAccess(noSubConsumer, DELIVERABLE_MIN_TIER, purchaserOptions)).toBe(
+      true,
+    )
   })
 
-  test('cell 4 — app trial who also purchased: purchase wins over non-active subscription state', () => {
-    const purchase = openPlanExportPurchase()
+  test('cell 4 — app trial who also purchased: loader row unlocks despite non-active sub', () => {
     const profile = {
       role: appTrialStoredProfile.role,
       consumer_tier: appTrialStoredProfile.consumer_tier,
       subscription_status: appTrialStoredProfile.subscription_status,
     }
+    const purchaserOptions = deliverableAccessOptionsFromLoaderRow(mockCompletedPlanExportRow())
 
-    expect(hasDeliverableDownloadAccess(profile, DELIVERABLE_MIN_TIER)).toBe(false)
-    expect(hasDeliverableDownloadAccess(profile, DELIVERABLE_MIN_TIER, purchase)).toBe(true)
-    expect(hasDeliverableUpdateAccess(profile, DELIVERABLE_MIN_TIER, purchase)).toBe(true)
+    expect(
+      hasDeliverableDownloadAccess(profile, DELIVERABLE_MIN_TIER, deliverableAccessOptionsFromLoaderRow(null)),
+    ).toBe(false)
+    expect(hasDeliverableDownloadAccess(profile, DELIVERABLE_MIN_TIER, purchaserOptions)).toBe(true)
+    expect(hasDeliverableUpdateAccess(profile, DELIVERABLE_MIN_TIER, purchaserOptions)).toBe(true)
   })
 })
 
-test.describe('PR 7 /print wiring (includes planExportPurchase like production)', () => {
-  test('app-trial, no purchase: gated, offer shown', () => {
+test.describe('PR 7 /print wiring (loader row → toPlanExportPurchaseContext)', () => {
+  test('app-trial, no purchase row: gated, offer shown', () => {
     const flags = printPageDeliverableFlags(appTrialStoredProfile, null)
     expect(flags.canDownloadDeliverable).toBe(false)
     expect(flags.canUpdateDeliverable).toBe(false)
@@ -151,17 +188,15 @@ test.describe('PR 7 /print wiring (includes planExportPurchase like production)'
     expect(flags.showPlanAndExportOffer).toBe(false)
   })
 
-  test('Plan & Export purchaser without sub: ungated, offer hidden (no double-sell)', () => {
-    const purchase = openPlanExportPurchase().planExportPurchase
-    const flags = printPageDeliverableFlags(noSubConsumer, purchase)
+  test('Plan & Export purchaser without sub: loader row unlocks, offer hidden', () => {
+    const flags = printPageDeliverableFlags(noSubConsumer, mockCompletedPlanExportRow())
     expect(flags.canDownloadDeliverable).toBe(true)
     expect(flags.canUpdateDeliverable).toBe(true)
     expect(flags.showPlanAndExportOffer).toBe(false)
   })
 
-  test('app-trial with purchase: ungated via purchase, offer hidden', () => {
-    const purchase = openPlanExportPurchase().planExportPurchase
-    const flags = printPageDeliverableFlags(appTrialStoredProfile, purchase)
+  test('app-trial with loader purchase row: ungated, offer hidden', () => {
+    const flags = printPageDeliverableFlags(appTrialStoredProfile, mockCompletedPlanExportRow())
     expect(flags.canDownloadDeliverable).toBe(true)
     expect(flags.canUpdateDeliverable).toBe(true)
     expect(flags.showPlanAndExportOffer).toBe(false)
