@@ -76,6 +76,27 @@ export const E2E_IDENTITIES = {
     fullName: 'E2E Consumer Canceled',
     householdName: 'E2E Canceled Household',
   },
+  /** App-managed trial — trial_ends_at set, has_ever_subscribed false → effective tier 3 */
+  consumerAppTrial: {
+    email: 'e2e-consumer-app-trial@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Consumer App Trial',
+    householdName: 'E2E App Trial Household',
+  },
+  /** Active retirement tier — consumer_tier 2 + active sub */
+  consumerTier2: {
+    email: 'e2e-consumer-tier2@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Consumer Tier2',
+    householdName: 'E2E Tier2 Household',
+  },
+  /** Plan & Export purchaser without active subscription — deliverable cell 3 */
+  consumerPlanExport: {
+    email: 'e2e-consumer-plan-export@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Consumer Plan Export',
+    householdName: 'E2E Plan Export Household',
+  },
   /** Stage 1 golden-path smoke — wizard done, 1 of 5 financial sections, tier 1 */
   goldenPathStage1: {
     email: 'e2e-golden-path@mywealthmaps.test',
@@ -190,6 +211,15 @@ export function buildEnvTestFileLines(opts: {
     '',
     `PLAYWRIGHT_CONSUMER_TIER1_EMAIL=${E2E_IDENTITIES.consumerTier1.email}`,
     `PLAYWRIGHT_CONSUMER_TIER1_PASSWORD=${E2E_IDENTITIES.consumerTier1.password}`,
+    '',
+    `PLAYWRIGHT_CONSUMER_APP_TRIAL_EMAIL=${E2E_IDENTITIES.consumerAppTrial.email}`,
+    `PLAYWRIGHT_CONSUMER_APP_TRIAL_PASSWORD=${E2E_IDENTITIES.consumerAppTrial.password}`,
+    '',
+    `PLAYWRIGHT_CONSUMER_TIER2_EMAIL=${E2E_IDENTITIES.consumerTier2.email}`,
+    `PLAYWRIGHT_CONSUMER_TIER2_PASSWORD=${E2E_IDENTITIES.consumerTier2.password}`,
+    '',
+    `PLAYWRIGHT_CONSUMER_PLAN_EXPORT_EMAIL=${E2E_IDENTITIES.consumerPlanExport.email}`,
+    `PLAYWRIGHT_CONSUMER_PLAN_EXPORT_PASSWORD=${E2E_IDENTITIES.consumerPlanExport.password}`,
     '',
     `PLAYWRIGHT_ADVISOR_REFERRAL_CODE=${E2E_REFERRAL_CODES.advisor}`,
     `PLAYWRIGHT_ATTORNEY_REFERRAL_CODE=${E2E_REFERRAL_CODES.attorney}`,

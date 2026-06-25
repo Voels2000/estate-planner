@@ -2,7 +2,7 @@
 
 **Owner:** Tier restructure PR 2 (authoritative for PR 6 export serializer).
 
-**Principle:** All data entry is free (Tier 0). Everything the system *computes* from those inputs is paid.
+**Canonical index:** [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md)
 
 ## Code source of truth
 

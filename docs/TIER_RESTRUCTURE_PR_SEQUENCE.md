@@ -192,10 +192,11 @@ PR 6 (export) can run in parallel on scheduling — it does not touch gating/tri
 
 ## Launch gate (feeds LAUNCH.md Gate 2)
 
-Do **not** flip the consumer launch gate until PRs **2, 3, 4, 5** are all in.
-Those four are what make the shipped billing page *true*: gates enforced, Tier 0
-dashboard safe, Tier 1 projections clean, and the Estate CTA consistent with the
-one-trial model. PR 6/7/8 should land too but are lower-risk to trail slightly.
+**Staging (2026-06-19): CLOSED** — PRs **2, 3, 4, 5** are merged to `staging` and verified (`npm run verify:pr5-staging-gate`). The billing page enforcement now matches the displayed model.
+
+Do **not** flip `PUBLIC_SIGNUP_OPEN` on production until Bucket B + B&O-READY in [LAUNCH.md](./LAUNCH.md). The tier restructure **prod cutover** (migration → verify columns → code) runs in Bucket C **before** that flip.
+
+PR 6/7 should land before open signups when possible; PR 8 consolidates seeds/docs so the matrix stays honest. Index: [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md).
 
 ---
 
