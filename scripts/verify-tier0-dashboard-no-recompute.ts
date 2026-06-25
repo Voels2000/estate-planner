@@ -1,21 +1,22 @@
 #!/usr/bin/env npx tsx
 /**
- * PR 3 gate 1 staging check: load canceled-persona /dashboard and confirm
- * estate_health_scores + estate_composition_cache timestamps did not advance
- * (no background recompute enqueued).
+ * PR 3 gate 1: canceled persona /dashboard must NOT enqueue recompute even when
+ * the heavy path would (stale projection + completed dashboard).
  *
  * Usage:
- *   TEST_ENV=staging npx tsx scripts/verify-tier0-dashboard-no-recompute.ts
+ *   npm run verify:tier0-no-recompute
  *
- * Requires: .env.test.staging (or .env.local) with Supabase service role + Playwright base URL.
+ * Requires PR 3 on target (Tier 0 slice UI). Arms staleness before snapshot.
  */
 import { chromium } from '@playwright/test'
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  armGate1CanceledPersonaFixture,
+  GATE1_DEBOUNCE_WAIT_MS,
+} from '@/lib/dashboard/armGate1VerifyFixture'
 import { E2E_IDENTITIES, E2E_TEST_PASSWORD } from './e2e-test-identities'
 import { findUserIdByEmail, initSupabaseEnv } from './seed-e2e-lib'
 import { getTestEnvConfig } from './testEnv'
-
-const DEBOUNCE_WAIT_MS = 6_000
 
 async function main() {
   initSupabaseEnv()
@@ -42,6 +43,25 @@ async function main() {
 
   const householdId = household.id
 
+  const armed = await armGate1CanceledPersonaFixture(admin, userId, householdId)
+  console.log('Armed fixture:', armed)
+
+  if (!armed.reachesCompletedDashboard) {
+    console.error('FAIL: Fixture would still hit onboarding onramp, not DashboardBody.')
+    process.exit(1)
+  }
+
+  if (!armed.heavyPathWouldTrigger) {
+    console.error(
+      'FAIL: Fixture is not stale — heavy path would NOT trigger; test would false-pass.',
+    )
+    process.exit(1)
+  }
+
+  console.log(
+    `Precondition OK: heavy path would trigger (${armed.staleReason}); Tier 0 must suppress.`,
+  )
+
   const [{ data: scoreBefore }, { data: cacheBefore }] = await Promise.all([
     admin
       .from('estate_health_scores')
@@ -58,8 +78,9 @@ async function main() {
 
   console.log(`Target: ${baseURL}/dashboard as ${email}`)
   console.log(`Household: ${householdId}`)
-  console.log('Before:', {
+  console.log('Snapshot BEFORE load:', {
     health_computed_at: scoreBefore?.computed_at ?? null,
+    health_updated_at: scoreBefore?.updated_at ?? null,
     cache_computed_at: cacheBefore?.computed_at ?? null,
   })
 
@@ -83,13 +104,17 @@ async function main() {
   const bodyText = await page.locator('body').innerText()
   const tier0Slice = /welcome back|your data — always free to enter/i.test(bodyText)
   console.log(`Tier 0 slice UI detected: ${tier0Slice}`)
+
   if (!tier0Slice) {
-    console.warn(
-      'WARN: Full dashboard may still be deployed — PR 3 must be on staging for this check.',
+    console.error(
+      'FAIL: PR 3 Tier 0 slice not deployed — cannot verify compute-safe path on this target.',
     )
+    await browser.close()
+    process.exit(1)
   }
 
-  await page.waitForTimeout(DEBOUNCE_WAIT_MS)
+  console.log(`Waiting ${GATE1_DEBOUNCE_WAIT_MS}ms for debounced recompute window…`)
+  await page.waitForTimeout(GATE1_DEBOUNCE_WAIT_MS)
 
   const [{ data: scoreAfter }, { data: cacheAfter }] = await Promise.all([
     admin
@@ -105,8 +130,9 @@ async function main() {
       .maybeSingle(),
   ])
 
-  console.log('After:', {
+  console.log('Snapshot AFTER debounce:', {
     health_computed_at: scoreAfter?.computed_at ?? null,
+    health_updated_at: scoreAfter?.updated_at ?? null,
     cache_computed_at: cacheAfter?.computed_at ?? null,
   })
 
@@ -123,10 +149,9 @@ async function main() {
     process.exit(1)
   }
 
-  console.log('PASS: No recompute artifact timestamps changed after dashboard load.')
-  if (!tier0Slice) {
-    console.warn('NOTE: Pass on timestamps only — deploy PR 3 and re-run for UI confirmation.')
-  }
+  console.log(
+    'PASS: Stale heavy-path preconditions armed; Tier 0 dashboard loaded; no recompute artifacts changed.',
+  )
 }
 
 main().catch((err) => {
