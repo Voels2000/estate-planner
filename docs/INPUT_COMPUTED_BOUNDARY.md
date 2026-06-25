@@ -35,6 +35,8 @@ Tier 0 sees `UpgradeBanner`; data-entry routes remain editable.
 
 Serialize **only** `EXPORT_INPUT_TABLES`. Never include `EXPORT_COMPUTED_DENYLIST` artifacts.
 
+**Endpoint:** `GET /api/consumer/data-export` — JSON attachment, scoped to `auth.uid()` (no household id parameter).
+
 ## Staging spot-check (PR 2 merge gate)
 
 Sign in as `e2e-consumer-canceled@mywealthmaps.test` (effective tier 0). Enter:
