@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getUserAccess } from '@/lib/get-user-access'
+import { isAdvisorIdentity } from '@/lib/access/isAdvisorIdentity'
 import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import UpgradeBanner from '@/app/(dashboard)/_components/UpgradeBanner'
 import { ImportClient } from './_import-client'
@@ -20,9 +21,15 @@ export default async function ImportPage({
 
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
   const hasImportFeature = hasFeatureAccess('import', access.tier, access.isAdvisor, access.isTrial)
-  // Job history table is Tier 2+ only; upload/commit uses FEATURE_TIERS.import (Tier 1 since 2026-05-27).
-  const showImportHistory = access.tier >= 2 && !access.isAdvisor
+  // Job history table is Tier 2+ only; advisors (by role) use a different import workflow.
+  const showImportHistory = access.tier >= 2 && !isAdvisorIdentity(profile?.role)
 
   if (!hasImportFeature) {
     return (
