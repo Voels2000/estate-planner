@@ -56,6 +56,10 @@ Do not expect ~$1.05M on the RE line — that total is equity + business, not eq
 
 **Gated surfaces:** `/real-estate` and `/insurance` allow entry; analysis panels show upsell only (no gap cards, no equity summary cards).
 
+See `docs/TIER0_DASHBOARD_PR3.md` staging spot-check (same fixture).
+
+Gate 1 (no recompute): `npm run verify:tier0-no-recompute` after PR 3 deploy + `npm run seed:e2e`.
+
 ```bash
 npm run seed:e2e
 npx playwright test --project=consumer-tier0

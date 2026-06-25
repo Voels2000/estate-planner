@@ -86,7 +86,7 @@ const projects: Project[] = [
   {
     name: 'import-unit',
     testDir: './tests/unit',
-    testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|simpleRateLimit|waitlist-mode|signupAdmission|signupPolicy|site-url|roth-analysis|tax-year-selection|privilegedMfaPolicy|verifyEnv|stripeWebhookVerify|stripePricesProdGuard|deleteUserSchema|waRegime|attorneyClientCap|consumerCheckoutBlockReason|processConsumerCheckout|requirePaidDownloadAccess|oneTimePurchases|stripeOneTimeSkus|planExportWarnings|shouldOfferPlanAndExportPurchase|app-url|internalApiAuth|applyEmailUnsubscribe|monteCarloAssumptionsFromRow|estateHouseholdAlerts|cronDripEligibility|readGpcOptOut|promotionSchemaVerification|consumerSubscriptionStatus|subscriptionPeriod|stripeIds|activateConsumerSubscription|resolveEffectiveTier|hasEverSubscribed|inputComputedBoundary|netWorthSummary).*\.spec\.ts/,
+    testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|simpleRateLimit|waitlist-mode|signupAdmission|signupPolicy|site-url|roth-analysis|tax-year-selection|privilegedMfaPolicy|verifyEnv|stripeWebhookVerify|stripePricesProdGuard|deleteUserSchema|waRegime|attorneyClientCap|consumerCheckoutBlockReason|processConsumerCheckout|requirePaidDownloadAccess|oneTimePurchases|stripeOneTimeSkus|planExportWarnings|shouldOfferPlanAndExportPurchase|app-url|internalApiAuth|applyEmailUnsubscribe|monteCarloAssumptionsFromRow|estateHouseholdAlerts|cronDripEligibility|readGpcOptOut|promotionSchemaVerification|consumerSubscriptionStatus|subscriptionPeriod|stripeIds|activateConsumerSubscription|resolveEffectiveTier|hasEverSubscribed|inputComputedBoundary|netWorthSummary|tier0Dashboard|armGate1VerifyFixture).*\.spec\.ts/,
     use: {
       baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     },
@@ -112,7 +112,7 @@ if (hasTier1Consumer) {
 projects.push({
   name: 'consumer-tier0',
   dependencies: ['consumer-canceled-setup'],
-  testMatch: /consumer-tier0-gates\.spec\.ts/,
+  testMatch: /consumer-tier0-gates\.spec\.ts|consumer-tier0-dashboard\.spec\.ts/,
   use: { storageState: '.auth/consumer-canceled.json' },
 })
 

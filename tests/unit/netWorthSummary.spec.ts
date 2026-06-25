@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test'
 import { buildNetWorthSummaryFromDashboardInput } from '@/lib/view-models/netWorthSummary'
+import { computeNetWorthFromInputTables } from '@/lib/dashboard/computeNetWorthFromInputTables'
 import type { EstateComposition } from '@/lib/estate/types'
 
 /**
@@ -58,15 +59,13 @@ test.describe('buildNetWorthSummaryFromDashboardInput', () => {
     expect(summary.netWorth).toBe(850_000)
   })
 
-  test('fallback path: raw real_estate rows (value − mortgage) feed net worth without gated UI', () => {
-    const summary = buildNetWorthSummaryFromDashboardInput({
-      composition: null,
-      financialAssetsFallback: 100_000,
-      realEstateValueFallback: 800_000,
-      businessValueFallback: 250_000,
-      insuranceValueFallback: 0,
-      mortgageBalance: 0,
-      otherLiabilities: 50_000,
+  test('input-table path uses FMV + mortgage in liabilities (matches composition)', () => {
+    const summary = computeNetWorthFromInputTables({
+      assets: [{ value: 100_000 }],
+      liabilities: [{ balance: 50_000 }],
+      realEstate: [{ current_value: 1_000_000, mortgage_balance: 200_000 }],
+      businesses: [{ estimated_value: 250_000, ownership_pct: 100 }],
+      businessInterests: [],
     })
 
     expect(summary.netWorth).toBe(1_100_000)
