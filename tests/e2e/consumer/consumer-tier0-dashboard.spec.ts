@@ -14,8 +14,13 @@ test.describe('Tier 0 dashboard slice', () => {
     await expect(page.getByText('Net Worth').first()).toBeVisible()
     await expect(page.getByText(/your data — always free to enter/i)).toBeVisible()
 
+    // Upgrade CTAs name locked modules — conversion path, not computed output.
+    await expect(page.getByRole('link', { name: 'Monte Carlo' })).toBeVisible()
+
+    // Computed analysis panels must not render on the Tier 0 slice.
+    await expect(page.getByTestId('computed-estate-outlook-section')).toHaveCount(0)
+    await expect(page.getByTestId('computed-estate-outlook-fan')).toHaveCount(0)
     await expect(page.getByText(/estate readiness/i)).toHaveCount(0)
-    await expect(page.getByText(/monte carlo/i)).toHaveCount(0)
     await expect(page.getByText(/estate tax exposure/i)).toHaveCount(0)
     await expect(page.getByText(/execution checklist/i)).toHaveCount(0)
   })

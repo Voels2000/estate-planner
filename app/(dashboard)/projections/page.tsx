@@ -13,9 +13,7 @@ import { loadProjectionData } from '@/lib/projections/loadProjectionData'
 import { mapProjectionRows } from '@/lib/projections/mappers/mapProjectionRows'
 import type { HouseholdProjectionProfile } from '@/lib/projections/types'
 import { checkProjectionReadiness } from '@/lib/planning/projectionReadiness'
-import { loadScenarioMonteCarloWithStaleness } from '@/lib/monte-carlo/loadScenarioMonteCarloWithStaleness'
 import { buildProjectionPlanningFields } from '@/lib/profile/profileFieldPromptDefs'
-import { WA_REGIME_D, isWaState } from '@/lib/estate/waRegime'
 import { ProjectionsClient } from './_projections-client'
 
 export default async function ProjectionsPage() {
@@ -64,51 +62,7 @@ export default async function ProjectionsPage() {
     supabase.from('income').select('amount').eq('owner_id', user.id),
   ])
 
-  const householdMcRes = await supabase
-    .from('households')
-    .select('id, base_case_scenario_id')
-    .eq('owner_id', user.id)
-    .single()
-
-  const mcLoad =
-    householdMcRes.data?.base_case_scenario_id && householdMcRes.data?.id
-      ? await loadScenarioMonteCarloWithStaleness(supabase, {
-          householdId: householdMcRes.data.id,
-          scenarioId: householdMcRes.data.base_case_scenario_id,
-        })
-      : { summary: null, isStale: false, isUpdating: false }
-  const mcData = mcLoad.summary
-
   const householdProfile = household as HouseholdProjectionProfile | null
-  const statePrimary = householdProfile?.state_primary?.trim().toUpperCase() ?? ''
-  let stateExemption: number | null = null
-  if (statePrimary) {
-    const currentYear = new Date().getFullYear()
-    let rulesRes = await supabase
-      .from('state_estate_tax_rules')
-      .select('exemption_amount')
-      .eq('state', statePrimary)
-      .eq('tax_year', currentYear)
-      .order('min_amount', { ascending: true })
-      .limit(1)
-      .maybeSingle()
-    if (!rulesRes.data?.exemption_amount) {
-      rulesRes = await supabase
-        .from('state_estate_tax_rules')
-        .select('exemption_amount')
-        .eq('state', statePrimary)
-        .order('tax_year', { ascending: false })
-        .order('min_amount', { ascending: true })
-        .limit(1)
-        .maybeSingle()
-    }
-    stateExemption =
-      rulesRes.data?.exemption_amount != null ? Number(rulesRes.data.exemption_amount) : null
-    if (isWaState(statePrimary)) {
-      stateExemption = WA_REGIME_D.exemption
-    }
-  }
-
   const totalAssets = (assetRows ?? []).reduce((sum, row) => sum + Number(row.value ?? 0), 0)
   const totalIncome = (incomeRows ?? []).reduce((sum, row) => sum + Number(row.amount ?? 0), 0)
 
@@ -134,9 +88,6 @@ export default async function ProjectionsPage() {
       householdId={householdProfile?.id ?? null}
       hasRealEstate={(reCount ?? 0) > 0}
       hasBusiness={(bizCount ?? 0) > 0}
-      mcBands={mcData?.percentiles_by_year ?? null}
-      mcUpdating={mcLoad.isUpdating}
-      stateExemption={stateExemption}
     />
   )
 }

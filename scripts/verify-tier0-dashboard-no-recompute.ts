@@ -101,6 +101,8 @@ async function main() {
     process.exit(1)
   }
 
+  await page.getByRole('heading', { name: /welcome back/i }).waitFor({ timeout: 60_000 })
+
   const bodyText = await page.locator('body').innerText()
   const tier0Slice = /welcome back|your data — always free to enter/i.test(bodyText)
   console.log(`Tier 0 slice UI detected: ${tier0Slice}`)
