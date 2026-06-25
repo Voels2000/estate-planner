@@ -57,26 +57,6 @@ test.describe('deliverable export gate', () => {
     })
   })
 
-  test('completed Plan & Export purchase unlocks /print without active sub', async ({
-    page,
-  }) => {
-    await withConsumerOwner(async (ownerId) => {
-      const sessionId = `e2e_plan_export_${Date.now()}`
-      await deferProfileAccessRestore(ownerId, SOCIAL_SECURITY_GATE_ACCESS, async () => {
-        await deferPlanAndExportPurchase(
-          ownerId,
-          sessionId,
-          planAndExportAmountCents(),
-          async () => {
-            await page.goto('/print')
-            await expect(page.getByTestId('deliverable-export-ready')).toBeVisible()
-            await expect(page.getByTestId('plan-and-export-cta')).toHaveCount(0)
-          },
-        )
-      })
-    })
-  })
-
   test('expired edit window shows download-only /print UI', async ({ page }) => {
     await withConsumerOwner(async (ownerId) => {
       const sessionId = `e2e_plan_export_expired_${Date.now()}`

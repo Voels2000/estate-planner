@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-19 (tier restructure PR 8 — E2E persona matrix)
+# Last updated: 2026-06-25 (re-baseline audit; PR 6/7 + PR 8 on staging)
 
 ---
 
@@ -27,6 +27,18 @@
 **Principle.** When a config value can come from multiple sources, the runtime must prove which source and which target it resolved to — loudly, at the boundary, at startup — never infer it from a downstream failure. Same habit as Supabase project-ref guards.
 
 **Files:** `scripts/testEnv.ts` · `tests/e2e/globalSetup.ts` · `scripts/verify-pr5-staging-gate.ts`
+
+---
+
+## Tests must match production call-site wiring (2026-06-25)
+
+**Problem.** Green unit tests that invoke a guard or gate with different arguments than production callers prove nothing about production — same false-pass family as un-awaited async guards, empty isolation fixtures, and shell-export overrides misread as "wrong key."
+
+**Rule.** A test of `hasDeliverableDownloadAccess`, `assertStripeAccountGuard`, export isolation, etc. must use the **same wiring shape** as the call site: e.g. purchase context via `toPlanExportPurchaseContext(getUserPlanExportPurchase(...))`, not a hand-built option the route never passes; guards `await`ed at the caller; isolation seeds both personas with data in every exported table.
+
+**Instances.** PR-A caller-halt tests · PR 6 A/B marker sweep · PR 7 deliverable matrix (`planExportAppTrialDeliverable.spec.ts`).
+
+**Principle.** Companion to the multi-source-config rule: prove resolution at the boundary **the way production resolves it**.
 
 ---
 
