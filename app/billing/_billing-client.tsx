@@ -3,19 +3,22 @@
 import { useMemo, useState, useEffect } from 'react'
 import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 import { Button } from '@/components/ui/Button'
-import { Card } from '@/components/ui/Card'
 import { BillingPeriodToggle } from '@/components/billing/BillingPeriodToggle'
+import { BillingCapabilityMatrix } from '@/components/billing/BillingCapabilityMatrix'
+import { BillingPageTrialBanner } from '@/components/billing/BillingPageTrialBanner'
+import { BillingPlanAndExportSection } from '@/components/billing/BillingPlanAndExportSection'
 import {
   getConsumerPlansForPeriod,
-  formatPlanPriceDisplay,
   type ConsumerPlanForCheckout,
 } from '@/lib/billing/consumerPlanCatalog'
 import type { BillingPeriod, PlanTier } from '@/lib/billing/stripePrices'
-import { getConsumerPlanDisplay } from '@/lib/billing/stripePrices'
-import { PlanAndExportCta } from '@/components/billing/PlanAndExportCta'
-import { TIER_PRICES, PRICE_ID_TO_TIER, TIER_NAMES } from '@/lib/tiers'
-
-const ESTATE_TRIAL_DAYS = getConsumerPlanDisplay(3, 'monthly').trialDays
+import { getBillingTierColumns } from '@/lib/billing/billingTierPresentation'
+import {
+  resolveBillingTrialBanner,
+  type BillingTrialBannerState,
+} from '@/lib/billing/resolveBillingTrialBanner'
+import { PRICE_ID_TO_TIER, TIER_NAMES } from '@/lib/tiers'
+import type { BillingMatrixTier } from '@/lib/billing/billingCapabilityMatrix'
 
 type Props = {
   currentPlan: string | null
@@ -26,6 +29,8 @@ type Props = {
   annualBillingAvailable: boolean
   recommendedPlanId?: 'financial' | 'retirement' | 'estate' | null
   showPlanAndExportOffer?: boolean
+  trialEndsAt?: string | null
+  hasEverSubscribed?: boolean
 }
 
 export function BillingClient({
@@ -37,6 +42,8 @@ export function BillingClient({
   annualBillingAvailable,
   recommendedPlanId = null,
   showPlanAndExportOffer = false,
+  trialEndsAt = null,
+  hasEverSubscribed = false,
 }: Props) {
   const [period, setPeriod] = useState<BillingPeriod>(() => subscribedPeriod ?? 'monthly')
   const billingPeriod = annualBillingAvailable ? period : 'monthly'
@@ -56,6 +63,22 @@ export function BillingClient({
         ? getConsumerPlansForPeriod(subscribedPeriod)
         : plans,
     [subscribedPeriod, annualBillingAvailable, plans],
+  )
+
+  const tierColumns = useMemo(
+    () => getBillingTierColumns(billingPeriod),
+    [billingPeriod],
+  )
+
+  const trialBanner: BillingTrialBannerState | null = useMemo(
+    () =>
+      resolveBillingTrialBanner({
+        trialEndsAt,
+        hasEverSubscribed,
+        subscriptionStatus,
+        subscriptionPeriodEnd,
+      }),
+    [trialEndsAt, hasEverSubscribed, subscriptionStatus, subscriptionPeriodEnd],
   )
 
   async function handleSubscribe(plan: ConsumerPlanForCheckout) {
@@ -158,9 +181,17 @@ export function BillingClient({
     activePlan?.name ??
     (currentTier != null ? TIER_NAMES[currentTier as 1 | 2 | 3] : null)
   const activeRenewalDate = formatRenewalDate(subscriptionPeriodEnd)
-  const recommendedPlan = recommendedPlanId
-    ? plans.find((p) => p.id === recommendedPlanId) ?? null
-    : null
+
+  const recommendedTier: BillingMatrixTier =
+    recommendedPlanId === 'financial'
+      ? 1
+      : recommendedPlanId === 'retirement'
+        ? 2
+        : recommendedPlanId === 'estate'
+          ? 3
+          : currentTier ?? 3
+
+  const mobileFocusTier: BillingMatrixTier = isActive && currentTier ? currentTier : recommendedTier
 
   useEffect(() => {
     if (subscribedPeriod && annualBillingAvailable) {
@@ -168,58 +199,45 @@ export function BillingClient({
     }
   }, [subscribedPeriod, annualBillingAvailable])
 
-  useEffect(() => {
-    if (!recommendedPlanId) return
-    const el = document.getElementById(`plan-card-${recommendedPlanId}`)
-    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }, [recommendedPlanId])
-
   if (isAdvisorClient) {
     return (
       <div className="mx-auto max-w-lg px-4 py-24 text-center">
-        <Card className="p-8">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
           <div className="mb-4 text-4xl">🎉</div>
           <h1 className="text-2xl font-bold text-neutral-900">You&apos;re all set</h1>
           <p className="mt-3 text-neutral-600">
             Your plan is managed by your advisor. There&apos;s nothing to do here.
           </p>
-        </Card>
+        </div>
       </div>
     )
   }
 
+  const paidPlans = plans.filter((p) => p.tier >= 1 && p.tier <= 3)
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12">
-      <div className="mb-10 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-neutral-900">Choose your plan</h1>
-        <p className="mt-3 text-neutral-600">
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:py-12">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold tracking-tight text-[color:var(--mwm-navy)]">
+          Choose your plan
+        </h1>
+        <p className="mx-auto mt-3 max-w-2xl text-[color:var(--mwm-text-secondary)]">
           Professional planning infrastructure at a fraction of attorney fees.
         </p>
-        <p className="mt-1 text-sm text-[color:var(--mwm-text-muted)]">
-          {`Starting at $${TIER_PRICES[1]}/month · Estate plan includes a ${ESTATE_TRIAL_DAYS}-day free trial`}
-        </p>
         {isActive && activePlanName && (
-          <p className="mt-2 text-sm font-medium text-green-600">
+          <p className="mt-2 text-sm font-medium text-green-700">
             You are currently on the {activePlanName} plan
           </p>
         )}
       </div>
+
+      {trialBanner && <BillingPageTrialBanner state={trialBanner} />}
 
       <BillingPeriodToggle
         period={period}
         onChange={setPeriod}
         annualAvailable={annualBillingAvailable}
       />
-
-      {recommendedPlan && !isActive && (
-        <div className="mb-6 rounded-lg border border-[color:var(--mwm-gold)]/40 bg-[color:var(--mwm-gold)]/10 px-4 py-3 text-center text-sm text-[color:var(--mwm-navy)]">
-          Based on your assessment, we recommend the{' '}
-          <strong>{recommendedPlan.name}</strong> plan
-          {recommendedPlan.trialDays > 0
-            ? ` — includes a ${recommendedPlan.trialDays}-day free trial`
-            : ''}.
-        </div>
-      )}
 
       {error && (
         <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
@@ -243,93 +261,42 @@ export function BillingClient({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-        {plans.map((plan) => {
-          const { main, sub } = formatPlanPriceDisplay(plan)
-          const isCurrentPlan =
-            currentTier !== null && plan.tier === currentTier
-          const showCheckout = !(isCurrentPlan && isActive)
-          const highlighted = plan.highlighted
+      <BillingCapabilityMatrix columns={tierColumns} mobileFocusTier={mobileFocusTier} />
 
-          const isRecommended = recommendedPlanId === plan.id
+      {/* Tier one-liners (desktop) */}
+      <div className="mt-8 hidden gap-4 lg:grid lg:grid-cols-4">
+        {tierColumns.map((col) => (
+          <p
+            key={col.tier}
+            className={`text-xs leading-relaxed text-[color:var(--mwm-text-muted)] ${
+              col.highlighted ? 'rounded-lg bg-[color:var(--mwm-navy)]/5 p-3' : ''
+            }`}
+          >
+            {col.oneLiner}
+          </p>
+        ))}
+      </div>
+
+      {/* Subscribe actions — paid tiers only */}
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {paidPlans.map((plan) => {
+          const isCurrentPlan = currentTier !== null && plan.tier === currentTier
+          const showCheckout = !(isCurrentPlan && isActive)
+          const col = tierColumns.find((c) => c.checkoutTier === plan.tier)
 
           return (
-            <div key={`${plan.tier}-${period}`} id={`plan-card-${plan.id}`}>
-            <Card
-              hover={!highlighted}
-              className={`relative rounded-2xl p-8 shadow-md ring-1 ${
-                highlighted
-                  ? '!border-[var(--mwm-navy)] !bg-[var(--mwm-navy)] ring-[color:var(--mwm-navy)]'
-                  : 'ring-neutral-200'
-              } ${isRecommended ? 'ring-2 ring-[color:var(--mwm-gold)] ring-offset-2' : ''}`}
+            <div
+              key={`${plan.tier}-${period}`}
+              id={`plan-card-${plan.id}`}
+              className={`rounded-xl border p-5 ${
+                col?.highlighted
+                  ? 'border-[color:var(--mwm-navy)]/25 bg-[color:var(--mwm-navy)]/5'
+                  : 'border-[color:var(--mwm-border)] bg-white'
+              }`}
             >
-              {plan.badge && (
-                <span
-                  className={`absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${
-                    highlighted
-                      ? 'bg-[var(--mwm-gold)] text-[color:var(--mwm-navy)]'
-                      : 'bg-[var(--mwm-navy)] text-white'
-                  }`}
-                >
-                  {plan.badge}
-                </span>
-              )}
-              {isCurrentPlan && isActive && (
-                <span className="absolute -top-3 right-4 rounded-full bg-green-500 px-3 py-1 text-xs font-medium text-white">
-                  Current Plan
-                </span>
-              )}
-              <h2
-                className={`text-lg font-semibold ${highlighted ? 'text-white' : 'text-neutral-900'}`}
-              >
-                {plan.name}
-              </h2>
-              <p
-                className={`mt-1 text-sm ${highlighted ? 'text-neutral-200' : 'text-neutral-500'}`}
-              >
-                {plan.description}
-              </p>
-              <div className="mt-4 flex flex-wrap items-baseline gap-1">
-                <span
-                  className={`text-4xl font-bold ${highlighted ? 'text-white' : 'text-neutral-900'}`}
-                >
-                  {main}
-                </span>
-                {sub && (
-                  <span
-                    className={`text-sm ${highlighted ? 'text-neutral-300' : 'text-neutral-500'}`}
-                  >
-                    {sub}
-                  </span>
-                )}
-              </div>
-              {period === 'annual' && plan.annualTotal && (
-                <p
-                  className={`mt-1 text-xs ${highlighted ? 'text-neutral-300' : 'text-neutral-500'}`}
-                >
-                  Billed ${plan.annualTotal.toLocaleString()} annually
-                </p>
-              )}
-              <ul className="mt-6 space-y-3">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2 text-sm">
-                    <span
-                      className={`text-lg leading-none ${highlighted ? 'text-[color:var(--mwm-gold-light)]' : 'text-[color:var(--mwm-navy)]'}`}
-                    >
-                      ✓
-                    </span>
-                    <span className={highlighted ? 'text-neutral-100' : 'text-neutral-600'}>
-                      {feature}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <p className="text-sm font-semibold text-[color:var(--mwm-navy)]">{plan.name}</p>
               {showCheckout && (
-                <p
-                  className={`mt-6 text-sm leading-relaxed ${
-                    highlighted ? 'text-neutral-200' : 'text-neutral-700'
-                  }`}
-                >
+                <p className="mt-2 text-xs leading-relaxed text-[color:var(--mwm-text-muted)]">
                   {BILLING_DISCLOSURES.preCheckout(
                     plan.name,
                     plan.period === 'annual' && plan.annualTotal
@@ -347,31 +314,24 @@ export function BillingClient({
                 className="mt-4 w-full rounded-lg py-2.5 text-sm font-medium"
               >
                 {isCurrentPlan && isActive
-                  ? 'Current Plan'
+                  ? 'Current plan'
                   : loadingCheckoutTier === plan.tier
-                    ? 'Redirecting...'
+                    ? 'Redirecting…'
                     : plan.cta}
               </Button>
-            </Card>
             </div>
           )
         })}
       </div>
 
-      {showPlanAndExportOffer && (
-        <div className="mt-10">
-          <PlanAndExportCta returnTo="/print" variant="card" />
-        </div>
-      )}
+      {showPlanAndExportOffer && <BillingPlanAndExportSection returnTo="/print" />}
 
-      {plans.some((p) => p.tier === 3) && (
-        <p className="mx-auto mt-6 max-w-md text-center text-xs text-[color:var(--mwm-text-muted)]">
-          A single estate planning attorney consultation often costs $3,000–$5,000. My Wealth Maps
-          prepares you to make every minute count.
-        </p>
-      )}
+      <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-[color:var(--mwm-text-muted)]">
+        A single estate planning attorney consultation often costs $3,000–$5,000. My Wealth Maps
+        prepares you to make every minute count.
+      </p>
 
-      <p className="mt-6 text-center text-xs text-[color:var(--mwm-text-muted)]">
+      <p className="mt-4 text-center text-xs text-[color:var(--mwm-text-muted)]">
         {BILLING_DISCLOSURES.pricingPageNotice}
       </p>
 

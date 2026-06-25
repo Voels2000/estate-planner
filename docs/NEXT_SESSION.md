@@ -1,6 +1,6 @@
 # NEXT_SESSION.md
 # Session handoff — current focus and paste block
-# Last updated: 2026-06-19 (Sprint E dead-code sweep closeout; staging at `3222746`)
+# Last updated: 2026-06-24 (billing capability matrix → staging)
 
 ---
 
@@ -12,23 +12,17 @@
 
 ---
 
-## Current focus (2026-06-19)
+## Current focus (2026-06-24)
 
-**Sprint E dead-code sweep — closing out.** Staging at **`3222746`** (PR #47).
+**Consumer billing page rebuild** — four-column cumulative capability matrix on `/billing` (PR → `staging`). Signup branded confirm (PR #111) merged at `521e9bdb`.
 
-**MERGED to staging (#42–#47):** knip + bundle-analyzer tooling (`ddd17a2`); mechanical tier — export aliases, SectionHeader `right`, Button variants (`654fa50`), waitlist wrapper pair (`cb2fbe9` / `b613e39`), orphan email templates (`3222746`).
+**Shipped to staging (#111):** Branded Resend signup confirm + prefetch-safe `/auth/confirm` · unit-test `RESEND_API_KEY` hygiene.
 
-**PENDING (merge on green):** *(superseded — #48–#53 merged to staging 2026-06-19)*
+**In flight:** Billing matrix UI + trial banner resolver + Plan & Export section below ladder · docs: BILLING_PAGE_COPY_SPEC, MASTER_ARCHITECTURE, DECISION_LOG.
 
-**#51 (merged):** GRAT/Roth household-alert port on staging; **counsel copy review passed** (attest: Al / 2026-06-19). See [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax).
+**Next (enforcement):** [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md) — **PR 1 spec locked.** Can branch `feature/tier-restructure-pr1` off `staging` **in parallel** with billing #112 (no code dependency). **Launch gate:** PRs 2–5 before consumer flip.
 
-**Deferred:** 6f validation schemas (wire-Zod-vs-ad-hoc architecture decision); knip in CI (after baseline clean); `mammoth`/`pdf-parse` (roadmap sign-off).
-
-**knip unused files:** 12 at sweep start → **10** after #47 (`npm run knip` on `3222746`); projected **7** after #48+#49 (#48 −3 components, #49 −`lib/routes.ts`).
-
-**Next actions:** merge #48/#49/#50 on green; hold #51 consumer launch on counsel; decide 6f separately.
-
-**Still open (pre-flip):** [LAUNCH.md](./LAUNCH.md) Bucket B — real-card smoke, C-4 walkthrough, counsel/email aliases, B&O ruling (Bucket A). Promotion runbook for #28–#39 batch remains valid when promoting staging→main: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
+**Still open (pre-flip):** [LAUNCH.md](./LAUNCH.md) Bucket B — real-card smoke, C-4 walkthrough, counsel/email aliases, B&O ruling (Bucket A). Promotion runbook for staging→main: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
 
 **CI / deploy flow:** `feature/*` → PR → **`staging`** (`verify`: lint + tsc + unit) → PR → **`main`** (`verify` full + `e2e-smoke` + `rls-verify`). Vercel: **`estate-planner-staging`** (branch `staging`) · **`estate-planner`** Production (`main`). See [DEPLOYMENT.md §7](./DEPLOYMENT.md#7-github-actions).
 

@@ -1,6 +1,30 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-18 (Plan & Export SKU + 7-day Estate trial)
+# Last updated: 2026-06-24 (Tier restructure PR 1 pre-code spec)
+
+---
+
+## Tier restructure — PR 1 load-bearing spec (2026-06-24)
+
+**Decision.** Before PR 1 code: (1) `has_ever_subscribed` flips **true** on first successful `customer.subscription.created` or first `active`/`canceling` status — evaluated **before** trial window in `resolveEffectiveTier`, so subscribe-then-cancel never re-enters trial; (2) `resolveEffectiveTier` is the **single source of truth** for tier — `getUserAccess` and dashboard sidebar must call it (fixes raw `consumer_tier` vs `getUserAccess().tier` divergence); (3) PR 1 ships unit test for subscribe-then-cancel → Tier 0 and a grep audit — **display** reads of raw tier OK, **access/gating** reads must use resolver even in billing code.
+
+**PR 6 boundary.** Export serializer shares PR 2's input/computed boundary — same list, two consumers; PR 2 authoritative.
+
+**Canonical sequence:** [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md). **Launch gate:** PRs 2–5 before consumer flip.
+
+---
+
+## Consumer billing page — cumulative capability matrix (2026-06-24)
+
+**Decision.** Replace three side-by-side plan cards on `/billing` with a **four-column cumulative matrix** (Free + Financial + Retirement + Estate). Rows group capabilities (finances / planning / confidence / estate); checks are cumulative (`minTier` ≤ column tier). Copy: tier **questions** + **one-liners** in column headers; Free shows **$0 always**. Estate column: subtle navy tint only — **no** “For estate households” marketing tag. Mobile: single focused column + **Compare all plans** expander (default focus Estate unless user has active paid tier).
+
+**Trial banner.** `resolveBillingTrialBanner` — prefer app `trial_ends_at` when set (future tier-restructure trial); fallback Stripe `trialing` + `subscription_period_end`. Financial/Retirement subscribe immediately; Estate retains 7-day Stripe trial at checkout.
+
+**Plan & Export.** One-time SKU block stays **below** the subscription ladder (not a matrix column).
+
+**Matrix vs gates.** Rows align with `FEATURE_TIERS` where keys exist; Tier 0 rows (`net-worth-view`, `data-export`) are matrix-only until tier-restructure gates ship — not added to `FEATURE_TIERS` (would break `DELIVERABLE_MIN_TIER` typing). **Enforcement plan:** [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md).
+
+**Files:** `lib/billing/billingCapabilityMatrix.ts` · `billingTierPresentation.ts` · `resolveBillingTrialBanner.ts` · `components/billing/BillingCapabilityMatrix.tsx` · `BillingPageTrialBanner.tsx` · `BillingPlanAndExportSection.tsx` · `app/billing/_billing-client.tsx` · unit specs · [BILLING_PAGE_COPY_SPEC.md](./BILLING_PAGE_COPY_SPEC.md).
 
 ---
 
@@ -3430,7 +3454,7 @@ Pass = at least one row with referral code matching a test signup.
 
 **Implication:** Branded resend for already-registered unconfirmed users stays on existing `/auth/confirm-email` Supabase resend (follow-up PR). Enable custom Resend SMTP on staging Supabase for non-signup auth emails.
 
-**Attestation:** Al / pending — staging Outlook prefetch test after deploy.
+**Attestation:** Al / 2026-06-24 — staging Outlook prefetch test passed (`avoels@outlook.com` confirm flow).
 
 ---
 
