@@ -33,7 +33,7 @@ export function PlanAndExportRefundAckCheckbox({
       </label>
       {showError && (
         <p className="ml-7 text-xs text-red-600" data-testid="plan-export-refund-ack-error">
-          You must acknowledge the refund policy before continuing.
+          Acknowledge the refund policy to continue.
         </p>
       )}
     </div>
