@@ -34,6 +34,14 @@
 
 ---
 
+## Profiles advisor SELECT — status gate on revoke (2026-06-26)
+
+**Problem.** `Advisors can view client profiles` matched on `advisor_id + client_id` only — no `status IN ('active','accepted')`. Consumer revoke (`disconnect-advisor`) and advisor remove set `status: 'removed'` but retain ids; ~60 other advisor policies honor status. Post-revocation PostgREST reads on `profiles` still returned name/email PII while app-layer gates hid it in the UI.
+
+**Decision.** Migration `20260726120000_profiles_advisor_select_status_gate.sql` — add the same connected-status filter as household/asset policies. Regression: `tests/e2e/security/advisor-profiles-revocation-rls.spec.ts` (revoke link → advisor JWT → direct `profiles` SELECT must deny).
+
+---
+
 ## Plan & Export refund acknowledgment (2026-06-26)
 
 **Problem.** One-time deliverable needs per-purchase, persisted evidence that the buyer acknowledged immediate digital delivery and non-refundable terms — for chargeback defense, not UX friction alone.
