@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-26 (Migration ledger backfill + self-recording apply)
+# Last updated: 2026-06-26 (Profiles advisor SELECT status gate)
 
 ---
 
@@ -39,6 +39,10 @@
 **Problem.** `Advisors can view client profiles` matched on `advisor_id + client_id` only — no `status IN ('active','accepted')`. Consumer revoke (`disconnect-advisor`) and advisor remove set `status: 'removed'` but retain ids; ~60 other advisor policies honor status. Post-revocation PostgREST reads on `profiles` still returned name/email PII while app-layer gates hid it in the UI.
 
 **Decision.** Migration `20260726120000_profiles_advisor_select_status_gate.sql` — add the same connected-status filter as household/asset policies. Regression: `tests/e2e/security/advisor-profiles-revocation-rls.spec.ts` (revoke link → advisor JWT → direct `profiles` SELECT must deny).
+
+**Verification (2026-06-26):** Staging **RED** pre-migration — revoked advisor PostgREST read returned `Morgan Demo` / `e2e-advisor-client@…`. Policy SQL applied; **GREEN** (4/4 security project). Prod policy applied same day; ledger `20260726120000` present (`INSERT 0 0` on record = already in `schema_migrations`).
+
+**Shipped:** [#150](https://github.com/Voels2000/estate-planner/pull/150) → staging · promote to `main` with code.
 
 ---
 

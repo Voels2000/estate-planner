@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # My Wealth Maps — Database Schema Guide
-# Last updated: 2026-06-18 (attorney drip unsubscribe column; promotion runbook)
+# Last updated: 2026-06-26 (profiles advisor SELECT status gate)
 
 **Session history:** [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · **Consumer journeys:** [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md)
 
@@ -52,6 +52,7 @@ This is a developer reference, not a full SQL DDL dump.
 - **Signup trigger:** `on_auth_user_created` → `handle_new_user()` inserts a `profiles` row (`role` from metadata; consumer defaults: `consumer_tier=1`, `subscription_status=none`). Estate trial (`trialing`) is set only by Stripe webhook after checkout.
 - **Attorney weekly digest (2026-06-07):** `attorney_digest_sent_at` — last weekly digest send; cron §10 cooldown (6 days). Migration `20260703120000`.
 - **Attorney drip unsubscribe (2026-06-18):** `attorney_drip_unsubscribed_at` — set by `GET /api/email/unsubscribe?type=attorney`; future drip sender must skip when non-null (mirrors `advisor_drip_unsubscribed_at`). Migration `20260718120000`.
+- **Advisor SELECT RLS (2026-06-26):** `Advisors can view client profiles` — `EXISTS (advisor_clients WHERE advisor_id = auth.uid() AND client_id = profiles.id AND status IN ('active','accepted'))`. Matches household/asset advisor policies; closes post-revoke PII leak when row retains ids at `status='removed'`. Migration `20260726120000`.
 
 ### `households`
 
@@ -89,7 +90,7 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 - **Key columns:** `advisor_id`, `client_id`, `status`, `accepted_at`, `advisor_pdf_access`, `connection_life_event_type`, `connection_life_event_at`
 - **Purpose:** advisor-client link and authorization boundary for advisor workflows.
 - **Connected statuses:** use `CONNECTED_ADVISOR_CLIENT_STATUSES` (`active`, `accepted`) from `lib/advisor/clientConnectionStatus.ts` in all new queries — not a single hardcoded status.
-- **Consumer UI:** `/my-advisor` reads connected link (`.in('status', ['active', 'accepted'])`); revoke sets `status='revoked'`.
+- **Consumer UI:** `/my-advisor` reads connected link (`.in('status', ['active', 'accepted'])`); consumer revoke (`disconnect-advisor`) and advisor remove set `status='removed'`, `client_status='inactive'` (ids retained).
 - **Life event at accept (Sprint 9):** `connection_life_event_*` populated in `accept-request` via `pickConnectionLifeEvent()`.
 
 ### `advisor_gap_statuses`
