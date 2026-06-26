@@ -14,7 +14,7 @@ import { getFullHouseholdForOwner } from '@/lib/household/getHouseholdForOwner'
 import { DashboardOnramp } from '@/components/dashboard/DashboardOnramp'
 import { shouldShowOnramp } from '@/lib/dashboard/onrampGate'
 import { displayPersonFirstName } from '@/lib/display-person-name'
-import { checkHouseholdHasData } from '@/lib/onboarding/checkHouseholdHasData'
+import { isMinimumViableProfile } from '@/lib/estate/profileGate'
 import { fetchSetupProgressCounts } from '@/lib/consumer/setupProgressCounts'
 import { resolveGuidedOnboardingHref } from '@/lib/dashboard/guidedOnboardingHref'
 import { DashboardEmptyState } from './_components/DashboardEmptyState'
@@ -30,32 +30,24 @@ export default async function DashboardPage() {
 
   const supabase = await createClient()
 
-  const needsOnrampScore = profile?.role === 'consumer'
-
-  const [household, healthScoreResult, hasAnyHouseholdData] = await Promise.all([
+  const [household, setupProgress] = await Promise.all([
     getFullHouseholdForOwner(sessionUser.id),
-    needsOnrampScore
-      ? supabase
-          .from('estate_health_scores')
-          .select('score')
-          .eq('household_id', householdRow.id)
-          .maybeSingle()
-      : Promise.resolve({ data: null }),
-    checkHouseholdHasData(supabase, sessionUser.id),
+    profile?.role === 'consumer'
+      ? fetchSetupProgressCounts(supabase, sessionUser.id)
+      : Promise.resolve(null),
   ])
-  const healthScore = healthScoreResult.data
 
   if (!household) return <DashboardEmptyState />
 
-  if (profile?.role === 'consumer') {
+  if (profile?.role === 'consumer' && setupProgress) {
+    const profileComplete = isMinimumViableProfile(household).complete
     const showOnramp = shouldShowOnramp({
-      wizardCompletedAt: profile.onboarding_wizard_completed_at ?? null,
-      foundationScore: healthScore?.score ?? null,
-      hasAnyHouseholdData,
+      profileComplete,
+      hasAssets: setupProgress.assets > 0,
+      hasIncome: setupProgress.income > 0,
     })
 
     if (showOnramp) {
-      const setupProgress = await fetchSetupProgressCounts(supabase, sessionUser.id)
       const guidedHref = resolveGuidedOnboardingHref({
         onboardingPersona: profile.onboarding_persona ?? null,
         wizardCompletedAt: profile.onboarding_wizard_completed_at ?? null,
@@ -64,12 +56,16 @@ export default async function DashboardPage() {
 
       return (
         <DashboardOnramp
-          foundationScore={healthScore?.score ?? 0}
           firstName={displayPersonFirstName(
             profile.full_name ?? household.person1_name,
             'there',
           )}
           guidedHref={guidedHref}
+          unlock={{
+            profileComplete,
+            hasAssets: setupProgress.assets > 0,
+            hasIncome: setupProgress.income > 0,
+          }}
         />
       )
     }

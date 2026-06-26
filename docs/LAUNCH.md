@@ -288,6 +288,27 @@ Both must succeed. If either fails, **stop** — deploying code now would drop e
 
 `getUserAccess` fails loud on profile read errors — but a missing column still means every consumer page errors until step 1 lands (PR 4.5 / #117 lesson).
 
+### Dashboard unlock gate — prod cutover (no migration)
+
+Code-only change. Rollback = **deploy revert** (restores old gate, not data). Canary `seed:prod-canary` adds income/expenses rows — **inert under old gate** (wizard+score+anydata already passed); note in PR if reverting so seed history vs row count is not surprising.
+
+**Before push — pick one mitigation for the step 1→2 window** (canary blocked on new gate until re-seed):
+- **A.** Run steps 1 and 2 back-to-back (minimal red), or
+- **B.** Silence canary alerts first — **set a reminder to re-arm** (silenced canary worse than momentary red).
+
+| Step | Action |
+|------|--------|
+| 1 | Deploy gate code to prod |
+| 2 | `E2E_CANARY_PASSWORD='…' npm run seed:prod-canary -- --confirm` (canary only — does not touch avoels/david) |
+| 3 | `npm run audit:dashboard-gate` — canary income present + unlocked; avoels + david unlocked |
+| 4 | Confirm canary monitoring/alerting **live again** post-cutover |
+
+**Optional prod smoke pause (steps 1–2):** one-shot only — `PLAYWRIGHT_CANARY_CUTOVER_PAUSE=1 npm run test:e2e:prod:smoke` (prefix, never `export`). Flag is **not** in CI workflows or checked-in env files; defaults off unless you set it for that single command. Remove after step 2 (follow-up PR / post-cutover — do not leave paused).
+
+**Staging vs prod:** Staging merge + verify exercises gate logic, onramp UI, and E2E seeds — it does **not** run `seed:prod-canary` (prod-only write). Green staging ≠ canary re-seeded. Step 3 `audit:dashboard-gate` against prod is the first real proof that step 2 landed.
+
+**Step 2 password:** one-shot prefix only — `E2E_CANARY_PASSWORD='…' npm run seed:prod-canary -- --confirm`. Do not `export` into the shell session (lingers in env + history). Clear scrollback if the shell logs the command line.
+
 ### Gate 2 — Go-live day sequence (in order)
 
 1. Verify Bucket B — every checkbox above is checked

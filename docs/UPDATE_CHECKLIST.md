@@ -1267,9 +1267,20 @@ Full table: ./archive/LAUNCH_CHECKLIST.md § Vercel Production env vars](./archi
 - [x] `DashboardOnramp` import card copy + format hint line
 - [x] Master docs synced (ROADMAP · NEXT_SESSION · DECISION_LOG · MASTER_ARCHITECTURE · CONSUMER_FLOWS · CONSUMER_NAV_MAP · CONSUMER_RELEASE_SMOKE_TEST · SPRINT_IMPORT_ATTORNEY)
 
+## Sprint — Dashboard unlock gate (2026-06-26)
+
+- [x] `lib/dashboard/canUnlockDashboard.ts` — canonical unlock predicate
+- [x] `onrampGate.ts` + `determinePlanStage.ts` + `dashboard/page.tsx` (MVI from full household, not layout slice)
+- [x] `DashboardOnramp` — profile/assets/income checkboxes; equal wizard/import/manual paths
+- [x] Seeds: golden-path income, armGate1 MVI+income, canceled persona assets+income
+- [x] `scripts/audit-dashboard-gate.ts` — `canUnlockDashboard()` + `shouldShowOnramp()`
+- [x] `PLAYWRIGHT_CANARY_CUTOVER_PAUSE` — temp skip @production consumer setup (remove post-cutover)
+- [ ] **Prod cutover:** deploy → `seed:prod-canary -- --confirm` → `audit:dashboard-gate` → re-arm canary alerts
+- [ ] Master docs synced
+
 ## Sprint — Dashboard onramp ✅ closed 2026-05-30
 
-- [x] `lib/dashboard/onrampGate.ts` — `shouldShowOnramp()`, `ONRAMP_SCORE_THRESHOLD = 60`
+- [x] `lib/dashboard/onrampGate.ts` — `shouldShowOnramp()` *(superseded by unlock gate 2026-06-26)*
 - [x] `components/dashboard/DashboardOnramp.tsx`
 - [x] `app/(dashboard)/dashboard/page.tsx` gate before `DashboardBody`
 - [x] Golden-path seed — `ensureMinEstateHealthScore` + recompute 15s timeout
