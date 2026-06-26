@@ -243,6 +243,8 @@ async function main() {
     householdId,
     advisorClientHouseholdId: advisorClientHouseholdId || undefined,
     consumerLinkHouseholdId: consumerLinkHouseholdId || undefined,
+    advisorUserId: advisorId || undefined,
+    consumerLinkUserId: consumerLinkUserId || undefined,
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   })

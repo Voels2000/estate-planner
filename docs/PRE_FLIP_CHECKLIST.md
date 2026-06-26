@@ -69,7 +69,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - ✅ **`funnel_events` + `referral_clicks`** — `TO service_role` grant alignment (`20260713150000`); advisory channel empty.
 - ✅ **Revoked-link lifecycle** — E2E in `cross-household-isolation.spec.ts`.
 - ✅ **Profiles advisor SELECT status gate** — `20260726130000` applied staging + prod (2026-06-26); post-revoke PostgREST profile leak closed; regression `advisor-profiles-revocation-rls.spec.ts` (RED pre-migration, GREEN after). [#150](https://github.com/Voels2000/estate-planner/pull/150)
-- ⬜ **Pending-link negative test** — advisor with pending (not accepted) link → estate-composition 403/404 (Track 2 link fixture #149).
+- ✅ **Pending-link negative test** — `advisor-pending-link-authz.spec.ts`: pending→active transition on `e2e-consumer-linked`; PR gate via `test:e2e:security-smoke` (5b + 5c). Staging verified 2026-06-26 (Phase 2: profile + composition 200 + export payload keys).
 
 ### Security hygiene
 - ⬜ **Service-role / Supabase secret never in client bundle** — grep built output.

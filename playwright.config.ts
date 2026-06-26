@@ -70,7 +70,7 @@ function buildProjects(): Project[] {
     },
     {
       name: 'security',
-      dependencies: ['consumer-setup', 'advisor-setup', 'advisor-empty-setup'],
+      dependencies: ['consumer-setup', 'consumer-link-setup', 'advisor-setup', 'advisor-empty-setup'],
       testMatch: /security\/.*\.spec\.ts/,
     },
     {
