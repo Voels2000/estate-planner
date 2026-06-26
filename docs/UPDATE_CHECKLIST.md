@@ -1274,8 +1274,8 @@ Full table: ./archive/LAUNCH_CHECKLIST.md § Vercel Production env vars](./archi
 - [x] `DashboardOnramp` — profile/assets/income checkboxes; equal wizard/import/manual paths
 - [x] Seeds: golden-path income, armGate1 MVI+income, canceled persona assets+income
 - [x] `scripts/audit-dashboard-gate.ts` — `canUnlockDashboard()` + `shouldShowOnramp()`
-- [x] `PLAYWRIGHT_CANARY_CUTOVER_PAUSE` — temp skip @production consumer setup (remove post-cutover)
-- [ ] **Prod cutover:** deploy → `seed:prod-canary -- --confirm` → `audit:dashboard-gate` → re-arm canary alerts
+- [x] `PLAYWRIGHT_CANARY_CUTOVER_PAUSE` — removed post-cutover (#142)
+- [x] **Prod cutover:** deploy → `seed:prod-canary -- --confirm` → `audit:dashboard-gate` → prod smoke re-enabled
 - [ ] Master docs synced
 
 ## Sprint — Dashboard onramp ✅ closed 2026-05-30

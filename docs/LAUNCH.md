@@ -296,18 +296,18 @@ Code-only change. Rollback = **deploy revert** (restores old gate, not data). Ca
 - **A.** Run steps 1 and 2 back-to-back (minimal red), or
 - **B.** Silence canary alerts first — **set a reminder to re-arm** (silenced canary worse than momentary red).
 
-| Step | Action |
-|------|--------|
-| 1 | Deploy gate code to prod |
-| 2 | `E2E_CANARY_PASSWORD='…' npm run seed:prod-canary -- --confirm` (canary only — does not touch avoels/david) |
-| 3 | `npm run audit:dashboard-gate` — canary income present + unlocked; avoels + david unlocked |
-| 4 | Confirm canary monitoring/alerting **live again** post-cutover |
+| Step | Action | Status |
+|------|--------|--------|
+| 1 | Deploy gate code to prod | ✅ #141 |
+| 2 | `npm run seed:prod-canary -- --confirm` (canary only — password from `.env.test.production` `PLAYWRIGHT_CONSUMER_PASSWORD`) | ✅ 2026-06-26 |
+| 3 | `npm run audit:dashboard-gate` — canary income present + unlocked; avoels + david unlocked | ✅ 2026-06-26 |
+| 4 | Confirm canary monitoring/alerting **live again** post-cutover | ✅ prod smoke re-enabled (#142) |
 
-**Optional prod smoke pause (steps 1–2):** one-shot only — `PLAYWRIGHT_CANARY_CUTOVER_PAUSE=1 npm run test:e2e:prod:smoke` (prefix, never `export`). Flag is **not** in CI workflows or checked-in env files; defaults off unless you set it for that single command. Remove after step 2 (follow-up PR / post-cutover — do not leave paused).
+**Prod smoke pause (cutover window):** removed in #142 — `@production` consumer setup always runs; no `PLAYWRIGHT_CANARY_CUTOVER_PAUSE` hook.
 
 **Staging vs prod:** Staging merge + verify exercises gate logic, onramp UI, and E2E seeds — it does **not** run `seed:prod-canary` (prod-only write). Green staging ≠ canary re-seeded. Step 3 `audit:dashboard-gate` against prod is the first real proof that step 2 landed.
 
-**Step 2 password:** one-shot prefix only — `E2E_CANARY_PASSWORD='…' npm run seed:prod-canary -- --confirm`. Do not `export` into the shell session (lingers in env + history). Clear scrollback if the shell logs the command line.
+**Step 2 password:** in `.env.test.production` as `PLAYWRIGHT_CONSUMER_PASSWORD` (same value as Vercel `E2E_CANARY_PASSWORD`). Run `npm run seed:prod-canary -- --confirm` — no shell prefix needed. One-shot override still works: `E2E_CANARY_PASSWORD='…' npm run seed:prod-canary -- --confirm`.
 
 ### Gate 2 — Go-live day sequence (in order)
 
