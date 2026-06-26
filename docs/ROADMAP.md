@@ -813,11 +813,27 @@ Was deferred post-launch; **drip is launch-day-critical** → fixed in `fix/cron
 
 ---
 
+### Sprint — Dashboard unlock gate (2026-06-26) **← in flight**
+
+| Item | Status |
+|------|--------|
+| `canUnlockDashboard()` canonical predicate | `[x]` |
+| `shouldShowOnramp()` + `getDashboardState()` State 1 aligned | `[x]` |
+| `DashboardOnramp` — profile/assets/income checkboxes + equal paths | `[x]` |
+| Golden-path / armGate1 / canceled seeds — assets+income | `[x]` |
+| `audit:dashboard-gate` prod verify script | `[x]` |
+| Prod cutover: deploy → canary re-seed → audit → re-arm alerts | `[ ]` |
+| Remove `PLAYWRIGHT_CANARY_CUTOVER_PAUSE` post-cutover | `[ ]` |
+
+**Cutover:** No migration. Rollback = deploy revert; canary extra income/expenses rows inert under old gate.
+
+---
+
 ### Sprint — Dashboard onramp (2026-05-30) **← shipped**
 
 | Item | Status |
 |------|--------|
-| `shouldShowOnramp()` gate (wizard + score ≥ 60 + hasData) | `[x]` |
+| `shouldShowOnramp()` gate (wizard + score ≥ 60 + hasData) | `[x]` *(superseded 2026-06-26)*
 | `DashboardOnramp` component (import / wizard / self-serve) | `[x]` |
 | Wire gate in `app/(dashboard)/dashboard/page.tsx` | `[x]` |
 | Golden-path E2E score floor (`ensureMinEstateHealthScore`) | `[x]` |

@@ -1,7 +1,7 @@
 /**
  * Seed a Stage 1 golden-path consumer for Playwright smoke tests.
  *
- * Profile: wizard complete, tier 1, exactly 1 financial section (assets only) → plan stage 1.
+ * Profile: wizard complete, tier 1, assets + income (unlocks dashboard), plan stage 1.
  *
  * Usage:
  *   dotenv -e .env.local -e .env.test -- npx tsx scripts/seed-golden-path-stage1.ts
@@ -10,12 +10,10 @@
 import { E2E_IDENTITIES, E2E_TEST_PASSWORD } from './e2e-test-identities'
 import {
   ensureAuthUser,
-  ensureMinEstateHealthScore,
   initSupabaseEnv,
   seedE2eEstateHealthForHousehold,
 } from './seed-e2e-lib'
 import { createAdminClient } from '../lib/supabase/admin'
-import { ONRAMP_SCORE_THRESHOLD } from '../lib/dashboard/onrampGate'
 
 const ID = E2E_IDENTITIES.goldenPathStage1
 
@@ -107,8 +105,17 @@ export async function seedGoldenPathStage1(): Promise<{ userId: string; househol
   })
   if (assetErr) throw new Error(`asset insert: ${assetErr.message}`)
 
+  const { error: incomeErr } = await admin.from('income').insert({
+    owner_id: userId,
+    source: 'salary',
+    name: 'Golden Path — Salary',
+    amount: 180_000,
+    start_year: new Date().getFullYear(),
+    inflation_adjust: true,
+  })
+  if (incomeErr) throw new Error(`income insert: ${incomeErr.message}`)
+
   await seedE2eEstateHealthForHousehold(householdId)
-  await ensureMinEstateHealthScore(householdId, ONRAMP_SCORE_THRESHOLD)
 
   return { userId, householdId }
 }

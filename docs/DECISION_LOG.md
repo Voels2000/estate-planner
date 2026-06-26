@@ -1,6 +1,22 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-26 (Plan & Export refund ack; isAdvisor #133/#134 re-attest)
+# Last updated: 2026-06-26 (Dashboard unlock gate — profile + assets + income)
+
+---
+
+## Dashboard unlock gate — profile + assets + income (2026-06-26)
+
+**Problem.** Dashboard onramp required wizard completion **and** `estate_health_scores.score ≥ 60`, blocking data-rich users (e.g. avoels at score 56, david with assets+income but no wizard) while canary passed on wizard+assets alone.
+
+**Decision.** Single canonical predicate in `lib/dashboard/canUnlockDashboard.ts`: `isMinimumViableProfile(household) && assets>0 && income>0`. `shouldShowOnramp()` and `getDashboardState()` State 1 both delegate to it. Wizard and estate score are **not** unlock gates; score remains on full dashboard via `EstateReadinessCard`. `DashboardOnramp` shows three explicit unlock checkboxes (profile / assets / income) and three equal entry paths (wizard, import, manual).
+
+**E2E / seeds:** Golden-path and armGate1 fixtures seed assets+income (not score floor). `ensureMinEstateHealthScore` unused for gating. Canceled persona seed gets MVI + assets + income for tier-0 dashboard reach.
+
+**Prod cutover (no migration):** (1) deploy code → (2) `seed:prod-canary -- --confirm` → (3) `npm run audit:dashboard-gate` → (4) confirm canary alerting live. Between 1–2 canary reads blocked — silence alerts or run back-to-back. Rollback = code revert only; richer canary rows are inert under old gate (wizard+score+anydata).
+
+**Cutover pause:** `PLAYWRIGHT_CANARY_CUTOVER_PAUSE=1` skips `@production` consumer setup during window 1–2. Remove after step 2 (post-cutover cleanup PR).
+
+**Verify:** `npm run audit:dashboard-gate` · `npx tsx scripts/check-golden-path-onramp-gate.ts` · `npm run test:e2e:golden-path`
 
 ---
 

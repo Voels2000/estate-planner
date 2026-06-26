@@ -1,6 +1,8 @@
 // Single source of truth for what stage a user is in.
 // Stage determines what the dashboard shows and what the next action is.
 
+import { canUnlockDashboard } from '@/lib/dashboard/canUnlockDashboard'
+
 export type DashboardState = 1 | 2 | 3
 
 export type PlanStage = 1 | 2 | 3 | 4
@@ -26,9 +28,9 @@ export interface DetermineStageInput {
 }
 
 export interface DashboardStateInput {
-  foundationScore: number | null
-  wizardCompletedAt: string | null
-  hasAnyHouseholdData: boolean
+  profileComplete: boolean
+  hasAssets: boolean
+  hasIncome: boolean
   estimatedTaxState: number
   estimatedTaxFederal: number
   hasEstatePlanData: boolean
@@ -37,15 +39,15 @@ export interface DashboardStateInput {
 /** Display state for `/dashboard` — State 1 is handled by `page.tsx` onramp early return. */
 export function getDashboardState(input: DashboardStateInput): DashboardState {
   const {
-    foundationScore,
-    wizardCompletedAt,
-    hasAnyHouseholdData,
+    profileComplete,
+    hasAssets,
+    hasIncome,
     estimatedTaxState,
     estimatedTaxFederal,
     hasEstatePlanData,
   } = input
 
-  if (!wizardCompletedAt || (foundationScore ?? 0) < 60 || !hasAnyHouseholdData) {
+  if (!canUnlockDashboard({ profileComplete, hasAssets, hasIncome })) {
     return 1
   }
 
