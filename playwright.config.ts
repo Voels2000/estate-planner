@@ -35,7 +35,13 @@ const TEST_ENV = process.env.TEST_ENV ?? 'local'
 
 // INTERIM: prod has no advisor role-canary yet, so these have nothing to pass
 // against. Remove once the advisor↔consumer canary pair lands (Track 2).
-const PROD_SMOKE_EXCLUDE = new Set(['advisor-setup', 'advisor-empty-setup'])
+const PROD_SMOKE_EXCLUDE = new Set([
+  'advisor-setup',
+  'advisor-empty-setup',
+  'consumer-link-setup',
+  'consumer-advisor-link-setup',
+  'advisor',
+])
 
 function resolveProjects(all: Project[]): Project[] {
   if (TEST_ENV !== 'production') return all
@@ -55,6 +61,13 @@ function buildProjects(): Project[] {
     { name: 'consumer-canceled-setup', testMatch: /helpers\/consumer-canceled\.setup\.ts/, timeout: setupTimeout },
     { name: 'attorney-setup', testMatch: /helpers\/attorney\.setup\.ts/, timeout: setupTimeout },
     { name: 'advisor-client-setup', testMatch: /helpers\/advisor-client\.setup\.ts/, timeout: setupTimeout },
+    { name: 'consumer-link-setup', testMatch: /helpers\/consumer-link\.setup\.ts/, timeout: setupTimeout },
+    {
+      name: 'consumer-advisor-link-setup',
+      dependencies: ['consumer-link-setup', 'advisor-setup'],
+      testMatch: /helpers\/consumer-advisor-link\.setup\.ts/,
+      timeout: setupTimeout,
+    },
     {
       name: 'security',
       dependencies: ['consumer-setup', 'advisor-setup', 'advisor-empty-setup'],
@@ -62,7 +75,7 @@ function buildProjects(): Project[] {
     },
     {
       name: 'advisor',
-      dependencies: ['advisor-setup'],
+      dependencies: ['consumer-advisor-link-setup'],
       testMatch: /advisor\/.*\.spec\.ts/,
       testIgnore: /advisor-consumer-sync\.spec\.ts/,
       use: { storageState: '.auth/advisor.json' },

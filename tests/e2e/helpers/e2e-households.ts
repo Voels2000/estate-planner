@@ -30,6 +30,17 @@ export async function resolveConsumerHouseholdId(): Promise<string | null> {
   return fetchHouseholdIdByOwnerEmail(email)
 }
 
+/** Linked-consumer fixture household (invite→accept setup). */
+export async function resolveConsumerLinkHouseholdId(): Promise<string | null> {
+  const fromEnv = process.env.PLAYWRIGHT_CONSUMER_LINK_HOUSEHOLD_ID?.trim()
+  if (fromEnv) return fromEnv
+  const email = resolveE2eEmail(
+    process.env.PLAYWRIGHT_CONSUMER_LINK_EMAIL,
+    E2E_IDENTITIES.consumerLinked.email,
+  )
+  return fetchHouseholdIdByOwnerEmail(email)
+}
+
 /** App-managed trial persona — seeded trial_ends_at future, subscription none. */
 export async function resolveAppTrialHouseholdId(): Promise<string | null> {
   const email = resolveE2eEmail(

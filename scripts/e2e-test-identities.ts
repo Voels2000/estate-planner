@@ -63,6 +63,13 @@ export const E2E_IDENTITIES = {
     fullName: 'E2E Consumer',
     householdName: 'E2E Consumer Household',
   },
+  /** Dedicated consumer for invite→accept link fixture — never linked in seed; link via Playwright setup. */
+  consumerLinked: {
+    email: 'e2e-consumer-linked@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Consumer Linked',
+    householdName: 'E2E Consumer Linked Household',
+  },
   consumerTier1: {
     email: 'e2e-consumer-tier1@mywealthmaps.test',
     password: E2E_TEST_PASSWORD,
@@ -182,6 +189,7 @@ export function buildEnvTestFileLines(opts: {
   testEnv: TestEnv
   householdId: string
   advisorClientHouseholdId?: string
+  consumerLinkHouseholdId?: string
   supabaseServiceRoleKey?: string
   supabaseAnonKey?: string
 }): string {
@@ -197,6 +205,8 @@ export function buildEnvTestFileLines(opts: {
     `PLAYWRIGHT_CONSUMER_PASSWORD=${E2E_IDENTITIES.consumer.password}`,
     `PLAYWRIGHT_HOUSEHOLD_ID=${opts.householdId}`,
     '',
+    `PLAYWRIGHT_CONSUMER_LINK_EMAIL=${E2E_IDENTITIES.consumerLinked.email}`,
+    `PLAYWRIGHT_CONSUMER_LINK_PASSWORD=${E2E_IDENTITIES.consumerLinked.password}`,
     `PLAYWRIGHT_ADVISOR_EMAIL=${E2E_IDENTITIES.advisor.email}`,
     `PLAYWRIGHT_ADVISOR_PASSWORD=${E2E_IDENTITIES.advisor.password}`,
     '',
@@ -231,6 +241,12 @@ export function buildEnvTestFileLines(opts: {
     lines.push(
       '',
       `PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID=${opts.advisorClientHouseholdId}`,
+    )
+  }
+  if (opts.consumerLinkHouseholdId) {
+    lines.push(
+      '',
+      `PLAYWRIGHT_CONSUMER_LINK_HOUSEHOLD_ID=${opts.consumerLinkHouseholdId}`,
     )
   }
   if (opts.supabaseAnonKey) {

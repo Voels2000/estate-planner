@@ -1372,6 +1372,34 @@ export async function ensureE2ePlanExportPurchaser(): Promise<string> {
   return userId
 }
 
+/** Linked-consumer fixture household — no advisor_clients row; link is created in Playwright setup. */
+export async function ensureE2eConsumerLinked(): Promise<{ userId: string; householdId: string }> {
+  const admin = createAdminClient()
+  const linked = E2E_IDENTITIES.consumerLinked
+
+  const userId = await ensureAuthUser({
+    email: linked.email,
+    password: linked.password,
+    fullName: linked.fullName,
+    role: 'consumer',
+  })
+
+  const householdId = await seedE2eConsumerHousehold(
+    userId,
+    linked.householdName,
+    3,
+    { fullName: linked.fullName },
+  )
+
+  await triggerE2eGenerateBaseCase(householdId, linked.email, 'consumer')
+
+  const { error } = await admin.from('advisor_clients').delete().eq('client_id', userId)
+  if (error) console.warn('  consumer-linked advisor_clients purge:', error.message)
+  else console.log('  consumer-linked: no advisor_clients row (link via Playwright setup)')
+
+  return { userId, householdId }
+}
+
 /** Fail loudly if any @mywealthmaps.test account is in an invalid state. */
 export async function verifyE2eAccounts(): Promise<void> {
   const admin = createAdminClient()

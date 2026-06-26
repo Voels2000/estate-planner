@@ -30,6 +30,7 @@ import {
   ensureAdvisorEmptyForE2e,
   ensureE2eAppTrialConsumer,
   ensureE2eCanceledSubscriber,
+  ensureE2eConsumerLinked,
   ensureE2ePlanExportPurchaser,
   ensureE2eSuperuser,
   initSupabaseEnv,
@@ -79,6 +80,8 @@ async function main() {
   let advisorEmptyId = ''
   let advisorClientUserId = ''
   let advisorClientHouseholdId = ''
+  let consumerLinkUserId = ''
+  let consumerLinkHouseholdId = ''
 
   if (run('consumer')) {
     console.log('1. Consumer (estate tier 3)')
@@ -94,6 +97,14 @@ async function main() {
       3,
       { fullName: E2E_IDENTITIES.consumer.fullName },
     )
+    console.log('')
+  }
+
+  if (run('consumer') || run('consumer-linked')) {
+    console.log('1b. Consumer linked (invite→accept fixture — unlinked in seed)')
+    const linked = await ensureE2eConsumerLinked()
+    consumerLinkUserId = linked.userId
+    consumerLinkHouseholdId = linked.householdId
     console.log('')
   }
 
@@ -231,6 +242,7 @@ async function main() {
     testEnv,
     householdId,
     advisorClientHouseholdId: advisorClientHouseholdId || undefined,
+    consumerLinkHouseholdId: consumerLinkHouseholdId || undefined,
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   })
