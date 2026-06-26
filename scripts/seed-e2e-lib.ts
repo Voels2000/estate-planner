@@ -1244,13 +1244,46 @@ export async function ensureE2eCanceledSubscriber(): Promise<string> {
     const { error } = await admin.from('households').insert({
       owner_id: userId,
       name: id.householdName,
+      person1_name: id.fullName,
       state_primary: 'WA',
       filing_status: 'single',
       person1_birth_year: 1970,
       updated_at: now,
     })
     if (error) throw new Error(`canceled household insert: ${error.message}`)
+  } else {
+    await admin
+      .from('households')
+      .update({
+        person1_name: id.fullName,
+        state_primary: 'WA',
+        filing_status: 'single',
+        person1_birth_year: 1970,
+        updated_at: now,
+      })
+      .eq('id', existing.id)
   }
+
+  await admin.from('assets').delete().eq('owner_id', userId)
+  await admin.from('income').delete().eq('owner_id', userId)
+
+  const { error: assetErr } = await admin.from('assets').insert({
+    owner_id: userId,
+    type: 'taxable_brokerage',
+    name: 'Canceled persona — brokerage',
+    value: 100_000,
+  })
+  if (assetErr) console.warn('  canceled assets:', assetErr.message)
+
+  const { error: incomeErr } = await admin.from('income').insert({
+    owner_id: userId,
+    source: 'salary',
+    name: 'Canceled persona — salary',
+    amount: 80_000,
+    start_year: new Date().getFullYear(),
+    inflation_adjust: true,
+  })
+  if (incomeErr) console.warn('  canceled income:', incomeErr.message)
 
   console.log(`  canceled subscriber: ${id.email} (has_ever_subscribed, tier 0)`)
   return userId

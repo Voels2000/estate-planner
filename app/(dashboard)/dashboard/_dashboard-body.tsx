@@ -43,7 +43,7 @@ import { buildConsumerMCScenariosFromRows } from '@/lib/monte-carlo/consumerAssu
 import { DashboardClient } from '../_dashboard-client'
 import type { LifeEvent, LoggedLifeEvent } from '@/app/(dashboard)/_components/LifeEventBanner'
 import { buildPersonaDashboardAlerts } from '@/lib/dashboard/personaAlerts'
-import { isWizardComplete } from '@/lib/estate/profileGate'
+import { isMinimumViableProfile, isWizardComplete } from '@/lib/estate/profileGate'
 import { buildEstateExecutionChecklist } from '@/lib/dashboard/buildEstateExecutionChecklist'
 import type { EstateExecutionItem } from '@/lib/dashboard/buildEstateExecutionChecklist'
 import { determinePlanStage, getDashboardState } from '@/lib/dashboard/determinePlanStage'
@@ -479,11 +479,11 @@ export async function DashboardBody({
     executionChecklist.length > 0
 
   const dashboardState = getDashboardState({
-    foundationScore: estateHealthScore?.score ?? null,
-    wizardCompletedAt: profile?.onboarding_wizard_completed_at ?? null,
+    profileComplete: isMinimumViableProfile(household ?? {}).complete,
+    hasAssets: setupProgress.assets > 0,
+    hasIncome: setupProgress.income > 0,
     estimatedTaxState: estateCallout?.estimatedTaxState ?? 0,
     estimatedTaxFederal: estateCallout?.estimatedTaxFederal ?? 0,
-    hasAnyHouseholdData: totalAssets > 0,
     hasEstatePlanData,
   })
 

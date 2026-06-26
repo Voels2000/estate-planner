@@ -1,11 +1,10 @@
 import { test, expect } from '@playwright/test'
 import { isProjectionStale } from '@/lib/projections/staleness'
-import { ONRAMP_SCORE_THRESHOLD, shouldShowOnramp } from '@/lib/dashboard/onrampGate'
+import { shouldShowOnramp } from '@/lib/dashboard/onrampGate'
 
 test.describe('armGate1VerifyFixture', () => {
   test('null base case + fresh household input is stale and reaches completed dashboard', () => {
     const now = Date.now()
-    const staleInputAt = new Date(now).toISOString()
 
     const armed = {
       baseCaseScenarioId: null as string | null,
@@ -23,9 +22,9 @@ test.describe('armGate1VerifyFixture', () => {
 
     expect(
       shouldShowOnramp({
-        wizardCompletedAt: staleInputAt,
-        foundationScore: ONRAMP_SCORE_THRESHOLD,
-        hasAnyHouseholdData: true,
+        profileComplete: true,
+        hasAssets: true,
+        hasIncome: true,
       }),
     ).toBe(false)
   })

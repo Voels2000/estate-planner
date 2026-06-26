@@ -2,6 +2,14 @@ import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import { resolveE2eEmail, resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
 
+// Dashboard gate prod cutover (deploy → canary re-seed): set PLAYWRIGHT_CANARY_CUTOVER_PAUSE=1
+// to skip @production consumer auth while canary is blocked on the new gate. Remove this skip
+// after cutover step 2 + audit pass (follow-up PR / post-cutover cleanup).
+setup.skip(
+  process.env.PLAYWRIGHT_CANARY_CUTOVER_PAUSE === '1',
+  'Canary cutover pause — unset after seed:prod-canary and audit:dashboard-gate',
+)
+
 setup('authenticate consumer @production', async ({ page }) => {
   const email = resolveE2eEmail(
     process.env.PLAYWRIGHT_CONSUMER_EMAIL,

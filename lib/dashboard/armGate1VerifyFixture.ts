@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { ONRAMP_SCORE_THRESHOLD, shouldShowOnramp } from '@/lib/dashboard/onrampGate'
+import { shouldShowOnramp } from '@/lib/dashboard/onrampGate'
+import { isMinimumViableProfile } from '@/lib/estate/profileGate'
 import { isProjectionStale } from '@/lib/projections/staleness'
 
 export type Gate1ArmResult = {
@@ -14,6 +15,7 @@ export type Gate1ArmResult = {
 }
 
 const GATE1_ASSET_NAME = 'Gate1 verify asset'
+const GATE1_INCOME_NAME = 'Gate1 verify income'
 
 /**
  * Arm e2e-consumer-canceled so a heavy-path dashboard load would call
@@ -35,6 +37,17 @@ export async function armGate1CanceledPersonaFixture(
       updated_at: staleInputAt,
     })
     .eq('id', userId)
+
+  await admin
+    .from('households')
+    .update({
+      person1_name: 'Gate1 Verify',
+      state_primary: 'WA',
+      filing_status: 'single',
+      person1_birth_year: 1970,
+      updated_at: staleInputAt,
+    })
+    .eq('id', householdId)
 
   const { data: existingAsset } = await admin
     .from('assets')
@@ -58,10 +71,34 @@ export async function armGate1CanceledPersonaFixture(
     })
   }
 
+  const { data: existingIncome } = await admin
+    .from('income')
+    .select('id')
+    .eq('owner_id', userId)
+    .eq('name', GATE1_INCOME_NAME)
+    .maybeSingle()
+
+  if (existingIncome?.id) {
+    await admin
+      .from('income')
+      .update({ amount: 120_000, updated_at: staleInputAt })
+      .eq('id', existingIncome.id)
+  } else {
+    await admin.from('income').insert({
+      owner_id: userId,
+      source: 'salary',
+      name: GATE1_INCOME_NAME,
+      amount: 120_000,
+      start_year: now.getFullYear(),
+      inflation_adjust: true,
+      updated_at: staleInputAt,
+    })
+  }
+
   await admin.from('estate_health_scores').upsert(
     {
       household_id: householdId,
-      score: ONRAMP_SCORE_THRESHOLD,
+      score: 45,
       computed_at: oldHealthComputedAt,
       updated_at: oldHealthComputedAt,
       recommendations: { recommendations: [] },
@@ -71,7 +108,7 @@ export async function armGate1CanceledPersonaFixture(
 
   const { data: householdBefore } = await admin
     .from('households')
-    .select('base_case_scenario_id')
+    .select('base_case_scenario_id, person1_name, state_primary, filing_status, person1_birth_year')
     .eq('id', householdId)
     .single()
 
@@ -108,10 +145,11 @@ export async function armGate1CanceledPersonaFixture(
       ? 'missing projection calculated_at'
       : 'household/input change newer than projection calculated_at'
 
+  const profileComplete = isMinimumViableProfile(householdBefore ?? {}).complete
   const reachesCompletedDashboard = !shouldShowOnramp({
-    wizardCompletedAt: staleInputAt,
-    foundationScore: ONRAMP_SCORE_THRESHOLD,
-    hasAnyHouseholdData: true,
+    profileComplete,
+    hasAssets: true,
+    hasIncome: true,
   })
 
   return {
