@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-26 (Dashboard unlock gate — profile + assets + income)
+# Last updated: 2026-06-26 (Migration ledger backfill + self-recording apply)
 
 ---
 
@@ -17,6 +17,20 @@
 **Cutover pause:** removed in #142 — `@production` consumer setup always runs after cutover complete.
 
 **Verify:** `npm run audit:dashboard-gate` · `npx tsx scripts/check-golden-path-onramp-gate.ts` · `npm run test:e2e:golden-path`
+
+---
+
+## Migration ledger backfill + self-recording apply (2026-06-26)
+
+**Problem.** Manual `apply-migration.sh` runs updated schema but not `supabase_migrations.schema_migrations` — prod had 128 ledger rows vs 136 repo files; staging had 0. Drift invisible to `migration list` / push.
+
+**Decision.** One-time idempotent backfill (`scripts/generate-ledger-backfill.sh` → `ledger-backfill.sql`, `ON CONFLICT DO NOTHING`) applied staging (136 inserted) + prod (8 inserted). **`apply-migration.sh` now INSERTs `(version, name)` after successful `psql -f`** so the gap cannot reopen. **`scripts/collect-migration-ledger-info.sh`** — read-only repo-vs-ledger drift check.
+
+**Naming convention:** Backfill generator and collector skip files whose leading token is not a 14-digit timestamp (e.g. `VERIFY_session27_*.sql`). Any future real migration with a non-timestamp filename would be invisible to both tools — not a concern while naming stays consistent.
+
+**`statements` column:** Backfill records `version` + `name` only; `statements` stays NULL on those rows. Fine for push/list (version-only). If CLI is linked later, `db pull` or repair may offer to repopulate NULLs — cosmetic fidelity, not drift.
+
+**Shipped:** #144 → staging · #145 → main. No schema migration required.
 
 ---
 
