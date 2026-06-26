@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-25 (tier restructure PRs 1–8 + audit on staging; Gate 2 code gate closed; persona matrix in `seed:e2e`)
+**Last updated:** 2026-06-26 (Plan & Export refund ack migration tracked; post-cutover)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -222,6 +222,21 @@ DROP TABLE IF EXISTS public.one_time_purchases;
 ```
 
 **When to reverse vs re-apply:** Step 2 query fails → migration may not have applied — diagnose (wrong DB target, permissions) and **re-run forward**; don't reverse. Reverse only when forward **applied but is wrong**. After gate flip, trial column drops destroy real data — PITR is the recovery path.
+
+### Post-cutover pending migrations (pre-flip)
+
+Apply **per environment** before the code that writes these columns — staging before staging merge/deploy; production before/at production deploy ([DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift)).
+
+| Forward migration | Adds | Reverse |
+|-------------------|------|---------|
+| `20260726120000_one_time_purchases_refund_ack.sql` | `refund_ack_at`, `refund_ack_version` on `one_time_purchases` (nullable) | `ALTER TABLE public.one_time_purchases DROP COLUMN IF EXISTS refund_ack_at, DROP COLUMN IF EXISTS refund_ack_version;` |
+
+**Verify after apply:**
+```sql
+SELECT refund_ack_at, refund_ack_version FROM one_time_purchases LIMIT 1;  -- must not 42703
+```
+
+**Pairs with:** Plan & Export refund-ack checkbox PR — server gate at checkout API; ack persisted on `one_time_purchases` at webhook fulfillment. Step 5 Plan & Export real-card smoke should run **after** this code is on prod.
 
 ### Tier restructure prod cutover — steps 0–5 (then stop)
 

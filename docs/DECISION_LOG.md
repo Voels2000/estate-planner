@@ -1,6 +1,18 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-25 (isAdvisor capability vs identity; PR 6/7 + PR 8 on staging)
+# Last updated: 2026-06-26 (Plan & Export refund ack)
+
+---
+
+## Plan & Export refund acknowledgment (2026-06-26)
+
+**Problem.** One-time deliverable needs per-purchase, persisted evidence that the buyer acknowledged immediate digital delivery and non-refundable terms — for chargeback defense, not UX friction alone.
+
+**Decision.** Mirror ToS acceptance shape on `one_time_purchases`: `refund_ack_at` + `refund_ack_version` (`REFUND_POLICY_VERSION` in `lib/legal/plan-export-refund-policy.ts`). Checkbox gates UI; **checkout API rejects (400) without ack** — server stamps metadata at session create; webhook copies to row on fulfill. Fail-closed fulfillment without ack metadata → no `one_time_purchases` row; **`captureStripeWebhookFailure` → Sentry** (charged-but-not-fulfilled must not be silent).
+
+**Counsel (at nexus):** pressure-test "all sales are final and we do not offer refunds" in launch states.
+
+**Sequencing:** Migration staging → prod before code. Step 5 Plan & Export real-card smoke after this ships (test final flow once).
 
 ---
 

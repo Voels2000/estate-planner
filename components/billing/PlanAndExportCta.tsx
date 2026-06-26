@@ -1,12 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
-import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 import { getConsumerPlanDisplay } from '@/lib/billing/stripePrices'
 import { planAndExportAmountCents } from '@/lib/billing/oneTimePurchases'
-import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { PlanAndExportCheckoutActions } from '@/components/billing/PlanAndExportCheckoutActions'
 
 type Props = {
   returnTo?: string
@@ -14,35 +12,9 @@ type Props = {
 }
 
 export function PlanAndExportCta({ returnTo = '/print', variant = 'gated' }: Props) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
   const priceCents = planAndExportAmountCents()
   const priceDisplay = `$${(priceCents / 100).toLocaleString('en-US')}`
   const estateMonthly = getConsumerPlanDisplay(3, 'monthly').monthlyEquivalent
-  const disclosure = BILLING_DISCLOSURES.planAndExportCheckout(priceDisplay)
-
-  async function handleBuy() {
-    setError(null)
-    setLoading(true)
-    try {
-      const res = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sku: 'plan_and_export', returnTo }),
-      })
-      const data = (await res.json()) as { url?: string; error?: string }
-      if (!res.ok || !data.url) {
-        setError(data.error ?? 'Checkout failed. Please try again.')
-        setLoading(false)
-        return
-      }
-      window.location.assign(data.url)
-    } catch {
-      setError('Something went wrong. Please try again.')
-      setLoading(false)
-    }
-  }
 
   const content = (
     <div data-testid="plan-and-export-cta" className="space-y-5">
@@ -71,21 +43,7 @@ export function PlanAndExportCta({ returnTo = '/print', variant = 'gated' }: Pro
             If you subscribe later, the {priceDisplay} counts toward your subscription.
           </span>
         </p>
-        <p className="text-sm leading-relaxed text-neutral-600">{disclosure}</p>
-        {error && (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        )}
-        <Button
-          type="button"
-          variant="primary"
-          disabled={loading}
-          onClick={() => void handleBuy()}
-          className="w-full rounded-lg py-2.5 text-sm font-medium sm:w-auto"
-        >
-          {loading ? 'Redirecting…' : `Buy Plan & Export — ${priceDisplay}`}
-        </Button>
+        <PlanAndExportCheckoutActions returnTo={returnTo} />
       </div>
     </div>
   )

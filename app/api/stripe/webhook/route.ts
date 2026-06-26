@@ -13,6 +13,7 @@ import {
   applyPlanAndExportCreditIfEligible,
   fulfillPlanAndExportPurchase,
 } from '@/lib/billing/oneTimePurchases'
+import { parsePlanExportRefundAckFromMetadata } from '@/lib/billing/planExportRefundAck'
 import { isPlanAndExportSku } from '@/lib/billing/stripePrices'
 import {
   formatUnixDateEnUs,
@@ -189,6 +190,29 @@ export async function POST(req: NextRequest) {
                 ? session.payment_intent
                 : session.payment_intent?.id ?? null
 
+            const refundAck = parsePlanExportRefundAckFromMetadata(session.metadata ?? undefined)
+            if (!refundAck) {
+              console.error(
+                'Plan & Export fulfillment blocked: missing refund acknowledgment in session metadata',
+                { sessionId: session.id, userId: paymentUserId, amountCents },
+              )
+              captureStripeWebhookFailure(
+                new Error('Plan & Export fulfillment missing refund acknowledgment'),
+                {
+                  stage: 'processing',
+                  event,
+                  extra: {
+                    context: 'plan_and_export_fulfillment',
+                    sessionId: session.id,
+                    userId: paymentUserId,
+                    amount_cents: String(amountCents),
+                    reason: 'missing_refund_ack_metadata',
+                  },
+                },
+              )
+              break
+            }
+
             const { error: fulfillError } = await fulfillPlanAndExportPurchase({
               admin: supabase,
               userId: paymentUserId,
@@ -196,6 +220,7 @@ export async function POST(req: NextRequest) {
               paymentIntentId,
               amountCents,
               currency,
+              refundAck,
             })
 
             if (fulfillError) {
@@ -203,7 +228,13 @@ export async function POST(req: NextRequest) {
               captureStripeWebhookFailure(fulfillError, {
                 stage: 'processing',
                 event,
-                extra: { context: 'plan_and_export_fulfillment' },
+                extra: {
+                  context: 'plan_and_export_fulfillment',
+                  sessionId: session.id,
+                  userId: paymentUserId,
+                  amount_cents: String(amountCents),
+                  reason: 'fulfillment_insert_failed',
+                },
               })
             }
           } else {

@@ -8,7 +8,25 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-# Last updated: 2026-06-24 (Tier restructure PR 1 — trial columns + effective tier)
+# Last updated: 2026-06-26 (Plan & Export refund ack columns)
+
+---
+
+## Plan & Export refund acknowledgment (2026-06-26)
+
+**Migration:** `20260726120000_one_time_purchases_refund_ack.sql`
+
+**Columns (nullable — pre-migration rows unaffected):**
+- `one_time_purchases.refund_ack_at` — server-stamped when checkout session created with ack gate passed
+- `one_time_purchases.refund_ack_version` — `REFUND_POLICY_VERSION` at purchase time
+
+**Flow:** Checkout API rejects without `refundAckAccepted === true`; server stamps ack into Stripe session metadata; webhook copies to row on `fulfillPlanAndExportPurchase`. Blocked fulfillment (charged, no row) → `captureStripeWebhookFailure` → Sentry.
+
+**Apply staging:** `bash scripts/apply-migration.sh staging supabase/migrations/20260726120000_one_time_purchases_refund_ack.sql`
+
+**Apply production:** same path with `production` — before prod deploy of refund-ack code.
+
+**Counsel (at nexus):** "all sales are final and we do not offer refunds" vs launch-state digital-goods rules.
 
 ---
 

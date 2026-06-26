@@ -147,20 +147,33 @@ test.describe('deliverable export gate', () => {
     })
   })
 
-  test('plan export buy CTA POSTs sku and opens Stripe checkout', async ({ page }) => {
+  test('plan export buy CTA requires refund ack before checkout', async ({ page }) => {
     await withConsumerOwner(async (ownerId) => {
       await deferProfileAccessRestore(ownerId, SOCIAL_SECURITY_GATE_ACCESS, async () => {
         await page.goto('/print')
         await expect(page.getByTestId('plan-and-export-cta')).toBeVisible()
 
+        const buyButton = page.getByRole('button', { name: /Buy Plan & Export/i })
+        await expect(buyButton).toBeDisabled()
+
+        await buyButton.click({ force: true })
+        await expect(page.getByTestId('plan-export-refund-ack-error')).toBeVisible()
+
+        await page.getByTestId('plan-export-refund-ack-checkbox').check()
+        await expect(buyButton).toBeEnabled()
+
         const checkoutResponse = page.waitForResponse(
           (res) =>
             res.url().includes('/api/stripe/checkout') && res.request().method() === 'POST',
         )
-        await page.getByRole('button', { name: /Buy Plan & Export/i }).click()
+        await buyButton.click()
         const res = await checkoutResponse
         const body = res.request().postDataJSON() as Record<string, unknown>
-        expect(body).toMatchObject({ sku: 'plan_and_export', returnTo: '/print' })
+        expect(body).toMatchObject({
+          sku: 'plan_and_export',
+          returnTo: '/print',
+          refundAckAccepted: true,
+        })
 
         if (!res.ok()) {
           const detail = await res.text()

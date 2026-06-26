@@ -35,6 +35,8 @@ export function mockCompletedPlanExportRow(
     edit_window_ends_at: computePlanExportEditWindowEndsAt(purchasedAt).toISOString(),
     warning_14d_sent_at: null,
     warning_3d_sent_at: null,
+    refund_ack_at: null,
+    refund_ack_version: null,
     created_at: purchasedAt.toISOString(),
   }
 }

@@ -8,12 +8,20 @@ import {
   fulfillPlanAndExportPurchase,
 } from '../../lib/billing/oneTimePurchases'
 import { PLAN_AND_EXPORT_SKU } from '../../lib/billing/stripePrices'
+import { REFUND_POLICY_VERSION } from '../../lib/legal/plan-export-refund-policy'
+
+const sampleRefundAck = {
+  at: '2026-06-26T12:00:00.000Z',
+  version: REFUND_POLICY_VERSION,
+}
 
 function mockAdmin(overrides: {
   purchase?: Record<string, unknown> | null
   consumeRow?: { id: string } | null
   insertError?: { code: string; message: string } | null
+  insertedRow?: Record<string, unknown>
 }) {
+  let insertedPayload: Record<string, unknown> | null = null
   const selectResult = async () => ({
     data: overrides.purchase ?? null,
     error: null,
@@ -27,14 +35,18 @@ function mockAdmin(overrides: {
   }
 
   return {
+    insertedPayload: () => insertedPayload,
     from: (table: string) => {
       if (table !== 'one_time_purchases') {
         throw new Error(`unexpected table ${table}`)
       }
       return {
-        insert: async () => ({
-          error: overrides.insertError ?? null,
-        }),
+        insert: async (payload: Record<string, unknown>) => {
+          insertedPayload = payload
+          return {
+            error: overrides.insertError ?? null,
+          }
+        },
         select: () => chain,
         update: () => ({
           eq: () => ({
@@ -54,7 +66,7 @@ function mockAdmin(overrides: {
 }
 
 test.describe('fulfillPlanAndExportPurchase', () => {
-  test('creates a purchase row on first delivery', async () => {
+  test('creates a purchase row on first delivery with refund ack', async () => {
     const admin = mockAdmin({})
     const result = await fulfillPlanAndExportPurchase({
       admin: admin as never,
@@ -63,9 +75,30 @@ test.describe('fulfillPlanAndExportPurchase', () => {
       paymentIntentId: 'pi_1',
       amountCents: 149000,
       currency: 'usd',
+      refundAck: sampleRefundAck,
     })
     expect(result.created).toBe(true)
     expect(result.error).toBeNull()
+    expect(admin.insertedPayload()).toMatchObject({
+      refund_ack_at: sampleRefundAck.at,
+      refund_ack_version: sampleRefundAck.version,
+    })
+  })
+
+  test('fails closed without refund ack metadata', async () => {
+    const admin = mockAdmin({})
+    const result = await fulfillPlanAndExportPurchase({
+      admin: admin as never,
+      userId: 'user-1',
+      sessionId: 'cs_test_missing_ack',
+      paymentIntentId: 'pi_1',
+      amountCents: 149000,
+      currency: 'usd',
+      refundAck: { at: '', version: '' },
+    })
+    expect(result.created).toBe(false)
+    expect(result.error?.message).toMatch(/refund acknowledgment/i)
+    expect(admin.insertedPayload()).toBeNull()
   })
 
   test('treats duplicate session id as no-op', async () => {
@@ -79,6 +112,7 @@ test.describe('fulfillPlanAndExportPurchase', () => {
       paymentIntentId: 'pi_1',
       amountCents: 149000,
       currency: 'usd',
+      refundAck: sampleRefundAck,
     })
     expect(result.created).toBe(false)
     expect(result.error).toBeNull()
