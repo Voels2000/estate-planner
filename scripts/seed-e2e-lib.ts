@@ -802,7 +802,7 @@ export async function ensureAdvisorFirmForE2e(
         owner_id: advisorUserId,
         tier: 'starter',
         seat_count: 1,
-        subscription_status: null,
+        subscription_status: 'active',
       })
       .select('id')
       .single()
@@ -813,6 +813,12 @@ export async function ensureAdvisorFirmForE2e(
     console.log(`  firms: created ${firmId}`)
   } else {
     console.log(`  firms: existing ${firmId}`)
+    const { error: firmErr } = await admin
+      .from('firms')
+      .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
+      .eq('id', firmId)
+      .or('subscription_status.is.null,subscription_status.in.(inactive,canceled,past_due)')
+    if (firmErr) console.warn('  firms subscription_status:', firmErr.message)
   }
 
   await admin
@@ -846,6 +852,23 @@ export async function ensureAdvisorFirmForE2e(
   }
 
   return firmId
+}
+
+/** E2E advisors need active firm billing so invite/accept API paths pass capacity gate. */
+export async function ensureE2eAdvisorFirmSubscriptionActive(advisorUserId: string): Promise<void> {
+  const admin = createAdminClient()
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('firm_id')
+    .eq('id', advisorUserId)
+    .maybeSingle()
+  if (!profile?.firm_id) return
+
+  await admin
+    .from('firms')
+    .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
+    .eq('id', profile.firm_id)
+    .or('subscription_status.is.null,subscription_status.in.(inactive,canceled,past_due)')
 }
 
 function supabaseProjectRef(url: string): string {

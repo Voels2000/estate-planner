@@ -6,7 +6,14 @@
  * Advisor smokes should depend on this project (not advisor-setup alone).
  */
 import { test as setup, expect, request } from '@playwright/test'
+import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import { createAdminClient } from '@/lib/supabase/admin'
+import {
+  ensureE2eAdvisorFirmSubscriptionActive,
+  findUserIdByEmail,
+  initSupabaseEnv,
+  pruneStrayE2eAdvisorClientLinks,
+} from '../../../scripts/seed-e2e-lib'
 import {
   isConnectedAdvisorLinkStatus,
   resolveAdvisorLinkFixtureEnv,
@@ -23,6 +30,16 @@ setup('link consumer → registered advisor via invite/accept, assert isolation'
   expect(env.isolationHouseholdId, 'PLAYWRIGHT_HOUSEHOLD_ID / isolation consumer household missing').toBeTruthy()
   expect(env.isolationConsumerUserId, 'isolation consumer user id missing').toBeTruthy()
   expect(env.linkedConsumerHouseholdId).not.toBe(env.isolationHouseholdId)
+
+  initSupabaseEnv()
+  await ensureE2eAdvisorFirmSubscriptionActive(env.advisorUserId)
+
+  const advisorClientUserId =
+    (await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)) ?? ''
+  await pruneStrayE2eAdvisorClientLinks(env.advisorUserId, [
+    advisorClientUserId,
+    env.linkedConsumerUserId,
+  ])
 
   const admin = createAdminClient()
   const { data: existingLink } = await admin
