@@ -41,6 +41,7 @@ E2E tenants (seeded by `npm run seed:e2e`):
 | 3 | Advisor Y | Advisor X client (B) | read | empty / 403 |
 | 4 | Advisor X | Consumer A (unlinked) | read | empty / 403 |
 | 5 | Advisor X (link revoked) | formerly-linked household | read | empty / 403 |
+| 5b | Advisor X (link revoked) | formerly-linked client **profile** (PostgREST) | read | empty / 403 — `advisor-profiles-revocation-rls.spec.ts` ([#150](https://github.com/Voels2000/estate-planner/pull/150)) |
 | 6 | Attorney P | unassigned household | read | empty / 403 |
 | 7 | Consumer A | advisor-only route | read | 403 |
 | 8 | Any actor | foreign export (`/api/advisor/client-export-payload`) | generate | 404 |
