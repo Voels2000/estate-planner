@@ -38,6 +38,13 @@ const projects: Project[] = [
   { name: 'consumer-canceled-setup', testMatch: /helpers\/consumer-canceled\.setup\.ts/, timeout: setupTimeout },
   { name: 'attorney-setup', testMatch: /helpers\/attorney\.setup\.ts/, timeout: setupTimeout },
   { name: 'advisor-client-setup', testMatch: /helpers\/advisor-client\.setup\.ts/, timeout: setupTimeout },
+  { name: 'consumer-link-setup', testMatch: /helpers\/consumer-link\.setup\.ts/, timeout: setupTimeout },
+  {
+    name: 'consumer-advisor-link-setup',
+    dependencies: ['consumer-link-setup', 'advisor-setup'],
+    testMatch: /helpers\/consumer-advisor-link\.setup\.ts/,
+    timeout: setupTimeout,
+  },
   {
     name: 'security',
     dependencies: ['consumer-setup', 'advisor-setup', 'advisor-empty-setup'],
@@ -45,7 +52,7 @@ const projects: Project[] = [
   },
   {
     name: 'advisor',
-    dependencies: ['advisor-setup'],
+    dependencies: ['consumer-advisor-link-setup'],
     testMatch: /advisor\/.*\.spec\.ts/,
     testIgnore: /advisor-consumer-sync\.spec\.ts/,
     use: { storageState: '.auth/advisor.json' },

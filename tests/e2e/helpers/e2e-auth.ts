@@ -8,6 +8,7 @@ import { findUserIdByEmail, initSupabaseEnv } from '../../../scripts/seed-e2e-li
 
 const CANONICAL_BY_EMAIL = new Map<string, string>([
   [E2E_IDENTITIES.consumer.email, E2E_IDENTITIES.consumer.password],
+  [E2E_IDENTITIES.consumerLinked.email, E2E_IDENTITIES.consumerLinked.password],
   [E2E_IDENTITIES.consumerTier1.email, E2E_IDENTITIES.consumerTier1.password],
   [E2E_IDENTITIES.consumerCanceled.email, E2E_IDENTITIES.consumerCanceled.password],
   [E2E_IDENTITIES.consumerAppTrial.email, E2E_IDENTITIES.consumerAppTrial.password],
