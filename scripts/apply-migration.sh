@@ -64,6 +64,22 @@ esac
 
 echo "── $ENV ($REF) ──"
 psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$MIGRATION"
+
+# --- record the migration in the ledger ---
+MIG_BASE="$(basename "$MIGRATION")"
+MIG_VERSION="${MIG_BASE%%_*}"
+if [[ "$MIG_VERSION" =~ ^[0-9]+$ ]]; then
+  MIG_REST="${MIG_BASE#*_}"; MIG_NAME="${MIG_REST%.sql}"
+  MIG_NAME="${MIG_NAME//\'/\'\'}"
+  psql "$DB_URL" -v ON_ERROR_STOP=1 -c \
+    "INSERT INTO supabase_migrations.schema_migrations (version, name)
+     VALUES ('$MIG_VERSION', '$MIG_NAME')
+     ON CONFLICT (version) DO NOTHING;"
+  echo "Recorded $MIG_VERSION in schema_migrations ledger."
+else
+  echo "Note: $MIG_BASE has no timestamp version; not recorded."
+fi
+
 echo "✓ $ENV"
 echo ""
 echo "Verify schema, then deploy (or merge) code that depends on this migration in $ENV only."
