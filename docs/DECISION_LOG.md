@@ -14,7 +14,7 @@
 
 **Prod cutover (no migration):** (1) deploy code → (2) `seed:prod-canary -- --confirm` → (3) `npm run audit:dashboard-gate` → (4) confirm canary alerting live. Between 1–2 canary reads blocked — silence alerts or run back-to-back. Rollback = code revert only; richer canary rows are inert under old gate (wizard+score+anydata).
 
-**Cutover pause:** `PLAYWRIGHT_CANARY_CUTOVER_PAUSE=1` skips `@production` consumer setup during window 1–2. Remove after step 2 (post-cutover cleanup PR).
+**Cutover pause:** removed in #142 — `@production` consumer setup always runs after cutover complete.
 
 **Verify:** `npm run audit:dashboard-gate` · `npx tsx scripts/check-golden-path-onramp-gate.ts` · `npm run test:e2e:golden-path`
 

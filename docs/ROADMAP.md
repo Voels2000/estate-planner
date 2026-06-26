@@ -822,8 +822,8 @@ Was deferred post-launch; **drip is launch-day-critical** → fixed in `fix/cron
 | `DashboardOnramp` — profile/assets/income checkboxes + equal paths | `[x]` |
 | Golden-path / armGate1 / canceled seeds — assets+income | `[x]` |
 | `audit:dashboard-gate` prod verify script | `[x]` |
-| Prod cutover: deploy → canary re-seed → audit → re-arm alerts | `[ ]` |
-| Remove `PLAYWRIGHT_CANARY_CUTOVER_PAUSE` post-cutover | `[ ]` |
+| Prod cutover: deploy → canary re-seed → audit → re-arm alerts | `[x]` |
+| Remove `PLAYWRIGHT_CANARY_CUTOVER_PAUSE` post-cutover | `[x]` |
 
 **Cutover:** No migration. Rollback = deploy revert; canary extra income/expenses rows inert under old gate.
 

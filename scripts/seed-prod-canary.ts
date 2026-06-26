@@ -5,7 +5,11 @@
  * PRODUCTION Supabase only. Idempotent — safe to re-run to reset known state.
  *
  * Usage (you run this — never CI):
- *   E2E_CANARY_PASSWORD='…same as Vercel Production…' npm run seed:prod-canary -- --confirm
+ *   npm run seed:prod-canary -- --confirm
+ *
+ * Password: E2E_CANARY_PASSWORD or PLAYWRIGHT_CONSUMER_PASSWORD from `.env.test.production`
+ * (same value as Vercel Production E2E_CANARY_PASSWORD). One-shot override still works:
+ *   E2E_CANARY_PASSWORD='…' npm run seed:prod-canary -- --confirm
  *
  * Requires .env.projects.local with PROD_* Supabase vars.
  */
@@ -51,6 +55,47 @@ function loadProdSupabaseEnv(): void {
   }
 }
 
+function unquoteEnvValue(raw: string): string {
+  let value = raw.trim()
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
+    value = value.slice(1, -1)
+  }
+  return value.replace(/\\\$/g, '$')
+}
+
+function readEnvFileVar(filePath: string, name: string): string {
+  if (!existsSync(filePath)) return ''
+  for (const line of readFileSync(filePath, 'utf8').split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const eq = trimmed.indexOf('=')
+    if (eq < 0) continue
+    if (trimmed.slice(0, eq).trim() !== name) continue
+    return unquoteEnvValue(trimmed.slice(eq + 1))
+  }
+  return ''
+}
+
+function loadCanaryPasswordFromEnvFile(): void {
+  if (process.env.E2E_CANARY_PASSWORD?.trim() || process.env.PLAYWRIGHT_CONSUMER_PASSWORD?.trim()) {
+    return
+  }
+  const file = join(process.cwd(), '.env.test.production')
+  const password = readEnvFileVar(file, 'PLAYWRIGHT_CONSUMER_PASSWORD')
+  if (password) process.env.E2E_CANARY_PASSWORD = password
+}
+
+function resolveCanaryPassword(): string {
+  return (
+    process.env.E2E_CANARY_PASSWORD?.trim() ||
+    process.env.PLAYWRIGHT_CONSUMER_PASSWORD?.trim() ||
+    ''
+  )
+}
+
 function extractSupabaseProjectRef(url: string): string | null {
   try {
     const match = new URL(url).hostname.match(/^([a-z0-9]+)\.supabase\.co$/i)
@@ -62,7 +107,7 @@ function extractSupabaseProjectRef(url: string): string | null {
 
 function assertProdCanarySeedSafe(): void {
   const confirm = process.argv.includes('--confirm')
-  const password = process.env.E2E_CANARY_PASSWORD?.trim()
+  const password = resolveCanaryPassword()
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
   const ref = extractSupabaseProjectRef(url)
 
@@ -87,19 +132,22 @@ function assertProdCanarySeedSafe(): void {
   }
 
   if (!password || password.length < 12) {
-    console.error('SAFETY: set E2E_CANARY_PASSWORD (≥12 chars, same as Vercel Production).')
+    console.error(
+      'SAFETY: set E2E_CANARY_PASSWORD or PLAYWRIGHT_CONSUMER_PASSWORD in .env.test.production (≥12 chars, same as Vercel Production).',
+    )
     process.exit(1)
   }
 }
 
 async function main() {
   loadProdSupabaseEnv()
+  loadCanaryPasswordFromEnvFile()
   assertProdCanarySeedSafe()
   initSupabaseEnv()
 
   console.log('=== Production consumer canary seed ===\n')
 
-  const password = process.env.E2E_CANARY_PASSWORD!.trim()
+  const password = resolveCanaryPassword()
 
   const userId = await ensureAuthUser({
     email: PROD_CANARY.email,

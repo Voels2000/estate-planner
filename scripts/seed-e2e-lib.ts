@@ -181,39 +181,25 @@ export async function seedE2eConsumerHousehold(
   }
 
   await admin.from('assets').delete().eq('owner_id', userId)
+  // Base columns only (owner_id, type, name, value) — prod may lack advisor-demo extras.
   const { error: assetErr } = await admin.from('assets').insert([
     {
       owner_id: userId,
-      owner: 'person1',
       type: 'traditional_401k',
-      asset_type: 'traditional_401k',
       name: 'E2E Traditional 401(k) — Alex',
       value: 750_000,
-      account_type: '401k',
-      institution: 'Fidelity',
-      is_taxable: false,
     },
     {
       owner_id: userId,
-      owner: 'person1',
       type: 'traditional_ira',
-      asset_type: 'traditional_ira',
       name: 'E2E Traditional IRA — Alex',
       value: 420_000,
-      account_type: 'ira',
-      institution: 'Vanguard',
-      is_taxable: false,
     },
     {
       owner_id: userId,
-      owner: 'joint',
       type: 'taxable_brokerage',
-      asset_type: 'taxable_brokerage',
       name: 'E2E Joint brokerage',
       value: 200_000,
-      account_type: 'brokerage',
-      institution: 'Charles Schwab',
-      is_taxable: true,
     },
   ])
   if (assetErr) console.warn('  assets:', assetErr.message)
