@@ -158,13 +158,26 @@ test.describe('advisor pending link (consumer_requested) authz', () => {
         data: { householdId: consumerHouseholdId, sourceRole: 'advisor' },
         timeout: API_TIMEOUT_MS,
       })
+      const pendingCompositionBody = await pendingComposition.text()
       expectAccessDenied(pendingComposition.status())
 
       const pendingPayload = await request.get(
         `/api/advisor/client-export-payload?clientId=${consumerUserId}`,
         { timeout: API_TIMEOUT_MS },
       )
+      const pendingPayloadBody = await pendingPayload.text()
       expectAccessDenied(pendingPayload.status())
+
+      console.log(
+        JSON.stringify({
+          phase1: {
+            compositionStatus: pendingComposition.status(),
+            compositionBody: pendingCompositionBody.slice(0, 200),
+            payloadStatus: pendingPayload.status(),
+            payloadBody: pendingPayloadBody.slice(0, 200),
+          },
+        }),
+      )
 
       expect(
         await advisorReadsProfile(),
