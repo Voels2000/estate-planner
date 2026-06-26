@@ -303,7 +303,11 @@ Code-only change. Rollback = **deploy revert** (restores old gate, not data). Ca
 | 3 | `npm run audit:dashboard-gate` — canary income present + unlocked; avoels + david unlocked |
 | 4 | Confirm canary monitoring/alerting **live again** post-cutover |
 
-**Optional prod smoke pause (steps 1–2):** `PLAYWRIGHT_CANARY_CUTOVER_PAUSE=1 npm run test:e2e:prod:smoke` skips consumer @production setup. **Remove pause env after step 2** (follow-up PR / post-cutover — do not leave paused).
+**Optional prod smoke pause (steps 1–2):** one-shot only — `PLAYWRIGHT_CANARY_CUTOVER_PAUSE=1 npm run test:e2e:prod:smoke` (prefix, never `export`). Flag is **not** in CI workflows or checked-in env files; defaults off unless you set it for that single command. Remove after step 2 (follow-up PR / post-cutover — do not leave paused).
+
+**Staging vs prod:** Staging merge + verify exercises gate logic, onramp UI, and E2E seeds — it does **not** run `seed:prod-canary` (prod-only write). Green staging ≠ canary re-seeded. Step 3 `audit:dashboard-gate` against prod is the first real proof that step 2 landed.
+
+**Step 2 password:** one-shot prefix only — `E2E_CANARY_PASSWORD='…' npm run seed:prod-canary -- --confirm`. Do not `export` into the shell session (lingers in env + history). Clear scrollback if the shell logs the command line.
 
 ### Gate 2 — Go-live day sequence (in order)
 
