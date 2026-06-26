@@ -52,7 +52,7 @@ This is a developer reference, not a full SQL DDL dump.
 - **Signup trigger:** `on_auth_user_created` → `handle_new_user()` inserts a `profiles` row (`role` from metadata; consumer defaults: `consumer_tier=1`, `subscription_status=none`). Estate trial (`trialing`) is set only by Stripe webhook after checkout.
 - **Attorney weekly digest (2026-06-07):** `attorney_digest_sent_at` — last weekly digest send; cron §10 cooldown (6 days). Migration `20260703120000`.
 - **Attorney drip unsubscribe (2026-06-18):** `attorney_drip_unsubscribed_at` — set by `GET /api/email/unsubscribe?type=attorney`; future drip sender must skip when non-null (mirrors `advisor_drip_unsubscribed_at`). Migration `20260718120000`.
-- **Advisor SELECT RLS (2026-06-26):** `Advisors can view client profiles` — `EXISTS (advisor_clients WHERE advisor_id = auth.uid() AND client_id = profiles.id AND status IN ('active','accepted'))`. Matches household/asset advisor policies; closes post-revoke PII leak when row retains ids at `status='removed'`. Migration `20260726120000`.
+- **Advisor SELECT RLS (2026-06-26):** `Advisors can view client profiles` — `EXISTS (advisor_clients WHERE advisor_id = auth.uid() AND client_id = profiles.id AND status IN ('active','accepted'))`. Matches household/asset advisor policies; closes post-revoke PII leak when row retains ids at `status='removed'`. Migration `20260726130000`.
 
 ### `households`
 

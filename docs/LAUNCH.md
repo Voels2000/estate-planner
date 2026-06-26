@@ -231,7 +231,7 @@ Apply **per environment** before the code that writes these columns — staging 
 | Forward migration | Adds | Reverse |
 |-------------------|------|---------|
 | `20260726120000_one_time_purchases_refund_ack.sql` | `refund_ack_at`, `refund_ack_version` on `one_time_purchases` (nullable) | `ALTER TABLE public.one_time_purchases DROP COLUMN IF EXISTS refund_ack_at, DROP COLUMN IF EXISTS refund_ack_version;` |
-| `20260726120000_profiles_advisor_select_status_gate.sql` | `profiles` advisor SELECT requires `advisor_clients.status IN ('active','accepted')` | Re-run forward file (DROP/CREATE policy) — **applied staging + prod 2026-06-26** ([#150](https://github.com/Voels2000/estate-planner/pull/150)) |
+| `20260726130000_profiles_advisor_select_status_gate.sql` | `profiles` advisor SELECT requires `advisor_clients.status IN ('active','accepted')` | Re-run forward file (DROP/CREATE policy) — **applied staging + prod 2026-06-26** ([#150](https://github.com/Voels2000/estate-planner/pull/150)) |
 
 **Verify after apply:**
 ```sql

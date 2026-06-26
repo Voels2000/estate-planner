@@ -14,15 +14,15 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ## Profiles advisor SELECT — connected-status gate (2026-06-26)
 
-**Migration:** `20260726120000_profiles_advisor_select_status_gate.sql`
+**Migration:** `20260726130000_profiles_advisor_select_status_gate.sql`
 
 **Change:** `Advisors can view client profiles` RLS policy now requires `advisor_clients.status IN ('active','accepted')` — same as ~60 other advisor-scoped policies. Revoke/decline/removed rows retain `advisor_id` + `client_id`; without this gate, PostgREST profile reads leaked PII after disconnect.
 
 **Regression:** `tests/e2e/security/advisor-profiles-revocation-rls.spec.ts` — red on staging pre-migration (Morgan Demo row returned), green after apply.
 
-**Apply staging:** `bash scripts/apply-migration.sh staging supabase/migrations/20260726120000_profiles_advisor_select_status_gate.sql` — applied 2026-06-26.
+**Apply staging:** `bash scripts/apply-migration.sh staging supabase/migrations/20260726130000_profiles_advisor_select_status_gate.sql` — applied 2026-06-26.
 
-**Apply production:** same path with `production` — applied 2026-06-26; ledger row `20260726120000` present (`INSERT 0 0` on re-apply = already recorded).
+**Apply production:** same path with `production` — applied 2026-06-26; ledger row `20260726130000` (version `20260726120000` is reserved for `one_time_purchases_refund_ack`).
 
 **Shipped:** [#150](https://github.com/Voels2000/estate-planner/pull/150)
 
