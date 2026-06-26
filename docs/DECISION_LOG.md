@@ -1,6 +1,6 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-26 (Plan & Export refund ack)
+# Last updated: 2026-06-26 (Plan & Export refund ack; isAdvisor #133/#134 re-attest)
 
 ---
 
@@ -26,7 +26,7 @@
 
 **Latent (unchanged).** `isAttorney` and `isAdmin` use the same `isSuperuser || role` pattern in `getAccessContext`. No parallel billing bug today (`/attorney/billing` uses `attorney_tier`; admin uses middleware bypass). Record for future UX audits; do not fix preemptively.
 
-**Ops.** Prod `avoels@comcast.net` role flip to `consumer` **after** code deploy — re-attest tier 3 + consumer billing + portal access.
+**Ops.** Prod `avoels@comcast.net` role flip to `consumer` **after** code deploy — re-attest tier 3 + consumer billing + portal access. **Done Al / 2026-06-26:** [#133](https://github.com/Voels2000/estate-planner/pull/133) on staging → [#134](https://github.com/Voels2000/estate-planner/pull/134) to `main` (`b7f7093`); Vercel prod deploy success-not-skipped; `UPDATE profiles SET role='consumer'` (kept `is_superuser`, `is_admin`, `is_attorney`); resolver re-attest **PASS** — **superuser+consumer tier 3** (not advisor-bypass), `resolveBillingExperience` → `consumer`, deliverable ✅; `/billing` consumer checkout confirmed (not “Firm not linked”).
 
 **Diagnostic:** `scripts/audit-isadvisor-capability-vs-identity.sh`
 
