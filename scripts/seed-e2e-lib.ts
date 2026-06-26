@@ -268,38 +268,6 @@ export async function triggerE2eRecompute(householdId: string): Promise<void> {
   }
 }
 
-/** Floor estate_health_scores so dashboard onramp gate (≥60) does not catch E2E users. */
-export async function ensureMinEstateHealthScore(
-  householdId: string,
-  minScore: number,
-): Promise<void> {
-  const admin = createAdminClient()
-  const now = new Date().toISOString()
-  const { data: row } = await admin
-    .from('estate_health_scores')
-    .select('score')
-    .eq('household_id', householdId)
-    .maybeSingle()
-
-  const current = row?.score ?? 0
-  if (current >= minScore) {
-    console.log(`  estate_health_scores: ${current} (≥ ${minScore}, ok)`)
-    return
-  }
-
-  const { error } = await admin.from('estate_health_scores').upsert(
-    {
-      household_id: householdId,
-      score: minScore,
-      computed_at: now,
-      updated_at: now,
-    },
-    { onConflict: 'household_id' },
-  )
-  if (error) console.warn('  estate_health_scores floor:', error.message)
-  else console.log(`  estate_health_scores: raised ${current} → ${minScore} (onramp gate)`)
-}
-
 /** Health check answers + baseline score so dashboard and recompute polls have a row. */
 export async function seedE2eEstateHealthForHousehold(householdId: string): Promise<void> {
   const admin = createAdminClient()

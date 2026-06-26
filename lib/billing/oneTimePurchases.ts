@@ -51,15 +51,6 @@ export function toPlanExportPurchaseContext(
   return { editWindowEndsAt: row.edit_window_ends_at }
 }
 
-/** @deprecated Prefer getUserPlanExportPurchase + toPlanExportPurchaseContext */
-export async function userHasCompletedPlanAndExport(
-  admin: SupabaseClient,
-  userId: string,
-): Promise<boolean> {
-  const row = await getUserPlanExportPurchase(admin, userId)
-  return !!row
-}
-
 export type FulfillPlanAndExportInput = {
   admin: SupabaseClient
   userId: string

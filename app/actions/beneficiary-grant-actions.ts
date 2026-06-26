@@ -96,43 +96,6 @@ export async function getGrantsForHousehold(
   return (data ?? []) as BeneficiaryAccessGrant[]
 }
 
-export async function createDigitalAsset(
-  payload: {
-    household_id: string
-    asset_type: string
-    platform: string
-    description: string | null
-    estimated_value: number | null
-    wallet_address: string | null
-    account_username: string | null
-    storage_location: string | null
-    access_instructions: string | null
-    executor_grantee_email: string | null
-    executor_notes: string | null
-  }
-): Promise<{ success: boolean; error?: string }> {
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { success: false, error: 'Not authenticated' }
-
-  const { error } = await supabase
-    .from('digital_assets')
-    .insert({
-      ...payload,
-      owner_id: user.id,
-      name: payload.platform,
-    })
-
-  if (error) {
-    console.error('createDigitalAsset error:', error)
-    return { success: false, error: error.message }
-  }
-
-  revalidatePath('/digital-assets')
-  return { success: true }
-}
-
 export async function deleteGrant(
   grantId: string
 ): Promise<{ success: boolean; error?: string }> {
