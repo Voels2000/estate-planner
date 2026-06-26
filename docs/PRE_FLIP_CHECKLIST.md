@@ -116,7 +116,8 @@ DROP TABLE IF EXISTS public.one_time_purchases;
 1. Apply prod migrations ONLY (no code deploy yet), timestamp order:
    …WA Regime D (20260613120000–140000) → one_time_purchases (20260624140000) →
    RLS fix (20260713130000) → coverage fixes (20260713140000) →
-   service_role grants (20260713150000) → tier_restructure trial columns (20260724120000)
+   service_role grants (20260713150000) → tier_restructure trial columns (20260724120000) →
+   plan_export refund ack (20260726120000_one_time_purchases_refund_ack.sql)
    via: bash scripts/apply-migration.sh production <file>
 2. Verify schema on PROD DB (gate — do not skip):
      SELECT trial_ends_at, has_ever_subscribed FROM profiles LIMIT 1;  -- no 42703

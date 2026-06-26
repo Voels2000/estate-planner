@@ -158,6 +158,7 @@ async function main() {
     const checkoutPromise = page.waitForResponse(
       (res) => res.url().includes('/api/stripe/checkout') && res.request().method() === 'POST',
     )
+    await page.getByTestId('plan-export-refund-ack-checkbox').check()
     await page.getByRole('button', { name: /Buy Plan & Export/i }).click()
     const checkoutRes = await checkoutPromise
     if (!checkoutRes.ok()) {
