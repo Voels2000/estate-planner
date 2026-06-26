@@ -90,6 +90,8 @@ export const getAccessContext = cache(async (): Promise<AccessContext> => {
       profileStatus === 'canceling')
 
   // isSuperuser grants admin, advisor, and attorney portal access regardless of role.
+  // Capability flags — portal/API access. For billing model and primary UI chrome,
+  // use isAdvisorIdentity(profile.role) instead (see lib/access/isAdvisorIdentity.ts).
   return {
     user: { id: user.id, email: user.email ?? '' },
     profile,

@@ -1,6 +1,22 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-25 (re-baseline audit; PR 6/7 + PR 8 on staging)
+# Last updated: 2026-06-25 (isAdvisor capability vs identity; PR 6/7 + PR 8 on staging)
+
+---
+
+## isAdvisor capability vs identity (2026-06-25)
+
+**Problem.** `getAccessContext().isAdvisor` is `isSuperuser || role === 'advisor'` — a **capability** flag for portal/API access. Several page-level branches used it for **identity** decisions (billing model, firm linkage, consumer vs advisor UI chrome). A superuser with `role='consumer'` could reach firm billing (“Firm not linked”) despite tier resolution and middleware already keying identity on `role === 'advisor'`.
+
+**Not a security bug** — nobody gained access they should not have; superusers got the wrong primary experience. Core load-bearing paths were already correct: `buildUserAccessFromProfile`, `middleware.ts` advisor billing redirect, non-superuser `layout.tsx`.
+
+**Decision.** Add `isAdvisorIdentity(role)` (`lib/access/isAdvisorIdentity.ts`) for identity branches. Keep `getAccessContext().isAdvisor` unchanged for capability. Fix identity hotspots: `/billing` (`resolveBillingExperience`), superuser dashboard layout sidebar props, `/print` deliverable bypass, import history visibility, unlock-estate redirect, trust-strategy and incapacity `userRole`. Regression tests: `resolveBillingExperience.spec.ts`, `printPageAdvisorIdentity.spec.ts`.
+
+**Latent (unchanged).** `isAttorney` and `isAdmin` use the same `isSuperuser || role` pattern in `getAccessContext`. No parallel billing bug today (`/attorney/billing` uses `attorney_tier`; admin uses middleware bypass). Record for future UX audits; do not fix preemptively.
+
+**Ops.** Prod `avoels@comcast.net` role flip to `consumer` **after** code deploy — re-attest tier 3 + consumer billing + portal access.
+
+**Diagnostic:** `scripts/audit-isadvisor-capability-vs-identity.sh`
 
 ---
 

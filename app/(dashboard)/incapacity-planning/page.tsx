@@ -4,6 +4,7 @@
 // ─────────────────────────────────────────
 
 import { getUserAccess } from '@/lib/get-user-access'
+import { isAdvisorIdentity } from '@/lib/access/isAdvisorIdentity'
 import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
@@ -18,6 +19,12 @@ export default async function IncapacityPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
 
   if (!hasFeatureAccess('incapacity', access.tier, access.isAdvisor, access.isTrial)) {
     const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
@@ -59,7 +66,7 @@ export default async function IncapacityPage() {
     <div className="mx-auto max-w-4xl px-4 py-12">
       <IncapacityPlanningDashboard
         householdId={householdRow.id}
-        userRole={access.isAdvisor ? 'advisor' : 'consumer'}
+        userRole={isAdvisorIdentity(profile?.role) ? 'advisor' : 'consumer'}
         consumerTier={access.tier}
       />
     </div>

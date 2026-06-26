@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { isAdvisorIdentity } from '@/lib/access/isAdvisorIdentity'
 import { NextResponse, type NextRequest } from 'next/server'
 import {
   isLocalDevHost,
@@ -249,7 +250,7 @@ export async function middleware(request: NextRequest) {
   const hasActiveSubscription = ['active', 'trialing', 'canceling'].includes(
     subscription_status
   )
-  const isAdvisor = profile?.role === 'advisor'
+  const isAdvisor = isAdvisorIdentity(profile?.role)
   const isFirmMember = profile?.firm_role === 'member'
   if (isAdvisor && !isSuperuser && !isFirmMember && !hasActiveSubscription) {
     return redirectPreservingCookies(request, '/billing', supabaseResponse)

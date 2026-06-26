@@ -10,6 +10,7 @@ import {
   ADVISOR_FIRM_SEAT_RATES,
 } from '@/lib/tiers'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { resolveBillingExperience } from '@/lib/billing/resolveBillingExperience'
 import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
 import { getSubscribedBillingPeriod } from '@/lib/billing/subscribedBillingPeriod'
 import { consumerCheckoutBlockReason } from '@/lib/billing/b2b2cBillingPolicy'
@@ -37,9 +38,14 @@ export default async function BillingPage({
   const access = await getAccessContext()
   if (!access.user) redirect('/login')
 
-  if (access.isAdvisor) {
-    if (!access.isFirmOwner) {
-      return (
+  const billingExperience = resolveBillingExperience({
+    role: access.profile?.role,
+    isFirmOwner: access.isFirmOwner,
+    firmId: access.firm_id,
+  })
+
+  if (billingExperience === 'firm_member') {
+    return (
         <div className="mx-auto max-w-lg px-4 py-24 text-center">
           <Card className="p-8">
             <div className="mb-4 text-4xl">🏢</div>
@@ -56,10 +62,10 @@ export default async function BillingPage({
           </Card>
         </div>
       )
-    }
+  }
 
-    if (!access.firm_id) {
-      return (
+  if (billingExperience === 'firm_not_linked') {
+    return (
         <div className="mx-auto max-w-lg px-4 py-24 text-center">
           <Card className="p-8">
             <div className="mb-4 text-4xl">⚠️</div>
@@ -75,8 +81,9 @@ export default async function BillingPage({
           </Card>
         </div>
       )
-    }
+  }
 
+  if (billingExperience === 'firm_owner') {
     const supabase = await createClient()
     const { data: firmRow } = await supabase
       .from('firms')
