@@ -1,4 +1,5 @@
 import { getUserAccess } from '@/lib/get-user-access'
+import { isAdvisorIdentity } from '@/lib/access/isAdvisorIdentity'
 import { featureUpgradeTier, hasFeatureAccess } from '@/lib/tiers'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
@@ -73,6 +74,12 @@ export default async function MyEstateTrustStrategyPage({
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const { data: profileRow } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
 
   if (!hasFeatureAccess('my-estate-trust-strategy', access.tier, access.isAdvisor, access.isTrial)) {
     const householdContext = await loadUpgradeBannerHouseholdContext(supabase, user.id)
@@ -527,7 +534,7 @@ export default async function MyEstateTrustStrategyPage({
       <MyEstateTrustStrategyClient
         householdId={householdRow.id}
         ownerUserId={user.id}
-        userRole={access.isAdvisor ? 'advisor' : 'consumer'}
+        userRole={isAdvisorIdentity(profileRow?.role) ? 'advisor' : 'consumer'}
         consumerTier={access.tier}
         initialTab={tab ?? 'gifting'}
         advisorRecommendations={advisorRecommendations ?? []}

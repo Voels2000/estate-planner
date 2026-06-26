@@ -1,4 +1,3 @@
-import { getUserAccess } from '@/lib/get-user-access'
 import {
   hasDeliverableDownloadAccess,
   hasDeliverableUpdateAccess,
@@ -12,10 +11,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { DELIVERABLE_MIN_TIER } from '@/lib/tiers'
+import { isAdvisorIdentity } from '@/lib/access/isAdvisorIdentity'
 import { PrintClient } from './_print-client'
 
 export default async function PrintPage() {
-  const access = await getUserAccess()
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
@@ -53,12 +52,14 @@ export default async function PrintPage() {
 
   const accessOptions = { planExportPurchase }
 
+  const advisorIdentity = isAdvisorIdentity(profile?.role)
+
   const canUpdateDeliverable =
-    access.isAdvisor ||
+    advisorIdentity ||
     hasDeliverableUpdateAccess(profileAccess, DELIVERABLE_MIN_TIER, accessOptions)
 
   const canDownloadDeliverable =
-    access.isAdvisor ||
+    advisorIdentity ||
     hasDeliverableDownloadAccess(profileAccess, DELIVERABLE_MIN_TIER, accessOptions)
 
   const showPlanAndExportOffer = shouldOfferPlanAndExportPurchase({
@@ -71,7 +72,7 @@ export default async function PrintPage() {
   return (
     <PrintClient
       householdId={household.id}
-      isAdvisor={access.isAdvisor}
+      isAdvisor={advisorIdentity}
       canUpdateDeliverable={canUpdateDeliverable}
       canDownloadDeliverable={canDownloadDeliverable}
       showPlanAndExportOffer={showPlanAndExportOffer}

@@ -8,6 +8,7 @@ import { InviteAdvisorOnboardingGate } from './_components/invite-advisor-gate'
 import { WizardOnboardingGate } from './_components/wizard-onboarding-gate'
 import { getDashboardLayoutContext } from '@/lib/access/getDashboardLayoutContext'
 import { getUserAccess } from '@/lib/get-user-access'
+import { isAdvisorIdentity } from '@/lib/access/isAdvisorIdentity'
 import {
   isMinimumViableProfile,
   isWizardComplete,
@@ -126,9 +127,11 @@ export default async function DashboardLayout({
             user={sessionUser}
             role={profileFull?.role ?? profile?.role}
             tier={3}
-            isAdvisor
+            isAdvisor={isAdvisorIdentity(profileFull?.role ?? profile?.role)}
             isAdmin
-            isAttorney
+            isAttorney={
+              profileFull?.role === 'attorney' || profileFull?.is_attorney === true
+            }
             isSuperuser
             hasHousehold={hasHousehold}
             initialUnreadCount={unreadNotificationCount}
