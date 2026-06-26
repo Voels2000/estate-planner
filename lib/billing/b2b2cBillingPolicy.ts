@@ -55,10 +55,11 @@ export type ConsumerCheckoutBlockCode =
   | 'advisor_managed'
   | 'attorney_managed'
   | 'advisor_client'
+  | 'refund_ack_required'
 
 export type ConsumerCheckoutBlock = {
   code: ConsumerCheckoutBlockCode
-  httpStatus: 403 | 409
+  httpStatus: 400 | 403 | 409
   message: string
 }
 

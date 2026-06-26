@@ -1374,6 +1374,10 @@ export async function ensureE2ePlanExportPurchaser(): Promise<string> {
     paymentIntentId: null,
     amountCents: 149_000,
     currency: 'usd',
+    refundAck: {
+      at: now,
+      version: '2026-06-26',
+    },
   })
   if (fulfillErr) throw new Error(`plan-export purchase seed: ${fulfillErr.message}`)
 

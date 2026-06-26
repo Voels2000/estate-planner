@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-25 (tier restructure PRs 1–8 + audit on staging; Gate 2 code gate closed; persona matrix in `seed:e2e`)
+**Last updated:** 2026-06-26 (cutover steps 0–4 attested; refund ack on staging; step 5 open)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -115,6 +115,7 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 - [x] Production consumer price throw-guard: `resolveConsumerPriceId` throws when unset in `VERCEL_ENV=production` (verify: `lib/billing/stripePrices.ts:99-110`, PR #4)
 - [x] **Live prod attestation (keys + prices):** `GET /api/admin/verify-env?live=1` on `www.mywealthmaps.com` → `missing` empty, `liveness.stripe: LIVE_OK`, **11/11** live prices `active` (6 consumer + 3 advisor + 2 attorney) (attest: Al / 2026-06-15)
 - [x] **Live prod attestation (post-webhook secret fix):** re-run `verify-env?live=1` after `STRIPE_WEBHOOK_SECRET` aligned in Vercel Production → still `missing` empty, `LIVE_OK`, 11/11 `active` (attest: Al / 2026-06-15)
+- [x] **Post-cutover re-attest (Plan & Export price live):** `verify-env?live=1` on prod after `sk_live_` fix → `missing` empty, `LIVE_OK`, **12/12** live prices `active` (attest: Al / 2026-06-25)
 - [x] **Live Stripe webhook plumbing:** endpoint on canonical `www.mywealthmaps.com`, signing secret aligned in Vercel Production, delivery confirmed **200** on resend (e.g. `customer.created`) — prior attestation assumed delivery; this proves it (attest: Al / 2026-06-15)
 - [x] **`?live=1` webhook event subscriptions:** canonical www endpoint subscribed to all 5 handler events; MISSING → `LIVE_FAIL` (verify: `lib/env/stripeWebhookVerify.ts`, PR #15)
 - [x] **`?live=1` price `tax_behavior`:** INFO-only per live price (pending WA B&O ruling — report, do not assert) (verify: `lib/env/verifyEnv.ts`, PR #15)
@@ -223,7 +224,38 @@ DROP TABLE IF EXISTS public.one_time_purchases;
 
 **When to reverse vs re-apply:** Step 2 query fails → migration may not have applied — diagnose (wrong DB target, permissions) and **re-run forward**; don't reverse. Reverse only when forward **applied but is wrong**. After gate flip, trial column drops destroy real data — PITR is the recovery path.
 
+### Post-cutover pending migrations (pre-flip)
+
+Apply **per environment** before the code that writes these columns — staging before staging merge/deploy; production before/at production deploy ([DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift)).
+
+| Forward migration | Adds | Reverse |
+|-------------------|------|---------|
+| `20260726120000_one_time_purchases_refund_ack.sql` | `refund_ack_at`, `refund_ack_version` on `one_time_purchases` (nullable) | `ALTER TABLE public.one_time_purchases DROP COLUMN IF EXISTS refund_ack_at, DROP COLUMN IF EXISTS refund_ack_version;` |
+
+**Verify after apply:**
+```sql
+SELECT refund_ack_at, refund_ack_version FROM one_time_purchases LIMIT 1;  -- must not 42703
+```
+
+**Pairs with:** Plan & Export refund-ack checkbox PR — server gate at checkout API; ack persisted on `one_time_purchases` at webhook fulfillment. Step 5 Plan & Export real-card smoke should run **after** this code is on prod.
+
 ### Tier restructure prod cutover — steps 0–5 (then stop)
+
+| Step | Status | Attestation |
+|------|--------|-------------|
+| **0** Docs reconciliation | ✅ | [PR #128](https://github.com/Voels2000/estate-planner/pull/128) merged |
+| **1** Prod migrations (no code) | ✅ | `20260624140000` + `20260724120000` applied prod (Al / 2026-06-25) |
+| **2** Schema gate on prod | ✅ | `trial_ends_at` / `one_time_purchases` queries pass (Al / 2026-06-25) |
+| **3** Promote → deploy | ✅ | [PR #130](https://github.com/Voels2000/estate-planner/pull/130) → `main`; CI quartet green; Vercel prod deploy not skipped (Al / 2026-06-25) |
+| **4** Post-deploy verify | ✅ (partial) | Resolver + canary browser + `verify-env` below; **`release:post-deploy` not attested** |
+| **5** Live-money smoke | ⬜ | Real-card + C-4 billing walkthrough — next gate |
+
+**Step 4 attestation detail (Al / 2026-06-25–26):**
+- `GET /api/admin/verify-env?live=1` → `missing: []`, `LIVE_OK`, **12/12** prices active
+- **Resolver (prod DB):** `canary-consumer@mywealthmaps.com` → tier 3 active-paid deliverable; `avoels@comcast.net` → **superuser+consumer tier 3** (post [#134](https://github.com/Voels2000/estate-planner/pull/134)); `david@gmail.com` → tier 1 read-only (never sign in)
+- **Browser:** canary sign-in + dashboard on `www.mywealthmaps.com`
+- **Stripe account guard:** `sk_live_` + correct account on prod
+- **Open:** `npm run release:post-deploy` (Voels 7/7 + RLS 3/3)
 
 **Step 0 — Land docs reconciliation.** [PR #128](https://github.com/Voels2000/estate-planner/pull/128) merged (LAUNCH + PRE_FLIP migration runbooks aligned through `20260724120000`). Execute from reconciled docs only — do not reconcile mid-cutover.
 
@@ -240,7 +272,7 @@ SELECT 1 FROM one_time_purchases LIMIT 1;                           -- must not 
 ```
 Both must succeed. If either fails, **stop** — deploying code now would drop every consumer to tier 0 (PR 1) or error every deliverable check (PR 7). Do not skip because step 1 "looked like it worked."
 
-**Step 3 — Promote staging → `main` and deploy to prod.** Open the staging→`main` PR; CI green (`verify` + `e2e-smoke` + `rls-verify` per branch protection); merge; let Vercel deploy. Carries the full inventory delta (tier restructure PRs 1–8, export, deliverable rules, guards, audit). Step 2 passed → code lands on schema that supports it.
+**Step 3 — Promote staging → `main` and deploy to prod.** [PR #130](https://github.com/Voels2000/estate-planner/pull/130) merged staging→`main`; CI green (`verify` + `e2e-smoke` + `rls-verify` per branch protection); Vercel prod deploy **not skipped** (attest: Al / 2026-06-25). Carries the full inventory delta (tier restructure PRs 1–8, export, deliverable rules, guards, audit). Step 2 passed → code lands on schema that supports it.
 
 **Step 4 — Verify on prod immediately (before trusting anything).**
 - `npm run release:post-deploy` — Voels gate + RLS SQL verify (standard Gate 4).
@@ -260,7 +292,7 @@ Both must succeed. If either fails, **stop** — deploying code now would drop e
 
 1. Verify Bucket B — every checkbox above is checked
 2. Verify tier-restructure prod cutover steps 0–5 above are complete (schema verified on prod **before** code deploy; post-deploy canary tier-resolution green)
-3. **Env pre-check:** `GET /api/admin/verify-env?live=1` with `x-admin-token` → `missing` empty, `liveness.stripe: LIVE_OK`, all live prices `active` — **attested Al / 2026-06-15**; re-run before flip if env changes
+3. **Env pre-check:** `GET /api/admin/verify-env?live=1` with `x-admin-token` → `missing` empty, `liveness.stripe: LIVE_OK`, all live prices `active` — **attested Al / 2026-06-15**; **re-attested Al / 2026-06-25** (12/12 active post-cutover); re-run before flip if env changes
 4. Supabase Auth → confirm email-confirm flow is ON for production project
 5. Verify `/auth/callback` works on production (sign in with existing account)
 6. Set `PUBLIC_SIGNUP_OPEN=true` in Vercel Production environment variables

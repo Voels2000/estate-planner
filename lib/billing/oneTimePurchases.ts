@@ -23,6 +23,8 @@ export type OneTimePurchaseRow = {
   edit_window_ends_at: string
   warning_14d_sent_at: string | null
   warning_3d_sent_at: string | null
+  refund_ack_at: string | null
+  refund_ack_version: string | null
   created_at: string
 }
 
@@ -66,12 +68,20 @@ export type FulfillPlanAndExportInput = {
   amountCents: number
   currency: string
   fulfilledAt?: Date
+  refundAck: { at: string; version: string }
 }
 
 /** Idempotent insert keyed on stripe_checkout_session_id. Returns true if a new row was created. */
 export async function fulfillPlanAndExportPurchase(
   input: FulfillPlanAndExportInput,
 ): Promise<{ created: boolean; error: Error | null }> {
+  if (!input.refundAck?.at || !input.refundAck?.version) {
+    return {
+      created: false,
+      error: new Error('Plan & Export fulfillment missing refund acknowledgment metadata'),
+    }
+  }
+
   const purchasedAt = input.fulfilledAt ?? new Date()
   const editWindowEndsAt = computePlanExportEditWindowEndsAt(purchasedAt)
 
@@ -85,6 +95,8 @@ export async function fulfillPlanAndExportPurchase(
     status: 'completed',
     purchased_at: purchasedAt.toISOString(),
     edit_window_ends_at: editWindowEndsAt.toISOString(),
+    refund_ack_at: input.refundAck.at,
+    refund_ack_version: input.refundAck.version,
   })
 
   if (!error) {

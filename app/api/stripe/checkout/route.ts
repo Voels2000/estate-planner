@@ -71,6 +71,7 @@ export async function POST(req: Request) {
         stripe,
         supabase,
         admin: createAdminClient(),
+        refundAckAccepted: body.refundAckAccepted,
       })
 
       if (!result.ok) {

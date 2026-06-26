@@ -10,6 +10,7 @@
  */
 
 import { PLAN_EXPORT_EDIT_WINDOW_DAYS } from '@/lib/billing/planExportAccess'
+import { planExportRefundDisclosureParagraph } from '@/lib/legal/plan-export-refund-policy'
 
 export const LEGAL_URLS = {
   tos: 'https://mywealthmaps.com/terms',
@@ -65,11 +66,12 @@ export const BILLING_DISCLOSURES = {
 
   /**
    * Plan & Export one-time SKU — checkout, receipt, and in-app surfaces.
-   * Lock removes plan *updates*; prior downloads remain available.
+   * Edit-window terms + non-refundable digital-goods disclosure (co-located).
    */
   planAndExportCheckout: (priceDisplay: string) =>
     `Plan & Export is a one-time ${priceDisplay} purchase including ${PLAN_EXPORT_EDIT_WINDOW_DAYS} days of plan editing and unlimited downloads. ` +
-    `After ${PLAN_EXPORT_EDIT_WINDOW_DAYS} days your plan stays downloadable; updating it requires a subscription.`,
+    `After ${PLAN_EXPORT_EDIT_WINDOW_DAYS} days your plan stays downloadable; updating it requires a subscription. ` +
+    planExportRefundDisclosureParagraph(),
 
   planExportWindowWarningEmail: (daysRemaining: 14 | 3, lockDate: string) => ({
     subject:

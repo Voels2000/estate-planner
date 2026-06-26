@@ -113,25 +113,29 @@ DROP TABLE IF EXISTS public.one_time_purchases;
 
 ```
 0. [x] Docs reconciliation (#128 merged)
-1. Apply prod migrations ONLY (no code deploy yet), timestamp order:
+1. [x] Apply prod migrations ONLY (no code deploy yet), timestamp order:
    …WA Regime D (20260613120000–140000) → one_time_purchases (20260624140000) →
    RLS fix (20260713130000) → coverage fixes (20260713140000) →
-   service_role grants (20260713150000) → tier_restructure trial columns (20260724120000)
+   service_role grants (20260713150000) → tier_restructure trial columns (20260724120000) →
+   plan_export refund ack (20260726120000_one_time_purchases_refund_ack.sql)
    via: bash scripts/apply-migration.sh production <file>
-2. Verify schema on PROD DB (gate — do not skip):
+   (attest: Al / 2026-06-25)
+2. [x] Verify schema on PROD DB (gate — do not skip):
      SELECT trial_ends_at, has_ever_subscribed FROM profiles LIMIT 1;  -- no 42703
      SELECT 1 FROM one_time_purchases LIMIT 1;                          -- table exists
-   If either fails → STOP. Do not deploy code.
-3. Promote staging → main; CI green (verify + e2e-smoke + rls-verify); merge; Vercel prod deploy
-4. Verify on prod immediately:
-     npm run release:post-deploy
-     GET /api/admin/verify-env?live=1  → LIVE_OK, prices active
-     Canary sign-in (canary-consumer@mywealthmaps.com) → correct effective tier + dashboard
-     Stripe account guard live (sk_live_ + correct account, no throw)
+   (attest: Al / 2026-06-25)
+3. [x] Promote staging → main (#130); CI green (verify + e2e-smoke + rls-verify); merge; Vercel prod deploy not skipped
+   (attest: Al / 2026-06-25)
+4. [x] Verify on prod immediately (partial — release:post-deploy still open):
+     GET /api/admin/verify-env?live=1  → LIVE_OK, 12/12 prices active (2026-06-25)
+     Three-account resolver: canary tier 3 · avoels superuser+consumer tier 3 (post-#134) · david tier 1
+     Canary browser sign-in → dashboard (2026-06-25)
+     Stripe account guard live (sk_live_ + correct account)
+     [ ] npm run release:post-deploy (Voels + RLS) — not attested post-cutover
      PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke
-       (same resolver/gate/boundary coverage as staging; no automated live charge)
-5. Real-card live smoke (smallest tier, refund/cancel after) + C-4 billing walkthrough
-── STOP. Cutover complete. Gate flip is §E. ──
+       (resolver/gate/boundary; no automated live charge)
+5. [ ] Real-card live smoke (smallest tier, refund/cancel after) + C-4 billing walkthrough
+── STOP. Cutover complete when step 5 done. Gate flip is §E. ──
 ```
 
 ---

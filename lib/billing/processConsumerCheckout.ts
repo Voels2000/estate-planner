@@ -11,6 +11,10 @@ import {
   getOneTimeSkuConfig,
   PLAN_AND_EXPORT_SKU,
 } from '@/lib/billing/stripePrices'
+import {
+  buildPlanExportRefundAckMetadata,
+  planExportRefundAckBlockReason,
+} from '@/lib/billing/planExportRefundAck'
 
 export type ConsumerCheckoutStripe = {
   customers: Pick<Stripe['customers'], 'create' | 'retrieve'>
@@ -123,11 +127,19 @@ function assertAbsoluteBaseUrl(baseUrl: string): string {
 export type ProcessPlanAndExportCheckoutInput = Omit<
   ProcessConsumerCheckoutInput,
   'priceId' | 'trialDays'
->
+> & {
+  /** Client signals checkbox checked; server stamps ack metadata when true. */
+  refundAckAccepted: unknown
+}
 
 export async function processPlanAndExportCheckout(
   input: ProcessPlanAndExportCheckoutInput,
 ): Promise<ProcessConsumerCheckoutResult> {
+  const refundAckBlock = planExportRefundAckBlockReason(input.refundAckAccepted)
+  if (refundAckBlock) {
+    return { ok: false, block: refundAckBlock }
+  }
+
   const block = consumerOneTimeCheckoutBlockReason({
     subscription_status: input.billingProfile?.subscription_status,
     subscription_plan: input.billingProfile?.subscription_plan,
@@ -152,7 +164,11 @@ export async function processPlanAndExportCheckout(
     cancel_url: input.returnTo
       ? `${baseUrl}/billing?canceled=true&returnTo=${encodeURIComponent(input.returnTo)}`
       : `${baseUrl}/billing?canceled=true`,
-    metadata: { userId: input.user.id, sku: PLAN_AND_EXPORT_SKU },
+    metadata: {
+      userId: input.user.id,
+      sku: PLAN_AND_EXPORT_SKU,
+      ...buildPlanExportRefundAckMetadata(),
+    },
   })
 
   return { ok: true, url: session.url }
