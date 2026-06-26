@@ -299,7 +299,7 @@ Code-only change. Rollback = **deploy revert** (restores old gate, not data). Ca
 | Step | Action |
 |------|--------|
 | 1 | Deploy gate code to prod |
-| 2 | `E2E_CANARY_PASSWORD='…' npm run seed:prod-canary -- --confirm` (canary only — does not touch avoels/david) |
+| 2 | `npm run seed:prod-canary -- --confirm` (canary only — password from `.env.test.production` `PLAYWRIGHT_CONSUMER_PASSWORD`) |
 | 3 | `npm run audit:dashboard-gate` — canary income present + unlocked; avoels + david unlocked |
 | 4 | Confirm canary monitoring/alerting **live again** post-cutover |
 
@@ -307,7 +307,7 @@ Code-only change. Rollback = **deploy revert** (restores old gate, not data). Ca
 
 **Staging vs prod:** Staging merge + verify exercises gate logic, onramp UI, and E2E seeds — it does **not** run `seed:prod-canary` (prod-only write). Green staging ≠ canary re-seeded. Step 3 `audit:dashboard-gate` against prod is the first real proof that step 2 landed.
 
-**Step 2 password:** one-shot prefix only — `E2E_CANARY_PASSWORD='…' npm run seed:prod-canary -- --confirm`. Do not `export` into the shell session (lingers in env + history). Clear scrollback if the shell logs the command line.
+**Step 2 password:** in `.env.test.production` as `PLAYWRIGHT_CONSUMER_PASSWORD` (same value as Vercel `E2E_CANARY_PASSWORD`). Run `npm run seed:prod-canary -- --confirm` — no shell prefix needed. One-shot override still works: `E2E_CANARY_PASSWORD='…' npm run seed:prod-canary -- --confirm`.
 
 ### Gate 2 — Go-live day sequence (in order)
 
