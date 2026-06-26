@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import Link from 'next/link'
 
 export type LegalBlock =
   | { kind: 'p'; text: string }
@@ -88,20 +87,5 @@ export function LegalDocumentLayout({ title, lastUpdated, sections, contact }: P
         )}
       </div>
     </div>
-  )
-}
-
-export function LegalFooterNote() {
-  return (
-    <p className="mt-8 text-center text-xs text-[#718096]">
-      Questions?{' '}
-      <Link href="/privacy" className="underline-offset-4 hover:underline">
-        Privacy Policy
-      </Link>
-      {' · '}
-      <Link href="/terms" className="underline-offset-4 hover:underline">
-        Terms of Service
-      </Link>
-    </p>
   )
 }

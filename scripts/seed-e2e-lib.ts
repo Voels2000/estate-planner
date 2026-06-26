@@ -268,38 +268,6 @@ export async function triggerE2eRecompute(householdId: string): Promise<void> {
   }
 }
 
-/** Floor estate_health_scores so dashboard onramp gate (≥60) does not catch E2E users. */
-export async function ensureMinEstateHealthScore(
-  householdId: string,
-  minScore: number,
-): Promise<void> {
-  const admin = createAdminClient()
-  const now = new Date().toISOString()
-  const { data: row } = await admin
-    .from('estate_health_scores')
-    .select('score')
-    .eq('household_id', householdId)
-    .maybeSingle()
-
-  const current = row?.score ?? 0
-  if (current >= minScore) {
-    console.log(`  estate_health_scores: ${current} (≥ ${minScore}, ok)`)
-    return
-  }
-
-  const { error } = await admin.from('estate_health_scores').upsert(
-    {
-      household_id: householdId,
-      score: minScore,
-      computed_at: now,
-      updated_at: now,
-    },
-    { onConflict: 'household_id' },
-  )
-  if (error) console.warn('  estate_health_scores floor:', error.message)
-  else console.log(`  estate_health_scores: raised ${current} → ${minScore} (onramp gate)`)
-}
-
 /** Health check answers + baseline score so dashboard and recompute polls have a row. */
 export async function seedE2eEstateHealthForHousehold(householdId: string): Promise<void> {
   const admin = createAdminClient()
@@ -834,7 +802,7 @@ export async function ensureAdvisorFirmForE2e(
         owner_id: advisorUserId,
         tier: 'starter',
         seat_count: 1,
-        subscription_status: null,
+        subscription_status: 'active',
       })
       .select('id')
       .single()
@@ -845,6 +813,12 @@ export async function ensureAdvisorFirmForE2e(
     console.log(`  firms: created ${firmId}`)
   } else {
     console.log(`  firms: existing ${firmId}`)
+    const { error: firmErr } = await admin
+      .from('firms')
+      .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
+      .eq('id', firmId)
+      .or('subscription_status.is.null,subscription_status.in.(inactive,canceled,past_due)')
+    if (firmErr) console.warn('  firms subscription_status:', firmErr.message)
   }
 
   await admin
@@ -878,6 +852,23 @@ export async function ensureAdvisorFirmForE2e(
   }
 
   return firmId
+}
+
+/** E2E advisors need active firm billing so invite/accept API paths pass capacity gate. */
+export async function ensureE2eAdvisorFirmSubscriptionActive(advisorUserId: string): Promise<void> {
+  const admin = createAdminClient()
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('firm_id')
+    .eq('id', advisorUserId)
+    .maybeSingle()
+  if (!profile?.firm_id) return
+
+  await admin
+    .from('firms')
+    .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
+    .eq('id', profile.firm_id)
+    .or('subscription_status.is.null,subscription_status.in.(inactive,canceled,past_due)')
 }
 
 function supabaseProjectRef(url: string): string {
@@ -1402,6 +1393,34 @@ export async function ensureE2ePlanExportPurchaser(): Promise<string> {
 
   console.log(`  plan-export purchaser: ${id.email} (completed one_time_purchases, no active sub)`)
   return userId
+}
+
+/** Linked-consumer fixture household — no advisor_clients row; link is created in Playwright setup. */
+export async function ensureE2eConsumerLinked(): Promise<{ userId: string; householdId: string }> {
+  const admin = createAdminClient()
+  const linked = E2E_IDENTITIES.consumerLinked
+
+  const userId = await ensureAuthUser({
+    email: linked.email,
+    password: linked.password,
+    fullName: linked.fullName,
+    role: 'consumer',
+  })
+
+  const householdId = await seedE2eConsumerHousehold(
+    userId,
+    linked.householdName,
+    3,
+    { fullName: linked.fullName },
+  )
+
+  await triggerE2eGenerateBaseCase(householdId, linked.email, 'consumer')
+
+  const { error } = await admin.from('advisor_clients').delete().eq('client_id', userId)
+  if (error) console.warn('  consumer-linked advisor_clients purge:', error.message)
+  else console.log('  consumer-linked: no advisor_clients row (link via Playwright setup)')
+
+  return { userId, householdId }
 }
 
 /** Fail loudly if any @mywealthmaps.test account is in an invalid state. */
