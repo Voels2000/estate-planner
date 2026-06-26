@@ -2,7 +2,7 @@
 
 Single map from planning artifacts to **shipped outcomes**. Use this instead of hunting eight separate docs.
 
-**Status (staging):** PRs **1–5** merged and verified (`npm run verify:pr5-staging-gate`). **Code gate closed** — see [LAUNCH.md § Bucket C](./LAUNCH.md#bucket-c--gate-2-flip-sequence-do-not-run-until-bo-ready). **Prod cutover** (migration → verify columns → code → flip) is the live runbook in that same section.
+**Status (staging + prod cutover):** PRs **1–8** on staging; **prod cutover steps 0–4 complete** (step 5 live-money smoke open). See [LAUNCH.md § Tier restructure cutover](./LAUNCH.md#tier-restructure-prod-cutover--steps-05-then-stop). **Prod cutover** runbook + Gate 2 flip remain in Bucket C.
 
 ---
 
