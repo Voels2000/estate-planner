@@ -33,6 +33,29 @@ const setupTimeout = 120_000
 
 const TEST_ENV = process.env.TEST_ENV ?? 'local'
 
+const REUSE_AUTH = process.env.E2E_REUSE_AUTH === '1'
+
+/** Minted once in e2e-prepare; suite jobs reuse `.auth/` from the prepare tarball. */
+const CI_SHARED_SETUP_PROJECTS = [
+  'consumer-setup',
+  'advisor-setup',
+  'advisor-empty-setup',
+  'consumer-link-setup',
+  'consumer-advisor-link-setup',
+]
+
+function scrubSharedSetupProjects(projects: Project[]): Project[] {
+  if (!REUSE_AUTH) return projects
+  return projects
+    .filter((p) => !CI_SHARED_SETUP_PROJECTS.includes(p.name ?? ''))
+    .map((p) => ({
+      ...p,
+      dependencies: (p.dependencies ?? []).filter(
+        (d) => !CI_SHARED_SETUP_PROJECTS.includes(d),
+      ),
+    }))
+}
+
 // INTERIM: prod has no advisor role-canary yet, so these have nothing to pass
 // against. Remove once the advisor↔consumer canary pair lands (Track 2).
 const PROD_SMOKE_EXCLUDE = new Set([
@@ -180,7 +203,7 @@ function buildProjects(): Project[] {
     },
   )
 
-  return resolveProjects(projects)
+  return scrubSharedSetupProjects(resolveProjects(projects))
 }
 
 export default defineConfig({

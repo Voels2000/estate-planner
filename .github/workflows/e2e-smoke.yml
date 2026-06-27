@@ -58,13 +58,36 @@ jobs:
           RESEND_API_KEY: re_placeholder_ci_build_only
           STRIPE_SECRET_KEY: sk_test_placeholder_ci_build_only
 
+      # Mint after build so the access-token TTL clock starts as late as possible.
+      - name: Mint shared auth sessions (sequential, single login per identity)
+        run: |
+          set -euo pipefail
+          npx dotenv -o -e .env.local -e .env.test.local -- npx playwright test --project=consumer-setup --workers=1
+          npx dotenv -o -e .env.local -e .env.test.local -- npx playwright test --project=advisor-empty-setup --workers=1
+          npx dotenv -o -e .env.local -e .env.test.local -- npx playwright test --project=consumer-advisor-link-setup --workers=1
+        env:
+          TEST_ENV: local
+
+      - name: Guard auth TTL for parallel fan-out
+        run: |
+          set -euo pipefail
+          node scripts/assert-auth-ttl.mjs .auth/consumer.json 1800
+          node scripts/assert-auth-ttl.mjs .auth/advisor.json 1800
+          node scripts/assert-auth-ttl.mjs .auth/consumer-link.json 1800
+          node scripts/assert-auth-ttl.mjs .auth/advisor-empty.json 1800
+
       - name: Stage CI E2E prepare artifact
         run: |
           set -euo pipefail
           test -d .next
           test -f .env.local
           test -f .env.test.local
-          tar -czf e2e-smoke-prepare.tar.gz .next .env.local .env.test.local
+          test -d .auth
+          test -f .auth/consumer.json
+          test -f .auth/advisor.json
+          test -f .auth/consumer-link.json
+          test -f .auth/advisor-empty.json
+          tar -czf e2e-smoke-prepare.tar.gz .next .env.local .env.test.local .auth
 
       - name: Upload CI E2E prepare artifact
         uses: actions/upload-artifact@v4
@@ -103,6 +126,8 @@ jobs:
 
       - name: E2E go-live profile smoke
         run: npm run test:e2e:go-live-profile -- --workers=1
+        env:
+          E2E_REUSE_AUTH: '1'
 
   e2e-security-smoke:
     if: vars.E2E_SMOKE_IN_CI == 'true'
@@ -132,7 +157,9 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: E2E security smoke
-        run: npm run test:e2e:security-smoke -- --workers=1
+        run: npm run test:e2e:security-smoke:ci -- --workers=1
+        env:
+          E2E_REUSE_AUTH: '1'
 
   e2e-b4-gate:
     if: vars.E2E_SMOKE_IN_CI == 'true'
@@ -162,7 +189,9 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: E2E B4 gate (prospect, health-score, playbook, drip)
-        run: npm run test:e2e:b4-gate -- --workers=1
+        run: npm run test:e2e:b4-gate:ci -- --workers=1
+        env:
+          E2E_REUSE_AUTH: '1'
 
   e2e-security-isolation:
     if: vars.E2E_SMOKE_IN_CI == 'true'
@@ -192,7 +221,9 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: E2E cross-household isolation (IDOR matrix)
-        run: npm run test:e2e:security-isolation -- --workers=1
+        run: npm run test:e2e:security-isolation:ci -- --workers=1
+        env:
+          E2E_REUSE_AUTH: '1'
 
   # Aggregator preserves branch-protection check name `e2e-smoke` while suites run in parallel.
   e2e-smoke:

@@ -1,6 +1,7 @@
 import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import { resolveE2eEmail, resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
+import { writeAuthExpirySidecar } from './e2e-auth-session'
 
 setup('authenticate consumer @production', async ({ page }) => {
   const email = resolveE2eEmail(
@@ -33,4 +34,5 @@ setup('authenticate consumer @production', async ({ page }) => {
   }
 
   await page.context().storageState({ path: '.auth/consumer.json' })
+  writeAuthExpirySidecar('.auth/consumer.json')
 })

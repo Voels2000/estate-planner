@@ -1,6 +1,7 @@
 import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import { resolveE2eEmail, resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
+import { writeAuthExpirySidecar } from './e2e-auth-session'
 
 setup('authenticate advisor', async ({ page }) => {
   const email = resolveE2eEmail(
@@ -18,4 +19,5 @@ setup('authenticate advisor', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 90_000 })
   await page.context().storageState({ path: '.auth/advisor.json' })
+  writeAuthExpirySidecar('.auth/advisor.json')
 })
