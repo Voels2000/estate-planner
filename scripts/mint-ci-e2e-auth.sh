@@ -13,4 +13,7 @@ echo "Minting shared link-fixture sessions (consumer-link, consumer-pending, adv
 echo "Minting per-suite sessions (independent API sessions — no refresh-token rotation)…"
 "${DOTENV[@]}" npx tsx scripts/mint-ci-e2e-auth-sessions.ts
 
+echo "Validating minted sessions server-side (refresh-token health)…"
+"${DOTENV[@]}" npx tsx scripts/validate-ci-e2e-auth-sessions.ts
+
 echo "Per-suite auth mint complete."

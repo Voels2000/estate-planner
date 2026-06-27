@@ -4,13 +4,21 @@
  * Each signInWithPassword creates a concurrent session (separate refresh token) so
  * parallel suite jobs never share or revoke one another's tokens.
  */
-import { mkdirSync, writeFileSync } from 'fs'
+import { mkdirSync, writeFileSync, existsSync } from 'fs'
 import { createClient } from '@supabase/supabase-js'
 import { E2E_IDENTITIES } from './e2e-test-identities'
 import { initSupabaseEnv } from './seed-e2e-lib'
-import { writeAuthExpirySidecar } from '../tests/e2e/helpers/e2e-auth-session'
+import { logAdvisorGetUserSnapshot } from './ci-e2e-auth-getuser'
+import { writeAuthExpirySidecar, logSessionFingerprint } from '../tests/e2e/helpers/e2e-auth-session'
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000'
+
+const ADVISOR_SNAPSHOT_PATHS = [
+  '.auth/advisor.json',
+  '.auth/advisor.security-smoke.json',
+  '.auth/advisor.b4-gate.json',
+  '.auth/advisor.security-isolation.json',
+] as const
 
 function supabaseProjectRef(url: string): string {
   return new URL(url).hostname.split('.')[0] ?? 'local'
@@ -47,6 +55,12 @@ function playwrightStorageState(
   }
 }
 
+async function snapshotAdvisorSessionsAfterMint(label: string): Promise<void> {
+  const existing = ADVISOR_SNAPSHOT_PATHS.filter((path) => existsSync(path))
+  if (existing.length === 0) return
+  await logAdvisorGetUserSnapshot(label, existing)
+}
+
 async function mintStorageState(path: string, email: string, password: string): Promise<void> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -66,25 +80,36 @@ async function mintStorageState(path: string, email: string, password: string): 
   writeFileSync(path, JSON.stringify(playwrightStorageState(supabaseUrl, data.session), null, 2))
   writeAuthExpirySidecar(path)
   console.log(`Minted ${path}`)
+  logSessionFingerprint(path, 'post-mint')
+}
+
+async function mintAdvisorSuite(path: string, email: string, password: string): Promise<void> {
+  await mintStorageState(path, email, password)
+  await snapshotAdvisorSessionsAfterMint(`after-${path}`)
 }
 
 async function main() {
   initSupabaseEnv()
+
+  if (existsSync('.auth/advisor.json')) {
+    logSessionFingerprint('.auth/advisor.json', 'pre-api-mint-browser-login')
+    await snapshotAdvisorSessionsAfterMint('pre-api-mint')
+  }
 
   const consumer = E2E_IDENTITIES.consumer
   const advisor = E2E_IDENTITIES.advisor
 
   await mintStorageState('.auth/consumer.go-live-profile.json', consumer.email, consumer.password)
   await mintStorageState('.auth/consumer.security-smoke.json', consumer.email, consumer.password)
-  await mintStorageState('.auth/advisor.security-smoke.json', advisor.email, advisor.password)
+  await mintAdvisorSuite('.auth/advisor.security-smoke.json', advisor.email, advisor.password)
   await mintStorageState('.auth/consumer.b4-gate.json', consumer.email, consumer.password)
-  await mintStorageState('.auth/advisor.b4-gate.json', advisor.email, advisor.password)
+  await mintAdvisorSuite('.auth/advisor.b4-gate.json', advisor.email, advisor.password)
   await mintStorageState(
     '.auth/consumer.security-isolation.json',
     consumer.email,
     consumer.password,
   )
-  await mintStorageState(
+  await mintAdvisorSuite(
     '.auth/advisor.security-isolation.json',
     advisor.email,
     advisor.password,
