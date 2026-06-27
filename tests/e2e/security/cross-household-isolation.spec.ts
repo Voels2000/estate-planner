@@ -1,24 +1,31 @@
 /**
  * Cross-household IDOR matrix — consumer and advisor must not read foreign households.
- * e2e-consumer is not advisor-linked (pending rec only); advisor-client + tier1 are linked.
+ *
+ * Independent isolation blocks run in parallel (own auth contexts). Serial mode is
+ * reserved for Advisor revoked link lifecycle, which mutates advisor_clients.
  */
 import { test, expect } from '@playwright/test'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
-import {
-  fetchAdvisorClientHouseholdId,
-  fetchHouseholdIdByOwnerEmail,
-} from '../helpers/e2e-households'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { findUserIdByEmail, initSupabaseEnv, pruneStrayE2eAdvisorClientLinks } from '../../../scripts/seed-e2e-lib'
+import { findUserIdByEmail, initSupabaseEnv } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
+import {
+  logRequestAuthPreSnapshot,
+  logRequestAuthSnapshot,
+} from '../helpers/advisor-failure-diag'
+import { getWithAuthRetry } from '../helpers/request-auth-retry'
+import { authStoragePath } from '../helpers/e2e-auth-storage'
 import {
   EXPORT_ISOLATION_MARKER_A,
   EXPORT_ISOLATION_MARKER_B,
   expectExportPayloadContainsMarker,
   expectExportPayloadExcludesMarker,
-  seedExportIsolationMarkers,
 } from '../helpers/export-isolation-fixture'
+import {
+  getCrossHouseholdIsolationFixture,
+  type CrossHouseholdIsolationFixture,
+} from '../helpers/cross-household-isolation-fixture'
 
 const API_TIMEOUT_MS = 30_000
 
@@ -31,87 +38,19 @@ function expectAccessDenied(status: number) {
   expect([403, 404]).toContain(status)
 }
 
-test.describe.configure({ mode: 'serial' })
-
-let consumerHouseholdId: string
-let advisorClientHouseholdId: string
-let consumerOwnerUserId: string
-let advisorClientOwnerUserId: string
-
-test.beforeAll(async ({}, testInfo) => {
-  const canAdminLookup =
-    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()) &&
-    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim())
-
-  consumerHouseholdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID?.trim() ?? ''
-  advisorClientHouseholdId = process.env.PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID?.trim() ?? ''
-
-  if (canAdminLookup) {
-    initSupabaseEnv()
-    const canonicalConsumer =
-      (await fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.consumer.email)) ?? ''
-    const canonicalAdvisorClient = (await fetchAdvisorClientHouseholdId()) ?? ''
-
-    if (canonicalConsumer) {
-      if (consumerHouseholdId && consumerHouseholdId !== canonicalConsumer) {
-        console.warn(
-          `[e2e] PLAYWRIGHT_HOUSEHOLD_ID (${consumerHouseholdId}) ≠ canonical consumer (${canonicalConsumer}); using canonical`,
-        )
-      }
-      consumerHouseholdId = canonicalConsumer
-    } else if (!consumerHouseholdId) {
-      consumerHouseholdId = ''
-    }
-
-    if (canonicalAdvisorClient) {
-      if (
-        advisorClientHouseholdId &&
-        advisorClientHouseholdId !== canonicalAdvisorClient
-      ) {
-        console.warn(
-          `[e2e] PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID (${advisorClientHouseholdId}) ≠ canonical (${canonicalAdvisorClient}); using canonical`,
-        )
-      }
-      advisorClientHouseholdId = canonicalAdvisorClient
-    } else if (!advisorClientHouseholdId) {
-      advisorClientHouseholdId = ''
-    }
-
-    consumerOwnerUserId = (await findUserIdByEmail(E2E_IDENTITIES.consumer.email)) ?? ''
-    advisorClientOwnerUserId =
-      (await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)) ?? ''
-
-    const advisorId = (await findUserIdByEmail(E2E_IDENTITIES.advisor.email)) ?? ''
-    const tier1UserId = (await findUserIdByEmail(E2E_IDENTITIES.consumerTier1.email)) ?? ''
-    if (advisorId) {
-      await pruneStrayE2eAdvisorClientLinks(advisorId, [
-        advisorClientOwnerUserId,
-        tier1UserId,
-      ].filter(Boolean))
-    }
-  }
-
-  if (!consumerHouseholdId || !advisorClientHouseholdId) {
-    testInfo.skip(
-      true,
-      'Missing household IDs — run npm run seed:e2e on staging, or set PLAYWRIGHT_HOUSEHOLD_ID / service role for lookup',
-    )
-    return
-  }
-  expect(consumerHouseholdId).not.toBe(advisorClientHouseholdId)
-
-  if (consumerOwnerUserId && advisorClientOwnerUserId) {
-    await seedExportIsolationMarkers(consumerOwnerUserId, advisorClientOwnerUserId)
-  }
-})
-
 test.describe('Consumer isolation @production', () => {
-  test.use({ storageState: '.auth/consumer.json' })
+  test.use({ storageState: authStoragePath('consumer') })
+
+  let fx: CrossHouseholdIsolationFixture
+
+  test.beforeAll(async ({}, testInfo) => {
+    fx = await getCrossHouseholdIsolationFixture(testInfo)
+  })
 
   test('POST gifting-summary on foreign household returns 403 or 404', async ({ request }) => {
     const res = await request.post('/api/gifting-summary', {
       ...apiOpts(),
-      data: { householdId: advisorClientHouseholdId },
+      data: { householdId: fx.advisorClientHouseholdId },
     })
     expectAccessDenied(res.status())
   })
@@ -119,21 +58,21 @@ test.describe('Consumer isolation @production', () => {
   test('POST estate-composition on foreign household returns 403 or 404', async ({ request }) => {
     const res = await request.post('/api/estate-composition', {
       ...apiOpts(),
-      data: { householdId: advisorClientHouseholdId, sourceRole: 'consumer' },
+      data: { householdId: fx.advisorClientHouseholdId, sourceRole: 'consumer' },
     })
     expectAccessDenied(res.status())
   })
 
   test('GET export-estate-plan on foreign household returns 403 or 404', async ({ request }) => {
     const res = await request.get(
-      `/api/export-estate-plan?household_id=${advisorClientHouseholdId}`,
+      `/api/export-estate-plan?household_id=${fx.advisorClientHouseholdId}`,
       apiOpts(),
     )
     expectAccessDenied(res.status())
   })
 
   test('GET documents on foreign household returns 403 or 404', async ({ request }) => {
-    const res = await request.get(`/api/documents/household/${advisorClientHouseholdId}`, apiOpts())
+    const res = await request.get(`/api/documents/household/${fx.advisorClientHouseholdId}`, apiOpts())
     expectAccessDenied(res.status())
   })
 
@@ -144,81 +83,144 @@ test.describe('Consumer isolation @production', () => {
     expect(res.status()).toBe(200)
     const body = await res.text()
     const payload = JSON.parse(body) as { household_id: string | null; tables: Record<string, unknown[]> }
-    expect(payload.household_id).toBe(consumerHouseholdId)
+    expect(payload.household_id).toBe(fx.consumerHouseholdId)
     expectExportPayloadContainsMarker(body, EXPORT_ISOLATION_MARKER_A)
     expectExportPayloadExcludesMarker(body, payload, EXPORT_ISOLATION_MARKER_B)
-    expect(body).not.toContain(advisorClientHouseholdId)
+    expect(body).not.toContain(fx.advisorClientHouseholdId)
   })
 })
 
-test.describe('Advisor isolation', () => {
-  test.use({ storageState: '.auth/advisor.json' })
+test.describe('Advisor-empty isolation (unlinked book) @production', () => {
+  test.use({ storageState: '.auth/advisor-empty.json' })
+
+  let fx: CrossHouseholdIsolationFixture
+
+  test.beforeAll(async ({}, testInfo) => {
+    fx = await getCrossHouseholdIsolationFixture(testInfo)
+  })
+
+  test('GET client-export-payload for linked client owner returns 404', async ({ request }) => {
+    const linkedOwnerId = fx.linkedClientOwnerUserId || fx.advisorClientOwnerUserId
+    test.skip(!linkedOwnerId, 'linked client owner user id unavailable')
+    await logRequestAuthPreSnapshot(request, 'advisor-empty-client-export-pre')
+    const res = await getWithAuthRetry(
+      request,
+      `/api/advisor/client-export-payload?clientId=${linkedOwnerId}`,
+      apiOpts(),
+      'advisor-empty-client-export',
+    )
+    await logRequestAuthSnapshot(request, 'advisor-empty-client-export-post', res.status())
+    expectAccessDenied(res.status())
+  })
+
+  test('POST estate-composition on advisor client household returns 403 or 404', async ({
+    request,
+  }) => {
+    test.skip(
+      !fx.linkedClientOwnerUserId && !fx.advisorClientOwnerUserId,
+      'linked client owner user id unavailable',
+    )
+    const res = await request.post('/api/estate-composition', {
+      ...apiOpts(),
+      data: { householdId: fx.linkedClientHouseholdId, sourceRole: 'advisor' },
+    })
+    expectAccessDenied(res.status())
+  })
+})
+
+test.describe('Advisor isolation @production', () => {
+  test.use({ storageState: authStoragePath('advisor') })
+
+  let fx: CrossHouseholdIsolationFixture
+
+  test.beforeAll(async ({}, testInfo) => {
+    fx = await getCrossHouseholdIsolationFixture(testInfo)
+  })
 
   test('POST gifting-summary on e2e-consumer household returns 403 or 404', async ({ request }) => {
     const res = await request.post('/api/gifting-summary', {
       ...apiOpts(),
-      data: { householdId: consumerHouseholdId },
+      data: { householdId: fx.advisorForeignHouseholdId },
     })
+    await logRequestAuthSnapshot(request, 'gifting-summary', res.status())
     expectAccessDenied(res.status())
   })
 
   test('POST estate-composition on e2e-consumer household returns 403 or 404', async ({ request }) => {
     const res = await request.post('/api/estate-composition', {
       ...apiOpts(),
-      data: { householdId: consumerHouseholdId, sourceRole: 'advisor' },
+      data: { householdId: fx.advisorForeignHouseholdId, sourceRole: 'advisor' },
     })
     expectAccessDenied(res.status())
   })
 
   test('GET export-estate-plan on e2e-consumer household returns 403 or 404', async ({ request }) => {
     const res = await request.get(
-      `/api/export-estate-plan?household_id=${consumerHouseholdId}`,
+      `/api/export-estate-plan?household_id=${fx.advisorForeignHouseholdId}`,
       apiOpts(),
     )
     expectAccessDenied(res.status())
   })
 
   test('GET client-export-payload for unlinked consumer owner returns 404', async ({ request }) => {
-    test.skip(!consumerOwnerUserId, 'consumer owner user id unavailable')
-    const res = await request.get(
-      `/api/advisor/client-export-payload?clientId=${consumerOwnerUserId}`,
+    const foreignOwnerId = fx.advisorForeignOwnerUserId || fx.consumerOwnerUserId
+    test.skip(!foreignOwnerId, 'isolation consumer owner user id unavailable')
+    const res = await getWithAuthRetry(
+      request,
+      `/api/advisor/client-export-payload?clientId=${foreignOwnerId}`,
       apiOpts(),
+      'advisor-isolation-client-export',
     )
     expectAccessDenied(res.status())
   })
 })
 
-test.describe('Advisor access to linked client', () => {
-  test.use({ storageState: '.auth/advisor.json' })
+test.describe('Advisor access to linked client @production', () => {
+  test.use({ storageState: authStoragePath('advisor') })
+
+  let fx: CrossHouseholdIsolationFixture
+
+  test.beforeAll(async ({}, testInfo) => {
+    fx = await getCrossHouseholdIsolationFixture(testInfo)
+  })
 
   test('POST estate-composition on advisor client household returns 200', async ({ request }) => {
     const res = await request.post('/api/estate-composition', {
       ...apiOpts(),
-      data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
+      data: { householdId: fx.linkedClientHouseholdId, sourceRole: 'advisor' },
     })
     expect(res.ok(), await res.text()).toBeTruthy()
   })
 })
 
 test.describe('Advisor revoked link lifecycle', () => {
-  test.use({ storageState: '.auth/advisor.json' })
+  test.describe.configure({ mode: 'serial' })
 
+  test.use({ storageState: authStoragePath('advisor') })
+
+  let fx: CrossHouseholdIsolationFixture
   let advisorClientLinkId: string | null = null
   let savedLinkStatus: { status: string; client_status: string | null } | null = null
 
   test.beforeAll(async ({}, testInfo) => {
+    fx = await getCrossHouseholdIsolationFixture(testInfo)
+
     const canAdminLookup =
       Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()) &&
       Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim())
-    if (!canAdminLookup || !advisorClientOwnerUserId) {
+    if (!canAdminLookup || !fx.advisorClientOwnerUserId) {
       testInfo.skip(true, 'service role + advisor-client owner required')
       return
     }
 
     initSupabaseEnv()
-    const advisorId = await findUserIdByEmail(E2E_IDENTITIES.advisor.email)
-    if (!advisorId || !advisorClientOwnerUserId) {
-      testInfo.skip(true, 'e2e advisor or advisor-client owner missing')
+    const advisorEmail = resolveE2eEmail(
+      process.env.PLAYWRIGHT_ADVISOR_EMAIL,
+      E2E_IDENTITIES.advisor.email,
+    )
+    const advisorId = await findUserIdByEmail(advisorEmail)
+    if (!advisorId) {
+      testInfo.skip(true, 'e2e advisor missing')
       return
     }
 
@@ -227,7 +229,7 @@ test.describe('Advisor revoked link lifecycle', () => {
       .from('advisor_clients')
       .select('id, status, client_status')
       .eq('advisor_id', advisorId)
-      .eq('client_id', advisorClientOwnerUserId)
+      .eq('client_id', fx.advisorClientOwnerUserId)
       .maybeSingle()
 
     advisorClientLinkId = link?.id ?? null
@@ -260,30 +262,7 @@ test.describe('Advisor revoked link lifecycle', () => {
 
     const res = await request.post('/api/estate-composition', {
       ...apiOpts(),
-      data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
-    })
-    expectAccessDenied(res.status())
-  })
-})
-
-test.describe('Advisor-empty isolation (unlinked book)', () => {
-  test.use({ storageState: '.auth/advisor-empty.json' })
-
-  test('GET client-export-payload for linked client owner returns 404', async ({ request }) => {
-    test.skip(!advisorClientOwnerUserId, 'advisor-client owner user id unavailable')
-    const res = await request.get(
-      `/api/advisor/client-export-payload?clientId=${advisorClientOwnerUserId}`,
-      apiOpts(),
-    )
-    expectAccessDenied(res.status())
-  })
-
-  test('POST estate-composition on advisor client household returns 403 or 404', async ({
-    request,
-  }) => {
-    const res = await request.post('/api/estate-composition', {
-      ...apiOpts(),
-      data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
+      data: { householdId: fx.advisorClientHouseholdId, sourceRole: 'advisor' },
     })
     expectAccessDenied(res.status())
   })

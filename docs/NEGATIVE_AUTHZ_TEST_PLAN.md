@@ -42,6 +42,7 @@ E2E tenants (seeded by `npm run seed:e2e`):
 | 4 | Advisor X | Consumer A (unlinked) | read | empty / 403 |
 | 5 | Advisor X (link revoked) | formerly-linked household | read | empty / 403 |
 | 5b | Advisor X (link revoked) | formerly-linked client **profile** (PostgREST) | read | empty / 403 — `advisor-profiles-revocation-rls.spec.ts` ([#150](https://github.com/Voels2000/estate-planner/pull/150)) |
+| 5c | Advisor X (`consumer_requested`) | invited consumer profile + household + export payload | read | empty / 403–404 while pending; same routes succeed after accept — `advisor-pending-link-authz.spec.ts` (pending→active transition proves status gate) |
 | 6 | Attorney P | unassigned household | read | empty / 403 |
 | 7 | Consumer A | advisor-only route | read | 403 |
 | 8 | Any actor | foreign export (`/api/advisor/client-export-payload`) | generate | 404 |
@@ -79,6 +80,8 @@ Structural coverage gate in `scripts/assert-rls-coverage.sql`: any table with a 
 - [x] `household_id_table_missing_rls` invariant gates `verify:rls` / `release:preflight`
 - [x] `@authz` subset in `test:e2e:prod:smoke` (via `@production` tag)
 - [x] Revoked-link lifecycle test (seed `advisor_clients.status` inactive row)
+- [x] Pending-link (`consumer_requested`) negative + active contrast — `advisor-pending-link-authz.spec.ts`
+- [x] **PR gate:** matrix rows 5b + 5c run in `test:e2e:security-smoke` (merge-time guard, not isolation-only)
 - [x] Attorney cap-at-assignment test (`tests/unit/attorneyClientCap.spec.ts`)
 - [x] Full per-table JWT matrix for every `HOUSEHOLD_SCOPED_TABLES` entry (`verify:rls`)
 

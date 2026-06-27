@@ -169,6 +169,7 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 - [x] Billing code + B2B2C handoff + pricing surfaces
 - [x] Production `@production` smoke harness (`test:e2e:prod:smoke`, canary subset)
 - [x] Prod canary reset: `npm run seed:prod-canary -- --confirm` (verify: `package.json`, `scripts/seed-prod-canary.ts`, `PROD_CANARY` in `scripts/e2e-test-identities.ts:19-23`)
+- [x] **Track 2 — advisor↔consumer prod canary:** [runbook](./prod-smoke-canary-runbook.md) — link pair + manual isolation ✅; reporting marker + `@production` advisor isolation + `PROD_SMOKE_EXCLUDE` removed (watch first prod run for advisor blocks executing)
 - [x] Two-DB steady-state docs + scripts on `main` (verify: `docs/DEPLOYMENT.md`, PR #6)
 - [x] **`lifetime_exemption_summary` PostgREST IDOR closed** — revoke `anon`/`authenticated` on SECURITY DEFINER view; CI invariant #6 + isolation attack-sim (PR #16; prod migration applied 2026-06-15)
 - [x] Stale estate-readiness banner shipped (`isScoreStale()` wired in `EstateReadinessCard`; PR #12)

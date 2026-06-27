@@ -18,7 +18,11 @@ export async function fetchHouseholdIdByOwnerEmail(email: string): Promise<strin
 }
 
 export async function fetchAdvisorClientHouseholdId(): Promise<string | null> {
-  return fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.advisorClient.email)
+  const email = resolveE2eEmail(
+    process.env.PLAYWRIGHT_ADVISOR_CLIENT_EMAIL,
+    E2E_IDENTITIES.advisorClient.email,
+  )
+  return fetchHouseholdIdByOwnerEmail(email)
 }
 
 /** Canonical logged-in consumer household (same email as consumer.setup). */

@@ -775,6 +775,18 @@ export async function ensureAdvisorFirmForE2e(
   advisorUserId: string,
   firmName: string,
 ): Promise<string> {
+  return ensureAdvisorFirmBootstrap(advisorUserId, firmName, 'active')
+}
+
+/**
+ * Firm owner bootstrap — transcribed writes used by staging E2E and prod canary setup.
+ * `trialing` clears getAdvisorClientCapacity without paid Stripe; `active` for staging E2E.
+ */
+export async function ensureAdvisorFirmBootstrap(
+  advisorUserId: string,
+  firmName: string,
+  subscriptionStatus: 'active' | 'trialing',
+): Promise<string> {
   const admin = createAdminClient()
 
   const { data: profile } = await admin
@@ -802,7 +814,7 @@ export async function ensureAdvisorFirmForE2e(
         owner_id: advisorUserId,
         tier: 'starter',
         seat_count: 1,
-        subscription_status: 'active',
+        subscription_status: subscriptionStatus,
       })
       .select('id')
       .single()
@@ -810,12 +822,12 @@ export async function ensureAdvisorFirmForE2e(
       throw new Error(`firms insert: ${error?.message ?? 'no id'}`)
     }
     firmId = firm.id
-    console.log(`  firms: created ${firmId}`)
+    console.log(`  firms: created ${firmId} (${subscriptionStatus})`)
   } else {
     console.log(`  firms: existing ${firmId}`)
     const { error: firmErr } = await admin
       .from('firms')
-      .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
+      .update({ subscription_status: subscriptionStatus, updated_at: new Date().toISOString() })
       .eq('id', firmId)
       .or('subscription_status.is.null,subscription_status.in.(inactive,canceled,past_due)')
     if (firmErr) console.warn('  firms subscription_status:', firmErr.message)
@@ -875,7 +887,8 @@ function supabaseProjectRef(url: string): string {
   return new URL(url).hostname.split('.')[0] ?? 'local'
 }
 
-function authCookieHeader(
+/** Cookie header for Next.js API routes from a Supabase session (E2E API calls). */
+export function buildSupabaseAuthCookieHeader(
   supabaseUrl: string,
   session: {
     access_token: string
@@ -888,6 +901,20 @@ function authCookieHeader(
 ): string {
   const payload = Buffer.from(JSON.stringify(session)).toString('base64')
   return `sb-${supabaseProjectRef(supabaseUrl)}-auth-token=base64-${payload}`
+}
+
+function authCookieHeader(
+  supabaseUrl: string,
+  session: {
+    access_token: string
+    refresh_token: string
+    expires_at?: number
+    expires_in?: number
+    token_type: string
+    user: unknown
+  },
+): string {
+  return buildSupabaseAuthCookieHeader(supabaseUrl, session)
 }
 
 /** Magic-link session for seed-time API calls (generate-base-case). */
@@ -1084,6 +1111,38 @@ export async function ensureAdvisorEmptyForE2e(): Promise<string> {
   else console.log('  advisor-empty: zero linked clients')
 
   return advisorId
+}
+
+/** Pending-link authz fixture — firm-active advisor, zero links; 5c owns invite→accept. */
+export async function ensureE2eAdvisorPending(): Promise<{ userId: string }> {
+  const admin = createAdminClient()
+  const pending = E2E_IDENTITIES.advisorPending
+
+  const advisorId = await ensureAuthUser({
+    email: pending.email,
+    password: pending.password,
+    fullName: pending.fullName,
+    role: 'advisor',
+  })
+
+  await admin
+    .from('profiles')
+    .update({
+      subscription_status: 'active',
+      consumer_tier: 3,
+      is_superuser: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', advisorId)
+
+  await ensureAdvisorFirmForE2e(advisorId, pending.firmName)
+  await ensureE2eAdvisorFirmSubscriptionActive(advisorId)
+
+  const { error } = await admin.from('advisor_clients').delete().eq('advisor_id', advisorId)
+  if (error) console.warn('  advisor-pending links purge:', error.message)
+  else console.log('  advisor-pending: zero linked clients (5c owns link lifecycle)')
+
+  return { userId: advisorId }
 }
 
 /** Enrich consumer cast after all users exist: projections, pending rec, base case. */
@@ -1419,6 +1478,34 @@ export async function ensureE2eConsumerLinked(): Promise<{ userId: string; house
   const { error } = await admin.from('advisor_clients').delete().eq('client_id', userId)
   if (error) console.warn('  consumer-linked advisor_clients purge:', error.message)
   else console.log('  consumer-linked: no advisor_clients row (link via Playwright setup)')
+
+  return { userId, householdId }
+}
+
+/** Pending-link authz fixture — no advisor_clients row; 5c drives pending→active. */
+export async function ensureE2eConsumerPending(): Promise<{ userId: string; householdId: string }> {
+  const admin = createAdminClient()
+  const pending = E2E_IDENTITIES.consumerPending
+
+  const userId = await ensureAuthUser({
+    email: pending.email,
+    password: pending.password,
+    fullName: pending.fullName,
+    role: 'consumer',
+  })
+
+  const householdId = await seedE2eConsumerHousehold(
+    userId,
+    pending.householdName,
+    3,
+    { fullName: pending.fullName },
+  )
+
+  await triggerE2eGenerateBaseCase(householdId, pending.email, 'consumer')
+
+  const { error } = await admin.from('advisor_clients').delete().eq('client_id', userId)
+  if (error) console.warn('  consumer-pending advisor_clients purge:', error.message)
+  else console.log('  consumer-pending: no advisor_clients row (5c owns link lifecycle)')
 
   return { userId, householdId }
 }
