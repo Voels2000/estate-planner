@@ -355,6 +355,5 @@ then let automation keep proving it.
 
 | Still open | Notes |
 |------------|--------|
-| **#157** serial restructure | Architecture debt in `cross-household-isolation.spec.ts`; not this flake's local cause, but still fragile |
-| **PR #156 retry watch** | Monitor `request-auth-retry` in staging isolation CI over several runs |
-| **getSession route probe** | Remove once captured-or-clean (`E2E_DIAG_ROUTE_AUTH` gated) |
+| **#156 / PR retry watch** | Do **not** merge #156 on a single green. Watch staging isolation CI for `request-auth-retry` firing in logs over several runs — that is the strong signal (retry caught null read and recovered). Green alone is weak. Once captured-or-clean stretch, remove `E2E_DIAG_ROUTE_AUTH` getSession probe from `client-export-payload/route.ts` — gated diagnostic, not permanent. |
+| **#157 serial restructure** | **Done (2026-06-27):** independent isolation blocks parallel; serial only for revoked-link lifecycle. Fixture in `cross-household-isolation-fixture.ts`. |
