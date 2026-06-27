@@ -25,7 +25,7 @@ export const PROD_CANARY = {
 } as const
 
 /**
- * Production role canaries — login smoke only (no firm/subscription, no advisor links).
+ * Production role canaries — login smoke only (no firm; use seed:prod-advisor-firm for Track 2).
  * Password: same E2E_CANARY_PASSWORD as consumer canary. Seed: npm run seed:prod-role-canaries -- --confirm
  */
 export const PROD_ROLE_CANARIES = {

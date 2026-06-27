@@ -38,6 +38,7 @@
     "seed:e2e:prod": "dotenv -o -e .env.test.production -- npx tsx scripts/seed-e2e-fixtures.ts",
     "seed:prod-canary": "npx tsx scripts/seed-prod-canary.ts",
     "seed:prod-role-canaries": "npx tsx scripts/seed-prod-role-canaries.ts",
+    "seed:prod-advisor-firm": "npx tsx scripts/seed-prod-advisor-firm.ts",
     "test:e2e:golden-path": "dotenv -o -e .env.local -e .env.test.local -- npx playwright test --project=golden-path",
     "seed:golden-path": "dotenv -e .env.local -e .env.test.local -- npx tsx scripts/seed-golden-path-stage1.ts",
     "audit:dashboard-gate": "npx tsx scripts/audit-dashboard-gate.ts",

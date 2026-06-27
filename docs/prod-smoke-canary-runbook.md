@@ -69,17 +69,21 @@ Real signup **does not** auto-trial the firm — it inserts the firm with
 
 ### Recommended prod provisioning (before invite)
 
-Mirror staging's **complete** firm bootstrap — not a lone `subscription_status`
-update on a half-provisioned row. Staging's `ensureAdvisorFirmForE2e` sets:
+**Use the version-controlled script** — not one-off SQL. It transcribes staging's
+`ensureAdvisorFirmForE2e` via shared `ensureAdvisorFirmBootstrap`, changing only
+`active` → `trialing`:
 
-- `firms` row (`name`, `owner_id`, `tier: starter`, `seat_count: 1`, status)
-- `firm_members` owner row (`status: active`)
-- `profiles.firm_id`, `firm_role: owner`, `firm_name`
+```bash
+npm run seed:prod-role-canaries -- --confirm   # advisor profile (login-only, no firm)
+npm run seed:prod-advisor-firm -- --confirm    # firm + owner member + trialing
+# then invite → accept (firm BEFORE invite avoids dangling consumer_requested / 409)
+```
 
-For prod canary, use **`trialing`** instead of `active` — same gate, no paid Stripe,
-no revenue-pollution concern. Either extend `seed-prod-role-canaries` with an
-opt-in firm bootstrap for Track 2, or run a one-off prod script modeled on
-`ensureAdvisorFirmForE2e` with `subscription_status: 'trialing'`.
+Implementation: `scripts/seed-prod-advisor-firm.ts` → `ensureAdvisorFirmBootstrap` in
+`scripts/seed-e2e-lib.ts` (same writes as staging; status is the only delta).
+
+If accept still **403s**, diff script output against `ensureAdvisorFirmForE2e` —
+do not guess missing fields.
 
 **Avoid:** setting only `firms.subscription_status` without `firm_id` linkage and
 `firm_members` — works until some other path reads missing fields.
@@ -255,15 +259,12 @@ not be deleted during cleanup.
 ## Order of operations summary
 
 ```
-Accounts (mostly done)
-  → Step 2: firm in active/trialing for accept (trialing OK — not paid Stripe)
-  → Step 3: seed consumer data
-  → Step 4: link (invite → accept; email non-issue; recover 409 via accept pending)
-  → Step 5: manual isolation proof  ← negative case deliberate
-  → Step 6: reporting exclusion (canary marker — not email list)
-  → Step 7: wire prod env + @production tags (isolation blocks only)
-  → Step 8: remove PROD_SMOKE_EXCLUDE + confirm run green
-  → Step 9: document in LAUNCH.md
+npm run seed:prod-role-canaries -- --confirm   # 1. advisor profile
+npm run seed:prod-advisor-firm -- --confirm    # 2. firm → trialing (BEFORE invite)
+npm run seed:prod-canary -- --confirm          # consumer data (if needed)
+→ invite → accept (checkpoint: accept 200)
+→ manual isolation hand-check (negative case deliberate)
+→ reporting exclusion → @production tags → drop PROD_SMOKE_EXCLUDE
 ```
 
 **Manual isolation (Step 5) before removing the filter (Step 8).** Prove by hand once,
