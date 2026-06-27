@@ -1,6 +1,8 @@
 /**
- * Read-only prod audit: canary-advisor-client@ is a valid automated foreign target.
- *   npx tsx scripts/audit-prod-foreign-canary-target.ts
+ * Read-only prod fixture audit before prod smoke (link + foreign target).
+ *   npm run audit:prod-foreign-canary-target
+ *
+ * Run this first when prod smoke fails or before trusting a prod run result.
  */
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
@@ -94,19 +96,56 @@ async function main() {
     linkToForeign?.status != null &&
     (CONNECTED_ADVISOR_CLIENT_STATUSES as readonly string[]).includes(linkToForeign.status)
 
+  const linkActive =
+    linkToLinked?.status != null &&
+    (CONNECTED_ADVISOR_CLIENT_STATUSES as readonly string[]).includes(linkToLinked.status)
+
+  const { data: advisorProfile } = advisorId
+    ? await admin.from('profiles').select('firm_id').eq('id', advisorId).maybeSingle()
+    : { data: null }
+
+  const { data: firm } = advisorProfile?.firm_id
+    ? await admin
+        .from('firms')
+        .select('id, subscription_status')
+        .eq('id', advisorProfile.firm_id)
+        .maybeSingle()
+    : { data: null }
+
   const populated =
     (foreignHousehold?.assetCount ?? 0) > 0 || (foreignHousehold?.incomeCount ?? 0) > 0
 
-  let verdict: string
-  if (!foreignUserId) verdict = 'FAIL — canary-advisor-client profile missing'
-  else if (!foreignHousehold?.household) verdict = 'FAIL — no household'
-  else if (foreignLinked) verdict = 'FAIL — linked to canary-advisor (not foreign)'
-  else if (!populated) verdict = 'WARN — household empty (404 may be trivial, not authz)'
-  else verdict = 'OK — populated, unlinked foreign household'
+  let foreignVerdict: string
+  if (!foreignUserId) foreignVerdict = 'FAIL — canary-advisor-client profile missing'
+  else if (!foreignHousehold?.household) foreignVerdict = 'FAIL — no household'
+  else if (foreignLinked) foreignVerdict = 'FAIL — linked to canary-advisor (not foreign)'
+  else if (!populated) foreignVerdict = 'WARN — household empty (404 may be trivial, not authz)'
+  else foreignVerdict = 'OK — populated, unlinked foreign household'
+
+  let linkVerdict: string
+  if (!advisorId || !linkedUserId) linkVerdict = 'FAIL — canary advisor or consumer profile missing'
+  else if (!advisorProfile?.firm_id) linkVerdict = 'FAIL — advisor firm_id null (accept gate broken)'
+  else if (!firm || !['active', 'trialing'].includes(firm.subscription_status ?? ''))
+    linkVerdict = `FAIL — firm not active/trialing (${firm?.subscription_status ?? 'missing'})`
+  else if (linkToLinked?.status === 'consumer_requested')
+    linkVerdict = 'FAIL — pending consumer_requested row (accept needed, do not re-invite)'
+  else if (!linkActive) linkVerdict = 'FAIL — no active link to canary-consumer'
+  else linkVerdict = 'OK — active link, firm ready'
 
   console.log(
     JSON.stringify(
       {
+        linkPrecondition: {
+          advisorEmail,
+          consumerEmail: linkedEmail,
+          firmId: advisorProfile?.firm_id,
+          firmSubscriptionStatus: firm?.subscription_status,
+          linkStatus: linkToLinked?.status,
+          linkAcceptedAt: linkToLinked?.accepted_at,
+          pendingLinkId:
+            linkToLinked?.status === 'consumer_requested' ? linkToLinked?.id : undefined,
+          verdict: linkVerdict,
+        },
         automatedForeignTarget: {
           email: foreignEmail,
           userId: foreignUserId,
@@ -116,24 +155,28 @@ async function main() {
           incomeCount: foreignHousehold?.incomeCount,
           linkedToCanaryAdvisor: foreignLinked,
           linkRow: linkToForeign,
-          verdict,
+          verdict: foreignVerdict,
         },
         linkedClient: {
           email: linkedEmail,
           userId: linkedUserId,
           householdId: linkedHousehold?.household?.id,
-          linkStatus: linkToLinked?.status,
-          linkAcceptedAt: linkToLinked?.accepted_at,
         },
+        prodSmokeReadingOrder: [
+          '1. linkPrecondition.verdict OK',
+          '2. advisor isolation blocks execute (not skip) in job log',
+          '3. automatedForeignTarget.verdict OK — negative denies populated foreign household',
+          '4. positive case reaches linked consumer (Advisor access @production green)',
+        ],
         handCheckNote:
-          'Hand-check used david@gmail.com (real customer). Automation uses canary-advisor-client@ — valid if verdict is OK.',
+          'Hand-check (track2:prod-link-handcheck) used david@gmail.com. Automation uses canary-advisor-client@.',
       },
       null,
       2,
     ),
   )
 
-  if (verdict.startsWith('FAIL')) process.exit(1)
+  if (foreignVerdict.startsWith('FAIL') || linkVerdict.startsWith('FAIL')) process.exit(1)
 }
 
 main().catch((e) => {

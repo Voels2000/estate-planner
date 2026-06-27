@@ -29,8 +29,10 @@ hand-made `advisor_clients` row.
 |-------|----------|--------|
 | Consumer canary | `canary-consumer@mywealthmaps.com` (`PROD_CANARY`) | Reset: `npm run seed:prod-canary -- --confirm` |
 | Role canary accounts | `canary-advisor@`, `canary-advisor-empty@`, etc. | `PROD_ROLE_CANARIES` in `scripts/e2e-test-identities.ts` |
-| Role seed (login-only) | `npm run seed:prod-role-canaries -- --confirm` | **Intentionally** no links, subscriptions, or authz data |
-| Prod smoke filter | `PROD_SMOKE_EXCLUDE` in `playwright.config.ts` | Drops advisor projects until linked pair lands |
+| Role seed (login-only) | `npm run seed:prod-role-canaries -- --confirm` | Refreshes auth/password; **does not** purge `advisor_clients` or clear `firm_id` (2026-06-27) |
+| Prod smoke | `npm run test:e2e:prod:smoke` | Advisor isolation blocks `@production` in `cross-household-isolation.spec.ts` |
+| Fixture audit | `npm run audit:prod-foreign-canary-target` | **Run first** when prod smoke fails — link + foreign target preconditions |
+| Link restore | `npm run track2:prod-link-handcheck` | Idempotent invite→accept + isolation re-proof |
 | Cleanup protection | `GO_LIVE_PROTECTED` in `scripts/cleanup-test-accounts.ts` | All `PROD_CANARY_EMAILS` protected from purge |
 
 **Step 1 is largely done.** The seed scripts stopping short of links/subscriptions is
@@ -51,15 +53,17 @@ So Step 2 is **not** "provision paid Stripe for feature smokes." It **is** "advi
 canary must have a firm in `active`/`trialing` before accept will succeed." No money
 needs to change hands — `trialing` clears the gate.
 
-**Do not** run `seed-prod-role-canaries` alone and go straight to invite→accept.
-That script explicitly sets `firm_id: null` and skips billing — accept will **403**
-`tier_limit_reached`.
+**Do not** run invite→accept before firm bootstrap (Step 2). A prior version of
+`seed-prod-role-canaries` cleared `firm_id` and purged `advisor_clients` on re-run —
+that foot-gun is **fixed** (re-seed now refreshes login only). If an old re-seed tore
+down the link, see [Link fixture recovery](#link-fixture-recovery-when-prod-smoke-fails).
 
 ### What each advisor-creation path lands in (code-confirmed)
 
 | Path | `firm_id` | Firm `subscription_status` | Accept works? |
 |------|-----------|------------------------------|---------------|
-| `seed-prod-role-canaries` | **null** (cleared) | — (no firm row) | **No** |
+| `seed-prod-role-canaries` (first run, before firm bootstrap) | **null** | — (no firm row) | **No** |
+| After `seed-prod-advisor-firm` | Set + `firm_members` owner | **`trialing`** | **Yes** |
 | Real advisor signup (`bootstrapAdvisorFirm` in `completeSignup.ts`) | Created + linked | **`null`** (not auto-trialing) | **No** until status set |
 | Staging E2E (`ensureAdvisorFirmForE2e` in `seed-e2e-lib.ts`) | Created + `firm_members` owner | **`active`** | **Yes** |
 
@@ -106,9 +110,9 @@ Security/isolation coverage in prod smoke today:
 | `cross-household-isolation` — **PostgREST @production** | anon + consumer sign-in | PostgREST `lifetime_exemption_summary` | No |
 | `route-authz` — **Consumer role boundaries @production** | consumer | `GET /api/advisor/strategy-tab` (expects 401/403/404) | No |
 
-**Advisor isolation blocks** (advisor-empty, advisor foreign-household denial,
-`client-export-payload`) are **not** `@production`-tagged yet. Track 2 adds them
-after the linked pair exists.
+**Advisor isolation blocks** are `@production`-tagged in `cross-household-isolation.spec.ts`
+(advisor-empty, advisor foreign-household denial, linked-client positive). **Not** tagged:
+revoked-link lifecycle (mutates `advisor_clients` — staging-only).
 
 ### Routes the advisor isolation smokes will call (when enabled)
 
@@ -231,16 +235,89 @@ excluded from firm MRR. Pattern-based, not a hardcoded email list.
 
 ---
 
-## Step 8 — Remove `PROD_SMOKE_EXCLUDE` (one PR) and watch it actually run
+## Step 8 — Prod smoke: reading order (every run, especially first after merge)
 
-Remove the exclusion set in `playwright.config.ts` so advisor projects run in prod.
+`PROD_SMOKE_EXCLUDE` is removed — advisor setups and isolation blocks run in prod smoke.
 
-On the **first** prod run after merge:
+`npm run test:e2e:prod:smoke -- --workers=1`
 
-- Confirm advisor smokes **executed** — not skipped (`--list` / job log).
-- Confirm **green** — wiring isn't banked until you've seen it fire.
+**`--list` proves blocks are scheduled, not that they pass.** A green-or-red prod smoke
+is only meaningful if the fixture was intact when it ran.
 
-Use `npm run test:e2e:prod:smoke -- --workers=1`.
+### Reading order (do not skip step 1)
+
+| Step | What to confirm | How |
+|------|-----------------|-----|
+| **1. Link active** | `canary-advisor@` ↔ `canary-consumer@` link is **active**; firm is **trialing/active**; foreign target populated + unlinked | `npm run audit:prod-foreign-canary-target` — both `linkPrecondition.verdict` and `automatedForeignTarget.verdict` OK |
+| **2. Blocks execute** | Advisor isolation tests **ran**, not skipped | Job log: `[security]` lines for Advisor-empty / Advisor isolation / Advisor access @production |
+| **3. Negative denies populated foreign** | Advisor cannot reach `canary-advisor-client@` household (has assets; not linked) | Those isolation tests green — not trivial 404 on empty/missing target |
+| **4. Positive reaches linked client** | Advisor can read linked `canary-consumer@` | `Advisor access to linked client @production` green |
+
+If **step 1 fails**, do not interpret steps 2–4 as an isolation regression — restore
+the fixture first ([recovery below](#link-fixture-recovery-when-prod-smoke-fails)).
+
+If **positive fails but audit shows link OK**, then investigate isolation/authz.
+
+Hand-check (`track2:prod-link-handcheck`) proved denial against **david@gmail.com**
+(real customer). Automation uses **canary-advisor-client@** — valid isolation, different
+target; strength depends on foreign target being populated and genuinely unlinked
+(step 1 `automatedForeignTarget`).
+
+---
+
+## Link fixture recovery (when prod smoke fails)
+
+**When to suspect link teardown first:** positive case fails (`Advisor access to linked
+client` red); accept **403** `tier_limit_reached` after maintenance; audit shows
+`linkPrecondition.verdict` FAIL.
+
+**Known recurrence:** re-running an **older** `seed-prod-role-canaries` (before
+2026-06-27) deleted all `advisor_clients` for `canary-advisor@` and cleared `firm_id`.
+Current script no longer does this — but any maintenance that drops the link or firm
+has the same symptom.
+
+### Diagnose (one command)
+
+```bash
+npm run audit:prod-foreign-canary-target
+```
+
+Read `linkPrecondition.verdict` and `automatedForeignTarget.verdict`.
+
+### Restore (do not re-invite if pending row exists)
+
+```bash
+# 1. Firm gate (if firm_id null or subscription not active/trialing)
+npm run seed:prod-advisor-firm -- --confirm
+
+# 2. Link + optional full isolation re-proof (idempotent)
+npm run track2:prod-link-handcheck
+```
+
+**If invite already succeeded but accept 403'd:** a `consumer_requested` row remains.
+A second invite returns **409**. Fix firm (step 1), then **accept the existing pending
+row** — `track2:prod-link-handcheck` does this automatically; do not invite again.
+
+**If link was fully deleted and no pending row:** handcheck runs invite → accept.
+
+Re-run audit until both preconditions OK, then re-run prod smoke.
+
+---
+
+## Scripts that touch `advisor_clients` (prod awareness)
+
+| Script / path | Prod impact | Notes |
+|---------------|-------------|--------|
+| `seed-prod-role-canaries.ts` | **Safe** (2026-06-27+) | No link purge; no `firm_id` clear |
+| `seed-prod-advisor-firm.ts` | **Safe** | Idempotent firm bootstrap |
+| `track2-prod-link-handcheck.ts` | **Intentional** | Creates/restores Track 2 link |
+| `audit-prod-foreign-canary-target.ts` | Read-only | Pre-flight |
+| `seed-e2e-lib.ts` (`seed:e2e`, staging) | **Staging only** | Deletes/prunes links for `@mywealthmaps.test` advisors |
+| `cleanup-test-accounts.ts` | **Blocked for canaries** | `GO_LIVE_PROTECTED` / `PROD_CANARY_EMAILS` |
+| `tests/e2e/advisor/b4-playbook-activation.spec.ts` | **Staging** | Deletes links in spec setup — not `@production` |
+| `cross-household-isolation.spec.ts` revoked block | **Staging** | Mutates link — not `@production` |
+
+Do not run staging `seed:e2e` against production Supabase.
 
 ---
 
@@ -265,7 +342,8 @@ npm run seed:prod-advisor-firm -- --confirm    # 2. firm → trialing (BEFORE in
 npm run seed:prod-canary -- --confirm          # consumer data (if needed)
 → invite → accept (checkpoint: accept 200)
 → manual isolation hand-check (negative case deliberate)
-→ reporting exclusion ✅ → @production tags ✅ → drop PROD_SMOKE_EXCLUDE ✅
+→ reporting exclusion ✅ → @production tags ✅ → PROD_SMOKE_EXCLUDE removed ✅
+→ ongoing: audit before trusting prod smoke; recovery section above if link torn down
 ```
 
 **Manual isolation (Step 5) before removing the filter (Step 8).** Prove by hand once,
