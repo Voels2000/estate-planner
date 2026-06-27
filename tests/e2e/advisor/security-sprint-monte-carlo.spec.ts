@@ -8,7 +8,10 @@ import {
   logAdvisorAuthCookieComparison,
   logAdvisorPageAuthCookies,
 } from '../helpers/advisor-auth-cookie-diag'
+import { installAdvisorFailureDiag } from '../helpers/advisor-failure-diag'
 import { authStoragePath } from '../helpers/e2e-auth-storage'
+
+installAdvisorFailureDiag(test)
 
 test.describe('Security sprint — Monte Carlo edge auth', () => {
   test('Strategy tab Monte Carlo returns P10/P50/P90', async ({ page }) => {

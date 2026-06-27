@@ -12,6 +12,7 @@ import {
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findUserIdByEmail, initSupabaseEnv, pruneStrayE2eAdvisorClientLinks } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
+import { logRequestAuthSnapshot } from '../helpers/advisor-failure-diag'
 import { authStoragePath } from '../helpers/e2e-auth-storage'
 import {
   EXPORT_ISOLATION_MARKER_A,
@@ -160,6 +161,7 @@ test.describe('Advisor isolation', () => {
       ...apiOpts(),
       data: { householdId: consumerHouseholdId },
     })
+    await logRequestAuthSnapshot(request, 'gifting-summary', res.status())
     expectAccessDenied(res.status())
   })
 

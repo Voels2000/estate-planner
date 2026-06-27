@@ -4,7 +4,10 @@ import {
   logAdvisorAuthCookieComparison,
   logAdvisorPageAuthCookies,
 } from '../helpers/advisor-auth-cookie-diag'
+import { installAdvisorFailureDiag } from '../helpers/advisor-failure-diag'
 import { authStoragePath } from '../helpers/e2e-auth-storage'
+
+installAdvisorFailureDiag(test)
 
 /**
  * B4 Prospect Track 1 (steps 3–8, 4b) — form logic + PDF route content.
