@@ -157,6 +157,51 @@ test.describe('Consumer isolation @production', () => {
   })
 })
 
+test.describe('Advisor-empty isolation (unlinked book)', () => {
+  test.use({ storageState: '.auth/advisor-empty.json' })
+
+  test.beforeAll(async () => {
+    console.log(
+      JSON.stringify({
+        diag: 'advisor-empty-serial-context',
+        fileSerialMode: true,
+        serialPosition: 'runs immediately after Consumer isolation — before per-suite advisor blocks',
+        priorSerialBlocks: ['Consumer isolation (consumer storage only — does not touch advisor-empty.json)'],
+        laterSerialBlocks: [
+          'Advisor isolation (per-suite advisor — not advisor-empty.json)',
+          'Advisor access to linked client',
+          'Advisor revoked link lifecycle (mutates advisor_clients link)',
+        ],
+        thisBlockOrder: [
+          'GET client-export-payload (first in block; POST skipped if GET fails)',
+        ],
+      }),
+    )
+    await logStorageStateFileGetUserProbe('.auth/advisor-empty.json', 'advisor-empty-pre-test')
+  })
+
+  test('GET client-export-payload for linked client owner returns 404', async ({ request }) => {
+    test.skip(!advisorClientOwnerUserId, 'advisor-client owner user id unavailable')
+    await logRequestAuthPreSnapshot(request, 'advisor-empty-client-export-pre')
+    const res = await request.get(
+      `/api/advisor/client-export-payload?clientId=${advisorClientOwnerUserId}`,
+      apiOpts(),
+    )
+    await logRequestAuthSnapshot(request, 'advisor-empty-client-export-post', res.status())
+    expectAccessDenied(res.status())
+  })
+
+  test('POST estate-composition on advisor client household returns 403 or 404', async ({
+    request,
+  }) => {
+    const res = await request.post('/api/estate-composition', {
+      ...apiOpts(),
+      data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
+    })
+    expectAccessDenied(res.status())
+  })
+})
+
 test.describe('Advisor isolation', () => {
   test.use({ storageState: authStoragePath('advisor') })
 
@@ -265,50 +310,6 @@ test.describe('Advisor revoked link lifecycle', () => {
       .eq('id', advisorClientLinkId!)
     expect(revokeError, revokeError?.message).toBeNull()
 
-    const res = await request.post('/api/estate-composition', {
-      ...apiOpts(),
-      data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
-    })
-    expectAccessDenied(res.status())
-  })
-})
-
-test.describe('Advisor-empty isolation (unlinked book)', () => {
-  test.use({ storageState: '.auth/advisor-empty.json' })
-
-  test.beforeAll(async () => {
-    console.log(
-      JSON.stringify({
-        diag: 'advisor-empty-serial-context',
-        fileSerialMode: true,
-        priorSerialBlocks: [
-          'Consumer isolation (consumer storage)',
-          'Advisor isolation (per-suite advisor storage — not advisor-empty.json)',
-          'Advisor access to linked client',
-          'Advisor revoked link lifecycle',
-        ],
-        thisBlockOrder: [
-          'GET client-export-payload (runs first; POST estate-composition skipped if this fails)',
-        ],
-      }),
-    )
-    await logStorageStateFileGetUserProbe('.auth/advisor-empty.json', 'advisor-empty-pre-test')
-  })
-
-  test('GET client-export-payload for linked client owner returns 404', async ({ request }) => {
-    test.skip(!advisorClientOwnerUserId, 'advisor-client owner user id unavailable')
-    await logRequestAuthPreSnapshot(request, 'advisor-empty-client-export-pre')
-    const res = await request.get(
-      `/api/advisor/client-export-payload?clientId=${advisorClientOwnerUserId}`,
-      apiOpts(),
-    )
-    await logRequestAuthSnapshot(request, 'advisor-empty-client-export-post', res.status())
-    expectAccessDenied(res.status())
-  })
-
-  test('POST estate-composition on advisor client household returns 403 or 404', async ({
-    request,
-  }) => {
     const res = await request.post('/api/estate-composition', {
       ...apiOpts(),
       data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
