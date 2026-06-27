@@ -38,25 +38,58 @@ correct design — the safety-sensitive work starts at Step 2 below.
 
 ---
 
-## Step 2 — Firm subscription provisioning
+## Step 2 — Firm state for link accept (not paid Stripe)
 
-**Confirmed not required for isolation-only smokes — skip unless tagging advisor
-feature smokes (prospect PDF, presets, billing) for prod.**
+**Two different gates — do not conflate them:**
 
-Isolation routes gate on `getUser` + `role === advisor` + `advisor_clients` link —
-**not** on Stripe or firm subscription. `ensureE2eAdvisorFirmSubscriptionActive`
-is staging fixture setup only (`consumer-advisor-link.setup.ts`); it was never part
-of the isolation path, only of feature tests we are not enabling in prod.
+| Gate | Subscription / firm needed? |
+|------|----------------------------|
+| **Isolation assertions** (`client-export-payload`, foreign-household 403/404) | **No** — `getUser` + role + link only |
+| **`POST /api/advisor/accept-request`** (creates the link) | **Yes** — `getAdvisorClientCapacity` requires `firm_id` + firm `subscription_status` in `active` or `trialing` |
 
-| If you enable… | Subscription needed? |
-|----------------|---------------------|
-| **Isolation-only** (Track 2 scope) | **No** — authenticated plain advisor + invite→accept link |
-| **Advisor feature smokes** (out of scope) | **Yes** — firm checkout / `ACTIVE_FIRM_STATUSES` |
+So Step 2 is **not** "provision paid Stripe for feature smokes." It **is** "advisor
+canary must have a firm in `active`/`trialing` before accept will succeed." No money
+needs to change hands — `trialing` clears the gate.
 
-Do not provision a comped Stripe subscription preemptively. An unnecessary comped
-sub pollutes revenue reporting and creates exclusion work.
+**Do not** run `seed-prod-role-canaries` alone and go straight to invite→accept.
+That script explicitly sets `firm_id: null` and skips billing — accept will **403**
+`tier_limit_reached`.
 
-### Reference — what prod smoke runs today (`npm run test:e2e:prod:smoke`)
+### What each advisor-creation path lands in (code-confirmed)
+
+| Path | `firm_id` | Firm `subscription_status` | Accept works? |
+|------|-----------|------------------------------|---------------|
+| `seed-prod-role-canaries` | **null** (cleared) | — (no firm row) | **No** |
+| Real advisor signup (`bootstrapAdvisorFirm` in `completeSignup.ts`) | Created + linked | **`null`** (not auto-trialing) | **No** until status set |
+| Staging E2E (`ensureAdvisorFirmForE2e` in `seed-e2e-lib.ts`) | Created + `firm_members` owner | **`active`** | **Yes** |
+
+Real signup **does not** auto-trial the firm — it inserts the firm with
+`subscription_status: null`. Stripe firm checkout is the product path to
+`active`/`trialing`; staging bypasses that with `ensureAdvisorFirmForE2e`.
+
+### Recommended prod provisioning (before invite)
+
+Mirror staging's **complete** firm bootstrap — not a lone `subscription_status`
+update on a half-provisioned row. Staging's `ensureAdvisorFirmForE2e` sets:
+
+- `firms` row (`name`, `owner_id`, `tier: starter`, `seat_count: 1`, status)
+- `firm_members` owner row (`status: active`)
+- `profiles.firm_id`, `firm_role: owner`, `firm_name`
+
+For prod canary, use **`trialing`** instead of `active` — same gate, no paid Stripe,
+no revenue-pollution concern. Either extend `seed-prod-role-canaries` with an
+opt-in firm bootstrap for Track 2, or run a one-off prod script modeled on
+`ensureAdvisorFirmForE2e` with `subscription_status: 'trialing'`.
+
+**Avoid:** setting only `firms.subscription_status` without `firm_id` linkage and
+`firm_members` — works until some other path reads missing fields.
+
+### Feature smokes (out of scope)
+
+Prospect PDF, presets, firm billing specs remain **staging-only** — those may need
+real Stripe. Track 2 isolation does not.
+
+### Reference — isolation routes (when enabled)
 
 42 tests tagged `@production` across 12 files. **No file under `tests/e2e/advisor/`**
 is `@production`-tagged today.
@@ -82,10 +115,10 @@ after the linked pair exists.
 | `POST /api/estate-composition` (foreign household) | Household authz → 403/404 | **No** subscription check in route |
 | `GET /api/export-estate-plan` (foreign household) | Authz denial expected | Consumer tier/billing on *success* path; isolation expects **denial** |
 
-`ensureE2eAdvisorFirmSubscriptionActive` appears in **staging** `consumer-advisor-link.setup.ts`
-only — not in prod smoke specs. **Step 2 action: skip.**
+`ensureE2eAdvisorFirmSubscriptionActive` is staging fixture setup only
+(`consumer-advisor-link.setup.ts`).
 
----
+### Reference — what prod smoke runs today (`npm run test:e2e:prod:smoke`)
 
 ## Step 3 — Give the consumer canary realistic data
 
@@ -102,16 +135,39 @@ export payload markers.
 
 ## Step 4 — Link them the real way (NOT a hand-made database link)
 
-1. Log in as **consumer canary** → invite **advisor canary** by email.
-2. Log in as **advisor canary** → accept the request.
-3. Confirm (read-only) the link shows **active / accepted**.
+### Email is not the mechanism (registered advisor)
 
-Why: invite→accept records consumer consent and activates through real code. A
-DB-forged link can grant access that shouldn't exist — the bug class guarded against
-throughout staging isolation work. Applies doubly in production.
+When the invited email matches an existing advisor profile, `invite-advisor` inserts
+a `consumer_requested` row with **no invite token**. Email is a notification linking
+to `/advisor` — acceptance is **`POST /api/advisor/accept-request`** while logged
+in (UI or API). **Deliverable inbox not required** for `canary-advisor@` /
+`canary-consumer@`.
 
-**Never** use `seed-prod-role-canaries` or admin SQL to insert `advisor_clients` rows
-for this pair.
+The token-in-email path applies only to **unregistered** invitees (signup with
+`connect=` token).
+
+### Link steps
+
+1. Ensure advisor canary has firm in **`active` or `trialing`** (Step 2).
+2. Log in as **consumer canary** → invite **advisor canary** by email.
+3. Log in as **advisor canary** → accept the pending request (UI at `/advisor` or API).
+4. Confirm (read-only) the link shows **active / accepted**.
+
+Why: invite→accept records consumer consent through real code. A DB-forged
+`advisor_clients` row can grant access that shouldn't exist.
+
+**Never** insert `advisor_clients` rows by hand for this pair.
+
+### Retry / 409 recovery (leftover pending state)
+
+If invite succeeds but accept **403s** on firm state, a `consumer_requested` row
+remains. A second invite returns **409** ("already have a pending or active
+connection") — not a new bug.
+
+**Recovery:** fix firm state (Step 2), then **accept the existing pending row** —
+do not invite again. Or clear the pending row first, then re-invite.
+
+Same pattern as 5c leftover-state poisoning, in a manual flow.
 
 ---
 
@@ -200,11 +256,11 @@ not be deleted during cleanup.
 
 ```
 Accounts (mostly done)
-  → Step 2: SKIP (isolation-only — not subscription-gated)
+  → Step 2: firm in active/trialing for accept (trialing OK — not paid Stripe)
   → Step 3: seed consumer data
-  → Step 4: link (invite → accept)
-  → Step 5: manual isolation proof  ← do not skip
-  → Step 6: reporting exclusion (profile counts + future linked pair)
+  → Step 4: link (invite → accept; email non-issue; recover 409 via accept pending)
+  → Step 5: manual isolation proof  ← negative case deliberate
+  → Step 6: reporting exclusion (canary marker — not email list)
   → Step 7: wire prod env + @production tags (isolation blocks only)
   → Step 8: remove PROD_SMOKE_EXCLUDE + confirm run green
   → Step 9: document in LAUNCH.md
