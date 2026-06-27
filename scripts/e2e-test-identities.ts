@@ -70,6 +70,13 @@ export const E2E_IDENTITIES = {
     fullName: 'E2E Consumer Linked',
     householdName: 'E2E Consumer Linked Household',
   },
+  /** Dedicated consumer for pending-link authz (5c) — never linked; 5c owns pending→active. */
+  consumerPending: {
+    email: 'e2e-consumer-pending@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Consumer Pending',
+    householdName: 'E2E Consumer Pending Household',
+  },
   consumerTier1: {
     email: 'e2e-consumer-tier1@mywealthmaps.test',
     password: E2E_TEST_PASSWORD,

@@ -12,6 +12,7 @@ import {
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findUserIdByEmail, initSupabaseEnv, pruneStrayE2eAdvisorClientLinks } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
+import { authStoragePath } from '../helpers/e2e-auth-storage'
 import {
   EXPORT_ISOLATION_MARKER_A,
   EXPORT_ISOLATION_MARKER_B,
@@ -106,7 +107,7 @@ test.beforeAll(async ({}, testInfo) => {
 })
 
 test.describe('Consumer isolation @production', () => {
-  test.use({ storageState: '.auth/consumer.json' })
+  test.use({ storageState: authStoragePath('consumer') })
 
   test('POST gifting-summary on foreign household returns 403 or 404', async ({ request }) => {
     const res = await request.post('/api/gifting-summary', {
@@ -152,7 +153,7 @@ test.describe('Consumer isolation @production', () => {
 })
 
 test.describe('Advisor isolation', () => {
-  test.use({ storageState: '.auth/advisor.json' })
+  test.use({ storageState: authStoragePath('advisor') })
 
   test('POST gifting-summary on e2e-consumer household returns 403 or 404', async ({ request }) => {
     const res = await request.post('/api/gifting-summary', {
@@ -189,7 +190,7 @@ test.describe('Advisor isolation', () => {
 })
 
 test.describe('Advisor access to linked client', () => {
-  test.use({ storageState: '.auth/advisor.json' })
+  test.use({ storageState: authStoragePath('advisor') })
 
   test('POST estate-composition on advisor client household returns 200', async ({ request }) => {
     const res = await request.post('/api/estate-composition', {
@@ -201,7 +202,7 @@ test.describe('Advisor access to linked client', () => {
 })
 
 test.describe('Advisor revoked link lifecycle', () => {
-  test.use({ storageState: '.auth/advisor.json' })
+  test.use({ storageState: authStoragePath('advisor') })
 
   let advisorClientLinkId: string | null = null
   let savedLinkStatus: { status: string; client_status: string | null } | null = null

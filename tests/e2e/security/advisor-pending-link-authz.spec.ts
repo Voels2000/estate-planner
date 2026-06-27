@@ -24,6 +24,7 @@ import {
 import type { APIRequestContext } from '@playwright/test'
 import { resolveAdvisorLinkFixtureEnv } from '../helpers/e2e-advisor-link-env'
 import { resolveE2ePassword } from '../helpers/e2e-auth'
+import { authStoragePath } from '../helpers/e2e-auth-storage'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -130,7 +131,7 @@ test.afterAll(async () => {
 })
 
 test.describe('advisor pending link (consumer_requested) authz', () => {
-  test.use({ storageState: '.auth/advisor.json' })
+  test.use({ storageState: authStoragePath('advisor') })
 
   test('pending grants no access; accepting grants access (status is the only variable)', async ({
     request,

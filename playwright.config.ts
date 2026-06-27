@@ -1,5 +1,6 @@
 import { defineConfig, devices, type Project } from '@playwright/test'
 import { ENVIRONMENTS, getTestEnvConfig } from './scripts/testEnv'
+import { authStoragePath } from './tests/e2e/helpers/e2e-auth-storage'
 
 function loadTestEnvConfig(): { baseURL: string; envFile: string } {
   if (!process.env.TEST_ENV) {
@@ -101,20 +102,20 @@ function buildProjects(): Project[] {
       dependencies: ['consumer-advisor-link-setup'],
       testMatch: /advisor\/.*\.spec\.ts/,
       testIgnore: /advisor-consumer-sync\.spec\.ts/,
-      use: { storageState: '.auth/advisor.json' },
+      use: { storageState: authStoragePath('advisor') },
     },
     {
       name: 'advisor-sync',
       dependencies: ['advisor-setup', 'advisor-client-setup'],
       testMatch: /advisor\/advisor-consumer-sync\.spec\.ts/,
-      use: { storageState: '.auth/advisor.json' },
+      use: { storageState: authStoragePath('advisor') },
     },
     {
       name: 'consumer',
       dependencies: ['consumer-setup'],
       testMatch: /consumer\/.*\.spec\.ts/,
       testIgnore: /consumer-tier1-gates\.spec\.ts|consumer-tier0-gates\.spec\.ts|golden-path-show-all-tools\.spec\.ts|onboarding-persona\.spec\.ts|consumer-deliverable-persona-matrix\.spec\.ts/,
-      use: { storageState: '.auth/consumer.json' },
+      use: { storageState: authStoragePath('consumer') },
     },
     {
       name: 'consumer-onboarding',
