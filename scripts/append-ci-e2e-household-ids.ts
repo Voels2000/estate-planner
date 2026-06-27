@@ -4,7 +4,7 @@
  * security-isolation and go-live-profile aligned with e2e-consumer / advisor-client.
  * Also prunes stray advisor→e2e-consumer links (cast topology: pending rec only).
  *
- * Called from scripts/write-ci-staging-env.sh (service role already in env).
+ * Called from e2e-prepare after seed:e2e:persona-matrix (service role in env).
  */
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
@@ -32,6 +32,9 @@ async function main() {
   const consumerLinkHouseholdId = await fetchHouseholdIdByOwnerEmail(
     E2E_IDENTITIES.consumerLinked.email,
   )
+  const consumerPendingHouseholdId = await fetchHouseholdIdByOwnerEmail(
+    E2E_IDENTITIES.consumerPending.email,
+  )
 
   if (!consumerId || !advisorClientId) {
     console.error(
@@ -43,6 +46,13 @@ async function main() {
   if (!consumerLinkHouseholdId) {
     console.error(
       'Could not resolve e2e-consumer-linked household — seed with --only=consumer-linked (or full seed:e2e).',
+    )
+    process.exit(1)
+  }
+
+  if (!consumerPendingHouseholdId) {
+    console.error(
+      'Could not resolve e2e-consumer-pending household — seed with --only=consumer-pending (or persona-matrix).',
     )
     process.exit(1)
   }
@@ -60,6 +70,31 @@ async function main() {
   contents = upsertEnvLine(contents, 'PLAYWRIGHT_CONSUMER_LINK_HOUSEHOLD_ID', consumerLinkHouseholdId)
   contents = upsertEnvLine(
     contents,
+    'PLAYWRIGHT_CONSUMER_PENDING_HOUSEHOLD_ID',
+    consumerPendingHouseholdId,
+  )
+  contents = upsertEnvLine(
+    contents,
+    'PLAYWRIGHT_CONSUMER_PENDING_EMAIL',
+    E2E_IDENTITIES.consumerPending.email,
+  )
+  contents = upsertEnvLine(
+    contents,
+    'PLAYWRIGHT_CONSUMER_PENDING_PASSWORD',
+    E2E_IDENTITIES.consumerPending.password,
+  )
+  contents = upsertEnvLine(
+    contents,
+    'PLAYWRIGHT_ADVISOR_PENDING_EMAIL',
+    E2E_IDENTITIES.advisorPending.email,
+  )
+  contents = upsertEnvLine(
+    contents,
+    'PLAYWRIGHT_ADVISOR_PENDING_PASSWORD',
+    E2E_IDENTITIES.advisorPending.password,
+  )
+  contents = upsertEnvLine(
+    contents,
     'PLAYWRIGHT_CONSUMER_LINK_EMAIL',
     E2E_IDENTITIES.consumerLinked.email,
   )
@@ -74,18 +109,26 @@ async function main() {
   const advisorClientUserId = await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)
   const tier1UserId = await findUserIdByEmail(E2E_IDENTITIES.consumerTier1.email)
   const consumerLinkUserId = await findUserIdByEmail(E2E_IDENTITIES.consumerLinked.email)
+  const consumerPendingUserId = await findUserIdByEmail(E2E_IDENTITIES.consumerPending.email)
+  const advisorPendingUserId = await findUserIdByEmail(E2E_IDENTITIES.advisorPending.email)
 
   if (advisorId) {
     contents = upsertEnvLine(contents, 'PLAYWRIGHT_ADVISOR_USER_ID', advisorId)
     await pruneStrayE2eAdvisorClientLinks(
       advisorId,
-      [advisorClientUserId, tier1UserId, consumerLinkUserId].filter((id): id is string =>
-        Boolean(id),
+      [advisorClientUserId, tier1UserId, consumerLinkUserId, consumerPendingUserId].filter(
+        (id): id is string => Boolean(id),
       ),
     )
   }
+  if (advisorPendingUserId) {
+    contents = upsertEnvLine(contents, 'PLAYWRIGHT_ADVISOR_PENDING_USER_ID', advisorPendingUserId)
+  }
   if (consumerLinkUserId) {
     contents = upsertEnvLine(contents, 'PLAYWRIGHT_CONSUMER_LINK_USER_ID', consumerLinkUserId)
+  }
+  if (consumerPendingUserId) {
+    contents = upsertEnvLine(contents, 'PLAYWRIGHT_CONSUMER_PENDING_USER_ID', consumerPendingUserId)
   }
 
   writeFileSync(envFile, contents)

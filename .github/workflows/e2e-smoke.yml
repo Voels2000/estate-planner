@@ -58,13 +58,45 @@ jobs:
           RESEND_API_KEY: re_placeholder_ci_build_only
           STRIPE_SECRET_KEY: sk_test_placeholder_ci_build_only
 
+      # Mint after build so the access-token TTL clock starts as late as possible.
+      - name: Mint shared auth sessions (sequential, single login per identity)
+        run: bash scripts/mint-ci-e2e-auth.sh
+        env:
+          TEST_ENV: local
+
+      - name: Guard auth TTL for parallel fan-out
+        run: |
+          set -euo pipefail
+          node scripts/assert-auth-ttl.mjs .auth/consumer-link.json 1800
+          node scripts/assert-auth-ttl.mjs .auth/consumer-pending.json 1800
+          node scripts/assert-auth-ttl.mjs .auth/advisor-pending.json 1800
+          node scripts/assert-auth-ttl.mjs .auth/advisor-empty.json 1800
+          for suite in go-live-profile security-smoke b4-gate security-isolation; do
+            node scripts/assert-auth-ttl.mjs ".auth/consumer.${suite}.json" 1800
+            if [[ "$suite" != "go-live-profile" ]]; then
+              node scripts/assert-auth-ttl.mjs ".auth/advisor.${suite}.json" 1800
+            fi
+          done
+
       - name: Stage CI E2E prepare artifact
         run: |
           set -euo pipefail
           test -d .next
           test -f .env.local
           test -f .env.test.local
-          tar -czf e2e-smoke-prepare.tar.gz .next .env.local .env.test.local
+          test -d .auth
+          test -f .auth/consumer-link.json
+          test -f .auth/consumer-pending.json
+          test -f .auth/advisor-pending.json
+          test -f .auth/advisor-empty.json
+          test -f .auth/advisor.json
+          for suite in go-live-profile security-smoke b4-gate security-isolation; do
+            test -f ".auth/consumer.${suite}.json"
+            if [[ "$suite" != "go-live-profile" ]]; then
+              test -f ".auth/advisor.${suite}.json"
+            fi
+          done
+          tar -czf e2e-smoke-prepare.tar.gz .next .env.local .env.test.local .auth
 
       - name: Upload CI E2E prepare artifact
         uses: actions/upload-artifact@v4
@@ -103,6 +135,9 @@ jobs:
 
       - name: E2E go-live profile smoke
         run: npm run test:e2e:go-live-profile -- --workers=1
+        env:
+          E2E_REUSE_AUTH: '1'
+          E2E_SUITE: go-live-profile
 
   e2e-security-smoke:
     if: vars.E2E_SMOKE_IN_CI == 'true'
@@ -132,7 +167,10 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: E2E security smoke
-        run: npm run test:e2e:security-smoke -- --workers=1
+        run: npm run test:e2e:security-smoke:ci -- --workers=1
+        env:
+          E2E_REUSE_AUTH: '1'
+          E2E_SUITE: security-smoke
 
   e2e-b4-gate:
     if: vars.E2E_SMOKE_IN_CI == 'true'
@@ -162,7 +200,10 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: E2E B4 gate (prospect, health-score, playbook, drip)
-        run: npm run test:e2e:b4-gate -- --workers=1
+        run: npm run test:e2e:b4-gate:ci -- --workers=1
+        env:
+          E2E_REUSE_AUTH: '1'
+          E2E_SUITE: b4-gate
 
   e2e-security-isolation:
     if: vars.E2E_SMOKE_IN_CI == 'true'
@@ -192,7 +233,11 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: E2E cross-household isolation (IDOR matrix)
-        run: npm run test:e2e:security-isolation -- --workers=1
+        run: npm run test:e2e:security-isolation:ci -- --workers=1
+        env:
+          E2E_REUSE_AUTH: '1'
+          E2E_SUITE: security-isolation
+          E2E_DIAG_ROUTE_AUTH: '1'
 
   # Aggregator preserves branch-protection check name `e2e-smoke` while suites run in parallel.
   e2e-smoke:

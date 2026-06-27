@@ -1,15 +1,17 @@
 import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import { resolveE2eEmail, resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
-import { authStoragePathForMint } from './e2e-auth-storage'
 import { writeAuthExpirySidecar } from './e2e-auth-session'
 
-setup('authenticate consumer @production', async ({ page }) => {
+setup('authenticate pending-link advisor fixture', async ({ page }) => {
   const email = resolveE2eEmail(
-    process.env.PLAYWRIGHT_CONSUMER_EMAIL,
-    E2E_IDENTITIES.consumer.email,
+    process.env.PLAYWRIGHT_ADVISOR_PENDING_EMAIL,
+    E2E_IDENTITIES.advisorPending.email,
   )
-  const password = resolveE2ePassword(email, process.env.PLAYWRIGHT_CONSUMER_PASSWORD)
+  const password = resolveE2ePassword(
+    email,
+    process.env.PLAYWRIGHT_ADVISOR_PENDING_PASSWORD ?? process.env.PLAYWRIGHT_ADVISOR_PASSWORD,
+  )
 
   await syncE2ePasswordForEmail(email, password)
 
@@ -28,13 +30,12 @@ setup('authenticate consumer @production', async ({ page }) => {
       .textContent()
       .catch(() => null)
     throw new Error(
-      `Consumer login did not leave /login (url=${page.url()})${
+      `Pending advisor login did not leave /login (url=${page.url()})${
         loginError ? `: ${loginError.trim()}` : ''
-      }. Re-run npm run seed:e2e and confirm PLAYWRIGHT_BASE_URL matches the seeded project.`,
+      }. Run npm run seed:e2e with advisor-pending.`,
     )
   }
 
-  const storagePath = authStoragePathForMint('consumer')
-  await page.context().storageState({ path: storagePath })
-  writeAuthExpirySidecar(storagePath)
+  await page.context().storageState({ path: '.auth/advisor-pending.json' })
+  writeAuthExpirySidecar('.auth/advisor-pending.json')
 })

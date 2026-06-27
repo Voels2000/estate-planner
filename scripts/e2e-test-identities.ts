@@ -25,7 +25,7 @@ export const PROD_CANARY = {
 } as const
 
 /**
- * Production role canaries — login smoke only (no firm/subscription, no advisor links).
+ * Production role canaries — login smoke only (no firm; use seed:prod-advisor-firm for Track 2).
  * Password: same E2E_CANARY_PASSWORD as consumer canary. Seed: npm run seed:prod-role-canaries -- --confirm
  */
 export const PROD_ROLE_CANARIES = {
@@ -69,6 +69,13 @@ export const E2E_IDENTITIES = {
     password: E2E_TEST_PASSWORD,
     fullName: 'E2E Consumer Linked',
     householdName: 'E2E Consumer Linked Household',
+  },
+  /** Dedicated consumer for pending-link authz (5c) — never linked; 5c owns pending→active. */
+  consumerPending: {
+    email: 'e2e-consumer-pending@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Consumer Pending',
+    householdName: 'E2E Consumer Pending Household',
   },
   consumerTier1: {
     email: 'e2e-consumer-tier1@mywealthmaps.test',
@@ -116,6 +123,13 @@ export const E2E_IDENTITIES = {
     password: E2E_TEST_PASSWORD,
     fullName: 'E2E Test Advisor',
     firmName: 'MWM E2E Advisory',
+  },
+  /** Dedicated advisor for pending-link authz (5c) — never shares sessions with read-only smokes. */
+  advisorPending: {
+    email: 'e2e-advisor-pending@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Advisor Pending',
+    firmName: 'MWM E2E Pending Advisory',
   },
   /** Zero linked clients — playbook empty-state E2E; consumer link for pending recommendations. */
   advisorEmpty: {

@@ -1,5 +1,13 @@
 import { test, expect } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
+import {
+  logAdvisorAuthCookieComparison,
+  logAdvisorPageAuthCookies,
+} from '../helpers/advisor-auth-cookie-diag'
+import { installAdvisorFailureDiag } from '../helpers/advisor-failure-diag'
+import { authStoragePath } from '../helpers/e2e-auth-storage'
+
+installAdvisorFailureDiag(test)
 
 /**
  * B4 Prospect Track 1 (steps 3–8, 4b) — form logic + PDF route content.
@@ -7,7 +15,9 @@ import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
  */
 test.describe('B4 prospect form logic', () => {
   test('CA married business owner — tax figures, sunset delta, no state card', async ({ page }) => {
+    logAdvisorAuthCookieComparison(authStoragePath('advisor'))
     await page.goto('/prospect')
+    await logAdvisorPageAuthCookies(page, 'b4-prospect-after-goto')
     await expect(page.getByRole('heading', { name: 'Prospect Mode' })).toBeVisible()
 
     await page.locator('input[name="name"]').fill('Test Prospect')

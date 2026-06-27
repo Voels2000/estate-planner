@@ -6,7 +6,7 @@
  *
  * Placement: test layer only. CI intermittent 401s on advisor routes have been observed
  * exclusively via APIRequestContext ({ request } + storageState), not via page/browser
- * navigation (see retry PR placement audit when that lands).
+ * navigation (see logRequestContextPlacementAudit).
  */
 import type { APIRequestContext, APIResponse } from '@playwright/test'
 
@@ -92,4 +92,20 @@ export async function postWithAuthRetry(
   label?: string,
 ): Promise<APIResponse> {
   return withAuthRetry(request, 'POST', url, opts, label, () => request.post(url, opts))
+}
+
+/** Confirms placement: CI async-null 401s are request-context-only, not browser-context. */
+export function logRequestContextPlacementAudit(scope: string): void {
+  console.log(
+    JSON.stringify({
+      diag: 'auth-context-placement-audit',
+      scope,
+      isolationApiCalls: 'playwright-request (APIRequestContext + storageState)',
+      browserAdvisorSpecs:
+        'page.goto specs (e.g. b4-prospect-form) use installAdvisorFailureDiag on page responses — separate path',
+      ciIntermittent401ObservedOn: 'request.get to /api/advisor/client-export-payload only',
+      browserContextNullObserved: false,
+      placement: 'test-layer guarded retry; prod route retry not warranted unless browser nulls appear',
+    }),
+  )
 }

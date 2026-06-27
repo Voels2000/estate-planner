@@ -14,7 +14,15 @@ import { resolveAdvisorLinkFixtureEnv } from '../helpers/e2e-advisor-link-env'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findUserIdByEmail, initSupabaseEnv, pruneStrayE2eAdvisorClientLinks } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
-import { getWithAuthRetry } from '../helpers/request-auth-retry'
+import {
+  logRequestAuthPreSnapshot,
+  logRequestAuthSnapshot,
+} from '../helpers/advisor-failure-diag'
+import {
+  getWithAuthRetry,
+  logRequestContextPlacementAudit,
+} from '../helpers/request-auth-retry'
+import { authStoragePath } from '../helpers/e2e-auth-storage'
 import {
   EXPORT_ISOLATION_MARKER_A,
   EXPORT_ISOLATION_MARKER_B,
@@ -146,7 +154,7 @@ test.beforeAll(async ({}, testInfo) => {
 })
 
 test.describe('Consumer isolation @production', () => {
-  test.use({ storageState: '.auth/consumer.json' })
+  test.use({ storageState: authStoragePath('consumer') })
 
   test('POST gifting-summary on foreign household returns 403 or 404', async ({ request }) => {
     const res = await request.post('/api/gifting-summary', {
@@ -192,13 +200,14 @@ test.describe('Consumer isolation @production', () => {
 })
 
 test.describe('Advisor isolation @production', () => {
-  test.use({ storageState: '.auth/advisor.json' })
+  test.use({ storageState: authStoragePath('advisor') })
 
   test('POST gifting-summary on e2e-consumer household returns 403 or 404', async ({ request }) => {
     const res = await request.post('/api/gifting-summary', {
       ...apiOpts(),
       data: { householdId: advisorForeignHouseholdId },
     })
+    await logRequestAuthSnapshot(request, 'gifting-summary', res.status())
     expectAccessDenied(res.status())
   })
 
@@ -232,7 +241,7 @@ test.describe('Advisor isolation @production', () => {
 })
 
 test.describe('Advisor access to linked client @production', () => {
-  test.use({ storageState: '.auth/advisor.json' })
+  test.use({ storageState: authStoragePath('advisor') })
 
   test('POST estate-composition on advisor client household returns 200', async ({ request }) => {
     const res = await request.post('/api/estate-composition', {
@@ -244,7 +253,7 @@ test.describe('Advisor access to linked client @production', () => {
 })
 
 test.describe('Advisor revoked link lifecycle', () => {
-  test.use({ storageState: '.auth/advisor.json' })
+  test.use({ storageState: authStoragePath('advisor') })
 
   let advisorClientLinkId: string | null = null
   let savedLinkStatus: { status: string; client_status: string | null } | null = null
@@ -314,17 +323,38 @@ test.describe('Advisor revoked link lifecycle', () => {
 })
 
 test.describe('Advisor-empty isolation (unlinked book) @production', () => {
-  test.use({ storageState: '.auth/advisor-empty.json' })
+  test.use({ storageState: authStoragePath('advisor-empty') })
+
+  test.beforeAll(async () => {
+    logRequestContextPlacementAudit('cross-household-isolation / advisor-empty block')
+    console.log(
+      JSON.stringify({
+        diag: 'advisor-empty-serial-context',
+        fileSerialMode: true,
+        serialPosition: 'runs after revoked-link lifecycle — before PostgREST view isolation',
+        priorSerialBlocks: [
+          'Consumer isolation',
+          'Advisor isolation',
+          'Advisor access to linked client',
+          'Advisor revoked link lifecycle (mutates advisor_clients link)',
+        ],
+        laterSerialBlocks: ['PostgREST view isolation @production'],
+        thisBlockOrder: ['GET client-export-payload', 'POST estate-composition'],
+      }),
+    )
+  })
 
   test('GET client-export-payload for linked client owner returns 404', async ({ request }) => {
     const linkedOwnerId = linkedClientOwnerUserId || advisorClientOwnerUserId
     test.skip(!linkedOwnerId, 'linked client owner user id unavailable')
+    await logRequestAuthPreSnapshot(request, 'advisor-empty-client-export-pre')
     const res = await getWithAuthRetry(
       request,
       `/api/advisor/client-export-payload?clientId=${linkedOwnerId}`,
       apiOpts(),
       'advisor-empty-client-export',
     )
+    await logRequestAuthSnapshot(request, 'advisor-empty-client-export-post', res.status())
     expectAccessDenied(res.status())
   })
 

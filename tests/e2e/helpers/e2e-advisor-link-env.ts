@@ -7,6 +7,44 @@ import { findUserIdByEmail, initSupabaseEnv } from '../../../scripts/seed-e2e-li
 import { resolveE2eEmail } from './e2e-auth'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 
+export type PendingLinkFixtureEnv = {
+  advisorEmail: string
+  pendingConsumerEmail: string
+  pendingConsumerUserId: string
+  pendingConsumerHouseholdId: string
+  advisorUserId: string
+}
+
+/** Resolve IDs for 5c pending-link authz (consumer-pending ↔ advisor-pending — never shared smokes). */
+export async function resolvePendingLinkFixtureEnv(): Promise<PendingLinkFixtureEnv> {
+  initSupabaseEnv()
+
+  const advisorEmail = resolveE2eEmail(
+    process.env.PLAYWRIGHT_ADVISOR_PENDING_EMAIL,
+    E2E_IDENTITIES.advisorPending.email,
+  )
+  const pendingConsumerEmail = resolveE2eEmail(
+    process.env.PLAYWRIGHT_CONSUMER_PENDING_EMAIL,
+    E2E_IDENTITIES.consumerPending.email,
+  )
+
+  const advisorUserId = (await findUserIdByEmail(advisorEmail)) ?? ''
+  const pendingConsumerUserId = (await findUserIdByEmail(pendingConsumerEmail)) ?? ''
+
+  const pendingConsumerHouseholdId =
+    process.env.PLAYWRIGHT_CONSUMER_PENDING_HOUSEHOLD_ID?.trim() ||
+    (await fetchHouseholdIdByOwnerEmail(pendingConsumerEmail)) ||
+    ''
+
+  return {
+    advisorEmail,
+    pendingConsumerEmail,
+    pendingConsumerUserId,
+    pendingConsumerHouseholdId,
+    advisorUserId,
+  }
+}
+
 export type AdvisorLinkFixtureEnv = {
   advisorEmail: string
   linkedConsumerEmail: string
