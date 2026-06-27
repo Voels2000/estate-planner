@@ -12,9 +12,21 @@ import {
 
 const ADVISOR_AUTH_FILES = [
   '.auth/advisor.json',
+  '.auth/advisor-empty.json',
   '.auth/advisor.security-smoke.json',
   '.auth/advisor.b4-gate.json',
   '.auth/advisor.security-isolation.json',
+] as const
+
+const ADVISOR_PER_SUITE_FILES = [
+  '.auth/advisor.security-smoke.json',
+  '.auth/advisor.b4-gate.json',
+  '.auth/advisor.security-isolation.json',
+] as const
+
+const ADVISOR_FAIL_ON_GETUSER_FILES = [
+  '.auth/advisor-empty.json',
+  ...ADVISOR_PER_SUITE_FILES,
 ] as const
 
 const CONSUMER_PER_SUITE_FILES = [
@@ -22,12 +34,6 @@ const CONSUMER_PER_SUITE_FILES = [
   '.auth/consumer.security-smoke.json',
   '.auth/consumer.b4-gate.json',
   '.auth/consumer.security-isolation.json',
-] as const
-
-const ADVISOR_PER_SUITE_FILES = [
-  '.auth/advisor.security-smoke.json',
-  '.auth/advisor.b4-gate.json',
-  '.auth/advisor.security-isolation.json',
 ] as const
 
 async function main() {
@@ -84,7 +90,7 @@ async function main() {
     failures.push(`advisor files share refresh tokens: ${advisorDupes.join(', ')}`)
   }
 
-  for (const path of ADVISOR_PER_SUITE_FILES) {
+  for (const path of ADVISOR_FAIL_ON_GETUSER_FILES) {
     const check = advisorChecks.find((c) => c.path === path)
     if (!check) continue
     if (!check.getUserOk) {
@@ -108,6 +114,10 @@ async function main() {
       consumerPerSuiteGetUserDead,
       advisorBrowserLoginGetUserOk: advisorChecks.find((c) => c.path === '.auth/advisor.json')
         ?.getUserOk,
+      advisorEmptyGetUserOk: advisorChecks.find((c) => c.path === '.auth/advisor-empty.json')
+        ?.getUserOk,
+      advisorEmptyEmailConfirmedAt: advisorChecks.find((c) => c.path === '.auth/advisor-empty.json')
+        ?.emailConfirmedAt,
     }),
   )
 

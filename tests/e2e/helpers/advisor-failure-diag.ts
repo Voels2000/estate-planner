@@ -79,16 +79,51 @@ function authCookieLenFromState(state: { cookies: { name: string; value: string 
     .reduce((total, cookie) => total + (cookie.value?.length ?? 0), 0)
 }
 
+function sessionExpFromState(state: { cookies: { name: string; value: string }[] }): number | null {
+  const chunks = state.cookies
+    .filter((c) => AUTH_COOKIE.test(c.name))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((c) => c.value)
+    .join('')
+  if (!chunks) return null
+
+  const raw = chunks.startsWith('base64-')
+    ? Buffer.from(chunks.slice('base64-'.length), 'base64').toString('utf8')
+    : decodeURIComponent(chunks)
+
+  try {
+    const s = JSON.parse(raw) as {
+      expires_at?: number
+      access_token?: string
+    }
+    if (s.expires_at) return s.expires_at
+    if (s.access_token) {
+      const payload = JSON.parse(
+        Buffer.from(s.access_token.split('.')[1], 'base64').toString(),
+      ) as { exp?: number }
+      return payload.exp ?? null
+    }
+  } catch {
+    // fall through
+  }
+  return null
+}
+
 /** Pre-request: auth on the exact request fixture before the HTTP call (non-mutating read). */
 export async function logRequestAuthPreSnapshot(
   ctx: { storageState: () => Promise<{ cookies: { name: string; value: string }[] }> },
   label: string,
 ): Promise<void> {
   const state = await ctx.storageState().catch(() => ({ cookies: [] as { name: string; value: string }[] }))
+  const nowUnix = Math.floor(Date.now() / 1000)
+  const accessTokenExp = sessionExpFromState(state)
   console.log(
     `advisor-request-auth-pre ${JSON.stringify({
       label,
       authCookieLen: authCookieLenFromState(state),
+      accessTokenExp,
+      nowUnix,
+      secondsUntilExp: accessTokenExp ? accessTokenExp - nowUnix : null,
       timing: 'before-request',
     })}`,
   )

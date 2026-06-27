@@ -16,6 +16,7 @@ export type StorageStateGetUserCheck = {
   userId?: string
   getUserOk: boolean
   getUserError?: string
+  emailConfirmedAt?: string | null
 }
 
 export async function checkStorageStateGetUser(
@@ -56,6 +57,7 @@ export async function checkStorageStateGetUser(
     userId: userData.user?.id ?? session.user_id,
     getUserOk: !getUserError && Boolean(userData.user),
     getUserError: getUserError?.message,
+    emailConfirmedAt: userData.user?.email_confirmed_at ?? null,
   }
 }
 

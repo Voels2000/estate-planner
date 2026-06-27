@@ -16,6 +16,27 @@ export async function GET(request: Request) {
   } = await supabase.auth.getUser()
 
   if (authError || !user) {
+    if (process.env.E2E_DIAG_ROUTE_AUTH === '1') {
+      try {
+        const { cookies } = await import('next/headers')
+        const store = await cookies()
+        const authCookies = store
+          .getAll()
+          .filter((c) => /sb-.*-auth-token(\.\d+)?$/.test(c.name))
+        console.error(
+          JSON.stringify({
+            diag: 'client-export-payload-auth',
+            authError: authError?.message ?? null,
+            userPresent: Boolean(user),
+            wireCookieChunks: authCookies.length,
+            wireCookieNames: authCookies.map((c) => c.name).sort(),
+            wireCookieTotalLen: authCookies.reduce((n, c) => n + (c.value?.length ?? 0), 0),
+          }),
+        )
+      } catch (e) {
+        console.error(JSON.stringify({ diag: 'client-export-payload-auth', logError: String(e) }))
+      }
+    }
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

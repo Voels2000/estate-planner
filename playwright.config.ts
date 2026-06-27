@@ -235,6 +235,9 @@ export default defineConfig({
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
+        env: process.env.E2E_DIAG_ROUTE_AUTH
+          ? { E2E_DIAG_ROUTE_AUTH: process.env.E2E_DIAG_ROUTE_AUTH }
+          : undefined,
       }
     : undefined,
 })
