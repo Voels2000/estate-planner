@@ -62,9 +62,9 @@ jobs:
       - name: Mint shared auth sessions (sequential, single login per identity)
         run: |
           set -euo pipefail
-          npx dotenv -o -e .env.local -e .env.test.local -- npx playwright test --project=consumer-setup --workers=1
-          npx dotenv -o -e .env.local -e .env.test.local -- npx playwright test --project=advisor-empty-setup --workers=1
-          npx dotenv -o -e .env.local -e .env.test.local -- npx playwright test --project=consumer-advisor-link-setup --workers=1
+          npx dotenv -o -e .env.test.local -- npx playwright test --project=consumer-setup --workers=1
+          npx dotenv -o -e .env.test.local -- npx playwright test --project=advisor-empty-setup --workers=1
+          npx dotenv -o -e .env.test.local -- npx playwright test --project=consumer-advisor-link-setup --workers=1
         env:
           TEST_ENV: local
 
