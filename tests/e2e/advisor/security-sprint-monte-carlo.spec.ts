@@ -4,9 +4,15 @@
  */
 import { test, expect } from '@playwright/test'
 import { clickAdvisorClientTab, gotoAdvisorLinkedClient } from '../helpers/constants'
+import {
+  logAdvisorAuthCookieComparison,
+  logAdvisorPageAuthCookies,
+} from '../helpers/advisor-auth-cookie-diag'
+import { authStoragePath } from '../helpers/e2e-auth-storage'
 
 test.describe('Security sprint — Monte Carlo edge auth', () => {
   test('Strategy tab Monte Carlo returns P10/P50/P90', async ({ page }) => {
+    logAdvisorAuthCookieComparison(authStoragePath('advisor'))
     const edgeResponses: number[] = []
 
     page.on('response', (res) => {
@@ -16,6 +22,7 @@ test.describe('Security sprint — Monte Carlo edge auth', () => {
     })
 
     await gotoAdvisorLinkedClient(page)
+    await logAdvisorPageAuthCookies(page, 'monte-carlo-after-goto-advisor-client')
     await clickAdvisorClientTab(page, /Strategy/)
 
     await page.getByRole('button', { name: 'Run Monte Carlo' }).click()
