@@ -8,7 +8,9 @@ import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import {
   fetchAdvisorClientHouseholdId,
   fetchHouseholdIdByOwnerEmail,
+  resolveConsumerHouseholdId,
 } from '../helpers/e2e-households'
+import { resolveAdvisorLinkFixtureEnv } from '../helpers/e2e-advisor-link-env'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findUserIdByEmail, initSupabaseEnv, pruneStrayE2eAdvisorClientLinks } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
@@ -44,32 +46,55 @@ test.describe.configure({ mode: 'serial' })
 
 let consumerHouseholdId: string
 let advisorClientHouseholdId: string
+/** Advisor's linked client household — equals advisorClient on staging; canary-consumer on prod. */
+let linkedClientHouseholdId: string
+/** Household the linked advisor must not reach — equals consumerHouseholdId on staging. */
+let advisorForeignHouseholdId: string
 let consumerOwnerUserId: string
 let advisorClientOwnerUserId: string
+let linkedClientOwnerUserId: string
+let advisorForeignOwnerUserId: string
 
 test.beforeAll(async ({}, testInfo) => {
   const canAdminLookup =
     Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()) &&
     Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim())
 
+  const consumerEmail = resolveE2eEmail(
+    process.env.PLAYWRIGHT_CONSUMER_EMAIL,
+    E2E_IDENTITIES.consumer.email,
+  )
+  const advisorClientEmail = resolveE2eEmail(
+    process.env.PLAYWRIGHT_ADVISOR_CLIENT_EMAIL,
+    E2E_IDENTITIES.advisorClient.email,
+  )
+  const linkedConsumerEmail = resolveE2eEmail(
+    process.env.PLAYWRIGHT_CONSUMER_LINK_EMAIL,
+    E2E_IDENTITIES.consumerLinked.email,
+  )
+  const advisorEmail = resolveE2eEmail(
+    process.env.PLAYWRIGHT_ADVISOR_EMAIL,
+    E2E_IDENTITIES.advisor.email,
+  )
+
   consumerHouseholdId = process.env.PLAYWRIGHT_HOUSEHOLD_ID?.trim() ?? ''
   advisorClientHouseholdId = process.env.PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID?.trim() ?? ''
 
   if (canAdminLookup) {
     initSupabaseEnv()
-    const canonicalConsumer =
-      (await fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.consumer.email)) ?? ''
+    const canonicalConsumer = (await fetchHouseholdIdByOwnerEmail(consumerEmail)) ?? ''
     const canonicalAdvisorClient = (await fetchAdvisorClientHouseholdId()) ?? ''
+    const linkEnv = await resolveAdvisorLinkFixtureEnv()
 
     if (canonicalConsumer) {
       if (consumerHouseholdId && consumerHouseholdId !== canonicalConsumer) {
         console.warn(
-          `[e2e] PLAYWRIGHT_HOUSEHOLD_ID (${consumerHouseholdId}) ≠ canonical consumer (${canonicalConsumer}); using canonical`,
+          `[e2e] PLAYWRIGHT_HOUSEHOLD_ID (${consumerHouseholdId}) ≠ consumer (${canonicalConsumer}); using consumer household`,
         )
       }
       consumerHouseholdId = canonicalConsumer
     } else if (!consumerHouseholdId) {
-      consumerHouseholdId = ''
+      consumerHouseholdId = (await resolveConsumerHouseholdId()) ?? ''
     }
 
     if (canonicalAdvisorClient) {
@@ -86,18 +111,33 @@ test.beforeAll(async ({}, testInfo) => {
       advisorClientHouseholdId = ''
     }
 
-    consumerOwnerUserId = (await findUserIdByEmail(E2E_IDENTITIES.consumer.email)) ?? ''
-    advisorClientOwnerUserId =
-      (await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)) ?? ''
+    consumerOwnerUserId = (await findUserIdByEmail(consumerEmail)) ?? ''
+    advisorClientOwnerUserId = (await findUserIdByEmail(advisorClientEmail)) ?? ''
+    linkedClientOwnerUserId = (await findUserIdByEmail(linkedConsumerEmail)) ?? ''
 
-    const advisorId = (await findUserIdByEmail(E2E_IDENTITIES.advisor.email)) ?? ''
+    if (process.env.TEST_ENV === 'production') {
+      linkedClientHouseholdId = linkEnv.linkedConsumerHouseholdId || consumerHouseholdId
+      advisorForeignHouseholdId =
+        linkEnv.isolationHouseholdId || advisorClientHouseholdId
+      advisorForeignOwnerUserId = advisorClientOwnerUserId
+    } else {
+      linkedClientHouseholdId = advisorClientHouseholdId
+      advisorForeignHouseholdId = consumerHouseholdId
+      advisorForeignOwnerUserId = linkEnv.isolationConsumerUserId || consumerOwnerUserId
+    }
+
+    const advisorId = (await findUserIdByEmail(advisorEmail)) ?? ''
     const tier1UserId = (await findUserIdByEmail(E2E_IDENTITIES.consumerTier1.email)) ?? ''
     if (advisorId) {
       await pruneStrayE2eAdvisorClientLinks(advisorId, [
         advisorClientOwnerUserId,
+        linkedClientOwnerUserId,
         tier1UserId,
       ].filter(Boolean))
     }
+  } else {
+    linkedClientHouseholdId = advisorClientHouseholdId
+    advisorForeignHouseholdId = consumerHouseholdId
   }
 
   if (!consumerHouseholdId || !advisorClientHouseholdId) {
@@ -107,6 +147,8 @@ test.beforeAll(async ({}, testInfo) => {
     )
     return
   }
+  if (!linkedClientHouseholdId) linkedClientHouseholdId = advisorClientHouseholdId
+  if (!advisorForeignHouseholdId) advisorForeignHouseholdId = consumerHouseholdId
   expect(consumerHouseholdId).not.toBe(advisorClientHouseholdId)
 
   if (consumerOwnerUserId && advisorClientOwnerUserId) {
@@ -160,7 +202,7 @@ test.describe('Consumer isolation @production', () => {
   })
 })
 
-test.describe('Advisor-empty isolation (unlinked book)', () => {
+test.describe('Advisor-empty isolation (unlinked book) @production', () => {
   test.use({ storageState: '.auth/advisor-empty.json' })
 
   test.beforeAll(async () => {
@@ -185,11 +227,12 @@ test.describe('Advisor-empty isolation (unlinked book)', () => {
   })
 
   test('GET client-export-payload for linked client owner returns 404', async ({ request }) => {
-    test.skip(!advisorClientOwnerUserId, 'advisor-client owner user id unavailable')
+    const linkedOwnerId = linkedClientOwnerUserId || advisorClientOwnerUserId
+    test.skip(!linkedOwnerId, 'linked client owner user id unavailable')
     await logRequestAuthPreSnapshot(request, 'advisor-empty-client-export-pre')
     const res = await getWithAuthRetry(
       request,
-      `/api/advisor/client-export-payload?clientId=${advisorClientOwnerUserId}`,
+      `/api/advisor/client-export-payload?clientId=${linkedOwnerId}`,
       apiOpts(),
       'advisor-empty-client-export',
     )
@@ -200,21 +243,23 @@ test.describe('Advisor-empty isolation (unlinked book)', () => {
   test('POST estate-composition on advisor client household returns 403 or 404', async ({
     request,
   }) => {
+    const linkedOwnerId = linkedClientOwnerUserId || advisorClientOwnerUserId
+    test.skip(!linkedOwnerId, 'linked client owner user id unavailable')
     const res = await request.post('/api/estate-composition', {
       ...apiOpts(),
-      data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
+      data: { householdId: linkedClientHouseholdId, sourceRole: 'advisor' },
     })
     expectAccessDenied(res.status())
   })
 })
 
-test.describe('Advisor isolation', () => {
+test.describe('Advisor isolation @production', () => {
   test.use({ storageState: authStoragePath('advisor') })
 
   test('POST gifting-summary on e2e-consumer household returns 403 or 404', async ({ request }) => {
     const res = await request.post('/api/gifting-summary', {
       ...apiOpts(),
-      data: { householdId: consumerHouseholdId },
+      data: { householdId: advisorForeignHouseholdId },
     })
     await logRequestAuthSnapshot(request, 'gifting-summary', res.status())
     expectAccessDenied(res.status())
@@ -223,24 +268,25 @@ test.describe('Advisor isolation', () => {
   test('POST estate-composition on e2e-consumer household returns 403 or 404', async ({ request }) => {
     const res = await request.post('/api/estate-composition', {
       ...apiOpts(),
-      data: { householdId: consumerHouseholdId, sourceRole: 'advisor' },
+      data: { householdId: advisorForeignHouseholdId, sourceRole: 'advisor' },
     })
     expectAccessDenied(res.status())
   })
 
   test('GET export-estate-plan on e2e-consumer household returns 403 or 404', async ({ request }) => {
     const res = await request.get(
-      `/api/export-estate-plan?household_id=${consumerHouseholdId}`,
+      `/api/export-estate-plan?household_id=${advisorForeignHouseholdId}`,
       apiOpts(),
     )
     expectAccessDenied(res.status())
   })
 
   test('GET client-export-payload for unlinked consumer owner returns 404', async ({ request }) => {
-    test.skip(!consumerOwnerUserId, 'consumer owner user id unavailable')
+    const foreignOwnerId = advisorForeignOwnerUserId || consumerOwnerUserId
+    test.skip(!foreignOwnerId, 'isolation consumer owner user id unavailable')
     const res = await getWithAuthRetry(
       request,
-      `/api/advisor/client-export-payload?clientId=${consumerOwnerUserId}`,
+      `/api/advisor/client-export-payload?clientId=${foreignOwnerId}`,
       apiOpts(),
       'advisor-isolation-client-export',
     )
@@ -248,13 +294,13 @@ test.describe('Advisor isolation', () => {
   })
 })
 
-test.describe('Advisor access to linked client', () => {
+test.describe('Advisor access to linked client @production', () => {
   test.use({ storageState: authStoragePath('advisor') })
 
   test('POST estate-composition on advisor client household returns 200', async ({ request }) => {
     const res = await request.post('/api/estate-composition', {
       ...apiOpts(),
-      data: { householdId: advisorClientHouseholdId, sourceRole: 'advisor' },
+      data: { householdId: linkedClientHouseholdId, sourceRole: 'advisor' },
     })
     expect(res.ok(), await res.text()).toBeTruthy()
   })

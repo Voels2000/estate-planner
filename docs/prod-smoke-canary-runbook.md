@@ -212,9 +212,10 @@ profile `created_at` falls in the window — not from re-seeds, but still visibl
 signup-style headline counts. Role canaries, once seeded and linked, will add more
 profiles unless excluded.
 
-**Code gap:** `GO_LIVE_PROTECTED` (cleanup script) ≠ analytics exclusion. No
-`PROD_CANARY_EMAILS` filter exists in funnel queries or profile signup aggregates
-today. Step 6 should add explicit exclusion before linking adds two more accounts.
+**Code gap (closed 2026-06-27):** `lib/admin/reportingCanary.ts` — profiles matching
+`*canary*@mywealthmaps.com` are excluded from admin headline counts (`newToday` /
+`newThisWeek` / `newThisMonth`, `totalUsers`, MRR inputs) and canary-owned firms are
+excluded from firm MRR. Pattern-based, not a hardcoded email list.
 
 ---
 
@@ -264,7 +265,7 @@ npm run seed:prod-advisor-firm -- --confirm    # 2. firm → trialing (BEFORE in
 npm run seed:prod-canary -- --confirm          # consumer data (if needed)
 → invite → accept (checkpoint: accept 200)
 → manual isolation hand-check (negative case deliberate)
-→ reporting exclusion → @production tags → drop PROD_SMOKE_EXCLUDE
+→ reporting exclusion ✅ → @production tags ✅ → drop PROD_SMOKE_EXCLUDE ✅
 ```
 
 **Manual isolation (Step 5) before removing the filter (Step 8).** Prove by hand once,

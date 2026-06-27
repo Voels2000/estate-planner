@@ -11,7 +11,10 @@
  *   - No attorney listing / checkout configuration
  *
  * Usage (manual only — never CI):
- *   E2E_CANARY_PASSWORD='…same as consumer canary…' npm run seed:prod-role-canaries -- --confirm
+ *   npm run seed:prod-role-canaries -- --confirm
+ *
+ * Password: E2E_CANARY_PASSWORD or PLAYWRIGHT_CONSUMER_PASSWORD from `.env.test.production`
+ * (same as consumer canary). One-shot override: E2E_CANARY_PASSWORD='…' npm run …
  *
  * Requires .env.projects.local with PROD_* Supabase vars.
  */
@@ -63,9 +66,50 @@ function extractSupabaseProjectRef(url: string): string | null {
   }
 }
 
+function unquoteEnvValue(raw: string): string {
+  let value = raw.trim()
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
+    value = value.slice(1, -1)
+  }
+  return value.replace(/\\\$/g, '$')
+}
+
+function readEnvFileVar(filePath: string, name: string): string {
+  if (!existsSync(filePath)) return ''
+  for (const line of readFileSync(filePath, 'utf8').split('\n')) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const eq = trimmed.indexOf('=')
+    if (eq < 0) continue
+    if (trimmed.slice(0, eq).trim() !== name) continue
+    return unquoteEnvValue(trimmed.slice(eq + 1))
+  }
+  return ''
+}
+
+function loadCanaryPasswordFromEnvFile(): void {
+  if (process.env.E2E_CANARY_PASSWORD?.trim() || process.env.PLAYWRIGHT_CONSUMER_PASSWORD?.trim()) {
+    return
+  }
+  const file = join(process.cwd(), '.env.test.production')
+  const password = readEnvFileVar(file, 'PLAYWRIGHT_CONSUMER_PASSWORD')
+  if (password) process.env.E2E_CANARY_PASSWORD = password
+}
+
+function resolveCanaryPassword(): string {
+  return (
+    process.env.E2E_CANARY_PASSWORD?.trim() ||
+    process.env.PLAYWRIGHT_CONSUMER_PASSWORD?.trim() ||
+    ''
+  )
+}
+
 function assertProdRoleCanarySeedSafe(): void {
   const confirm = process.argv.includes('--confirm')
-  const password = process.env.E2E_CANARY_PASSWORD?.trim()
+  const password = resolveCanaryPassword()
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
   const ref = extractSupabaseProjectRef(url)
 
@@ -76,9 +120,7 @@ function assertProdRoleCanarySeedSafe(): void {
 
   if (!confirm) {
     console.error('SAFETY: pass --confirm to seed production role canaries.')
-    console.error(
-      "  E2E_CANARY_PASSWORD='…' npm run seed:prod-role-canaries -- --confirm",
-    )
+    console.error('  npm run seed:prod-role-canaries -- --confirm')
     process.exit(1)
   }
 
@@ -90,7 +132,9 @@ function assertProdRoleCanarySeedSafe(): void {
   }
 
   if (!password || password.length < 12) {
-    console.error('SAFETY: set E2E_CANARY_PASSWORD (≥12 chars, same as consumer canary).')
+    console.error(
+      'SAFETY: set E2E_CANARY_PASSWORD or PLAYWRIGHT_CONSUMER_PASSWORD in .env.test.production (≥12 chars).',
+    )
     process.exit(1)
   }
 }
@@ -243,10 +287,11 @@ async function seedLoginOnlyAdvisorClient(
 
 async function main() {
   loadProdSupabaseEnv()
+  loadCanaryPasswordFromEnvFile()
   assertProdRoleCanarySeedSafe()
   initSupabaseEnv()
 
-  const password = process.env.E2E_CANARY_PASSWORD!.trim()
+  const password = resolveCanaryPassword()
   const { advisor, advisorEmpty, attorney, advisorClient } = PROD_ROLE_CANARIES
 
   console.log('=== Production role canaries (login-only) ===\n')
