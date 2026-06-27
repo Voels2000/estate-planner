@@ -8,15 +8,17 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  REQUIRE_PRIVILEGED_MFA: 'false'
+  PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+
 jobs:
-  e2e-smoke:
+  e2e-prepare:
     if: vars.E2E_SMOKE_IN_CI == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
 
     env:
-      REQUIRE_PRIVILEGED_MFA: 'false'
-      PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -43,6 +45,9 @@ jobs:
       - name: Seed tier-restructure persona matrix on staging
         run: npm run seed:e2e:persona-matrix
 
+      - name: Reconcile E2E household IDs after seed
+        run: npx tsx scripts/append-ci-e2e-household-ids.ts
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
@@ -53,14 +58,151 @@ jobs:
           RESEND_API_KEY: re_placeholder_ci_build_only
           STRIPE_SECRET_KEY: sk_test_placeholder_ci_build_only
 
+      - name: Upload CI E2E prepare artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-smoke-prepare
+          path: |
+            .next
+            .env.local
+            .env.test.local
+          retention-days: 1
+
+  e2e-go-live-profile:
+    if: vars.E2E_SMOKE_IN_CI == 'true'
+    needs: e2e-prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download CI E2E prepare artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-smoke-prepare
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: E2E go-live profile smoke
         run: npm run test:e2e:go-live-profile -- --workers=1
+
+  e2e-security-smoke:
+    if: vars.E2E_SMOKE_IN_CI == 'true'
+    needs: e2e-prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download CI E2E prepare artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-smoke-prepare
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
 
       - name: E2E security smoke
         run: npm run test:e2e:security-smoke -- --workers=1
 
+  e2e-b4-gate:
+    if: vars.E2E_SMOKE_IN_CI == 'true'
+    needs: e2e-prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download CI E2E prepare artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-smoke-prepare
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: E2E B4 gate (prospect, health-score, playbook, drip)
         run: npm run test:e2e:b4-gate -- --workers=1
 
+  e2e-security-isolation:
+    if: vars.E2E_SMOKE_IN_CI == 'true'
+    needs: e2e-prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download CI E2E prepare artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-smoke-prepare
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: E2E cross-household isolation (IDOR matrix)
         run: npm run test:e2e:security-isolation -- --workers=1
+
+  # Aggregator preserves branch-protection check name `e2e-smoke` while suites run in parallel.
+  e2e-smoke:
+    if: always() && vars.E2E_SMOKE_IN_CI == 'true'
+    needs:
+      - e2e-prepare
+      - e2e-go-live-profile
+      - e2e-security-smoke
+      - e2e-b4-gate
+      - e2e-security-isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Require all E2E smoke suites passed
+        run: |
+          set -euo pipefail
+          fail=0
+          check() {
+            local name="$1" result="$2"
+            if [[ "$result" != "success" ]]; then
+              echo "::error title=E2E smoke suite failed::$name result=$result"
+              fail=1
+            fi
+          }
+          check "e2e-prepare" "${{ needs.e2e-prepare.result }}"
+          check "e2e-go-live-profile" "${{ needs.e2e-go-live-profile.result }}"
+          check "e2e-security-smoke" "${{ needs.e2e-security-smoke.result }}"
+          check "e2e-b4-gate" "${{ needs.e2e-b4-gate.result }}"
+          check "e2e-security-isolation" "${{ needs.e2e-security-isolation.result }}"
+          exit "$fail"
