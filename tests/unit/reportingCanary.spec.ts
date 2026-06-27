@@ -1,11 +1,11 @@
-import { describe, expect, test } from 'vitest'
+import { test, expect } from '@playwright/test'
 import {
   filterReportingProfiles,
   isReportingExcludedCanaryEmail,
 } from '@/lib/admin/reportingCanary'
 import { PROD_CANARY_EMAILS } from '../../scripts/e2e-test-identities'
 
-describe('isReportingExcludedCanaryEmail', () => {
+test.describe('isReportingExcludedCanaryEmail', () => {
   test('excludes prod smoke canary addresses', () => {
     for (const email of PROD_CANARY_EMAILS) {
       expect(isReportingExcludedCanaryEmail(email)).toBe(true)
