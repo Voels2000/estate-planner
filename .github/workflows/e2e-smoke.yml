@@ -98,12 +98,6 @@ jobs:
           done
           tar -czf e2e-smoke-prepare.tar.gz .next .env.local .env.test.local .auth
 
-      - name: Probe auth rotation and topology (diagnostic, post-tarball)
-        run: |
-          set -euo pipefail
-          npx dotenv -o -e .env.test.local -- npx tsx scripts/probe-refresh-rotation.ts
-          npx tsx scripts/check-auth-topology.ts .auth
-
       - name: Upload CI E2E prepare artifact
         uses: actions/upload-artifact@v4
         with:
@@ -177,7 +171,6 @@ jobs:
         env:
           E2E_REUSE_AUTH: '1'
           E2E_SUITE: security-smoke
-          E2E_DIAG_ADVISOR_COOKIES: '1'
 
   e2e-b4-gate:
     if: vars.E2E_SMOKE_IN_CI == 'true'
@@ -211,7 +204,6 @@ jobs:
         env:
           E2E_REUSE_AUTH: '1'
           E2E_SUITE: b4-gate
-          E2E_DIAG_ADVISOR_COOKIES: '1'
 
   e2e-security-isolation:
     if: vars.E2E_SMOKE_IN_CI == 'true'

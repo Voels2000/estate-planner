@@ -15,7 +15,6 @@ import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
 import {
   logRequestAuthPreSnapshot,
   logRequestAuthSnapshot,
-  logStorageStateFileGetUserProbe,
 } from '../helpers/advisor-failure-diag'
 import { authStoragePath } from '../helpers/e2e-auth-storage'
 import {
@@ -171,13 +170,13 @@ test.describe('Advisor-empty isolation (unlinked book)', () => {
           'Advisor isolation (per-suite advisor — not advisor-empty.json)',
           'Advisor access to linked client',
           'Advisor revoked link lifecycle (mutates advisor_clients link)',
+          'PostgREST view isolation @production (last in file — skipped if any earlier test fails)',
         ],
         thisBlockOrder: [
           'GET client-export-payload (first in block; POST skipped if GET fails)',
         ],
       }),
     )
-    await logStorageStateFileGetUserProbe('.auth/advisor-empty.json', 'advisor-empty-pre-test')
   })
 
   test('GET client-export-payload for linked client owner returns 404', async ({ request }) => {
