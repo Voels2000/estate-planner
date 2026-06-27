@@ -32,6 +32,7 @@ import {
   ensureE2eCanceledSubscriber,
   ensureE2eConsumerLinked,
   ensureE2eConsumerPending,
+  ensureE2eAdvisorPending,
   ensureE2ePlanExportPurchaser,
   ensureE2eSuperuser,
   initSupabaseEnv,
@@ -112,6 +113,12 @@ async function main() {
   if (run('consumer-pending')) {
     console.log('1c. Consumer pending (5c authz — unlinked in seed)')
     await ensureE2eConsumerPending()
+    console.log('')
+  }
+
+  if (run('advisor-pending')) {
+    console.log('1d. Advisor pending (5c authz — zero links in seed)')
+    await ensureE2eAdvisorPending()
     console.log('')
   }
 

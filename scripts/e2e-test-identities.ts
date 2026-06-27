@@ -124,6 +124,13 @@ export const E2E_IDENTITIES = {
     fullName: 'E2E Test Advisor',
     firmName: 'MWM E2E Advisory',
   },
+  /** Dedicated advisor for pending-link authz (5c) — never shares sessions with read-only smokes. */
+  advisorPending: {
+    email: 'e2e-advisor-pending@mywealthmaps.test',
+    password: E2E_TEST_PASSWORD,
+    fullName: 'E2E Advisor Pending',
+    firmName: 'MWM E2E Pending Advisory',
+  },
   /** Zero linked clients — playbook empty-state E2E; consumer link for pending recommendations. */
   advisorEmpty: {
     email: 'e2e-advisor-empty@mywealthmaps.test',

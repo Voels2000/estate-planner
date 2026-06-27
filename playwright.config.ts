@@ -41,6 +41,7 @@ const CI_SHARED_SETUP_PROJECTS = [
   'consumer-setup',
   'advisor-setup',
   'advisor-empty-setup',
+  'advisor-pending-setup',
   'consumer-link-setup',
   'consumer-pending-setup',
   'consumer-advisor-link-setup',
@@ -82,6 +83,7 @@ function buildProjects(): Project[] {
   const projects: Project[] = [
     { name: 'advisor-setup', testMatch: /helpers\/advisor\.setup\.ts/, timeout: setupTimeout },
     { name: 'advisor-empty-setup', testMatch: /helpers\/advisor-empty\.setup\.ts/, timeout: setupTimeout },
+    { name: 'advisor-pending-setup', testMatch: /helpers\/advisor-pending\.setup\.ts/, timeout: setupTimeout },
     { name: 'consumer-setup', testMatch: /helpers\/consumer\.setup\.ts/, timeout: setupTimeout },
     { name: 'consumer-canceled-setup', testMatch: /helpers\/consumer-canceled\.setup\.ts/, timeout: setupTimeout },
     { name: 'attorney-setup', testMatch: /helpers\/attorney\.setup\.ts/, timeout: setupTimeout },
@@ -96,7 +98,7 @@ function buildProjects(): Project[] {
     },
     {
       name: 'security',
-      dependencies: ['consumer-setup', 'consumer-link-setup', 'consumer-pending-setup', 'advisor-setup', 'advisor-empty-setup'],
+      dependencies: ['consumer-setup', 'consumer-link-setup', 'consumer-pending-setup', 'advisor-setup', 'advisor-pending-setup', 'advisor-empty-setup'],
       testMatch: /security\/.*\.spec\.ts/,
     },
     {

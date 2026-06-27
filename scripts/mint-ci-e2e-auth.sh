@@ -7,6 +7,7 @@ DOTENV=(npx dotenv -o -e .env.test.local --)
 echo "Minting shared link-fixture sessions (consumer-link, consumer-pending, advisor-empty, active link)…"
 "${DOTENV[@]}" npx playwright test --project=consumer-link-setup --workers=1
 "${DOTENV[@]}" npx playwright test --project=consumer-pending-setup --workers=1
+"${DOTENV[@]}" npx playwright test --project=advisor-pending-setup --workers=1
 "${DOTENV[@]}" npx playwright test --project=advisor-empty-setup --workers=1
 "${DOTENV[@]}" npx playwright test --project=consumer-advisor-link-setup --workers=1
 

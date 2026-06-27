@@ -15,13 +15,13 @@ export type PendingLinkFixtureEnv = {
   advisorUserId: string
 }
 
-/** Resolve IDs for 5c pending-link authz (consumer-pending ↔ advisor — never consumer-linked). */
+/** Resolve IDs for 5c pending-link authz (consumer-pending ↔ advisor-pending — never shared smokes). */
 export async function resolvePendingLinkFixtureEnv(): Promise<PendingLinkFixtureEnv> {
   initSupabaseEnv()
 
   const advisorEmail = resolveE2eEmail(
-    process.env.PLAYWRIGHT_ADVISOR_EMAIL,
-    E2E_IDENTITIES.advisor.email,
+    process.env.PLAYWRIGHT_ADVISOR_PENDING_EMAIL,
+    E2E_IDENTITIES.advisorPending.email,
   )
   const pendingConsumerEmail = resolveE2eEmail(
     process.env.PLAYWRIGHT_CONSUMER_PENDING_EMAIL,

@@ -1101,6 +1101,38 @@ export async function ensureAdvisorEmptyForE2e(): Promise<string> {
   return advisorId
 }
 
+/** Pending-link authz fixture — firm-active advisor, zero links; 5c owns invite→accept. */
+export async function ensureE2eAdvisorPending(): Promise<{ userId: string }> {
+  const admin = createAdminClient()
+  const pending = E2E_IDENTITIES.advisorPending
+
+  const advisorId = await ensureAuthUser({
+    email: pending.email,
+    password: pending.password,
+    fullName: pending.fullName,
+    role: 'advisor',
+  })
+
+  await admin
+    .from('profiles')
+    .update({
+      subscription_status: 'active',
+      consumer_tier: 3,
+      is_superuser: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', advisorId)
+
+  await ensureAdvisorFirmForE2e(advisorId, pending.firmName)
+  await ensureE2eAdvisorFirmSubscriptionActive(advisorId)
+
+  const { error } = await admin.from('advisor_clients').delete().eq('advisor_id', advisorId)
+  if (error) console.warn('  advisor-pending links purge:', error.message)
+  else console.log('  advisor-pending: zero linked clients (5c owns link lifecycle)')
+
+  return { userId: advisorId }
+}
+
 /** Enrich consumer cast after all users exist: projections, pending rec, base case. */
 export async function seedE2eConsumerEnrichments(opts: {
   consumerUserId: string

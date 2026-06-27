@@ -2,8 +2,8 @@
  * Pending-link authz (consumer_requested) — proves the invite window grants no access,
  * and proves it for the right reason via a pending→active transition on one pair.
  *
- * Uses e2e-consumer-pending (not consumer-linked) so prepare's active-link fixture
- * and this test never share advisor_clients state.
+ * Uses e2e-consumer-pending + e2e-advisor-pending (not shared link-fixture identities)
+ * so auth transitions in this spec never mutate .auth/advisor.<suite>.json sessions.
  *
  * Phase 1 denies on profiles RLS, estate-composition, and client-export-payload while
  * consumer_requested. Phase 2 accepts through accept-request and asserts the same routes
@@ -22,13 +22,12 @@ import {
 import type { APIRequestContext } from '@playwright/test'
 import { resolvePendingLinkFixtureEnv } from '../helpers/e2e-advisor-link-env'
 import { resolveE2ePassword } from '../helpers/e2e-auth'
-import { authStoragePath } from '../helpers/e2e-auth-storage'
-import { logStorageStateAuthCookies } from '../helpers/advisor-auth-cookie-diag'
 
 test.describe.configure({ mode: 'serial' })
 
 const API_TIMEOUT_MS = 30_000
 const CONSUMER_PENDING_AUTH = '.auth/consumer-pending.json'
+const ADVISOR_PENDING_AUTH = '.auth/advisor-pending.json'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
@@ -90,14 +89,14 @@ function expectAccessDenied(status: number) {
 
 /** signInWithPassword (profile RLS read) revokes stored cookie sessions — mint fresh for Phase 2. */
 async function freshAdvisorApiContext(): Promise<APIRequestContext> {
-  const { session, supabaseUrl } = await createE2eAuthSessionForEmail(advisorEmail)
+  const { session, supabaseUrl: url } = await createE2eAuthSessionForEmail(advisorEmail)
   expect(session.user.id, 'fresh advisor session must match fixture advisor user id').toBe(
     advisorUserId,
   )
   return playwrightRequest.newContext({
     baseURL: process.env.PLAYWRIGHT_BASE_URL,
     extraHTTPHeaders: {
-      Cookie: buildSupabaseAuthCookieHeader(supabaseUrl, session),
+      Cookie: buildSupabaseAuthCookieHeader(url, session),
     },
   })
 }
@@ -114,7 +113,7 @@ test.beforeAll(async ({}, testInfo) => {
   if (!env.advisorUserId || !env.pendingConsumerUserId || !env.pendingConsumerHouseholdId) {
     testInfo.skip(
       true,
-      'e2e-consumer-pending + advisor missing — run npm run seed:e2e with consumer-pending',
+      'e2e-consumer-pending + e2e-advisor-pending missing — run npm run seed:e2e with advisor-pending',
     )
     return
   }
@@ -125,7 +124,7 @@ test.beforeAll(async ({}, testInfo) => {
   advisorEmail = env.advisorEmail
   advisorPassword = resolveE2ePassword(
     advisorEmail,
-    process.env.PLAYWRIGHT_ADVISOR_PASSWORD,
+    process.env.PLAYWRIGHT_ADVISOR_PENDING_PASSWORD ?? process.env.PLAYWRIGHT_ADVISOR_PASSWORD,
   )
 
   await ensureE2eAdvisorFirmSubscriptionActive(advisorUserId)
@@ -140,8 +139,6 @@ test.describe('advisor pending link (consumer_requested) authz', () => {
   test('pending grants no access; accepting grants access (status is the only variable)', async () => {
     test.skip(!advisorUserId || !consumerUserId || !consumerHouseholdId, 'fixture env missing')
 
-    logStorageStateAuthCookies(authStoragePath('advisor'), '5c-phase0-storage-state')
-
     await ensureCleanPendingPair()
 
     const consumer = await playwrightRequest.newContext({
@@ -151,7 +148,7 @@ test.describe('advisor pending link (consumer_requested) authz', () => {
 
     const phase1Advisor = await playwrightRequest.newContext({
       baseURL: process.env.PLAYWRIGHT_BASE_URL,
-      storageState: authStoragePath('advisor'),
+      storageState: ADVISOR_PENDING_AUTH,
     })
 
     try {

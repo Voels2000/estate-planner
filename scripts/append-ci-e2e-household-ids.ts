@@ -85,6 +85,16 @@ async function main() {
   )
   contents = upsertEnvLine(
     contents,
+    'PLAYWRIGHT_ADVISOR_PENDING_EMAIL',
+    E2E_IDENTITIES.advisorPending.email,
+  )
+  contents = upsertEnvLine(
+    contents,
+    'PLAYWRIGHT_ADVISOR_PENDING_PASSWORD',
+    E2E_IDENTITIES.advisorPending.password,
+  )
+  contents = upsertEnvLine(
+    contents,
     'PLAYWRIGHT_CONSUMER_LINK_EMAIL',
     E2E_IDENTITIES.consumerLinked.email,
   )
@@ -100,6 +110,7 @@ async function main() {
   const tier1UserId = await findUserIdByEmail(E2E_IDENTITIES.consumerTier1.email)
   const consumerLinkUserId = await findUserIdByEmail(E2E_IDENTITIES.consumerLinked.email)
   const consumerPendingUserId = await findUserIdByEmail(E2E_IDENTITIES.consumerPending.email)
+  const advisorPendingUserId = await findUserIdByEmail(E2E_IDENTITIES.advisorPending.email)
 
   if (advisorId) {
     contents = upsertEnvLine(contents, 'PLAYWRIGHT_ADVISOR_USER_ID', advisorId)
@@ -109,6 +120,9 @@ async function main() {
         (id): id is string => Boolean(id),
       ),
     )
+  }
+  if (advisorPendingUserId) {
+    contents = upsertEnvLine(contents, 'PLAYWRIGHT_ADVISOR_PENDING_USER_ID', advisorPendingUserId)
   }
   if (consumerLinkUserId) {
     contents = upsertEnvLine(contents, 'PLAYWRIGHT_CONSUMER_LINK_USER_ID', consumerLinkUserId)

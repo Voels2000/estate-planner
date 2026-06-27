@@ -15,6 +15,7 @@ const CANONICAL_BY_EMAIL = new Map<string, string>([
   [E2E_IDENTITIES.consumerAppTrial.email, E2E_IDENTITIES.consumerAppTrial.password],
   [E2E_IDENTITIES.consumerPlanExport.email, E2E_IDENTITIES.consumerPlanExport.password],
   [E2E_IDENTITIES.advisor.email, E2E_IDENTITIES.advisor.password],
+  [E2E_IDENTITIES.advisorPending.email, E2E_IDENTITIES.advisorPending.password],
   [E2E_IDENTITIES.advisorClient.email, E2E_IDENTITIES.advisorClient.password],
   [E2E_IDENTITIES.attorneyPortal.email, E2E_IDENTITIES.attorneyPortal.password],
 ].map(([email, password]) => [email.toLowerCase(), password] as const))
