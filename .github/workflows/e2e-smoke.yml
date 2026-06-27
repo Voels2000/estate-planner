@@ -58,14 +58,22 @@ jobs:
           RESEND_API_KEY: re_placeholder_ci_build_only
           STRIPE_SECRET_KEY: sk_test_placeholder_ci_build_only
 
+      - name: Stage CI E2E prepare artifact
+        run: |
+          set -euo pipefail
+          test -d .next
+          test -f .env.local
+          test -f .env.test.local
+          mkdir -p e2e-smoke-artifact
+          cp -a .next e2e-smoke-artifact/next
+          cp .env.local .env.test.local e2e-smoke-artifact/
+
       - name: Upload CI E2E prepare artifact
         uses: actions/upload-artifact@v4
         with:
           name: e2e-smoke-prepare
-          path: |
-            .next
-            .env.local
-            .env.test.local
+          path: e2e-smoke-artifact/
+          if-no-files-found: error
           retention-days: 1
 
   e2e-go-live-profile:
@@ -88,6 +96,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: e2e-smoke-prepare
+
+      - name: Restore CI E2E prepare artifact
+        run: |
+          set -euo pipefail
+          cp -a e2e-smoke-artifact/next .next
+          cp e2e-smoke-artifact/.env.local e2e-smoke-artifact/.env.test.local .
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -116,6 +130,12 @@ jobs:
         with:
           name: e2e-smoke-prepare
 
+      - name: Restore CI E2E prepare artifact
+        run: |
+          set -euo pipefail
+          cp -a e2e-smoke-artifact/next .next
+          cp e2e-smoke-artifact/.env.local e2e-smoke-artifact/.env.test.local .
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
@@ -143,6 +163,12 @@ jobs:
         with:
           name: e2e-smoke-prepare
 
+      - name: Restore CI E2E prepare artifact
+        run: |
+          set -euo pipefail
+          cp -a e2e-smoke-artifact/next .next
+          cp e2e-smoke-artifact/.env.local e2e-smoke-artifact/.env.test.local .
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
@@ -169,6 +195,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: e2e-smoke-prepare
+
+      - name: Restore CI E2E prepare artifact
+        run: |
+          set -euo pipefail
+          cp -a e2e-smoke-artifact/next .next
+          cp e2e-smoke-artifact/.env.local e2e-smoke-artifact/.env.test.local .
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
