@@ -16,6 +16,10 @@ import {
   logRequestAuthPreSnapshot,
   logRequestAuthSnapshot,
 } from '../helpers/advisor-failure-diag'
+import {
+  getWithAuthRetry,
+  logRequestContextPlacementAudit,
+} from '../helpers/request-auth-retry'
 import { authStoragePath } from '../helpers/e2e-auth-storage'
 import {
   EXPORT_ISOLATION_MARKER_A,
@@ -160,6 +164,7 @@ test.describe('Advisor-empty isolation (unlinked book)', () => {
   test.use({ storageState: '.auth/advisor-empty.json' })
 
   test.beforeAll(async () => {
+    logRequestContextPlacementAudit('cross-household-isolation / advisor-empty block')
     console.log(
       JSON.stringify({
         diag: 'advisor-empty-serial-context',
@@ -182,9 +187,11 @@ test.describe('Advisor-empty isolation (unlinked book)', () => {
   test('GET client-export-payload for linked client owner returns 404', async ({ request }) => {
     test.skip(!advisorClientOwnerUserId, 'advisor-client owner user id unavailable')
     await logRequestAuthPreSnapshot(request, 'advisor-empty-client-export-pre')
-    const res = await request.get(
+    const res = await getWithAuthRetry(
+      request,
       `/api/advisor/client-export-payload?clientId=${advisorClientOwnerUserId}`,
       apiOpts(),
+      'advisor-empty-client-export',
     )
     await logRequestAuthSnapshot(request, 'advisor-empty-client-export-post', res.status())
     expectAccessDenied(res.status())
@@ -231,9 +238,11 @@ test.describe('Advisor isolation', () => {
 
   test('GET client-export-payload for unlinked consumer owner returns 404', async ({ request }) => {
     test.skip(!consumerOwnerUserId, 'consumer owner user id unavailable')
-    const res = await request.get(
+    const res = await getWithAuthRetry(
+      request,
       `/api/advisor/client-export-payload?clientId=${consumerOwnerUserId}`,
       apiOpts(),
+      'advisor-isolation-client-export',
     )
     expectAccessDenied(res.status())
   })

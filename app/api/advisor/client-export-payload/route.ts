@@ -15,6 +15,22 @@ export async function GET(request: Request) {
   }
 
   const supabase = await createClient()
+  if (process.env.E2E_DIAG_ROUTE_AUTH === '1') {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
+    console.error(
+      JSON.stringify({
+        diag: 'client-export-payload-getSession',
+        timing: 'after-createClient-before-getUser',
+        sessionPresent: Boolean(session),
+        sessionError: sessionError?.message ?? null,
+        sessionUserId: session?.user?.id ?? null,
+        note: 'null here with full route-auth-cookie-pre → SSR storage read lost binding',
+      }),
+    )
+  }
   const {
     data: { user },
     error: authError,

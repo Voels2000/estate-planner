@@ -22,6 +22,7 @@ import {
 import type { APIRequestContext } from '@playwright/test'
 import { resolvePendingLinkFixtureEnv } from '../helpers/e2e-advisor-link-env'
 import { resolveE2ePassword } from '../helpers/e2e-auth'
+import { getWithAuthRetry } from '../helpers/request-auth-retry'
 
 test.describe.configure({ mode: 'serial' })
 
@@ -177,9 +178,11 @@ test.describe('advisor pending link (consumer_requested) authz', () => {
       const pendingCompositionBody = await pendingComposition.text()
       expectAccessDenied(pendingComposition.status())
 
-      const pendingPayload = await phase1Advisor.get(
+      const pendingPayload = await getWithAuthRetry(
+        phase1Advisor,
         `/api/advisor/client-export-payload?clientId=${consumerUserId}`,
         { timeout: API_TIMEOUT_MS },
+        'pending-link-phase1-client-export',
       )
       const pendingPayloadBody = await pendingPayload.text()
       expectAccessDenied(pendingPayload.status())
@@ -238,9 +241,11 @@ test.describe('advisor pending link (consumer_requested) authz', () => {
         const compositionBody = await activeComposition.text()
         expect(activeComposition.ok(), compositionBody).toBeTruthy()
 
-        const activePayload = await advisorPhase2.get(
+        const activePayload = await getWithAuthRetry(
+          advisorPhase2,
           `/api/advisor/client-export-payload?clientId=${consumerUserId}`,
           { timeout: API_TIMEOUT_MS },
+          'pending-link-phase2-client-export',
         )
         const payloadJson = (await activePayload.json()) as Record<string, unknown>
         expect(

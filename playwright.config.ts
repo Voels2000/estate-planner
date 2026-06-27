@@ -100,6 +100,12 @@ function buildProjects(): Project[] {
       name: 'security',
       dependencies: ['consumer-setup', 'consumer-link-setup', 'consumer-pending-setup', 'advisor-setup', 'advisor-pending-setup', 'advisor-empty-setup'],
       testMatch: /security\/.*\.spec\.ts/,
+      testIgnore: /advisor-empty-route-repro\.spec\.ts/,
+    },
+    {
+      name: 'security-repro',
+      dependencies: ['consumer-setup', 'advisor-empty-setup'],
+      testMatch: /advisor-empty-route-repro\.spec\.ts/,
     },
     {
       name: 'advisor',
