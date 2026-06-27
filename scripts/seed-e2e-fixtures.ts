@@ -31,6 +31,7 @@ import {
   ensureE2eAppTrialConsumer,
   ensureE2eCanceledSubscriber,
   ensureE2eConsumerLinked,
+  ensureE2eConsumerPending,
   ensureE2ePlanExportPurchaser,
   ensureE2eSuperuser,
   initSupabaseEnv,
@@ -105,6 +106,12 @@ async function main() {
     const linked = await ensureE2eConsumerLinked()
     consumerLinkUserId = linked.userId
     consumerLinkHouseholdId = linked.householdId
+    console.log('')
+  }
+
+  if (run('consumer-pending')) {
+    console.log('1c. Consumer pending (5c authz — unlinked in seed)')
+    await ensureE2eConsumerPending()
     console.log('')
   }
 

@@ -2,14 +2,12 @@
  * Pending-link authz (consumer_requested) — proves the invite window grants no access,
  * and proves it for the right reason via a pending→active transition on one pair.
  *
+ * Uses e2e-consumer-pending (not consumer-linked) so prepare's active-link fixture
+ * and this test never share advisor_clients state.
+ *
  * Phase 1 denies on profiles RLS, estate-composition, and client-export-payload while
  * consumer_requested. Phase 2 accepts through accept-request and asserts the same routes
  * succeed. Only link status changes — the active phase is the teeth-check.
- *
- * Wiring: security project depends on consumer-link-setup (not consumer-advisor-link-setup).
- * Advisor API calls use the Playwright `request` fixture + test.use storageState for Phase 1
- * app routes. signInWithPassword (profile RLS read) revokes that cookie session — accept +
- * Phase 2 app routes use a freshly minted session via createE2eAuthSessionForEmail.
  */
 import { test, expect, request as playwrightRequest } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
@@ -22,13 +20,14 @@ import {
   initSupabaseEnv,
 } from '../../../scripts/seed-e2e-lib'
 import type { APIRequestContext } from '@playwright/test'
-import { resolveAdvisorLinkFixtureEnv } from '../helpers/e2e-advisor-link-env'
+import { resolvePendingLinkFixtureEnv } from '../helpers/e2e-advisor-link-env'
 import { resolveE2ePassword } from '../helpers/e2e-auth'
 import { authStoragePath } from '../helpers/e2e-auth-storage'
 
 test.describe.configure({ mode: 'serial' })
 
 const API_TIMEOUT_MS = 30_000
+const CONSUMER_PENDING_AUTH = '.auth/consumer-pending.json'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
@@ -57,6 +56,11 @@ async function getLink() {
     .eq('client_id', consumerUserId)
     .maybeSingle()
   return data
+}
+
+async function ensureCleanPendingPair() {
+  await resetLink()
+  expect(await getLink(), 'pair must start with no advisor_clients row').toBeFalsy()
 }
 
 async function advisorReadsProfile() {
@@ -101,19 +105,19 @@ test.beforeAll(async ({}, testInfo) => {
   }
 
   initSupabaseEnv()
-  const env = await resolveAdvisorLinkFixtureEnv()
+  const env = await resolvePendingLinkFixtureEnv()
 
-  if (!env.advisorUserId || !env.linkedConsumerUserId || !env.linkedConsumerHouseholdId) {
+  if (!env.advisorUserId || !env.pendingConsumerUserId || !env.pendingConsumerHouseholdId) {
     testInfo.skip(
       true,
-      'e2e-consumer-linked + advisor missing — run npm run seed:e2e and set PLAYWRIGHT_CONSUMER_LINK_*',
+      'e2e-consumer-pending + advisor missing — run npm run seed:e2e with consumer-pending',
     )
     return
   }
 
   advisorUserId = env.advisorUserId
-  consumerUserId = env.linkedConsumerUserId
-  consumerHouseholdId = env.linkedConsumerHouseholdId
+  consumerUserId = env.pendingConsumerUserId
+  consumerHouseholdId = env.pendingConsumerHouseholdId
   advisorEmail = env.advisorEmail
   advisorPassword = resolveE2ePassword(
     advisorEmail,
@@ -121,8 +125,6 @@ test.beforeAll(async ({}, testInfo) => {
   )
 
   await ensureE2eAdvisorFirmSubscriptionActive(advisorUserId)
-  await resetLink()
-  expect(await getLink(), 'expected no pre-existing link for the pair').toBeFalsy()
 })
 
 test.afterAll(async () => {
@@ -138,9 +140,11 @@ test.describe('advisor pending link (consumer_requested) authz', () => {
   }) => {
     test.skip(!advisorUserId || !consumerUserId || !consumerHouseholdId, 'fixture env missing')
 
+    await ensureCleanPendingPair()
+
     const consumer = await playwrightRequest.newContext({
       baseURL: process.env.PLAYWRIGHT_BASE_URL,
-      storageState: '.auth/consumer-link.json',
+      storageState: CONSUMER_PENDING_AUTH,
     })
 
     try {
@@ -150,11 +154,23 @@ test.describe('advisor pending link (consumer_requested) authz', () => {
       })
       expect(invite.ok(), await invite.text()).toBeTruthy()
 
-      const pending = await getLink()
-      expect(pending?.status, 'invite should create consumer_requested').toBe('consumer_requested')
-      expect(pending?.accepted_at, 'pending must not be accepted').toBeFalsy()
+      let pendingLinkId = ''
+      await expect
+        .poll(
+          async () => {
+            const row = await getLink()
+            pendingLinkId = row?.id ?? ''
+            return row?.status ?? null
+          },
+          { message: 'invite should create consumer_requested', timeout: 15_000 },
+        )
+        .toBe('consumer_requested')
 
-      // App-layer routes first — advisorReadsProfile() signInWithPassword invalidates cookie session.
+      const pending = await getLink()
+      expect(pending?.id, 'pending row must exist after invite').toBeTruthy()
+      expect(pending?.accepted_at, 'pending must not be accepted').toBeFalsy()
+      pendingLinkId = pending!.id
+
       const pendingComposition = await request.post('/api/estate-composition', {
         data: { householdId: consumerHouseholdId, sourceRole: 'advisor' },
         timeout: API_TIMEOUT_MS,
@@ -188,7 +204,7 @@ test.describe('advisor pending link (consumer_requested) authz', () => {
       const advisorAfterProfileRead = await freshAdvisorApiContext()
       try {
         const accept = await advisorAfterProfileRead.post('/api/advisor/accept-request', {
-          data: { advisor_client_id: pending!.id },
+          data: { advisor_client_id: pendingLinkId },
           timeout: API_TIMEOUT_MS,
         })
         expect(accept.ok(), await accept.text()).toBeTruthy()
@@ -236,6 +252,7 @@ test.describe('advisor pending link (consumer_requested) authz', () => {
       }
     } finally {
       await consumer.dispose()
+      await resetLink()
     }
   })
 })

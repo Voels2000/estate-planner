@@ -1438,6 +1438,34 @@ export async function ensureE2eConsumerLinked(): Promise<{ userId: string; house
   return { userId, householdId }
 }
 
+/** Pending-link authz fixture — no advisor_clients row; 5c drives pending→active. */
+export async function ensureE2eConsumerPending(): Promise<{ userId: string; householdId: string }> {
+  const admin = createAdminClient()
+  const pending = E2E_IDENTITIES.consumerPending
+
+  const userId = await ensureAuthUser({
+    email: pending.email,
+    password: pending.password,
+    fullName: pending.fullName,
+    role: 'consumer',
+  })
+
+  const householdId = await seedE2eConsumerHousehold(
+    userId,
+    pending.householdName,
+    3,
+    { fullName: pending.fullName },
+  )
+
+  await triggerE2eGenerateBaseCase(householdId, pending.email, 'consumer')
+
+  const { error } = await admin.from('advisor_clients').delete().eq('client_id', userId)
+  if (error) console.warn('  consumer-pending advisor_clients purge:', error.message)
+  else console.log('  consumer-pending: no advisor_clients row (5c owns link lifecycle)')
+
+  return { userId, householdId }
+}
+
 /** Fail loudly if any @mywealthmaps.test account is in an invalid state. */
 export async function verifyE2eAccounts(): Promise<void> {
   const admin = createAdminClient()

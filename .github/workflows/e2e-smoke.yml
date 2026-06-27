@@ -68,6 +68,7 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/assert-auth-ttl.mjs .auth/consumer-link.json 1800
+          node scripts/assert-auth-ttl.mjs .auth/consumer-pending.json 1800
           node scripts/assert-auth-ttl.mjs .auth/advisor-empty.json 1800
           for suite in go-live-profile security-smoke b4-gate security-isolation; do
             node scripts/assert-auth-ttl.mjs ".auth/consumer.${suite}.json" 1800
@@ -84,6 +85,7 @@ jobs:
           test -f .env.test.local
           test -d .auth
           test -f .auth/consumer-link.json
+          test -f .auth/consumer-pending.json
           test -f .auth/advisor-empty.json
           test -f .auth/advisor.json
           for suite in go-live-profile security-smoke b4-gate security-isolation; do
