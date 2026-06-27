@@ -161,9 +161,6 @@ async function seedLoginOnlyAdvisor(
       email,
       subscription_status: null,
       consumer_tier: 1,
-      firm_id: null,
-      firm_role: null,
-      firm_name: null,
       is_superuser: false,
       terms_accepted_at: now,
       terms_version: '2026-06-02',
@@ -171,9 +168,7 @@ async function seedLoginOnlyAdvisor(
     })
     .eq('id', userId)
 
-  const { error: linkErr } = await admin.from('advisor_clients').delete().eq('advisor_id', userId)
-  if (linkErr) console.warn(`  advisor_clients purge (${email}):`, linkErr.message)
-
+  // Do not purge advisor_clients or firm_id — Track 2 link + firm bootstrap are intentional.
   console.log(`  ✅ ${email} (advisor, login-only)`)
   return userId
 }
@@ -279,6 +274,21 @@ async function seedLoginOnlyAdvisorClient(
       .single()
     if (error || !data?.id) throw new Error(`household insert: ${error?.message ?? 'no id'}`)
     householdId = data.id
+  }
+
+  const { count: assetCount } = await admin
+    .from('assets')
+    .select('*', { count: 'exact', head: true })
+    .eq('owner_id', userId)
+  if ((assetCount ?? 0) === 0) {
+    const { error: assetErr } = await admin.from('assets').insert({
+      owner_id: userId,
+      type: 'taxable_brokerage',
+      name: 'Canary foreign-target isolation marker',
+      value: 100_000,
+    })
+    if (assetErr) throw new Error(`foreign-target asset: ${assetErr.message}`)
+    console.log(`  assets: seeded isolation marker on ${householdId}`)
   }
 
   console.log(`  ✅ ${email} (consumer, login-only household ${householdId})`)
