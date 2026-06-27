@@ -64,15 +64,13 @@ jobs:
           test -d .next
           test -f .env.local
           test -f .env.test.local
-          mkdir -p e2e-smoke-artifact
-          cp -a .next e2e-smoke-artifact/next
-          cp .env.local .env.test.local e2e-smoke-artifact/
+          tar -czf e2e-smoke-prepare.tar.gz .next .env.local .env.test.local
 
       - name: Upload CI E2E prepare artifact
         uses: actions/upload-artifact@v4
         with:
           name: e2e-smoke-prepare
-          path: e2e-smoke-artifact/
+          path: e2e-smoke-prepare.tar.gz
           if-no-files-found: error
           retention-days: 1
 
@@ -98,10 +96,7 @@ jobs:
           name: e2e-smoke-prepare
 
       - name: Restore CI E2E prepare artifact
-        run: |
-          set -euo pipefail
-          cp -a e2e-smoke-artifact/next .next
-          cp e2e-smoke-artifact/.env.local e2e-smoke-artifact/.env.test.local .
+        run: tar -xzf e2e-smoke-prepare.tar.gz
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -131,10 +126,7 @@ jobs:
           name: e2e-smoke-prepare
 
       - name: Restore CI E2E prepare artifact
-        run: |
-          set -euo pipefail
-          cp -a e2e-smoke-artifact/next .next
-          cp e2e-smoke-artifact/.env.local e2e-smoke-artifact/.env.test.local .
+        run: tar -xzf e2e-smoke-prepare.tar.gz
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -164,10 +156,7 @@ jobs:
           name: e2e-smoke-prepare
 
       - name: Restore CI E2E prepare artifact
-        run: |
-          set -euo pipefail
-          cp -a e2e-smoke-artifact/next .next
-          cp e2e-smoke-artifact/.env.local e2e-smoke-artifact/.env.test.local .
+        run: tar -xzf e2e-smoke-prepare.tar.gz
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -197,10 +186,7 @@ jobs:
           name: e2e-smoke-prepare
 
       - name: Restore CI E2E prepare artifact
-        run: |
-          set -euo pipefail
-          cp -a e2e-smoke-artifact/next .next
-          cp e2e-smoke-artifact/.env.local e2e-smoke-artifact/.env.test.local .
+        run: tar -xzf e2e-smoke-prepare.tar.gz
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
