@@ -278,6 +278,7 @@ test.describe('Advisor-empty isolation (unlinked book)', () => {
       `/api/advisor/client-export-payload?clientId=${advisorClientOwnerUserId}`,
       apiOpts(),
     )
+    await logRequestAuthSnapshot(request, 'advisor-empty-client-export-payload', res.status())
     expectAccessDenied(res.status())
   })
 
