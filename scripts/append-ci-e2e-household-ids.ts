@@ -4,7 +4,7 @@
  * security-isolation and go-live-profile aligned with e2e-consumer / advisor-client.
  * Also prunes stray advisor→e2e-consumer links (cast topology: pending rec only).
  *
- * Called from scripts/write-ci-staging-env.sh (service role already in env).
+ * Called from e2e-prepare after seed:e2e:persona-matrix (service role in env).
  */
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
