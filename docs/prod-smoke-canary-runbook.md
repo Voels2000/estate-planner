@@ -12,7 +12,8 @@ on in prod" means those feature specs run; only the isolation/authz subset is in
 
 **Related docs:** [LAUNCH.md](./LAUNCH.md) (canary accounts, cutover steps) ·
 [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) (prod smoke harness) ·
-[PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) (`test:e2e:prod:smoke`)
+[PLAYWRIGHT_E2E.md](./PLAYWRIGHT_E2E.md) (`test:e2e:prod:smoke`) ·
+[pre-billing-run-sheet.md](./pre-billing-run-sheet.md) (gates before live billing)
 
 **Core principles:** dedicated plain-advisor canary (not admin/superuser), linked
 the real way (invite→accept), tested read-only, excluded from real reporting.
@@ -357,3 +358,4 @@ then let automation keep proving it.
 |------------|--------|
 | **#156 / PR retry watch** | Do **not** merge #156 on a single green. Watch staging isolation CI for `request-auth-retry` firing in logs over several runs — that is the strong signal (retry caught null read and recovered). Green alone is weak. Once captured-or-clean stretch, remove `E2E_DIAG_ROUTE_AUTH` getSession probe from `client-export-payload/route.ts` — gated diagnostic, not permanent. |
 | **#157 serial restructure** | **Pending:** merge after retry soak on staging. Independent isolation blocks parallel; serial only for revoked-link lifecycle. Not in this PR — staging keeps file-level serial. |
+| **Live billing prep** | Before a live billing run: [pre-billing-run-sheet.md](./pre-billing-run-sheet.md) — Gate A/B STOPs, #158 clean-slice, prod smoke bank. |

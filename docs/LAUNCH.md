@@ -169,7 +169,7 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 - [x] Billing code + B2B2C handoff + pricing surfaces
 - [x] Production `@production` smoke harness (`test:e2e:prod:smoke`, canary subset)
 - [x] Prod canary reset: `npm run seed:prod-canary -- --confirm` (verify: `package.json`, `scripts/seed-prod-canary.ts`, `PROD_CANARY` in `scripts/e2e-test-identities.ts:19-23`)
-- [x] **Track 2 — advisor↔consumer prod canary:** [runbook](./prod-smoke-canary-runbook.md) — link pair + manual isolation ✅; reporting marker + `@production` advisor isolation + `PROD_SMOKE_EXCLUDE` removed (watch first prod run for advisor blocks executing)
+- [x] **Track 2 — advisor↔consumer prod canary:** [runbook](./prod-smoke-canary-runbook.md) — link pair + manual isolation ✅; reporting marker + `@production` advisor isolation + `PROD_SMOKE_EXCLUDE` removed (watch first prod run for advisor blocks executing). **Before live billing:** [pre-billing-run-sheet.md](./pre-billing-run-sheet.md).
 - [x] Two-DB steady-state docs + scripts on `main` (verify: `docs/DEPLOYMENT.md`, PR #6)
 - [x] **`lifetime_exemption_summary` PostgREST IDOR closed** — revoke `anon`/`authenticated` on SECURITY DEFINER view; CI invariant #6 + isolation attack-sim (PR #16; prod migration applied 2026-06-15)
 - [x] Stale estate-readiness banner shipped (`isScoreStale()` wired in `EstateReadinessCard`; PR #12)
@@ -250,7 +250,7 @@ SELECT refund_ack_at, refund_ack_version FROM one_time_purchases LIMIT 1;  -- mu
 | **2** Schema gate on prod | ✅ | `trial_ends_at` / `one_time_purchases` queries pass (Al / 2026-06-25) |
 | **3** Promote → deploy | ✅ | [PR #130](https://github.com/Voels2000/estate-planner/pull/130) → `main`; CI quartet green; Vercel prod deploy not skipped (Al / 2026-06-25) |
 | **4** Post-deploy verify | ✅ (partial) | Resolver + canary browser + `verify-env` below; **`release:post-deploy` not attested** |
-| **5** Live-money smoke | ⬜ | Real-card + C-4 billing walkthrough — next gate |
+| **5** Live-money smoke | ⬜ | Follow [pre-billing-run-sheet.md](./pre-billing-run-sheet.md) first (Gates A/B, #158, prod smoke bank); then real-card + C-4 billing walkthrough |
 
 **Step 4 attestation detail (Al / 2026-06-25–26):**
 - `GET /api/admin/verify-env?live=1` → `missing: []`, `LIVE_OK`, **12/12** prices active
