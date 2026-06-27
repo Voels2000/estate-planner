@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { logPreCreateClientAuthCookies } from '@/lib/e2e/route-auth-cookie-diag'
+import { logPreCreateClientAuthDiag } from '@/lib/e2e/route-auth-cookie-diag'
 import { loadAdvisorClientExportPayload } from '@/lib/advisor/loadClientExportPayload'
 import { NextResponse } from 'next/server'
 
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   }
 
   if (process.env.E2E_DIAG_ROUTE_AUTH === '1') {
-    logPreCreateClientAuthCookies(request, 'client-export-payload')
+    await logPreCreateClientAuthDiag(request, 'client-export-payload')
   }
 
   const supabase = await createClient()

@@ -53,8 +53,43 @@ function combineAuthTokenValue(cookies: Map<string, string>, baseName: string): 
   return combined || null
 }
 
-/** Log every auth cookie on the wire plus JWT sub — before createClient/getUser. */
-export function logPreCreateClientAuthCookies(request: Request, label: string): void {
+/** Log raw Cookie header vs Next.js cookies().getAll() before Supabase touches either. */
+export async function logCookieLayerComparison(request: Request): Promise<void> {
+  const cookieHeader = request.headers.get('cookie') ?? ''
+  const parsedHeader = parseCookieHeader(cookieHeader)
+  const authHeaderEntries = [...parsedHeader.entries()].filter(([name]) => AUTH_TOKEN.test(name))
+  const rawVal =
+    authHeaderEntries.find(([name]) => !/\.\d+$/.test(name))?.[1] ??
+    authHeaderEntries[0]?.[1] ??
+    ''
+
+  const { cookies } = await import('next/headers')
+  const nextParsed = (await cookies()).getAll().filter((c) => AUTH_TOKEN.test(c.name))
+
+  console.error(
+    JSON.stringify({
+      diag: 'client-export-payload-cookie-layer',
+      timing: 'before-createClient',
+      rawHeaderAuthLen: rawVal.length,
+      rawIsUrlEncoded: /%[0-9A-Fa-f]{2}/.test(rawVal),
+      rawHead: rawVal.slice(0, 24),
+      parsedNames: nextParsed.map((c) => c.name),
+      parsedTotalLen: nextParsed.reduce((n, c) => n + (c.value?.length ?? 0), 0),
+      parsedEntries: nextParsed.map((c) => ({
+        name: c.name,
+        valueLen: c.value?.length ?? 0,
+        head: (c.value ?? '').slice(0, 24),
+      })),
+    }),
+  )
+}
+
+export async function logPreCreateClientAuthDiag(request: Request, label: string): Promise<void> {
+  logPreCreateClientAuthCookies(request, label)
+  await logCookieLayerComparison(request)
+}
+
+function logPreCreateClientAuthCookies(request: Request, label: string): void {
   const cookieHeader = request.headers.get('cookie') ?? ''
   const parsed = parseCookieHeader(cookieHeader)
   const allNames = [...parsed.keys()].sort()
