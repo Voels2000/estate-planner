@@ -33,24 +33,15 @@ const setupTimeout = 120_000
 
 const TEST_ENV = process.env.TEST_ENV ?? 'local'
 
-// INTERIM: prod has no advisor role-canary yet, so these have nothing to pass
-// against. Remove once the advisor↔consumer canary pair lands (Track 2).
-const PROD_SMOKE_EXCLUDE = new Set([
-  'advisor-setup',
-  'advisor-empty-setup',
-  'consumer-link-setup',
-  'consumer-advisor-link-setup',
-  'advisor',
-])
-
 function resolveProjects(all: Project[]): Project[] {
   if (TEST_ENV !== 'production') return all
-  return all
-    .filter((p) => !PROD_SMOKE_EXCLUDE.has(p.name ?? ''))
-    .map((p) => {
-      if (p.name !== 'security') return p
-      return { ...p, dependencies: ['consumer-setup'] }
-    })
+  return all.map((p) => {
+    if (p.name !== 'security') return p
+    return {
+      ...p,
+      dependencies: ['consumer-setup', 'advisor-setup', 'advisor-empty-setup'],
+    }
+  })
 }
 
 function buildProjects(): Project[] {

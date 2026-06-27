@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { computeAdminMrr } from '@/lib/billing/computeAdminMrr'
 import { getCanonicalTerms } from '@/lib/terms/getCanonicalTerms'
 import { computeOpsTaskUrgency } from '@/lib/admin/opsTasks'
+import { filterReportingProfiles, isReportingExcludedCanaryEmail } from '@/lib/admin/reportingCanary'
 import type { OpsTaskRow } from '@/lib/admin/opsTasks'
 import type { CronHealthRow, OpsInboxCounts } from './ops-home-tab'
 import { AdminClient } from './_admin-client'
@@ -12,10 +13,17 @@ export default async function AdminPage() {
   const supabase = await createClient()
 
   // User stats
-  const { data: profiles } = await supabase
+  const { data: profilesRaw } = await supabase
     .from('profiles')
     .select('id, email, full_name, role, consumer_tier, attorney_tier, subscription_status, subscription_plan, created_at')
     .order('created_at', { ascending: false })
+
+  const profiles = filterReportingProfiles(profilesRaw ?? [])
+  const excludedOwnerIds = new Set(
+    (profilesRaw ?? [])
+      .filter((p) => isReportingExcludedCanaryEmail(p.email))
+      .map((p) => p.id),
+  )
 
   // Usage stats
   const [
@@ -253,10 +261,14 @@ export default async function AdminPage() {
   const tier3Count =
     profiles?.filter((p) => p.consumer_tier === 3 && activePaid(p)).length ?? 0
 
-  const { data: activeFirms } = await admin
+  const { data: activeFirmsRaw } = await admin
     .from('firms')
-    .select('seat_count, tier')
+    .select('seat_count, tier, owner_id')
     .in('subscription_status', ['active', 'trialing'])
+
+  const activeFirms = (activeFirmsRaw ?? []).filter(
+    (f) => !f.owner_id || !excludedOwnerIds.has(f.owner_id),
+  )
 
   const { consumerMrr, firmMrr, attorneyMrr, mrr } = computeAdminMrr(
     profiles ?? [],

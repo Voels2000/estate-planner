@@ -775,6 +775,18 @@ export async function ensureAdvisorFirmForE2e(
   advisorUserId: string,
   firmName: string,
 ): Promise<string> {
+  return ensureAdvisorFirmBootstrap(advisorUserId, firmName, 'active')
+}
+
+/**
+ * Firm owner bootstrap — transcribed writes used by staging E2E and prod canary setup.
+ * `trialing` clears getAdvisorClientCapacity without paid Stripe; `active` for staging E2E.
+ */
+export async function ensureAdvisorFirmBootstrap(
+  advisorUserId: string,
+  firmName: string,
+  subscriptionStatus: 'active' | 'trialing',
+): Promise<string> {
   const admin = createAdminClient()
 
   const { data: profile } = await admin
@@ -802,7 +814,7 @@ export async function ensureAdvisorFirmForE2e(
         owner_id: advisorUserId,
         tier: 'starter',
         seat_count: 1,
-        subscription_status: 'active',
+        subscription_status: subscriptionStatus,
       })
       .select('id')
       .single()
@@ -810,12 +822,12 @@ export async function ensureAdvisorFirmForE2e(
       throw new Error(`firms insert: ${error?.message ?? 'no id'}`)
     }
     firmId = firm.id
-    console.log(`  firms: created ${firmId}`)
+    console.log(`  firms: created ${firmId} (${subscriptionStatus})`)
   } else {
     console.log(`  firms: existing ${firmId}`)
     const { error: firmErr } = await admin
       .from('firms')
-      .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
+      .update({ subscription_status: subscriptionStatus, updated_at: new Date().toISOString() })
       .eq('id', firmId)
       .or('subscription_status.is.null,subscription_status.in.(inactive,canceled,past_due)')
     if (firmErr) console.warn('  firms subscription_status:', firmErr.message)
