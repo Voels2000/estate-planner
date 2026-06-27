@@ -12,7 +12,11 @@ import {
 import { createAdminClient } from '@/lib/supabase/admin'
 import { findUserIdByEmail, initSupabaseEnv, pruneStrayE2eAdvisorClientLinks } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
-import { logRequestAuthSnapshot } from '../helpers/advisor-failure-diag'
+import {
+  logRequestAuthPreSnapshot,
+  logRequestAuthSnapshot,
+  logStorageStateFileGetUserProbe,
+} from '../helpers/advisor-failure-diag'
 import { authStoragePath } from '../helpers/e2e-auth-storage'
 import {
   EXPORT_ISOLATION_MARKER_A,
@@ -272,13 +276,33 @@ test.describe('Advisor revoked link lifecycle', () => {
 test.describe('Advisor-empty isolation (unlinked book)', () => {
   test.use({ storageState: '.auth/advisor-empty.json' })
 
+  test.beforeAll(async () => {
+    console.log(
+      JSON.stringify({
+        diag: 'advisor-empty-serial-context',
+        fileSerialMode: true,
+        priorSerialBlocks: [
+          'Consumer isolation (consumer storage)',
+          'Advisor isolation (per-suite advisor storage — not advisor-empty.json)',
+          'Advisor access to linked client',
+          'Advisor revoked link lifecycle',
+        ],
+        thisBlockOrder: [
+          'GET client-export-payload (runs first; POST estate-composition skipped if this fails)',
+        ],
+      }),
+    )
+    await logStorageStateFileGetUserProbe('.auth/advisor-empty.json', 'advisor-empty-pre-test')
+  })
+
   test('GET client-export-payload for linked client owner returns 404', async ({ request }) => {
     test.skip(!advisorClientOwnerUserId, 'advisor-client owner user id unavailable')
+    await logRequestAuthPreSnapshot(request, 'advisor-empty-client-export-pre')
     const res = await request.get(
       `/api/advisor/client-export-payload?clientId=${advisorClientOwnerUserId}`,
       apiOpts(),
     )
-    await logRequestAuthSnapshot(request, 'advisor-empty-client-export-payload', res.status())
+    await logRequestAuthSnapshot(request, 'advisor-empty-client-export-post', res.status())
     expectAccessDenied(res.status())
   })
 

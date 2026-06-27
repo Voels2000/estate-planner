@@ -1,15 +1,13 @@
 /**
- * At-failure classifier for advisor specs. On a FAILED test, emits one
- * `advisor-failure-diag` line that splits the failure into:
- *
- *   AUTH_SESSION_CLEARED  — landed on /login or the auth cookie is empty.
- *   AUTH_REFRESH_FAILED   — a /auth/v1/token refresh call 4xx'd during the test.
- *   AUTH_401_HEALTHY_COOKIE — saw a 401 but the cookie is still full and no refresh failed.
- *   RENDER_OR_TIMING      — right URL, cookie healthy, no 401, no failed refresh.
- *
- * Observational only — never calls refreshSession/getUser or redeems a token.
+ * Observational request-context auth logging. Pre-request reads are taken before
+ * the HTTP call; post-request reads may show empty cookies after a 401 clears them.
  */
+import { createClient } from '@supabase/supabase-js'
 import type { test as BaseTest } from '@playwright/test'
+import {
+  parseSessionFromStorageState,
+  refreshTokenSuffix,
+} from './e2e-auth-session'
 
 type Resp = { url: string; status: number }
 
@@ -74,27 +72,98 @@ export function installAdvisorFailureDiag(t: typeof BaseTest) {
   })
 }
 
-/** Request-context snapshot when page stream is empty (e.g. isolation gifting-summary 401). */
+/** Read-only cookie length from a Playwright storageState payload. */
+function authCookieLenFromState(state: { cookies: { name: string; value: string }[] }): number {
+  return state.cookies
+    .filter((cookie) => AUTH_COOKIE.test(cookie.name))
+    .reduce((total, cookie) => total + (cookie.value?.length ?? 0), 0)
+}
+
+/** Pre-request: auth on the exact request fixture before the HTTP call (non-mutating read). */
+export async function logRequestAuthPreSnapshot(
+  ctx: { storageState: () => Promise<{ cookies: { name: string; value: string }[] }> },
+  label: string,
+): Promise<void> {
+  const state = await ctx.storageState().catch(() => ({ cookies: [] as { name: string; value: string }[] }))
+  console.log(
+    `advisor-request-auth-pre ${JSON.stringify({
+      label,
+      authCookieLen: authCookieLenFromState(state),
+      timing: 'before-request',
+    })}`,
+  )
+}
+
+/**
+ * Standalone getUser probe from a storage file (throwaway client — does not touch
+ * the Playwright request fixture). getUser only; no refreshSession.
+ */
+export async function logStorageStateFileGetUserProbe(storagePath: string, label: string): Promise<void> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !anonKey) {
+    console.log(
+      `advisor-storage-getuser-probe ${JSON.stringify({ label, storagePath, skipped: 'missing supabase env' })}`,
+    )
+    return
+  }
+
+  try {
+    const session = parseSessionFromStorageState(storagePath)
+    const client = createClient(supabaseUrl, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    await client.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    })
+    const { data, error } = await client.auth.getUser()
+    console.log(
+      `advisor-storage-getuser-probe ${JSON.stringify({
+        label,
+        storagePath,
+        refreshSuffix: refreshTokenSuffix(session.refresh_token),
+        userId: data.user?.id ?? session.user_id,
+        getUserOk: !error && Boolean(data.user),
+        getUserError: error?.message,
+      })}`,
+    )
+  } catch (probeError) {
+    console.log(
+      `advisor-storage-getuser-probe ${JSON.stringify({
+        label,
+        storagePath,
+        getUserOk: false,
+        getUserError: probeError instanceof Error ? probeError.message : String(probeError),
+      })}`,
+    )
+  }
+}
+
+/** Post-request snapshot — cookie may be empty after 401 clears the session. */
 export async function logRequestAuthSnapshot(
   ctx: { storageState: () => Promise<{ cookies: { name: string; value: string }[] }> },
   label: string,
   status: number,
 ) {
   const state = await ctx.storageState().catch(() => ({ cookies: [] as { name: string; value: string }[] }))
-  const authCookieLen = state.cookies
-    .filter((cookie) => AUTH_COOKIE.test(cookie.name))
-    .reduce((total, cookie) => total + (cookie.value?.length ?? 0), 0)
+  const authCookieLen = authCookieLenFromState(state)
 
   console.log(
     `advisor-request-auth-snapshot ${JSON.stringify({
       label,
       status,
       authCookieLen,
+      timing: 'after-request',
+      note:
+        authCookieLen === 0 && status === 401
+          ? 'post-response empty may mean server cleared cookie on 401 — compare pre-request'
+          : undefined,
       signal:
         status === 401 && authCookieLen > 0
           ? 'ROUTE_OR_AUTHZ_NOT_SESSION'
           : status === 401
-            ? 'NO_AUTH_COOKIE_ON_CONTEXT'
+            ? 'POST_RESPONSE_EMPTY_INCONCLUSIVE'
             : 'OK',
     })}`,
   )
