@@ -33,24 +33,15 @@ const setupTimeout = 120_000
 
 const TEST_ENV = process.env.TEST_ENV ?? 'local'
 
-// INTERIM: prod has no advisor role-canary yet, so these have nothing to pass
-// against. Remove once the advisor↔consumer canary pair lands (Track 2).
-const PROD_SMOKE_EXCLUDE = new Set([
-  'advisor-setup',
-  'advisor-empty-setup',
-  'consumer-link-setup',
-  'consumer-advisor-link-setup',
-  'advisor',
-])
-
 function resolveProjects(all: Project[]): Project[] {
   if (TEST_ENV !== 'production') return all
-  return all
-    .filter((p) => !PROD_SMOKE_EXCLUDE.has(p.name ?? ''))
-    .map((p) => {
-      if (p.name !== 'security') return p
-      return { ...p, dependencies: ['consumer-setup'] }
-    })
+  return all.map((p) => {
+    if (p.name !== 'security') return p
+    return {
+      ...p,
+      dependencies: ['consumer-setup', 'advisor-setup', 'advisor-empty-setup'],
+    }
+  })
 }
 
 function buildProjects(): Project[] {
@@ -116,7 +107,7 @@ function buildProjects(): Project[] {
     {
       name: 'import-unit',
       testDir: './tests/unit',
-      testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|simpleRateLimit|waitlist-mode|signupAdmission|signupPolicy|site-url|roth-analysis|tax-year-selection|privilegedMfaPolicy|verifyEnv|stripeWebhookVerify|stripePricesProdGuard|stripeAccountGuard|stripeAccountGuardCallSite|deleteUserSchema|waRegime|attorneyClientCap|consumerCheckoutBlockReason|processConsumerCheckout|requirePaidDownloadAccess|oneTimePurchases|stripeOneTimeSkus|planExportWarnings|planExportAppTrialDeliverable|shouldOfferPlanAndExportPurchase|app-url|internalApiAuth|applyEmailUnsubscribe|monteCarloAssumptionsFromRow|estateHouseholdAlerts|cronDripEligibility|readGpcOptOut|promotionSchemaVerification|consumerSubscriptionStatus|subscriptionPeriod|stripeIds|activateConsumerSubscription|resolveEffectiveTier|hasEverSubscribed|inputComputedBoundary|inputExportPayload|netWorthSummary|tier0Dashboard|armGate1VerifyFixture|canUnlockDashboard|projectionsContentSplit|getUserAccessProfile|retireStripeConsumerTrial|e2ePersonaMatrix).*\.spec\.ts/,
+      testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|simpleRateLimit|waitlist-mode|signupAdmission|signupPolicy|site-url|roth-analysis|tax-year-selection|privilegedMfaPolicy|verifyEnv|stripeWebhookVerify|stripePricesProdGuard|stripeAccountGuard|stripeAccountGuardCallSite|deleteUserSchema|waRegime|attorneyClientCap|consumerCheckoutBlockReason|processConsumerCheckout|requirePaidDownloadAccess|oneTimePurchases|stripeOneTimeSkus|planExportWarnings|planExportAppTrialDeliverable|shouldOfferPlanAndExportPurchase|app-url|internalApiAuth|applyEmailUnsubscribe|monteCarloAssumptionsFromRow|estateHouseholdAlerts|cronDripEligibility|readGpcOptOut|promotionSchemaVerification|consumerSubscriptionStatus|subscriptionPeriod|stripeIds|activateConsumerSubscription|resolveEffectiveTier|hasEverSubscribed|inputComputedBoundary|inputExportPayload|netWorthSummary|tier0Dashboard|armGate1VerifyFixture|canUnlockDashboard|projectionsContentSplit|getUserAccessProfile|retireStripeConsumerTrial|e2ePersonaMatrix|reportingCanary).*\.spec\.ts/,
       use: {
         baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
       },
