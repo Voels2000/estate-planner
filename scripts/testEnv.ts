@@ -86,6 +86,47 @@ export function assertProductionSecretsConsistency(): void {
   assertSupabaseRef(PRODUCTION_SUPABASE_PROJECT_REF, 'production')
 }
 
+const PROD_SMOKE_CANARY_EMAIL_SUFFIX = '@mywealthmaps.com'
+
+/** Prod smoke login identities — must be set explicitly; no staging @mywealthmaps.test fallback. */
+const PROD_SMOKE_REQUIRED_IDENTITY_VARS = [
+  'PLAYWRIGHT_CONSUMER_EMAIL',
+  'PLAYWRIGHT_CONSUMER_PASSWORD',
+  'PLAYWRIGHT_ADVISOR_EMAIL',
+  'PLAYWRIGHT_ADVISOR_PASSWORD',
+  'PLAYWRIGHT_ADVISOR_EMPTY_EMAIL',
+  'PLAYWRIGHT_ADVISOR_EMPTY_PASSWORD',
+  'PLAYWRIGHT_ADVISOR_CLIENT_EMAIL',
+  'PLAYWRIGHT_HOUSEHOLD_ID',
+  'PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID',
+] as const
+
+export function assertProductionSmokeProdIdentities(): void {
+  const violations: string[] = []
+
+  for (const key of PROD_SMOKE_REQUIRED_IDENTITY_VARS) {
+    const value = process.env[key]?.trim() ?? ''
+    if (!value) {
+      violations.push(`${key} unset — prod smoke must not fall back to staging E2E identities`)
+      continue
+    }
+    if (key.endsWith('_EMAIL') && !value.toLowerCase().endsWith(PROD_SMOKE_CANARY_EMAIL_SUFFIX)) {
+      violations.push(
+        `${key}=${value} — prod smoke requires @mywealthmaps.com canaries, not staging .test identities`,
+      )
+    }
+    if (key.endsWith('_EMAIL') && value.toLowerCase().endsWith('@mywealthmaps.test')) {
+      violations.push(`${key} resolves to staging ${value}`)
+    }
+  }
+
+  if (violations.length > 0) {
+    throw new Error(
+      `[E2E env guard] Production smoke identity guard failed in ${ENVIRONMENTS.production.envFile}: ${violations.join('; ')}`,
+    )
+  }
+}
+
 export function assertProductionSmokeReadOnly(): void {
   const violations: string[] = []
 
@@ -174,6 +215,7 @@ export function assertPlaywrightEnvGuard(): void {
     }
     assertProductionSecretsConsistency()
     assertProductionSmokeReadOnly()
+    assertProductionSmokeProdIdentities()
   }
 }
 
