@@ -45,7 +45,6 @@ export default async function ProfilePage({ searchParams }: PageProps) {
       fromParam={from ?? null}
       requiredParam={required === 'true'}
       missingFields={missingFields as ProfileGateMissingField[]}
-      onboardingPersona={profile?.onboarding_persona ?? null}
       householdSnapshot={{
         state_primary: household?.state_primary ?? null,
         filing_status: household?.filing_status ?? null,
