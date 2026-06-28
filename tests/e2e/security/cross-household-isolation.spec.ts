@@ -107,7 +107,7 @@ test.beforeAll(async ({}, testInfo) => {
 
     if (process.env.TEST_ENV === 'production') {
       linkedClientHouseholdId = linkEnv.linkedConsumerHouseholdId || consumerHouseholdId
-      advisorForeignHouseholdId = linkEnv.isolationHouseholdId || advisorClientHouseholdId
+      advisorForeignHouseholdId = advisorClientHouseholdId
       advisorForeignOwnerUserId = advisorClientOwnerUserId
     } else {
       linkedClientHouseholdId = advisorClientHouseholdId
@@ -125,8 +125,13 @@ test.beforeAll(async ({}, testInfo) => {
       ].filter(Boolean))
     }
   } else {
-    linkedClientHouseholdId = advisorClientHouseholdId
-    advisorForeignHouseholdId = consumerHouseholdId
+    if (process.env.TEST_ENV === 'production') {
+      linkedClientHouseholdId = consumerHouseholdId
+      advisorForeignHouseholdId = advisorClientHouseholdId
+    } else {
+      linkedClientHouseholdId = advisorClientHouseholdId
+      advisorForeignHouseholdId = consumerHouseholdId
+    }
   }
 
   if (!consumerHouseholdId || !advisorClientHouseholdId) {
