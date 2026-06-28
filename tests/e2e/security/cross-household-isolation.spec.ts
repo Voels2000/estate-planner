@@ -140,9 +140,10 @@ test.beforeAll(async ({}, testInfo) => {
   if (!advisorForeignHouseholdId) advisorForeignHouseholdId = consumerHouseholdId
   expect(consumerHouseholdId).not.toBe(advisorClientHouseholdId)
 
-  if (consumerOwnerUserId && advisorClientOwnerUserId) {
+  if (consumerOwnerUserId && advisorClientOwnerUserId && process.env.TEST_ENV !== 'production') {
     await seedExportIsolationMarkers(consumerOwnerUserId, advisorClientOwnerUserId)
   }
+  // Prod smoke is read-only — pre-seed markers: npm run seed:prod-export-markers -- --confirm
 })
 
 test.describe('Consumer isolation @production', () => {
