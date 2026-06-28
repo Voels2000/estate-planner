@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { captureFunnelEvent } from '@/lib/analytics/useFunnelEvent'
 import { Button } from '@/components/ui/Button'
@@ -144,15 +145,23 @@ export function PersonaOnboardingClient() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
+      <p className="mb-6">
+        <Link
+          href="/dashboard"
+          className="text-sm font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-gold)]"
+        >
+          ← Back to getting started
+        </Link>
+      </p>
       <div className="mb-8 text-center">
         <p className="text-xs font-semibold uppercase tracking-widest text-[color:var(--mwm-gold)]">
-          One quick question
+          Guided setup
         </p>
         <h1 className="mt-2 font-[family-name:var(--font-display)] text-2xl text-[color:var(--mwm-navy)]">
           What describes you?
         </h1>
         <p className="mt-2 text-sm text-[color:var(--mwm-text-secondary)]">
-          We&apos;ll tailor your first experience based on your answer.
+          Pick the path that fits best — we&apos;ll tailor the walkthrough to your situation.
         </p>
       </div>
 
