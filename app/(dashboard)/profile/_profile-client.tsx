@@ -37,7 +37,6 @@ type ProfileClientProps = {
   requiredParam?: boolean
   missingFields?: ProfileGateMissingField[]
   householdSnapshot?: ProfileGateHousehold
-  onboardingPersona?: string | null
 }
 
 export function ProfileClient({
@@ -46,7 +45,6 @@ export function ProfileClient({
   requiredParam = false,
   missingFields = [],
   householdSnapshot,
-  onboardingPersona = null,
 }: ProfileClientProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -203,9 +201,7 @@ export function ProfileClient({
           ? fromParam
           : profileComplete && (householdId || created)
             ? showWizardFields
-              ? onboardingPersona
-                ? '/onboarding/wizard'
-                : '/onboarding/persona'
+              ? '/dashboard'
               : '/onboarding/invite-advisor'
             : householdId || created
               ? '/dashboard'
