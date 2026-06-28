@@ -378,22 +378,29 @@ export function DashboardClient(props: Props) {
   const tier = consumerTier ?? 1
   const [executionChecklist, setExecutionChecklist] = useState(initialExecutionChecklist)
 
-  const [showAllTools, setShowAllTools] = useState(planStage.stage >= 3)
+  const [showAllTools, setShowAllTools] = useState<boolean | null>(null)
 
   useEffect(() => {
     const stored = localStorage.getItem('mwm_show_all_tools')
     if (stored !== null) {
       setShowAllTools(stored === 'true')
+      return
     }
-  }, [])
+    setShowAllTools(planStage.stage >= 3)
+  }, [planStage.stage])
 
   useEffect(() => {
+    if (showAllTools === null) return
     localStorage.setItem('mwm_show_all_tools', String(showAllTools))
   }, [showAllTools])
 
+  const expandedTools = showAllTools ?? planStage.stage >= 3
+
   function sectionVisible(minStage: 1 | 2 | 3 | 4): boolean {
-    if (showAllTools) return true
-    return planStage.stage >= minStage
+    if (expandedTools) return true
+    // Guided mode: one planning surface at a time (financial summary is always shown).
+    const guidedFocusStage = Math.min(planStage.stage, 3) as 1 | 2 | 3
+    return minStage === guidedFocusStage
   }
 
   const router = useRouter()
@@ -574,8 +581,8 @@ export function DashboardClient(props: Props) {
             <div>
               <PlanProgressBar
                 planStage={planStage}
-                showAllTools={showAllTools}
-                onShowAllTools={() => setShowAllTools((prev) => !prev)}
+                showAllTools={expandedTools}
+                onShowAllTools={() => setShowAllTools((prev) => !(prev ?? planStage.stage >= 3))}
                 onQuickAddAsset={() => setQuickAddOpen(true)}
                 useQuickAddForNextAction={showQuickAddAsset}
               />
@@ -676,8 +683,8 @@ export function DashboardClient(props: Props) {
         <div className="mt-4">
           <PlanProgressBar
             planStage={planStage}
-            showAllTools={showAllTools}
-            onShowAllTools={() => setShowAllTools((prev) => !prev)}
+            showAllTools={expandedTools}
+            onShowAllTools={() => setShowAllTools((prev) => !(prev ?? planStage.stage >= 3))}
             onQuickAddAsset={() => setQuickAddOpen(true)}
             useQuickAddForNextAction={showQuickAddAsset}
           />
@@ -884,7 +891,7 @@ export function DashboardClient(props: Props) {
         <PersonaInsightCard {...personaInsight} />
       )}
 
-      {!isAdvisor && (planStage.stage === 1 || showAllTools) && (
+      {!isAdvisor && (planStage.stage === 1 || expandedTools) && (
         <div className="mt-4">
           {setupProgressLoading || !setupProgress ? (
             <SetupProgressCardSkeleton />
@@ -899,7 +906,7 @@ export function DashboardClient(props: Props) {
         </div>
       )}
 
-      {planStage.stage === 1 && !showAllTools && (
+      {planStage.stage === 1 && !expandedTools && (
         <div className="mt-4 rounded-xl border border-[color:var(--mwm-border)] bg-white p-5 shadow-sm">
           <p className="mb-3 text-sm font-semibold text-[color:var(--mwm-navy)]">What comes next</p>
           <div className="space-y-2">
