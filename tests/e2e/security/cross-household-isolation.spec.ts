@@ -107,7 +107,7 @@ test.beforeAll(async ({}, testInfo) => {
 
     if (process.env.TEST_ENV === 'production') {
       linkedClientHouseholdId = linkEnv.linkedConsumerHouseholdId || consumerHouseholdId
-      advisorForeignHouseholdId = linkEnv.isolationHouseholdId || advisorClientHouseholdId
+      advisorForeignHouseholdId = advisorClientHouseholdId
       advisorForeignOwnerUserId = advisorClientOwnerUserId
     } else {
       linkedClientHouseholdId = advisorClientHouseholdId
@@ -125,8 +125,13 @@ test.beforeAll(async ({}, testInfo) => {
       ].filter(Boolean))
     }
   } else {
-    linkedClientHouseholdId = advisorClientHouseholdId
-    advisorForeignHouseholdId = consumerHouseholdId
+    if (process.env.TEST_ENV === 'production') {
+      linkedClientHouseholdId = consumerHouseholdId
+      advisorForeignHouseholdId = advisorClientHouseholdId
+    } else {
+      linkedClientHouseholdId = advisorClientHouseholdId
+      advisorForeignHouseholdId = consumerHouseholdId
+    }
   }
 
   if (!consumerHouseholdId || !advisorClientHouseholdId) {
@@ -140,9 +145,22 @@ test.beforeAll(async ({}, testInfo) => {
   if (!advisorForeignHouseholdId) advisorForeignHouseholdId = consumerHouseholdId
   expect(consumerHouseholdId).not.toBe(advisorClientHouseholdId)
 
-  if (consumerOwnerUserId && advisorClientOwnerUserId) {
+  console.log(
+    JSON.stringify({
+      diag: 'e2e-isolation-probe-targets',
+      testEnv: process.env.TEST_ENV ?? 'unset',
+      canAdminLookup,
+      consumerHouseholdId,
+      advisorClientHouseholdId,
+      linkedClientHouseholdId,
+      advisorForeignHouseholdId,
+    }),
+  )
+
+  if (consumerOwnerUserId && advisorClientOwnerUserId && process.env.TEST_ENV !== 'production') {
     await seedExportIsolationMarkers(consumerOwnerUserId, advisorClientOwnerUserId)
   }
+  // Prod smoke is read-only — pre-seed markers: npm run seed:prod-export-markers -- --confirm
 })
 
 test.describe('Consumer isolation @production', () => {
@@ -199,6 +217,14 @@ test.describe('Advisor isolation @production', () => {
       ...apiOpts(),
       data: { householdId: advisorForeignHouseholdId },
     })
+    console.log(
+      JSON.stringify({
+        diag: 'e2e-isolation-probe',
+        probe: 'advisor-negative-gifting-summary',
+        householdId: advisorForeignHouseholdId,
+        status: res.status(),
+      }),
+    )
     expectAccessDenied(res.status())
   })
 
@@ -239,6 +265,14 @@ test.describe('Advisor access to linked client @production', () => {
       ...apiOpts(),
       data: { householdId: linkedClientHouseholdId, sourceRole: 'advisor' },
     })
+    console.log(
+      JSON.stringify({
+        diag: 'e2e-isolation-probe',
+        probe: 'advisor-positive-linked-estate-composition',
+        householdId: linkedClientHouseholdId,
+        status: res.status(),
+      }),
+    )
     expect(res.ok(), await res.text()).toBeTruthy()
   })
 })
