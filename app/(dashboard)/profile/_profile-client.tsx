@@ -469,6 +469,7 @@ export function ProfileClient({
               </Field>
             </div>
 
+            {householdId && !showWizardFields && (
             <div className="rounded-lg border border-gray-100 bg-gray-50/60 px-4 py-3">
               <p className="mb-2 text-xs font-semibold text-gray-600">
                 Additional planning settings
@@ -476,7 +477,7 @@ export function ProfileClient({
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-xs text-gray-500">
-                    Growth rates, real estate &amp; business assumptions
+                    Growth rates, inflation &amp; real estate assumptions
                   </span>
                   <a
                     href="/scenarios"
@@ -498,6 +499,7 @@ export function ProfileClient({
                 </div>
               </div>
             </div>
+            )}
           </div>
         </Card>
 
