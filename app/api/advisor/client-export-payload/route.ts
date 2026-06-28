@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { logPreCreateClientAuthDiag } from '@/lib/e2e/route-auth-cookie-diag'
 import { loadAdvisorClientExportPayload } from '@/lib/advisor/loadClientExportPayload'
 import { NextResponse } from 'next/server'
 
@@ -9,13 +10,56 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'clientId required' }, { status: 400 })
   }
 
+  if (process.env.E2E_DIAG_ROUTE_AUTH === '1') {
+    await logPreCreateClientAuthDiag(request, 'client-export-payload')
+  }
+
   const supabase = await createClient()
+  if (process.env.E2E_DIAG_ROUTE_AUTH === '1') {
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
+    console.error(
+      JSON.stringify({
+        diag: 'client-export-payload-getSession',
+        timing: 'after-createClient-before-getUser',
+        sessionPresent: Boolean(session),
+        sessionError: sessionError?.message ?? null,
+        sessionUserId: session?.user?.id ?? null,
+        note: 'null here with full route-auth-cookie-pre → SSR storage read lost binding',
+      }),
+    )
+  }
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser()
 
   if (authError || !user) {
+    if (process.env.E2E_DIAG_ROUTE_AUTH === '1') {
+      try {
+        const { cookies } = await import('next/headers')
+        const store = await cookies()
+        const authCookies = store
+          .getAll()
+          .filter((c) => /sb-.*-auth-token(\.\d+)?$/.test(c.name))
+        console.error(
+          JSON.stringify({
+            diag: 'client-export-payload-auth-post',
+            timing: 'after-getUser',
+            authError: authError?.message ?? null,
+            userPresent: Boolean(user),
+            wireCookieChunks: authCookies.length,
+            wireCookieNames: authCookies.map((c) => c.name).sort(),
+            wireCookieTotalLen: authCookies.reduce((n, c) => n + (c.value?.length ?? 0), 0),
+            note: 'post-getUser — cookie may be cleared by SSR; compare route-auth-cookie-pre',
+          }),
+        )
+      } catch (e) {
+        console.error(JSON.stringify({ diag: 'client-export-payload-auth', logError: String(e) }))
+      }
+    }
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

@@ -1,5 +1,6 @@
 import { defineConfig, devices, type Project } from '@playwright/test'
 import { ENVIRONMENTS, getTestEnvConfig } from './scripts/testEnv'
+import { authStoragePath } from './tests/e2e/helpers/e2e-auth-storage'
 
 function loadTestEnvConfig(): { baseURL: string; envFile: string } {
   if (!process.env.TEST_ENV) {
@@ -33,6 +34,31 @@ const setupTimeout = 120_000
 
 const TEST_ENV = process.env.TEST_ENV ?? 'local'
 
+const REUSE_AUTH = process.env.E2E_REUSE_AUTH === '1'
+
+/** Minted once in e2e-prepare; suite jobs reuse `.auth/` from the prepare tarball. */
+const CI_SHARED_SETUP_PROJECTS = [
+  'consumer-setup',
+  'advisor-setup',
+  'advisor-empty-setup',
+  'advisor-pending-setup',
+  'consumer-link-setup',
+  'consumer-pending-setup',
+  'consumer-advisor-link-setup',
+]
+
+function scrubSharedSetupProjects(projects: Project[]): Project[] {
+  if (!REUSE_AUTH) return projects
+  return projects
+    .filter((p) => !CI_SHARED_SETUP_PROJECTS.includes(p.name ?? ''))
+    .map((p) => ({
+      ...p,
+      dependencies: (p.dependencies ?? []).filter(
+        (d) => !CI_SHARED_SETUP_PROJECTS.includes(d),
+      ),
+    }))
+}
+
 function resolveProjects(all: Project[]): Project[] {
   if (TEST_ENV !== 'production') return all
   return all.map((p) => {
@@ -48,11 +74,13 @@ function buildProjects(): Project[] {
   const projects: Project[] = [
     { name: 'advisor-setup', testMatch: /helpers\/advisor\.setup\.ts/, timeout: setupTimeout },
     { name: 'advisor-empty-setup', testMatch: /helpers\/advisor-empty\.setup\.ts/, timeout: setupTimeout },
+    { name: 'advisor-pending-setup', testMatch: /helpers\/advisor-pending\.setup\.ts/, timeout: setupTimeout },
     { name: 'consumer-setup', testMatch: /helpers\/consumer\.setup\.ts/, timeout: setupTimeout },
     { name: 'consumer-canceled-setup', testMatch: /helpers\/consumer-canceled\.setup\.ts/, timeout: setupTimeout },
     { name: 'attorney-setup', testMatch: /helpers\/attorney\.setup\.ts/, timeout: setupTimeout },
     { name: 'advisor-client-setup', testMatch: /helpers\/advisor-client\.setup\.ts/, timeout: setupTimeout },
     { name: 'consumer-link-setup', testMatch: /helpers\/consumer-link\.setup\.ts/, timeout: setupTimeout },
+    { name: 'consumer-pending-setup', testMatch: /helpers\/consumer-pending\.setup\.ts/, timeout: setupTimeout },
     {
       name: 'consumer-advisor-link-setup',
       dependencies: ['consumer-link-setup', 'advisor-setup'],
@@ -61,28 +89,34 @@ function buildProjects(): Project[] {
     },
     {
       name: 'security',
-      dependencies: ['consumer-setup', 'consumer-link-setup', 'advisor-setup', 'advisor-empty-setup'],
+      dependencies: ['consumer-setup', 'consumer-link-setup', 'consumer-pending-setup', 'advisor-setup', 'advisor-pending-setup', 'advisor-empty-setup'],
       testMatch: /security\/.*\.spec\.ts/,
+      testIgnore: /advisor-empty-route-repro\.spec\.ts/,
+    },
+    {
+      name: 'security-repro',
+      dependencies: ['consumer-setup', 'advisor-empty-setup'],
+      testMatch: /advisor-empty-route-repro\.spec\.ts/,
     },
     {
       name: 'advisor',
       dependencies: ['consumer-advisor-link-setup'],
       testMatch: /advisor\/.*\.spec\.ts/,
       testIgnore: /advisor-consumer-sync\.spec\.ts/,
-      use: { storageState: '.auth/advisor.json' },
+      use: { storageState: authStoragePath('advisor') },
     },
     {
       name: 'advisor-sync',
       dependencies: ['advisor-setup', 'advisor-client-setup'],
       testMatch: /advisor\/advisor-consumer-sync\.spec\.ts/,
-      use: { storageState: '.auth/advisor.json' },
+      use: { storageState: authStoragePath('advisor') },
     },
     {
       name: 'consumer',
       dependencies: ['consumer-setup'],
       testMatch: /consumer\/.*\.spec\.ts/,
       testIgnore: /consumer-tier1-gates\.spec\.ts|consumer-tier0-gates\.spec\.ts|golden-path-show-all-tools\.spec\.ts|onboarding-persona\.spec\.ts|consumer-deliverable-persona-matrix\.spec\.ts/,
-      use: { storageState: '.auth/consumer.json' },
+      use: { storageState: authStoragePath('consumer') },
     },
     {
       name: 'consumer-onboarding',
@@ -171,7 +205,7 @@ function buildProjects(): Project[] {
     },
   )
 
-  return resolveProjects(projects)
+  return scrubSharedSetupProjects(resolveProjects(projects))
 }
 
 export default defineConfig({
@@ -198,6 +232,9 @@ export default defineConfig({
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
+        env: process.env.E2E_DIAG_ROUTE_AUTH
+          ? { E2E_DIAG_ROUTE_AUTH: process.env.E2E_DIAG_ROUTE_AUTH }
+          : undefined,
       }
     : undefined,
 })
