@@ -72,7 +72,7 @@ This converts the pilot from "I gave product away and learned nothing" into a re
 
 **Why three coupons, not one.** To enforce *both* the discount AND the per-persona cap, create one coupon per persona, each restricted to that persona's products via `applies_to.products`, each fronted by one **Promotion Code** carrying the cap in `max_redemptions`. The product restriction means a consumer can't apply the advisor code; the `max_redemptions` enforces the count. (Simpler alternative: one coupon + three promo codes with different caps — but then the caps rely on each persona only being handed their own code, with no product-level enforcement. Given the caps differ, the three-coupon version is the defensible one.)
 
-**Run the verify script first.** `scripts/verify-founding-codes.mjs` (TODO — not yet in repo) is read-only — it confirms which account/mode you're on, lists the active products + prices (so you can copy the per-persona **PRODUCT IDs** for `applies_to`), and checks that none of the three founding codes already exist. Run it, confirm a clean result, then create.
+**Run the verify script first.** [`scripts/verify-founding-codes.mjs`](../scripts/verify-founding-codes.mjs) is read-only — it confirms which account/mode you're on, lists the active products + prices (so you can copy the per-persona **PRODUCT IDs** for `applies_to`), and checks that none of the three founding codes already exist. Run it, confirm a clean result, then create.
 
 ```
 EXPECTED_STRIPE_ACCOUNT_ID=acct_1TAIt0ENTkKmTNa3 \
@@ -107,7 +107,7 @@ await stripe.promotionCodes.create({
 
 **Timeline (sequential, not overlapping):** free through launch (comp grant, no Stripe charge — coupon clock not started) → at launch each founding member converts to paid and the **12 discounted months start from their own conversion date** → standard price after. So the real offer is *free through launch, then 12 discounted months* — more generous than "12 months total," which is the right first-cohort shape.
 
-**Checkout wiring:** founding-member checkout must pass the promotion code through to the Stripe Checkout Session (`discounts: [{ promotion_code }]`) or allow promo-code entry. Confirm `/api/stripe/checkout` (consumer), `/api/stripe/attorney-checkout`, and `/api/stripe/firm-checkout` (advisor) accept it — one small change per route if not already supported.
+**Checkout wiring:** all three subscription checkout routes set `allow_promotion_codes: true` on the Checkout Session — consumer via `processConsumerCheckout`, plus `/api/stripe/attorney-checkout` and `/api/stripe/firm-checkout`. Founding members enter **FOUNDINGATTORNEY** / **FOUNDINGADVISOR** / **FOUNDINGCONSUMER** at checkout on ruling day.
 
 > Create the promo codes with `active: false` and flip them to `active: true` on launch day, so a leaked code can't be redeemed before B&O clears.
 
@@ -231,11 +231,68 @@ await stripe.promotionCodes.create({
 - [ ] WA_Estate_Tax_Explainer.pdf attached and current.
 - [ ] Invite/beta comp path tested — grants Tier 3 with **no** Stripe charge.
 - [x] Founding rate decided — **30% off, 12-month lock** (see Founding-Rate Mechanics above).
-- [ ] `scripts/verify-founding-codes.mjs` added + founding promo codes created in Stripe (`active: false` until B&O clears).
+- [x] `scripts/verify-founding-codes.mjs` in repo (run before creating codes in Stripe).
+- [ ] Founding promo codes created in Stripe (`active: false` until B&O clears).
 - [ ] Consumer copy review (GRAT/Roth) cleared.
 - [ ] WA MHMD determination answered.
-- [ ] Conversion email drafted and held, ready to fire on ruling day.
+- [x] Conversion emails drafted — see [B&O-Day Conversion Emails](#bo-day-conversion-emails-staged--fire-on-ruling-day) below.
 - [ ] Send-from-personal-email, reply-to al@mywealthmaps.com confirmed.
+
+---
+
+## B&O-Day Conversion Emails (staged — fire on ruling day)
+
+Trigger: B&O clears → promo codes flipped `active: true` → these send to founding members.
+Warm reactivation, not a cold sell — the relationship and usage already exist.
+Conversion window: 30 days from send. Fill `[deadline]` when you know ruling day.
+
+### Attorney — founding rate live
+
+> **Subject:** Your founding rate is live, [First Name]
+>
+> Hi [First Name],
+>
+> Quick update: My Wealth Maps is now open for paid plans, and your founding rate is ready.
+>
+> If the free tier has been enough, nothing changes — you keep it. If you've wanted the paid features (weekly client digest, document repository, the higher household cap), you can move up at the founding rate: **30% off, locked for 12 months.** Use code **FOUNDINGATTORNEY** at checkout.
+>
+> The founding rate is open through [deadline]; after that it's standard pricing.
+>
+> [Manage your plan →]
+>
+> Al Voels · Founder, My Wealth Maps
+
+### Advisor — founding rate live
+
+> **Subject:** Your founding seat rate is live, [First Name]
+>
+> Hi [First Name],
+>
+> My Wealth Maps is now open for paid plans. As a founding advisor, your seat pricing is locked at **30% off for 12 months** — code **FOUNDINGADVISOR** at checkout, applied across all your seats.
+>
+> You've already seen the part that matters: send a client a strategy recommendation, they accept, and the estate-tax number moves. This just keeps that running for your whole book at the founding rate.
+>
+> Open through [deadline], then standard per-seat pricing.
+>
+> [Set up your seats →]
+>
+> Al Voels · Founder, My Wealth Maps
+
+### Consumer — founding rate live
+
+> **Subject:** Your founding-member rate is ready, [First Name]
+>
+> Hi [First Name],
+>
+> My Wealth Maps is now open for paid plans, and as one of our founding members you have a rate locked in: **30% off, held for 12 months.** Use code **FOUNDINGCONSUMER** at checkout.
+>
+> Everything you've already built — your assets, your estate picture, the plan you and [Advisor name] have been working from — carries straight over. Nothing to redo.
+>
+> Your founding rate is open through [deadline].
+>
+> [Continue at your founding rate →]
+>
+> Al Voels · Founder, My Wealth Maps
 
 ---
 

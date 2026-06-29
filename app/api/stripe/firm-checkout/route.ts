@@ -122,6 +122,7 @@ export async function POST(req: Request) {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: seatCount }],
       billing_address_collection: 'required',
+      allow_promotion_codes: true,
       success_url: `${siteUrl}/billing?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/billing`,
       metadata: { firm_id: firmId },

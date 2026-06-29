@@ -49,11 +49,11 @@ GRAT/ROTH COPY REVIEW ─────────► Consumer sees those alerts
 ## Start-here sequence
 
 1. **Confirm the tax caveat** (accountant): a free pilot doesn't create a filing wrinkle or complicate the pending ruling. *(GTM doc, pre-flight)*
-2. **Buy the counsel hour** on MHMD classification — it dissolves or activates the whole MHMD doc and unblocks consumer pilots.
+2. **Initiate the MHMD counsel hour** (book now — runs on counsel's clock) **and send Bucket 1/2 outreach in parallel.** The counsel hour unblocks consumer pilots + the MHMD delta doc; attorney/advisor outreach does not depend on the MHMD answer.
 3. **Clear the GRAT/Roth copy review** — confirm it was in the 2026-06-19 counsel pass; if not, clear it.
 4. **Verify + finalize** the 5 attorneys (WSBA) and 5 advisors (FINRA BrokerCheck). *(GTM doc, Buckets 1–2)*
-5. **Send advisor + attorney outreach** with the free founding-member offer. Onboard as they say yes.
-6. **Stage the conversion email** so it fires the day B&O clears.
+5. **Onboard** as advisors/attorneys say yes.
+6. **Conversion emails** are staged in [GTM_FIRST_WAVE.md § B&O-Day](./GTM_FIRST_WAVE.md#bo-day-conversion-emails-staged--fire-on-ruling-day) — fire when B&O clears + promo codes go `active: true`.
 7. **Work the launch-debt P1 items** (input-validation hardening) in parallel as bandwidth allows. *(POST_LAUNCH doc)*
 
 Steps 1–6 are the unblocked path that moves the business. Step 7 is the engineering backstop that doesn't gate any of it.

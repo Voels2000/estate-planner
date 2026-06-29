@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
       customer: stripeCustomerId,
       line_items: [{ price: priceId, quantity: 1 }],
       billing_address_collection: 'required',
+      allow_promotion_codes: true,
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: { userId: user.id, planKey },

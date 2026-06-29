@@ -71,6 +71,7 @@
     "verify:billing-edges": "bash scripts/verify-billing-edges.sh",
     "verify:security-hygiene": "bash scripts/verify-security-hygiene.sh",
     "verify:item-8": "bash scripts/verify-item-8.sh",
+    "verify:founding-codes": "node scripts/verify-founding-codes.mjs",
     "check:email-dns": "npx tsx scripts/check-email-dns.ts",
     "cleanup:rolobe": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --rolobe",
     "cleanup:purge": "dotenv -e .env.local -- npx tsx scripts/cleanup-test-accounts.ts --purge-unprotected",
