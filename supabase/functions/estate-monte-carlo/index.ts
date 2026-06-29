@@ -31,6 +31,17 @@ const NO_PORTABILITY_STATES = new Set([
   'DC', 'NE', 'IA', 'KY', 'PA',
 ])
 
+/** Mirror lib/calculations/stateEstateTax.ts — edge cannot import @/lib. */
+function isMFJFilingStatus(filingStatus: string | null | undefined): boolean {
+  const fs = (filingStatus ?? '').toLowerCase().trim()
+  return (
+    fs === 'mfj' ||
+    fs === 'married_filing_jointly' ||
+    fs === 'married filing jointly' ||
+    fs === 'married_joint'
+  )
+}
+
 function applyBrackets(taxableAmount: number, brackets: StateBracket[]): number {
   if (taxableAmount <= 0 || brackets.length === 0) return 0
   let tax = 0
@@ -477,7 +488,7 @@ serve(async (req) => {
       federalBrackets,
       stateCode,
       stateBrackets,
-      filingStatus: filingStatus === 'mfj' ? 'mfj' : 'single',
+      filingStatus: isMFJFilingStatus(filingStatus) ? 'mfj' : 'single',
       hasBypassTrust: Boolean(hasBypassTrust),
       yearsUntilDeath,
       strategyEstateReduction,

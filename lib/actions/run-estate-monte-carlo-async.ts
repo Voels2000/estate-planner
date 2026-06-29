@@ -15,6 +15,7 @@ import {
   computeProjectionInputsHash,
 } from '@/lib/monte-carlo/computeProjectionInputsHash'
 import { mapAndResolveStateEstateBrackets } from '@/lib/estate/resolveStateEstateBrackets'
+import { isMFJFilingStatus } from '@/lib/calculations/stateEstateTax'
 
 async function fetchStateBrackets(
   supabase: SupabaseClient,
@@ -92,7 +93,7 @@ export async function runEstateMonteCarloAsync(
   const stateCode = household.state_primary ?? ''
   const bracketsData = stateCode ? await fetchStateBrackets(supabase, stateCode) : []
 
-  const isMFJ = household.filing_status === 'mfj' && !!household.has_spouse
+  const isMFJ = isMFJFilingStatus(household.filing_status) && !!household.has_spouse
   const federalExemption = householdFederalExemption(
     household.filing_status ?? 'single',
     !!household.has_spouse,
