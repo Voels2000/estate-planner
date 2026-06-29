@@ -317,3 +317,55 @@ Use after creating a new staging project or major rebuild:
 4. `supabase functions deploy estate-monte-carlo --project-ref cmzyxpxfyvdvbsykjvsg`
 5. `npm run seed:e2e` → update `.env.test` + GitHub `PLAYWRIGHT_HOUSEHOLD_ID`
 6. Smoke: `npm run test:e2e:go-live-profile -- --workers=1` locally, or re-run `e2e-smoke` workflow on a PR
+
+---
+
+## 10. Production backups and PITR (pre-flip gate)
+
+**Project:** `estate-planner-prod` · ref `fnzvlmrqwcqwiqueevux`
+
+### Category 1 — propagation (one-time, ~48h, then retire)
+
+After enabling PITR in the dashboard, run until exit 0:
+
+```bash
+npm run check:pitr-prod
+```
+
+Pass condition: `pitr_enabled=true` **and** `latest_physical_backup_date_unix` populated (JSON via CLI or Management API). Re-check in a few hours and tomorrow; when it exits 0, cross off permanently.
+
+Always use JSON for attestation (pretty table hides the PITR window when daily snapshots are listed):
+
+```bash
+supabase backups list --project-ref fnzvlmrqwcqwiqueevux -o json
+```
+
+### Category 2 — ongoing (automated)
+
+Daily **`GET /api/cron/post-deploy-verify`** (09:00 UTC) includes a **`backup-health`** check on prod only:
+
+- `pitr_enabled === true`
+- `LATEST` within 30 minutes (continuous WAL)
+- WARN (not fail) if recovery window &lt; 6 days (still building toward 7-day retention)
+
+Failures → Sentry + compliance email (same path as Voels checks).
+
+Requires **`SUPABASE_ACCESS_TOKEN`** (Supabase personal access token) on Vercel **`estate-planner`** Production.
+
+### Category 3 — verify-env gate
+
+`GET /api/admin/verify-env?live=1` on production includes **`liveness.supabase_backups`** and **CRITICAL** flags when PITR is off or unhealthy. Also **WARN** when `SUPABASE_ACCESS_TOKEN` is unset.
+
+### PITR restore (non-destructive)
+
+Restore creates a **new** project — never overwrites prod in place. CLI timestamp is **Unix epoch seconds**:
+
+```bash
+supabase backups list --project-ref fnzvlmrqwcqwiqueevux -o json
+# Pick a timestamp inside the window, then:
+supabase backups restore --project-ref fnzvlmrqwcqwiqueevux -t 1735689600
+```
+
+Dashboard: **Database → Backups / Point in Time → Start a restore** — confirm the time picker is selectable before attesting.
+
+**When to use PITR vs column rollback:** Pre-flip schema mistakes may use reverse SQL in [PRE_FLIP_CHECKLIST §D](./PRE_FLIP_CHECKLIST.md#d-tier-restructure-prod-cutover--steps-05-then-stop). After `PUBLIC_SIGNUP_OPEN=true`, use PITR restore — not column drops.

@@ -79,6 +79,7 @@
     "verify:estate": "dotenv -e .env.local -- npx tsx scripts/verify-estate-suite.ts",
     "verify:estate:voels": "dotenv -e .env.local -- npx tsx scripts/verify-estate-suite.ts --preset voels --check-goldens --http",
     "verify:post-deploy-voels": "dotenv -e .env.local -- npx tsx scripts/verify-post-deploy-voels.ts",
+    "check:pitr-prod": "bash scripts/check-pitr-prod.sh",
     "verify:rls": "dotenv -o -e .env.local -e .env.test.local -- npx tsx scripts/verify-rls-post-migration.ts",
     "verify:consumer-openapi": "npx tsx scripts/verify-consumer-openapi.ts",
     "verify:tax-coverage": "dotenv -e .env.local -- npx tsx scripts/verify-state-tax-coverage.ts",

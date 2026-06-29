@@ -3,6 +3,7 @@ import {
   analyzeStripeWebhookEndpoints,
   type StripeWebhookLiveness,
 } from '@/lib/env/stripeWebhookVerify'
+import { verifySupabaseBackupLiveness, type SupabaseBackupLiveness } from '@/lib/env/supabaseBackupVerify'
 import { createStripeClient } from '@/lib/stripe/config'
 import { createClient } from '@supabase/supabase-js'
 import {
@@ -58,6 +59,7 @@ export interface EnvVerifyReport {
     stripe_tax_note?: string
     supabase: 'LIVE_OK' | 'LIVE_FAIL'
     supabase_reason?: string
+    supabase_backups?: SupabaseBackupLiveness
   }
 }
 
@@ -554,6 +556,16 @@ async function runLivenessChecks(
   } catch (err) {
     result.supabase_reason =
       err instanceof Error ? err.message : 'Supabase query failed'
+  }
+
+  if (scope === 'production') {
+    const backup = await verifySupabaseBackupLiveness({
+      supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+      accessToken: env.SUPABASE_ACCESS_TOKEN,
+      isProductionScope: true,
+    })
+    result.supabase_backups = backup.liveness
+    livenessFlags.push(...backup.flags)
   }
 
   return { liveness: result, livenessFlags }

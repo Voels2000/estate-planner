@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as Sentry from '@sentry/nextjs'
 import { runPostDeployVoelsChecks } from '@/lib/verify/runPostDeployVoelsChecks'
+import { runProdBackupHealthCheck } from '@/lib/verify/supabaseBackupHealth'
 import { recordCronHealth } from '@/lib/cron/recordCronHealth'
 import { requireCronAuth } from '@/lib/api/internalApiAuth'
 import { sendPostDeployFailureEmail } from '@/lib/email/postDeployFailureEmail'
@@ -21,6 +23,9 @@ export async function GET(request: NextRequest) {
 
   try {
     const checks = await runPostDeployVoelsChecks({ baseUrl, remediate: true })
+    const backupCheck = await runProdBackupHealthCheck()
+    if (backupCheck) checks.push(backupCheck)
+
     const failed = checks.filter((c) => !c.pass)
 
     if (failed.length > 0) {
@@ -28,6 +33,11 @@ export async function GET(request: NextRequest) {
         .map((c) => `${c.id}: ${c.detail ?? 'failed'}`)
         .join('; ')
       console.error('[cron/post-deploy-verify] FAILED:', failed)
+      Sentry.captureMessage('post-deploy-verify failed', {
+        level: 'error',
+        tags: { area: 'post_deploy_verify' },
+        extra: { failed: failed.map((c) => ({ id: c.id, detail: c.detail })) },
+      })
       await recordCronHealth('post-deploy-verify', 'error', failureSummary)
 
       const complianceEmail = process.env.COMPLIANCE_EMAIL
