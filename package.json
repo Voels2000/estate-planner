@@ -35,6 +35,7 @@
     "seed:prod-canary": "npx tsx scripts/seed-prod-canary.ts",
     "reset:prod-voels-consumer": "npx tsx scripts/reset-prod-voels-consumer.ts",
     "seed:prod-role-canaries": "npx tsx scripts/seed-prod-role-canaries.ts",
+    "seed:prod-export-markers": "npx tsx scripts/seed-prod-export-markers.ts",
     "seed:prod-advisor-firm": "npx tsx scripts/seed-prod-advisor-firm.ts",
     "track2:prod-link-handcheck": "npx tsx scripts/track2-prod-link-handcheck.ts",
     "audit:prod-foreign-canary-target": "npx tsx scripts/audit-prod-foreign-canary-target.ts",
