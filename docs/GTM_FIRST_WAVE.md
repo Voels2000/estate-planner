@@ -109,7 +109,13 @@ await stripe.promotionCodes.create({
 
 **Checkout wiring:** all three subscription checkout routes set `allow_promotion_codes: true` on the Checkout Session — consumer via `processConsumerCheckout`, plus `/api/stripe/attorney-checkout` and `/api/stripe/firm-checkout`. Founding members enter **FOUNDINGATTORNEY** / **FOUNDINGADVISOR** / **FOUNDINGCONSUMER** at checkout on ruling day.
 
-> Create the promo codes with `active: false` and flip them to `active: true` on launch day, so a leaked code can't be redeemed before B&O clears.
+**Why open code entry, not hardcoded discounts:** one mechanism serves all three personas and all founding routes; promo logic stays in Stripe, not app code; no route change if you add a code later. **Trade-off (awareness, not a fix):** `allow_promotion_codes: true` accepts any active Stripe promotion code — per-persona enforcement now rests entirely on **product-scoped coupons** (`applies_to.products` blocks cross-persona use) plus `max_redemptions` caps. That is why three product-restricted coupons are load-bearing, not optional polish.
+
+> Create promo codes with **`active: false`** — non-negotiable. A leaked code is harmless until B&O clears; flip to `active: true` on ruling day only.
+
+**Pre-go-live verification (after create, before flip):** in Stripe **test mode**, run one test redemption per code — confirm **FOUNDINGCONSUMER** is **rejected** on an advisor/attorney price and **accepted** on a consumer price (and likewise for the other two codes on their scoped products). One-minute check that `applies_to` actually blocks cross-persona use; the failure mode otherwise only surfaces when a consumer quietly redeems the advisor rate.
+
+**Ruling-day order:** merge docs → `npm run verify:founding-codes` → create three product-scoped coupons + promo codes (`active: false`) → test-mode redemption check above → on B&O clear: flip codes `active: true` → conversion emails → `PUBLIC_SIGNUP_OPEN=true`.
 
 ---
 
@@ -293,7 +299,7 @@ Run rules: reply in the **same thread** (subject becomes `Re:`). Stop the moment
 | **Now — week 1** | Clear the two consumer compliance gates (copy review + MHMD) so consumer pilots are unblocked. |
 | **Weeks 1–2** | As advisors say yes, onboard them free; have them invite 1–3 client households each. Onboard your 5–10 direct consumer pilots. |
 | **Ongoing** | [4-touch follow-up cadence](#four-touch-follow-up-cadence-bucket-12) (Day 0 / 6 / 14 / 22) on non-responders. Reference early momentum in later waves ("a few Seattle EP attorneys have already come on..."). |
-| **B&O RULING CLEARS** | Configure Stripe Tax. `PUBLIC_SIGNUP_OPEN=true`. Send founding members their "rate is live" conversion email. Open self-serve paid signup. |
+| **B&O RULING CLEARS** | Flip promo codes `active: true` (after test-mode `applies_to` check). Configure Stripe Tax. `PUBLIC_SIGNUP_OPEN=true`. Send [B&O-day conversion emails](#bo-day-conversion-emails-staged--fire-on-ruling-day). Open self-serve paid signup. |
 
 ---
 
@@ -308,7 +314,8 @@ Run rules: reply in the **same thread** (subject becomes `Re:`). Stop the moment
 - [ ] Invite/beta comp path tested — grants Tier 3 with **no** Stripe charge.
 - [x] Founding rate decided — **30% off, 12-month lock** (see Founding-Rate Mechanics above).
 - [x] `scripts/verify-founding-codes.mjs` in repo (run before creating codes in Stripe).
-- [ ] Founding promo codes created in Stripe (`active: false` until B&O clears).
+- [ ] Founding promo codes created in Stripe — three **product-scoped** coupons + promo codes, **`active: false`** until B&O clears (non-negotiable).
+- [ ] Test-mode redemption check — each code accepted on its persona's price, rejected cross-persona (see Founding-Rate Mechanics).
 - [ ] Consumer copy review (GRAT/Roth) cleared.
 - [ ] WA MHMD determination answered.
 - [x] Conversion emails drafted — see [B&O-Day Conversion Emails](#bo-day-conversion-emails-staged--fire-on-ruling-day).

@@ -42,7 +42,7 @@ GRAT/ROTH COPY REVIEW ─────────► Consumer sees those alerts
 - **Advisor + attorney outreach and free pilots are unblocked TODAY.** Nothing in the gate map stops them — they need only contact verification (WSBA/FINRA) and a one-line tax-caveat confirm from your accountant. This is the high-leverage move while you wait.
 - **Free consumer pilots have two gates:** the GRAT/Roth copy review and the MHMD classification. Route consumer pilots through your pilot advisors' clients so the advisor owns the relationship and these two are the only things to clear.
 - **The B&O ruling gates money, not motion.** It blocks charging WA customers (paid signup flip + pilot conversion) — not first contact, not free onboarding.
-- **MHMD classification is load-bearing twice:** it decides whether the entire MHMD delta executes, AND it's a consumer-pilot gate. Buying that counsel hour unblocks the most.
+- **MHMD classification is load-bearing twice:** it decides whether the entire MHMD delta executes, AND it's a consumer-pilot gate. **Highest-leverage unblocked action:** book that counsel hour now — it runs on counsel's clock while you send Bucket 1/2 outreach in parallel.
 
 ---
 
