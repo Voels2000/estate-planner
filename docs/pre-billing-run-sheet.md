@@ -15,11 +15,12 @@ it as permanently true without a quick re-check.
 
 ## 0. KEYSTONE — verified 2026-06-27 (restate; re-run drift check if unsure)
 
-- Prod commit: `a53bdf75` (same as `origin/main` tip at time of verification)
-- Deployed 2026-06-26 19:37 UTC, after #150 promote (`3d49ae4e`, ~2h earlier); deploy succeeded
+- Prod commit: `63df4fa8` ([#170](https://github.com/Voels2000/estate-planner/pull/170) prod smoke fixes merged to `main`)
+- Deployed after #150 promote; #170 landed 2026-06-27
 - Prod ledger contains `20260726130000_profiles_advisor_select_status_gate`
   and `20260723120000_profiles_stripe_subscription_id`
 - Migration self-recording path already fired once, in its own window (not during billing)
+- **Step 5 attested:** real-card live smoke + C-4 billing walkthrough (Al / 2026-06-27)
 
 Optional drift confirm (should show no unexpected MISSING):
 
@@ -150,12 +151,15 @@ See [prod-smoke-canary-runbook.md](./prod-smoke-canary-runbook.md) for fixture r
 
 ---
 
-## 5. LIVE BILLING RUN
+## 5. LIVE BILLING RUN — ✅ attested 2026-06-27
 
-Only after Gates A + B passed, post-deploy clean, #158 on prod + smoke banked.
+Completed after Gates A + B passed, post-deploy clean, #158/#170 on prod + smoke banked.
 
 - Revenue dashboard reads clean (canary excluded from MRR via reporting marker)
-- Watch webhook deliveries during the run for any 500s
+- Real-card checkout → webhook → subscription active verified
+- C-4 billing walkthrough complete (Al / 2026-06-27)
+
+**Re-run only if** billing code or Stripe env changes materially.
 
 ---
 
