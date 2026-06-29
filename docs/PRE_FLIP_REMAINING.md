@@ -60,31 +60,35 @@ Account is reset — log in at https://www.mywealthmaps.com/login (no new signup
 - [ ] **`UPSTASH_REDIS_*` on prod** — not set (in-memory rate limits per instance); create Upstash Redis + add to Vercel **`estate-planner`** Production, redeploy
 - [x] **`CRON_SECRET` on `estate-planner-staging`** — cron routes return 401 (not 500) when bearer wrong → secret present (attest: Al / 2026-06-29)
 
-### 5. Email & comms (non-signup)
+### 5. Email & comms (non-signup) ✅
 
-- [ ] **Deliverability** — DKIM/DMARC + Gmail/Outlook placement (transactional + drip)
-- [ ] **BCC inbox smoke** — prospect step 10 → `avoels@comcast.net` (attest: __ / __)
-- [ ] **Drip cron steps 2/3** — day 3 / day 7 on real timeline (attest: __ / __)
-- [ ] **Email aliases** — `security@`, `legal@` live (`privacy@` routed) (attest: __ / __)
+- [x] **Deliverability — DNS** — SPF + Resend DKIM + DMARC (`p=none`, rua→comcast) verified via `npm run check:email-dns` (2026-06-29)
+- [x] **Deliverability — inbox placement** — prod signup confirm + prospect intake deliver; Gmail/Outlook spot-check (attest: Al / 2026-06-29)
+- [x] **BCC inbox smoke** — prospect step 10 → `avoels@comcast.net` (to + BCC) (attest: Al / 2026-06-29)
+- [x] **Drip cron steps 2/3** — backdated staging run: `npm run verify:drip-cron` (e2e-drip step 2+3 sent, DB timestamps OK, restored) (2026-06-29)
+- [x] **Email aliases** — `security@`, `legal@`, `privacy@` forward to monitored inbox (attest: Al / 2026-06-29)
 
 ### 6. Billing edge paths (beyond happy-path smoke)
 
-- [ ] Failed-renewal / dunning behavior defined and spot-checked
-- [ ] Card-decline, cancellation, refund, proration — one path each documented or tested
+- [x] **Failed-renewal / dunning** — `invoice.payment_failed` → `past_due`, tier 0, checkout blocked; Stripe Smart Retries (Dashboard); unit gate `npm run verify:billing-edges` 80/80 (2026-06-29)
+- [x] **Cancellation** — C-4 portal cancel → webhook sync (attest: Al / 2026-06-27)
+- [x] **Refund (Plan & Export)** — refund-ack gate + fulfillment in `oneTimePurchases` unit tests (verify:billing-edges)
+- [ ] **Card-decline at checkout** — optional staging spot-check with `4000000000000002` (no prod charge)
+- [ ] **Proration** — optional staging tier change in Customer Portal (Stripe-handled; app syncs via `subscription.updated`)
 
-### 7. Security & measurement hygiene
+### 7. Security & measurement hygiene ✅
 
-- [ ] Service-role / Supabase secret not in client bundle (grep built output)
-- [ ] Security headers / CSP (HSTS, X-Frame-Options, etc.)
-- [ ] Analytics / funnel instrumentation live before flip
-- [ ] Preview `verify-env?live=1` — advisor/attorney price IDs valid in test mode
+- [x] **Service-role / Supabase secret not in client bundle** — `npm run verify:security-hygiene` (no sk_live_/whsec_ values in chunks; server env not leaked) (2026-06-29)
+- [x] **Security headers / CSP** — prod HSTS, X-Frame-Options DENY, CSP, Referrer-Policy, Permissions-Policy (verify:security-hygiene curl)
+- [x] **Analytics / funnel instrumentation** — Vercel `<Analytics />` + `POST /api/analytics/funnel` + wizard/signup/event captures (verify:security-hygiene)
+- [x] **Staging verify-env `?live=1`** — `estate-planner-staging` HTTP 200 · `liveness.stripe: LIVE_OK` · `stripe_key_mode: test` · **12/12** prices `active` incl. advisor/attorney · Supabase ref `cmzyxpxfyvdvbsykjvsg` (attest: Al / 2026-06-29)
 
 ### 8. Engineering follow-ups (lower urgency)
 
-- [ ] Monte Carlo `isMFJ` alignment with `isMFJFilingStatus()`
-- [ ] WA Regime D band attestation on prod engine (19.5% / $1.49M base) if not re-run since cutover
-- [ ] Optional Vercel housekeeping — `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if desired
-- [ ] B3b staging→main promotion remainder if any secrets/migration attestations still open ([LAUNCH § B3b](./LAUNCH.md#b3b-staging--main-promotion-pre-launch-hardening--not-the-flip))
+- [x] **Monte Carlo `isMFJ` alignment** — `run-estate-monte-carlo-async` + edge fn use `isMFJFilingStatus()` (`married_filing_jointly` alias); `npm run verify:item-8` (2026-06-29). **Deploy:** `supabase functions deploy estate-monte-carlo` on staging + prod when promoting.
+- [x] **WA Regime D band attestation** — `waRegime.spec.ts` 30/30 incl. 19.5% band + $1.49M @ $9M taxable (`npm run verify:item-8`) (2026-06-29)
+- [ ] **Optional Vercel housekeeping** — `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if desired (defer)
+- [x] **B3b staging→main** — #181 promoted to main; prod on `www.mywealthmaps.com` (2026-06-29). Re-promote only if `staging` diverges again.
 
 ### 9. CI / post-launch (park — not flip-blocking)
 
@@ -112,5 +116,11 @@ When Bucket A resolves and every item above that you care about is green:
 | Prod export markers | `npm run seed:prod-export-markers -- --confirm` |
 | Prod smoke | `npm run test:e2e:prod:smoke -- --workers=1` |
 | Post-deploy (prod, guarded) | `npm run release:post-deploy:prod-once` |
+| Email DNS (SPF/DKIM/DMARC) | `npm run check:email-dns` |
+| Drip cron steps 2/3 (staging) | `npm run verify:drip-cron` |
+| Drip schedule (DB) | `npm run verify:drip -- --email <email>` |
+| Billing edges (unit, no charges) | `npm run verify:billing-edges` |
+| Security hygiene (item 7) | `npm run verify:security-hygiene` |
+| Engineering follow-ups (item 8) | `npm run verify:item-8` |
 | Post-deploy (legacy — needs .env.local) | `npm run release:post-deploy` |
 | Canary re-seed | `npm run seed:prod-canary -- --confirm` |
