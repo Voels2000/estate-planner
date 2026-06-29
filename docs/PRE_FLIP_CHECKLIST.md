@@ -10,8 +10,8 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [PRE_FLI
 
 ## A. Hard blockers — broken product or serious exposure if skipped
 
-- ⬜ **Stripe price IDs validated in test mode** — `GET /api/admin/verify-env?live=1` on Preview (`sk_test_`) runs `prices.retrieve` for advisor/attorney `STRIPE_PRICE_*` vars (catches `No such price` before checkout). Consumer unset on preview/local skipped (legacy fallbacks).
-- ⬜ **Webhook failure visibility** — alert when a Stripe webhook fails/times out. Confirm handlers are **idempotent**.
+- ✅ **Stripe price IDs validated in test mode** — staging `verify-env?live=1` · **12/12** test prices active incl. advisor/attorney (attest: Al / 2026-06-29).
+- ✅ **Webhook failure visibility** — Sentry `captureStripeWebhookSupabaseFailure` on billing write paths (attest: Al / 2026-06-29). Idempotency table deferred post-launch.
 
 ### Pre-launch security (2026-06-17 · PR #28)
 - ✅ **Beneficiary grant tokens** — capability tokens never logged (`beneficiary-grant-actions.ts`).
@@ -19,7 +19,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [PRE_FLI
 - ✅ **Admin API MFA** — directory admin, referrals admin, terms update use `requireAdminApi()`.
 - ✅ **Introduction emails** — session-bound sender; HTML escaped; advisor id/email validated.
 - ✅ **Email capture** — 10/min/IP rate limit; raw email removed from logs.
-- ⬜ **`CRON_SECRET` on `estate-planner-staging`** — required before staging crons run (fail-closed).
+- ✅ **`CRON_SECRET` on `estate-planner-staging`** — cron routes 401 on bad bearer (attest: Al / 2026-06-29).
 - ⬜ **`UPSTASH_REDIS_*` in prod** — recommended for durable email-capture rate limits across instances.
 
 ### Data integrity & isolation (on PROD, not just staging)
@@ -28,15 +28,15 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [PRE_FLI
 - ✅ **FOR ALL-to-public write leaks closed** — `estate_health_scores`, `household_alerts`, `beneficiary_conflicts` (integrity + availability, not read-only). Pre-launch; zero production customer rows affected ([DECISION_LOG](./DECISION_LOG.md)).
 - ✅ **Apply RLS migrations on prod** (2026-06-15) — in order: `20260713130000` → `20260713140000` → `20260713150000`. `assert-rls-coverage` → **0 rows** on prod.
 - ✅ **`verify:rls` on prod** — **27/27** (2 SQL + 25 JWT): `sql_invariants` + `rls_coverage_gate` PASS; full 21-table household JWT matrix PASS. Re-run after any policy migration: `npm run verify:rls -- --require-sql`.
-- ⬜ **PITR / backups confirmed ON before real data exists** — Supabase PITR enabled, retention known, written rollback path for bad prod migration.
+- 🔄 **PITR / backups confirmed ON before real data exists** — PITR **enabled in Dashboard + Small plan upgrade** (Al / 2026-06-29); `WALG=true`; **`pitr_enabled` propagating** — `npm run check:pitr-prod` until exit 0. Rollback path: [DEPLOYMENT §10](./DEPLOYMENT.md#10-production-backups-and-pitr-pre-flip-gate).
 
 ### Signup correctness (on PROD)
 - [x] **Prod Supabase SMTP sender** — Authentication → Email → SMTP: Sender name = **My Wealth Maps**; Sender email = **noreply@mywealthmaps.com**. Resend activity log **200** on prod signup confirmation (attest: Al / 2026-06-27).
 - ✅ **Waitlist hardening (staging §10)** — Layer 0 on prod + staging. Code on `main` (PR #25). **§10 matrix 6/6 PASS** on `https://estate-planner-staging.vercel.app` (2026-06-16) — [WAITLIST_HARDENING_SPEC §10 attestation](./WAITLIST_HARDENING_SPEC.md#10-attestation--closed-2026-06-16).
-- ⬜ **`verify-env` prod gates** — `GET /api/admin/verify-env?live=1` on production must show **CRITICAL** if `SIGNUP_SKIP_EMAIL_CONFIRM` is set (auto-confirms self-serve signups); `PUBLIC_SIGNUP_OPEN` must be `false` until flip.
+- ✅ **`verify-env` prod gates** — `PUBLIC_SIGNUP_OPEN=false`, no skip-email-confirm, MFA on, 12/12 prices, `LIVE_OK` (attest: Al / 2026-06-29). Expect **CRITICAL** `PITR_BACKUP_HEALTH` until propagation completes.
 - ✅ **Open-consumer email confirm (staging)** — Probe 1: `201` + `needsEmailConfirmation: true`, no session cookie (`delivered@resend.dev`). **Delivery:** server `sendSignupConfirmationEmail` after `createUser` (fix 2026-06-24 — admin API does not send mail). **Prod:** verify at flip with fresh email.
-- 🔄 **`handle_new_user` / signup defaults verified on prod** — `avoels@outlook.com` reset to `subscription_status='none'`, `consumer_tier=1` via `npm run reset:prod-voels-consumer -- --confirm` (2026-06-27). Re-walk onboarding via login (no fresh signup required).
-- ⬜ **Apply WA estate migrations on prod** — Regime D + CST parity in timestamp order (`20260613120000`, `20260613130000`, `20260613140000`) if not already applied.
+- ✅ **`handle_new_user` / signup defaults verified on prod** — login re-walk on `avoels@outlook.com`: wizard + checkout (attest: Al / 2026-06-29). Fresh-email signup deferred to AT-FLIP.
+- ✅ **Apply WA estate migrations on prod** — Regime D + CST parity applied in tier cutover §D step 1 (attest: Al / 2026-06-25).
 
 ### Observability
 - ✅ **Error monitoring live** (Sentry) — error-only, `sendDefaultPii: false`, tunnel `/monitoring`; preview event confirmed in Sentry dashboard; `SENTRY_AUTH_TOKEN` on both Vercel projects; per-DSN rate limit 150/12h (attest: Al / 2026-06-17 · [PR #29](https://github.com/Voels2000/estate-planner/pull/29) merged to staging).
@@ -47,7 +47,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [PRE_FLI
 - ✅ **Privacy policy published** — live at `/privacy` and linked at signup (engineering draft #60).
 - ✅ **"Not tax / legal / financial advice" disclaimers** beyond WA — household alerts passed; ToS §10/§11 counsel **TODO at first-state nexus** (not active pre-flip).
 - ✅ **Household-alert copy (all six `estate_*` alerts)** — counsel review **complete — passed** for advice-vs-fact framing (attest: Al / 2026-06-19). Impl merged #51; gate on [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax).
-- ⬜ **`PUBLIC_SIGNUP_OPEN=false`** until intentional flip; **`REQUIRE_PRIVILEGED_MFA=true`** confirmed in Vercel prod.
+- ✅ **`PUBLIC_SIGNUP_OPEN=false`** until intentional flip; **`REQUIRE_PRIVILEGED_MFA=true`** confirmed via `verify-env?live=1` (attest: Al / 2026-06-29).
 
 ---
 
@@ -60,7 +60,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [PRE_FLI
 
 ### Billing depth (beyond the happy path)
 - ✅ **C-4 billing walkthrough on prod** (B5) — attest: Al / 2026-06-27.
-- ⬜ **Failed-renewal / dunning, card-decline, cancellation, refund, proration** — confirm defined behavior per path.
+- ✅ **Failed-renewal / dunning, cancellation, refund** — `npm run verify:billing-edges` 80/80 + C-4 attested (2026-06-27/29). Optional: staging card-decline + proration spot-check.
 
 ### WA tax — final loose ends
 - ✅ **Confirm engine uses 19.5%** in the $7M–$9M band and $9M+ base = $1,490,000 (`waRegime.spec.ts` 30/30 · `npm run verify:item-8`, 2026-06-29).
@@ -75,6 +75,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [PRE_FLI
 ### Security hygiene
 - ✅ **Service-role / Supabase secret not in client bundle** — `npm run verify:security-hygiene` (2026-06-29).
 - ✅ **Security headers / CSP** — prod attested via verify:security-hygiene (2026-06-29).
+- ✅ **`public` RPC `search_path` pinned** — migration `20260729120000` applied staging + prod · [#184](https://github.com/Voels2000/estate-planner/pull/184) · [#185](https://github.com/Voels2000/estate-planner/pull/185) (2026-06-29).
 
 ### Measurement & ops
 - ✅ **Analytics / funnel instrumentation** — Vercel Analytics + funnel API + capture hooks (verify:security-hygiene, 2026-06-29).
@@ -134,7 +135,7 @@ DROP TABLE IF EXISTS public.one_time_purchases;
      Three-account resolver: canary tier 3 · avoels superuser+consumer tier 3 (post-#134) · david tier 1
      Canary browser sign-in → dashboard (2026-06-25)
      Stripe account guard live (sk_live_ + correct account)
-     [ ] npm run release:post-deploy (Voels + RLS) — not attested post-cutover
+     [x] npm run release:post-deploy:prod-once (Voels 8/8 + RLS) — attested Al / 2026-06-27
      PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke
        (resolver/gate/boundary; no automated live charge)
 5. [x] Real-card live smoke (smallest tier, refund/cancel after) + C-4 billing walkthrough

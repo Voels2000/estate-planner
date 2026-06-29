@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-26 (Profiles advisor SELECT status gate)
+# Last updated: 2026-06-29 (public function search_path batch)
+
+---
+
+## Public RPC `search_path` batch fix (2026-06-29)
+
+**Problem.** Supabase Security Advisor flagged ~29 legacy `public` functions without pinned `search_path` (`function_search_path_mutable`) — search-path hijacking risk on SECURITY DEFINER / unqualified references.
+
+**Decision.** Single idempotent migration `20260729120000_public_function_search_path.sql` — `ALTER FUNCTION … SET search_path = public` on 28 app-owned functions. Skip `public.moddatetime()` (Supabase extension owner `supabase_admin`; pooler cannot ALTER). Platform schemas (`auth`, `storage`, `realtime`, `extensions`) left untouched.
+
+**Apply order:** staging + prod DBs before/with doc record on main. Ledger via `apply-migration.sh`.
+
+**Verify:** Security Advisor rerun — `public` warnings ~29 → 1. No app behavior change expected.
+
+**Shipped:** #184 → staging · #185 → main.
 
 ---
 
