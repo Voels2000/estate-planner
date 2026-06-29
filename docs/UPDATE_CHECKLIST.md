@@ -92,6 +92,24 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (privacy rights, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`, `docs/legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Pre-flip master doc sync (2026-06-29)
+
+- [x] **PRE_FLIP_REMAINING** — items 3–8 attested; PITR propagating; search_path #184/#185; quick commands incl. `check:pitr-prod`
+- [x] **PRE_FLIP_CHECKLIST** — reconcile stale ⬜ (webhook, CRON staging, verify-env, signup re-walk, billing edges, search_path)
+- [x] **LAUNCH.md** — scoreboard 52/55; B3b promotion attests; last updated
+- [x] **NEXT_SESSION.md** — current handoff + paste block
+- [x] **SCHEMA_CHANGELOG** — `20260729120000_public_function_search_path.sql`
+- [x] **DECISION_LOG** — search_path batch decision
+- [x] **Webhook alerting remainder** — closed via #34 track (all billing write paths capture failures)
+- [x] **Launch / GTM planning set** — `LAUNCH_START_HERE.md` · `GTM_FIRST_WAVE.md` · `POST_LAUNCH_REMAINING.md` · `MHMD_COMPLIANCE_DELTA.md` (cross-links from LAUNCH / NEXT_SESSION / PRE_FLIP_REMAINING)
+
+## Pre-flaunch verify scripts items 5–8 (2026-06-29) — shipped
+
+- [x] `npm run check:email-dns` · `verify:drip-cron` · `verify:billing-edges` · `verify:security-hygiene` · `verify:item-8`
+- [x] MC MFJ + WA Regime D unit gates · edge fn deploy attested
+- [x] **Docs** — PRE_FLIP_REMAINING · PRE_FLIP_CHECKLIST · LAUNCH · NEXT_SESSION
+- [x] **Shipped:** [#182](https://github.com/Voels2000/estate-planner/pull/182) → staging · [#183](https://github.com/Voels2000/estate-planner/pull/183) → main
+
 ## Pre-launch hardening batch (PRs #28–#39) — on staging (2026-06-18)
 
 - [x] **#28** — fail-closed cron/internal auth; admin MFA routes; introduce + email-capture hardening
@@ -99,7 +117,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **#30** — cross-household isolation in `e2e-smoke` CI (20 tests)
 - [x] **#31** — doc reconciliation (Sentry/CI status markers)
 - [x] **#32** — Stripe webhook failure → Sentry
-- [ ] **Webhook alerting remainder** — `captureStripeWebhookSupabaseFailure` on `subscription.deleted` / `subscription.updated` / `invoice.payment_failed` silent writes (pre-flip Tier 1 #4)
+- [x] **Webhook alerting remainder** — all billing Supabase write paths use `captureStripeWebhookSupabaseFailure` (2026-06-29)
 - [ ] **Post-launch:** cron drip correctness — **pre-flip PR** `fix/cron-drip-correctness` (launch-critical; was logged deferred)
 - [x] **#34** — `trackTierUpgrade` only after successful profile write
 - [x] **#35** — `requireRecomputeAuth` fail-closed (`RECOMPUTE_SECRET`); unit + E2E auth specs
@@ -108,7 +126,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **#38** — [NOTIFICATION_HYGIENE.md](./NOTIFICATION_HYGIENE.md)
 - [x] **#39** — [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) + master-doc cross-links (15 files)
 - [x] **Signup confirmation email (PR #111)** — branded Resend + prefetch-safe `/auth/confirm` button POST (`generateLink` + `sendSignupConfirmationEmail`); supersedes `/auth/v1/resend`-only fix. Docs: MASTER_ARCHITECTURE, DECISION_LOG, WAITLIST_HARDENING_SPEC, STAGING_PROJECT_RUNBOOK, PRE_FLIP_CHECKLIST, CONSUMER_FLOWS, SCHEMA_CHANGELOG.
-- [ ] **Prod promote** — open staging→`main` PR; follow promotion runbook (secrets, migration verify, passive post-deploy smoke)
+- [x] **Prod promote** — #181 · #183 · #185 staging→main on green CI (2026-06-29)
 
 ## Consumer billing capability matrix (2026-06-24) — shipped
 
