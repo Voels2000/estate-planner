@@ -112,6 +112,12 @@ export const ENV_MANIFEST: EnvVarEntry[] = [
     secret: true,
     shape: { local: SUPABASE_SERVICE_ROLE, preview: SUPABASE_SERVICE_ROLE, production: SUPABASE_SERVICE_ROLE },
   }),
+  entry('SUPABASE_ACCESS_TOKEN', {
+    scopes: ALL_SCOPES,
+    requiredInScopes: [],
+    warnIfMissingInScopes: ['production'],
+    secret: true,
+  }),
 
   // --- Stripe secrets ---
   entry('STRIPE_SECRET_KEY', {
@@ -286,12 +292,14 @@ export const ENV_MANIFEST: EnvVarEntry[] = [
   entry('UPSTASH_REDIS_REST_URL', {
     scopes: ALL_SCOPES,
     requiredInScopes: [],
+    warnIfMissingInScopes: ['production'],
     secret: false,
     shape: { preview: HTTPS, production: HTTPS },
   }),
   entry('UPSTASH_REDIS_REST_TOKEN', {
     scopes: ALL_SCOPES,
     requiredInScopes: [],
+    warnIfMissingInScopes: ['production'],
     secret: true,
   }),
 
