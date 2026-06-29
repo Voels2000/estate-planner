@@ -45,7 +45,7 @@ npm run seed:prod-export-markers -- --confirm
 PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- --workers=1
 ```
 
-Expected post-#170: **31 passed · 3 advisory skips · 0 failed**.
+Expected post-#170: **34 passed · 0 skipped · 0 failed** (with owner UUIDs + webhook secret in `.env.test.production`).
 
 **Step 1 is largely done.** The seed scripts stopping short of links/subscriptions is
 correct design — the safety-sensitive work starts at Step 2 below.

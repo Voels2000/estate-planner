@@ -10,6 +10,7 @@ import {
   PRODUCTION_ACK_VAR,
   PRODUCTION_SUPABASE_PROJECT_REF,
   STAGING_SUPABASE_PROJECT_REF,
+  assertPlaywrightEnvGuard,
   assertStagingMoneyPathGuard,
   assertStripeAccountGuard,
   runPlaywrightStartupGuards,
@@ -60,6 +61,28 @@ test.describe('stripe guard call sites (PR-A seams)', () => {
       if (value === undefined) delete process.env[key]
       else process.env[key] = value
     }
+  })
+
+  test('production smoke rejects staging .test identity fallback', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'stripe-guard-callsite-'))
+    process.chdir(tempDir)
+    delete process.env.PLAYWRIGHT_SKIP_ENV_GUARD
+    productionEnvForGuard()
+    writeFileSync(
+      '.env.test.production',
+      `${PRODUCTION_ACK_VAR}=yes\nPLAYWRIGHT_CONSUMER_EMAIL=canary-consumer@mywealthmaps.com\n`,
+    )
+    process.env.PLAYWRIGHT_CONSUMER_EMAIL = 'e2e-consumer@mywealthmaps.test'
+    process.env.PLAYWRIGHT_CONSUMER_PASSWORD = 'test-password-12'
+    process.env.PLAYWRIGHT_ADVISOR_EMAIL = 'canary-advisor@mywealthmaps.com'
+    process.env.PLAYWRIGHT_ADVISOR_PASSWORD = 'test-password-12'
+    process.env.PLAYWRIGHT_ADVISOR_EMPTY_EMAIL = 'canary-advisor-empty@mywealthmaps.com'
+    process.env.PLAYWRIGHT_ADVISOR_EMPTY_PASSWORD = 'test-password-12'
+    process.env.PLAYWRIGHT_ADVISOR_CLIENT_EMAIL = 'canary-advisor-client@mywealthmaps.com'
+    process.env.PLAYWRIGHT_HOUSEHOLD_ID = '19743472-0000-4000-8000-000000000001'
+    process.env.PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID = '8d469266-0000-4000-8000-000000000001'
+
+    expect(() => assertPlaywrightEnvGuard()).toThrow(/@mywealthmaps\.com canaries/)
   })
 
   test('seam 1: production shell sk_live_ fails at runPlaywrightStartupGuards before strip', async () => {

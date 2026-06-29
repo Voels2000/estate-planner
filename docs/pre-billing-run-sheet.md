@@ -172,6 +172,14 @@ Completed after Gates A + B passed, post-deploy clean, #158/#170 on prod + smoke
 - **#157 parallel restructure** — open only after the #159 soak concludes, so a red
   run is unambiguously restructure-vs-retry.
 
+**CI workflow validation gap (merged ≠ main-gate validated):** Changes to
+`.github/workflows/e2e-smoke.yml` (or scripts it invokes) can merge to **`staging`**
+without ever running that gate — `e2e-smoke.yml` triggers only on PRs to **`main`**.
+Staging-green therefore does not prove the main-branch e2e graph. A promote PR is the
+first time the modified workflow is exercised. Same class as the billing-deploy check:
+assume nothing until the gate that matters has run. Fix (workflow self-proof before
+merge) is #159 territory — do not revert parallel CI on staging mid-soak.
+
 ---
 
 ### One-line gate summary
