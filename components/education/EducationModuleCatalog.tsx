@@ -66,17 +66,29 @@ export default function EducationModuleCatalog({
 
   useEffect(() => {
     let mounted = true
-    void fetchCompletedModules().then((set) => {
-      if (!mounted) return
-      setCompleted(set)
-    })
-    void fetchCompletedEntries().then((entries) => {
-      if (!mounted) return
-      setRecentCompleted(entries.slice(0, 3))
-    })
+    void fetchCompletedModules()
+      .then((set) => {
+        if (!mounted) return
+        setCompleted(set)
+      })
+      .catch(() => {})
+    void fetchCompletedEntries()
+      .then((entries) => {
+        if (!mounted) return
+        setRecentCompleted(entries.slice(0, 3))
+      })
+      .catch(() => {})
     const onProgressChanged = () => {
-      void fetchCompletedModules().then((set) => setCompleted(set))
-      void fetchCompletedEntries().then((entries) => setRecentCompleted(entries.slice(0, 3)))
+      void fetchCompletedModules()
+        .then((set) => {
+          if (mounted) setCompleted(set)
+        })
+        .catch(() => {})
+      void fetchCompletedEntries()
+        .then((entries) => {
+          if (mounted) setRecentCompleted(entries.slice(0, 3))
+        })
+        .catch(() => {})
     }
     window.addEventListener('education-progress-updated', onProgressChanged)
     return () => {
