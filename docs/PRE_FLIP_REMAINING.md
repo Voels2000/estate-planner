@@ -4,7 +4,7 @@
 **Purpose:** Ordered items to work through one-by-one while waiting on the WA B&O ruling.  
 **Not on this list:** Bucket A (B&O / Stripe Tax / ToS tax branch) · counsel ToS §10/§11 + privacy redline (TODO when revenue approaches first-state nexus) · fresh-email signup validation (AT-FLIP only — login re-walk on `avoels@outlook.com` attested sufficient pre-flip).
 
-**Canonical scoreboard:** [LAUNCH.md](./LAUNCH.md) · [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md)
+**Canonical scoreboard:** [LAUNCH.md](./LAUNCH.md) · [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) · **GTM / post-flip planning:** [LAUNCH_START_HERE.md](./LAUNCH_START_HERE.md)
 
 ---
 

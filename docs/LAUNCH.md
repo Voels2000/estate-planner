@@ -21,7 +21,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 **Working tracker (manual attestations):** [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) — browser UI at `tools/launch-tracker.html` (`npm run launch:tracker`); sync to this file via `npm run sync:launch-tracker`.
 
-**Step-off list (while B&O pending):** [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md)
+**Step-off list (while B&O pending):** [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) · **GTM / post-flip planning:** [LAUNCH_START_HERE.md](./LAUNCH_START_HERE.md)
 
 **Migrations before flip:** per-environment pairing — apply on staging before staging deploy, on production before/at production deploy (not both at staging-merge time). See [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift) and `bash scripts/apply-migration.sh staging|production …`. Vercel does not run migrations.
 

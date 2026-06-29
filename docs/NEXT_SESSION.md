@@ -6,7 +6,9 @@
 
 ## Start here
 
-**Working list:** [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) — pre-flip engineering largely complete; **wait on PITR propagation + Upstash + B&O**.
+**Pre-flip engineering:** [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) — PITR propagation + Upstash + B&O block the flip.
+
+**GTM while waiting:** [LAUNCH_START_HERE.md](./LAUNCH_START_HERE.md) — advisor/attorney outreach unblocked now; consumer pilots gated on MHMD + GRAT/Roth.
 
 **Blocked on external:** WA B&O / DAS ruling (Bucket A) — do **not** set `PUBLIC_SIGNUP_OPEN=true` until cleared.
 
@@ -51,7 +53,11 @@
 |-----|------|
 | [LAUNCH.md](./LAUNCH.md) | Single source of truth / Bucket A–C |
 | [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) | Consolidated hard vs should-clear |
-| [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) | **Ordered step-off list** |
+| [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) | **Ordered pre-flip step-off list** |
+| [LAUNCH_START_HERE.md](./LAUNCH_START_HERE.md) | Gate map + GTM / post-flip doc index |
+| [GTM_FIRST_WAVE.md](./GTM_FIRST_WAVE.md) | First-wave outreach + founding-member pilots |
+| [POST_LAUNCH_REMAINING.md](./POST_LAUNCH_REMAINING.md) | Post-flip deferred backlog (P0–P3) |
+| [MHMD_COMPLIANCE_DELTA.md](./MHMD_COMPLIANCE_DELTA.md) | WA MHMD compliance (conditional on counsel) |
 | [pre-billing-run-sheet.md](./pre-billing-run-sheet.md) | Gates A/B + billing attestation |
 | [prod-smoke-canary-runbook.md](./prod-smoke-canary-runbook.md) | Prod canary + isolation |
 | [ROADMAP.md](./ROADMAP.md) | Shipped history |

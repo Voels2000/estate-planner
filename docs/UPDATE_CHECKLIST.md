@@ -101,6 +101,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **SCHEMA_CHANGELOG** — `20260729120000_public_function_search_path.sql`
 - [x] **DECISION_LOG** — search_path batch decision
 - [x] **Webhook alerting remainder** — closed via #34 track (all billing write paths capture failures)
+- [x] **Launch / GTM planning set** — `LAUNCH_START_HERE.md` · `GTM_FIRST_WAVE.md` · `POST_LAUNCH_REMAINING.md` · `MHMD_COMPLIANCE_DELTA.md` (cross-links from LAUNCH / NEXT_SESSION / PRE_FLIP_REMAINING)
 
 ## Pre-flaunch verify scripts items 5–8 (2026-06-29) — shipped
 
