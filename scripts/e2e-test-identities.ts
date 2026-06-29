@@ -190,6 +190,8 @@ export function buildEnvTestFileLines(opts: {
   householdId: string
   advisorClientHouseholdId?: string
   consumerLinkHouseholdId?: string
+  advisorUserId?: string
+  consumerLinkUserId?: string
   supabaseServiceRoleKey?: string
   supabaseAnonKey?: string
 }): string {
@@ -248,6 +250,12 @@ export function buildEnvTestFileLines(opts: {
       '',
       `PLAYWRIGHT_CONSUMER_LINK_HOUSEHOLD_ID=${opts.consumerLinkHouseholdId}`,
     )
+  }
+  if (opts.advisorUserId) {
+    lines.push('', `PLAYWRIGHT_ADVISOR_USER_ID=${opts.advisorUserId}`)
+  }
+  if (opts.consumerLinkUserId) {
+    lines.push(`PLAYWRIGHT_CONSUMER_LINK_USER_ID=${opts.consumerLinkUserId}`)
   }
   if (opts.supabaseAnonKey) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL

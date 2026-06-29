@@ -4,7 +4,7 @@ Status key: ✅ done · 🔄 partial / verify · ⬜ open · 🌐 external depen
 
 The flip action is a single env change (`PUBLIC_SIGNUP_OPEN=true`). Everything below is what should be true *before* that change.
 
-Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISION_LOG.md](./DECISION_LOG.md) (pre-launch FOR ALL RLS timeline) · [NEGATIVE_AUTHZ_TEST_PLAN.md](./NEGATIVE_AUTHZ_TEST_PLAN.md) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) (staging→main hardening batch).
+Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) (ordered step-off list) · [DECISION_LOG.md](./DECISION_LOG.md) (pre-launch FOR ALL RLS timeline) · [NEGATIVE_AUTHZ_TEST_PLAN.md](./NEGATIVE_AUTHZ_TEST_PLAN.md) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) (staging→main hardening batch).
 
 ---
 
@@ -31,21 +31,21 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - ⬜ **PITR / backups confirmed ON before real data exists** — Supabase PITR enabled, retention known, written rollback path for bad prod migration.
 
 ### Signup correctness (on PROD)
-- ⬜ **Prod Supabase SMTP sender** — Authentication → Email → SMTP: Sender name = **My Wealth Maps** (name only); Sender email = **noreply@mywealthmaps.com** (no doubled-from / 422). Verify with a fresh signup confirmation: Resend activity log shows **200** delivery.
+- [x] **Prod Supabase SMTP sender** — Authentication → Email → SMTP: Sender name = **My Wealth Maps**; Sender email = **noreply@mywealthmaps.com**. Resend activity log **200** on prod signup confirmation (attest: Al / 2026-06-27).
 - ✅ **Waitlist hardening (staging §10)** — Layer 0 on prod + staging. Code on `main` (PR #25). **§10 matrix 6/6 PASS** on `https://estate-planner-staging.vercel.app` (2026-06-16) — [WAITLIST_HARDENING_SPEC §10 attestation](./WAITLIST_HARDENING_SPEC.md#10-attestation--closed-2026-06-16).
 - ⬜ **`verify-env` prod gates** — `GET /api/admin/verify-env?live=1` on production must show **CRITICAL** if `SIGNUP_SKIP_EMAIL_CONFIRM` is set (auto-confirms self-serve signups); `PUBLIC_SIGNUP_OPEN` must be `false` until flip.
 - ✅ **Open-consumer email confirm (staging)** — Probe 1: `201` + `needsEmailConfirmation: true`, no session cookie (`delivered@resend.dev`). **Delivery:** server `sendSignupConfirmationEmail` after `createUser` (fix 2026-06-24 — admin API does not send mail). **Prod:** verify at flip with fresh email.
-- 🔄 **`handle_new_user` / signup defaults verified on prod** — fresh signup → `subscription_status='none'`, `consumer_tier=1`. (B8)
+- 🔄 **`handle_new_user` / signup defaults verified on prod** — `avoels@outlook.com` reset to `subscription_status='none'`, `consumer_tier=1` via `npm run reset:prod-voels-consumer -- --confirm` (2026-06-27). Re-walk onboarding via login (no fresh signup required).
 - ⬜ **Apply WA estate migrations on prod** — Regime D + CST parity in timestamp order (`20260613120000`, `20260613130000`, `20260613140000`) if not already applied.
 
 ### Observability
 - ✅ **Error monitoring live** (Sentry) — error-only, `sendDefaultPii: false`, tunnel `/monitoring`; preview event confirmed in Sentry dashboard; `SENTRY_AUTH_TOKEN` on both Vercel projects; per-DSN rate limit 150/12h (attest: Al / 2026-06-17 · [PR #29](https://github.com/Voels2000/estate-planner/pull/29) merged to staging).
 - ✅ **`SENTRY_AUTH_TOKEN` verify-env REVIEW flag** — build-time source-map upload only; **keep on Vercel** (do not delete). `verify-env?live=1` REVIEW is expected (not in runtime manifest); no further action (attest: Al / 2026-06-21).
 
-### Legal / disclaimers (confirm with counsel)
+### Legal / disclaimers
 - ✅ **WA estate-tax disclaimers** — consumer page, advisor panel, PDF (date-stamped, no-portability, snapshot caveat).
-- ✅ **Privacy policy published** — live at `/privacy` and linked at signup (engineering draft #60; counsel redline **post-go-live**).
-- 🔄 **"Not tax / legal / financial advice" disclaimers** beyond WA — household alerts passed; ToS §10/§11 counsel **post-go-live** (revenue approaching first-state nexus).
+- ✅ **Privacy policy published** — live at `/privacy` and linked at signup (engineering draft #60).
+- ✅ **"Not tax / legal / financial advice" disclaimers** beyond WA — household alerts passed; ToS §10/§11 counsel **TODO at first-state nexus** (not active pre-flip).
 - ✅ **Household-alert copy (all six `estate_*` alerts)** — counsel review **complete — passed** for advice-vs-fact framing (attest: Al / 2026-06-19). Impl merged #51; gate on [LAUNCH.md § B6](./LAUNCH.md#b6-legal--entity-ops-attested-ex-tax).
 - ⬜ **`PUBLIC_SIGNUP_OPEN=false`** until intentional flip; **`REQUIRE_PRIVILEGED_MFA=true`** confirmed in Vercel prod.
 
@@ -58,7 +58,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - ⬜ **BCC inbox smoke** (B4) and **drip cron steps 2/3** on a real timeline (B4).
 
 ### Billing depth (beyond the happy path)
-- 🔄 **C-4 billing walkthrough on prod** (B5).
+- ✅ **C-4 billing walkthrough on prod** (B5) — attest: Al / 2026-06-27.
 - ⬜ **Failed-renewal / dunning, card-decline, cancellation, refund, proration** — confirm defined behavior per path.
 
 ### WA tax — final loose ends
@@ -69,7 +69,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - ✅ **`funnel_events` + `referral_clicks`** — `TO service_role` grant alignment (`20260713150000`); advisory channel empty.
 - ✅ **Revoked-link lifecycle** — E2E in `cross-household-isolation.spec.ts`.
 - ✅ **Profiles advisor SELECT status gate** — `20260726130000` applied staging + prod (2026-06-26); post-revoke PostgREST profile leak closed; regression `advisor-profiles-revocation-rls.spec.ts` (RED pre-migration, GREEN after). [#150](https://github.com/Voels2000/estate-planner/pull/150)
-- ⬜ **Pending-link negative test** — advisor with pending (not accepted) link → estate-composition 403/404 (Track 2 link fixture #149).
+- ✅ **Pending-link negative test** — `advisor-pending-link-authz.spec.ts`: pending→active transition on `e2e-consumer-linked`; PR gate via `test:e2e:security-smoke` (5b + 5c). Staging verified 2026-06-26 (Phase 2: profile + composition 200 + export payload keys).
 
 ### Security hygiene
 - ⬜ **Service-role / Supabase secret never in client bundle** — grep built output.
@@ -84,7 +84,7 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [DECISIO
 - 🌐 **WA B&O ruling** (Bucket A, P0-external).
 - 🌐 **DOR written ruling on SaaS DAS sales-tax classification**.
 - ⬜ **Email aliases** `security@`, `legal@`, `privacy@` (B6).
-- **Post-go-live:** Counsel ToS §10/§11 + privacy redline when revenue approaches nexus in first state (Al / 2026-06-20).
+- **TODO (first-state nexus):** Counsel ToS §10/§11 + privacy redline — not active pre-flip work.
 
 ---
 
@@ -135,8 +135,9 @@ DROP TABLE IF EXISTS public.one_time_purchases;
      [ ] npm run release:post-deploy (Voels + RLS) — not attested post-cutover
      PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke
        (resolver/gate/boundary; no automated live charge)
-5. [ ] Real-card live smoke (smallest tier, refund/cancel after) + C-4 billing walkthrough
-── STOP. Cutover complete when step 5 done. Gate flip is §E. ──
+5. [x] Real-card live smoke (smallest tier, refund/cancel after) + C-4 billing walkthrough
+   (attest: Al / 2026-06-27)
+── STOP. Cutover complete. Gate flip is §E. ──
 ```
 
 ---
@@ -144,11 +145,11 @@ DROP TABLE IF EXISTS public.one_time_purchases;
 ## E. Gate flip runbook — separate day (B&O-READY + cutover §D complete)
 
 ```
-1. Every §A hard blocker green (incl. prod SMTP sender + Resend 200)
+1. Every §A hard blocker green (PITR, webhook alerting, verify-env gates)
 2. verify-env on prod (?live=1) — re-run if env changed since cutover
 3. Email: BCC smoke, drip steps 2/3, spam-placement check
 4. Confirm live: PITR/backups · error monitoring · webhook-failure alerting
-5. ── only when Bucket A (B&O) + §D cutover + real-card smoke are done ──
+5. ── only when Bucket A (B&O) + §D cutover complete ──
    PUBLIC_SIGNUP_OPEN=true → redeploy → fresh-email signup E2E smoke
    (full sequence: LAUNCH.md Bucket C Gate 2)
 ```

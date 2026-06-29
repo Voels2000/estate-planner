@@ -29,10 +29,20 @@ function upsertEnvLine(contents: string, key: string, value: string): string {
 async function main() {
   const consumerId = await fetchHouseholdIdByOwnerEmail(E2E_IDENTITIES.consumer.email)
   const advisorClientId = await fetchAdvisorClientHouseholdId()
+  const consumerLinkHouseholdId = await fetchHouseholdIdByOwnerEmail(
+    E2E_IDENTITIES.consumerLinked.email,
+  )
 
   if (!consumerId || !advisorClientId) {
     console.error(
       'Could not resolve E2E household IDs — run npm run seed:e2e on staging first.',
+    )
+    process.exit(1)
+  }
+
+  if (!consumerLinkHouseholdId) {
+    console.error(
+      'Could not resolve e2e-consumer-linked household — seed with --only=consumer-linked (or full seed:e2e).',
     )
     process.exit(1)
   }
@@ -47,21 +57,42 @@ async function main() {
 
   contents = upsertEnvLine(contents, 'PLAYWRIGHT_HOUSEHOLD_ID', consumerId)
   contents = upsertEnvLine(contents, 'PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID', advisorClientId)
-  writeFileSync(envFile, contents)
+  contents = upsertEnvLine(contents, 'PLAYWRIGHT_CONSUMER_LINK_HOUSEHOLD_ID', consumerLinkHouseholdId)
+  contents = upsertEnvLine(
+    contents,
+    'PLAYWRIGHT_CONSUMER_LINK_EMAIL',
+    E2E_IDENTITIES.consumerLinked.email,
+  )
+  contents = upsertEnvLine(
+    contents,
+    'PLAYWRIGHT_CONSUMER_LINK_PASSWORD',
+    E2E_IDENTITIES.consumerLinked.password,
+  )
 
   initSupabaseEnv()
   const advisorId = await findUserIdByEmail(E2E_IDENTITIES.advisor.email)
   const advisorClientUserId = await findUserIdByEmail(E2E_IDENTITIES.advisorClient.email)
   const tier1UserId = await findUserIdByEmail(E2E_IDENTITIES.consumerTier1.email)
+  const consumerLinkUserId = await findUserIdByEmail(E2E_IDENTITIES.consumerLinked.email)
+
   if (advisorId) {
+    contents = upsertEnvLine(contents, 'PLAYWRIGHT_ADVISOR_USER_ID', advisorId)
     await pruneStrayE2eAdvisorClientLinks(
       advisorId,
-      [advisorClientUserId, tier1UserId].filter((id): id is string => Boolean(id)),
+      [advisorClientUserId, tier1UserId, consumerLinkUserId].filter((id): id is string =>
+        Boolean(id),
+      ),
     )
   }
+  if (consumerLinkUserId) {
+    contents = upsertEnvLine(contents, 'PLAYWRIGHT_CONSUMER_LINK_USER_ID', consumerLinkUserId)
+  }
+
+  writeFileSync(envFile, contents)
 
   console.log(`[ci] PLAYWRIGHT_HOUSEHOLD_ID=${consumerId}`)
   console.log(`[ci] PLAYWRIGHT_ADVISOR_CLIENT_HOUSEHOLD_ID=${advisorClientId}`)
+  console.log(`[ci] PLAYWRIGHT_CONSUMER_LINK_HOUSEHOLD_ID=${consumerLinkHouseholdId}`)
 }
 
 main().catch((err) => {

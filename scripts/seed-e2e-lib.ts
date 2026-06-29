@@ -887,7 +887,8 @@ function supabaseProjectRef(url: string): string {
   return new URL(url).hostname.split('.')[0] ?? 'local'
 }
 
-function authCookieHeader(
+/** Cookie header for Next.js API routes from a Supabase session (E2E API calls). */
+export function buildSupabaseAuthCookieHeader(
   supabaseUrl: string,
   session: {
     access_token: string
@@ -900,6 +901,20 @@ function authCookieHeader(
 ): string {
   const payload = Buffer.from(JSON.stringify(session)).toString('base64')
   return `sb-${supabaseProjectRef(supabaseUrl)}-auth-token=base64-${payload}`
+}
+
+function authCookieHeader(
+  supabaseUrl: string,
+  session: {
+    access_token: string
+    refresh_token: string
+    expires_at?: number
+    expires_in?: number
+    token_type: string
+    user: unknown
+  },
+): string {
+  return buildSupabaseAuthCookieHeader(supabaseUrl, session)
 }
 
 /** Magic-link session for seed-time API calls (generate-base-case). */

@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-26 (cutover steps 0–4 attested; refund ack on staging; step 5 open)
+**Last updated:** 2026-06-27 (cutover step 5 + SMTP attested; #170 prod smoke; counsel deferred to nexus)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -20,6 +20,8 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 **Related (not absorbed):** [GO_LIVE_E2E.md](./GO_LIVE_E2E.md) · [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) · [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) · [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) · [ENVIRONMENT_TESTING.md](./ENVIRONMENT_TESTING.md) · [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) · [TIER_RESTRUCTURE_INDEX.md](./TIER_RESTRUCTURE_INDEX.md) (tier restructure outcomes)
 
 **Working tracker (manual attestations):** [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) — browser UI at `tools/launch-tracker.html` (`npm run launch:tracker`); sync to this file via `npm run sync:launch-tracker`.
+
+**Step-off list (while B&O pending):** [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md)
 
 **Migrations before flip:** per-environment pairing — apply on staging before staging deploy, on production before/at production deploy (not both at staging-merge time). See [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift) and `bash scripts/apply-migration.sh staging|production …`. Vercel does not run migrations.
 
@@ -46,7 +48,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 - [x] `npm run test:e2e:security-isolation` (verify: **10/10** — 2026-06-09; stray `advisor_clients` link to e2e-consumer pruned via `pruneStrayE2eAdvisorClientLinks` in seed/prune)
 - [x] `npm run test:e2e:cross-role` (verify: green — 2026-06-09; `advisor-client-setup`)
 - [x] `npm run release:post-deploy` (verify: **Voels 7/7 + RLS 3/3** — 2026-06-09; `SUPABASE_DB_URL` in `.env.local` only — Session pooler URI from Supabase **Connect → Copy**, must be `SUPABASE_DB_URL=postgresql://...`; region must match project e.g. `us-west-2`)
-- [x] `npm run test:e2e:prod:smoke -- --workers=1` (verify: **40/42 passed, 2 advisory skips** — 2026-06-09; `.env.test.prod` live `PLAYWRIGHT_ADVISOR_FIRM_*` aligned with Vercel `STRIPE_PRICE_ADVISOR_*_MONTHLY`; skips: webhook (`PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` unset) + referral 429 (in-memory limits without Upstash); `--workers=1`)
+- [x] `npm run test:e2e:prod:smoke -- --workers=1` (verify: **31 passed, 3 advisory skips, 0 failed** — 2026-06-27 post [#170](https://github.com/Voels2000/estate-planner/pull/170); pre-run `npm run seed:prod-export-markers -- --confirm`; `.env.test.prod` canaries; `--workers=1`)
 - [x] E2E environment guard in place and proven to fire (`scripts/testEnv.ts` → `tests/e2e/globalSetup.ts`). Target/env mismatch, localhost-in-remote, Supabase-ref mismatch, leaked-prod-secret, and unguarded production runs all hard-fail at `globalSetup`. `resolveE2eEmail` gated so production uses real canary credentials. Staging tier-1 billing: 3/3. Prod consumer canary auth: green. (attest: Al / 2026-06-23)
 
 ### B2. TERMS-1
@@ -133,14 +135,14 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
   - [x] **Dead vars absent** — `STRIPE_CUSTOMER_PORTAL_URL`, `RESEND_WEBHOOK_SECRET` not on Production or Preview (attest: Al / 2026-06-21 · `vercel env ls`)
   - [x] **Production vs Preview env names** — two-DB split healthy; live prices/webhook Production-only (attest: Al / 2026-06-21)
   - [x] **`PUBLIC_SIGNUP_OPEN` / `REQUIRE_PRIVILEGED_MFA` / `EMAIL_FROM`** — present on Production (`verify-env` vars OK, 2026-06-21)
-- [ ] C-4 manual walkthrough on prod: signup → checkout → active → cancel → deletion schedule — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (attest: __ / __)
-- [ ] One real-card live smoke, smallest tier, refund/cancel after verify — **proves live checkout → `checkout.session.completed` → subscription active** (attest: __ / __)
+- [x] C-4 manual walkthrough on prod: signup → checkout → active → cancel → deletion schedule — [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) (attest: Al / 2026-06-27)
+- [x] One real-card live smoke, smallest tier, refund/cancel after verify — **proves live checkout → `checkout.session.completed` → subscription active** (attest: Al / 2026-06-27)
 
 ### B6. Legal / entity (ops-attested, ex-tax)
 
 - [x] Legal placeholders in product (verify: `lib/legal/company.ts` → `/terms`, `/privacy`)
-- [ ] ~~Counsel sign-off ToS §10, §11~~ → **post-go-live** (revenue approaching nexus in first state) — attest: Al / 2026-06-20
-- [ ] ~~Counsel redline privacy policy (#60)~~ → **post-go-live** (same gate) — engineering draft live on `/privacy`; matrix Q1–Q10 deferred
+- [x] ~~Counsel sign-off ToS §10, §11~~ → **TODO at first-state nexus** (not active pre-flip) — attest: Al / 2026-06-27
+- [x] ~~Counsel redline privacy policy (#60)~~ → **TODO at first-state nexus** (same gate) — engineering draft live on `/privacy`
 - [x] **Household-alert copy counsel review** — six consumer `estate_*` alerts (`lib/alerts/estateHouseholdAlerts.ts`, merged #51): fact-not-advice voice (state user's data → name structure/observation → redirect to licensed professional). **Counsel review complete — passed.** (attest: Al / 2026-06-19)
 - [x] WA LLC UBI / EIN / registered agent confirmed on SOS (attest: __ / __)
 - [x] Business bank account open (attest: __ / __)
@@ -250,7 +252,7 @@ SELECT refund_ack_at, refund_ack_version FROM one_time_purchases LIMIT 1;  -- mu
 | **2** Schema gate on prod | ✅ | `trial_ends_at` / `one_time_purchases` queries pass (Al / 2026-06-25) |
 | **3** Promote → deploy | ✅ | [PR #130](https://github.com/Voels2000/estate-planner/pull/130) → `main`; CI quartet green; Vercel prod deploy not skipped (Al / 2026-06-25) |
 | **4** Post-deploy verify | ✅ (partial) | Resolver + canary browser + `verify-env` below; **`release:post-deploy` not attested** |
-| **5** Live-money smoke | ⬜ | Follow [pre-billing-run-sheet.md](./pre-billing-run-sheet.md) first (Gates A/B, #158, prod smoke bank); then real-card + C-4 billing walkthrough |
+| **5** Live-money smoke | ✅ | Real-card + C-4 billing walkthrough (Al / 2026-06-27) · [pre-billing-run-sheet §5](./pre-billing-run-sheet.md#5-live-billing-run) |
 
 **Step 4 attestation detail (Al / 2026-06-25–26):**
 - `GET /api/admin/verify-env?live=1` → `missing: []`, `LIVE_OK`, **12/12** prices active
@@ -423,23 +425,23 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 
 ---
 
-## Launch status scoreboard (2026-06-15)
+## Launch status scoreboard (2026-06-27)
 
-**Bucket B:** **45 of 55** checked (10 open).
+**Bucket B:** **50 of 55** checked (5 open) — see [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) for ordered step-off list.
 
-**Done since 2026-06-14:** B4 app-logic automated (PR #12) · stale-score UI · B5 live `verify-env?live=1` + webhook delivery + webhook-event verifier (PR #15) · `lifetime_exemption_summary` IDOR closed on staging + prod (PR #16).
+**Done since 2026-06-25:** cutover step 5 (real-card + C-4) · prod SMTP · #170 prod smoke (31/31 executable) · counsel deferred to first-state nexus.
 
 **Launch blockers (pre-flip):** consolidated checklist → [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md).
 
 | Priority | Item | Bucket |
 |----------|------|--------|
-| **P0** | One real-card live smoke (checkout → `checkout.session.completed` → subscription active) | B5 |
 | **P0** | WA B&O / DAS ruling | A |
-| **P1** | C-4 billing walkthrough on prod | B5 |
+| **P1** | `release:post-deploy` attestation post-cutover | B1 |
+| **P1** | PITR / backups ON before real customers | B7 / PRE_FLIP §A |
 | **P1** | Email aliases (`security@`, `legal@`) | B6 |
-| **Post-go-live** | Counsel ToS §10/§11 + privacy redline (first-state nexus / revenue) | B6 / Bucket D |
-| **P2** | BCC inbox, drip cron 2/3, optional Vercel dashboard housekeeping | B4 / B5 |
-| **AT-FLIP** | Fresh prod signup smoke | B4 / C |
+| **P2** | BCC inbox, drip cron 2/3, webhook-failure alerting | B4 / B5 |
+| **TODO (nexus)** | Counsel ToS §10/§11 + privacy redline | deferred |
+| **AT-FLIP** | Fresh prod signup smoke (after B&O + flip) | B4 / C |
 
 ---
 

@@ -35,6 +35,17 @@ hand-made `advisor_clients` row.
 | Fixture audit | `npm run audit:prod-foreign-canary-target` | **Run first** when prod smoke fails — link + foreign target preconditions |
 | Link restore | `npm run track2:prod-link-handcheck` | Idempotent invite→accept + isolation re-proof |
 | Cleanup protection | `GO_LIVE_PROTECTED` in `scripts/cleanup-test-accounts.ts` | All `PROD_CANARY_EMAILS` protected from purge |
+| Export markers | `npm run seed:prod-export-markers -- --confirm` | Pre-seed before prod smoke when export specs need markers ([#170](https://github.com/Voels2000/estate-planner/pull/170)) |
+| Prod identity guard | `assertProductionSmokeProdIdentities()` in `scripts/testEnv.ts` | Requires `@mywealthmaps.com` canaries for consumer/advisor/advisor-empty |
+
+**Pre-smoke (prod):**
+
+```bash
+npm run seed:prod-export-markers -- --confirm
+PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- --workers=1
+```
+
+Expected post-#170: **34 passed · 0 skipped · 0 failed** (with owner UUIDs + webhook secret in `.env.test.production`).
 
 **Step 1 is largely done.** The seed scripts stopping short of links/subscriptions is
 correct design — the safety-sensitive work starts at Step 2 below.
