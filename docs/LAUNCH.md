@@ -97,8 +97,8 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 
 **Still manual (irreducible):**
 
-- [ ] Prospect step 10 — BCC inbox (`avoels@comcast.net`) (attest: __ / __)
-- [ ] Drip cron steps 2/3 (day 3 / day 7) unless backdated cron run on staging (attest: __ / __)
+- [x] Prospect step 10 — BCC inbox (`avoels@comcast.net`) (attest: Al / 2026-06-29)
+- [x] Drip cron steps 2/3 (day 3 / day 7) unless backdated cron run on staging (attest: Al / 2026-06-29 · `npm run verify:drip-cron`)
 - [ ] End-to-end fresh signup on **production URL** — AT-FLIP only (`PUBLIC_SIGNUP_OPEN=true`) (attest: __ / __)
 
 **Automated walkthroughs (staging seed + specs — PR #12 `test:e2e:b4-gate` / preflight `b4-deep`):**
@@ -147,7 +147,7 @@ Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** 
 - [x] WA LLC UBI / EIN / registered agent confirmed on SOS (attest: __ / __)
 - [x] Business bank account open (attest: __ / __)
 - [x] B&O / DOR account registered (attest: __ / __ — confirm w/ accountant OK pre-ruling)
-- [ ] Email aliases `security@`, `legal@` live (`privacy@` routed) (attest: __ / __)
+- [x] Email aliases `security@`, `legal@` live (`privacy@` routed) (attest: Al / 2026-06-29)
 
 ### B7. Database cleanup (prod one-time done; ongoing purge is staging-only)
 
@@ -438,8 +438,8 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | **P0** | WA B&O / DAS ruling | A |
 | **P1** | `release:post-deploy` attestation post-cutover | B1 |
 | **P1** | PITR / backups ON before real customers | B7 / PRE_FLIP §A |
-| **P1** | Email aliases (`security@`, `legal@`) | B6 |
-| **P2** | BCC inbox, drip cron 2/3, webhook-failure alerting | B4 / B5 |
+| **P1** | ~~Email aliases (`security@`, `legal@`)~~ ✅ | B6 |
+| **P2** | ~~BCC inbox, drip cron 2/3~~ ✅ · webhook-failure alerting ✅ | B4 / B5 |
 | **TODO (nexus)** | Counsel ToS §10/§11 + privacy redline | deferred |
 | **AT-FLIP** | Fresh prod signup smoke (after B&O + flip) | B4 / C |
 
@@ -458,6 +458,6 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 | B1 prod smoke optional passes | Set `PLAYWRIGHT_STRIPE_WEBHOOK_SECRET` (live `whsec_`) in `.env.test.prod`; enable Upstash on Vercel for 429 test |
 | B8 signup defaults on prod | Fresh signup → `subscription_status = 'none'`, `consumer_tier = 1` |
 
-**Still open — attest (Al):** B4 irreducible (BCC inbox, drip cron 2/3) + AT-FLIP fresh signup · B5 real-card smoke + C-4 walkthrough (+ optional Vercel dashboard housekeeping) · B6 counsel ToS §10/§11 + email aliases.
+**Still open — attest (Al):** AT-FLIP fresh signup · B5 optional Vercel dashboard housekeeping · B6 counsel ToS §10/§11 (deferred at nexus).
 
 **B&O/DOR note:** B6 B&O registration may be doable pre-ruling — confirm sequencing with accountant before filing.

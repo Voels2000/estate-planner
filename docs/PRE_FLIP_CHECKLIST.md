@@ -54,16 +54,17 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [PRE_FLI
 ## B. Should clear before flip — real risk if skipped, not catastrophic
 
 ### Email
-- ⬜ **Deliverability** — DKIM/DMARC + inbox placement at Gmail/Outlook (transactional + drip).
-- ⬜ **BCC inbox smoke** (B4) and **drip cron steps 2/3** on a real timeline (B4).
+- ✅ **Deliverability** — DKIM/DMARC (`npm run check:email-dns`) + prod signup confirm + prospect intake in Gmail/Outlook (attest: Al / 2026-06-29).
+- ✅ **BCC inbox smoke** (B4) — prospect step 10 to + BCC `avoels@comcast.net` (attest: Al / 2026-06-29).
+- ✅ **Drip cron steps 2/3** — `npm run verify:drip-cron` on staging (2026-06-29).
 
 ### Billing depth (beyond the happy path)
 - ✅ **C-4 billing walkthrough on prod** (B5) — attest: Al / 2026-06-27.
 - ⬜ **Failed-renewal / dunning, card-decline, cancellation, refund, proration** — confirm defined behavior per path.
 
 ### WA tax — final loose ends
-- 🔄 **Confirm engine uses 19.5%** in the $7M–$9M band and $9M+ base = $1,490,000 (Regime D attestation).
-- ⬜ **Monte Carlo `isMFJ` follow-up** — align `estate-monte-carlo` with `isMFJFilingStatus()` so MC matches projection path.
+- ✅ **Confirm engine uses 19.5%** in the $7M–$9M band and $9M+ base = $1,490,000 (`waRegime.spec.ts` 30/30 · `npm run verify:item-8`, 2026-06-29).
+- ✅ **Monte Carlo `isMFJ` follow-up** — `isMFJFilingStatus()` in async MC + edge fn (2026-06-29).
 
 ### Authz — hygiene
 - ✅ **`funnel_events` + `referral_clicks`** — `TO service_role` grant alignment (`20260713150000`); advisory channel empty.
@@ -72,18 +73,19 @@ Canonical companions: [LAUNCH.md](./LAUNCH.md) (Bucket B scoreboard) · [PRE_FLI
 - ✅ **Pending-link negative test** — `advisor-pending-link-authz.spec.ts`: pending→active transition on `e2e-consumer-linked`; PR gate via `test:e2e:security-smoke` (5b + 5c). Staging verified 2026-06-26 (Phase 2: profile + composition 200 + export payload keys).
 
 ### Security hygiene
-- ⬜ **Service-role / Supabase secret never in client bundle** — grep built output.
-- ⬜ **Security headers / CSP** (HSTS, X-Frame-Options, etc.).
+- ✅ **Service-role / Supabase secret not in client bundle** — `npm run verify:security-hygiene` (2026-06-29).
+- ✅ **Security headers / CSP** — prod attested via verify:security-hygiene (2026-06-29).
 
 ### Measurement & ops
-- ⬜ **Analytics / funnel instrumentation live** before flip.
+- ✅ **Analytics / funnel instrumentation** — Vercel Analytics + funnel API + capture hooks (verify:security-hygiene, 2026-06-29).
+- ✅ **Staging `verify-env?live=1`** — `LIVE_OK` · test mode · 12/12 prices active incl. advisor/attorney (attest: Al / 2026-06-29).
 - ✅ **Vercel env name audit (`estate-planner`)** — `vercel env ls` Production vs Preview (names only, 2026-06-21): dead vars **`STRIPE_CUSTOMER_PORTAL_URL`** / **`RESEND_WEBHOOK_SECRET`** absent both scopes; two-DB split intentional (prod Supabase + live `STRIPE_PRICE_*` / `STRIPE_WEBHOOK_SECRET` Production-only; Preview `WAITLIST_MODE` + staging Supabase). **Attest: Al / 2026-06-21.**
 - 🔄 **Vercel dashboard housekeeping (remainder)** — `PUBLIC_SIGNUP_OPEN`, `REQUIRE_PRIVILEGED_MFA`, `EMAIL_FROM` present on Production (`verify-env` OK); optional `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` rename if needed (B5).
 
 ### External (in flight, may not gate flip but track)
 - 🌐 **WA B&O ruling** (Bucket A, P0-external).
 - 🌐 **DOR written ruling on SaaS DAS sales-tax classification**.
-- ⬜ **Email aliases** `security@`, `legal@`, `privacy@` (B6).
+- ✅ **Email aliases** `security@`, `legal@`, `privacy@` → monitored inbox (attest: Al / 2026-06-29).
 - **TODO (first-state nexus):** Counsel ToS §10/§11 + privacy redline — not active pre-flip work.
 
 ---
