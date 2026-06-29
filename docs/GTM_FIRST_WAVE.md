@@ -177,6 +177,81 @@ await stripe.promotionCodes.create({
 
 ---
 
+## Four-Touch Follow-Up Cadence (Bucket 1/2)
+
+Run rules: reply in the **same thread** (subject becomes `Re:`). Stop the moment they reply. 3–5 business days between touches. HIGH contacts first; once any HIGH bites, reference that momentum in later waves ("a couple of Seattle EP attorneys have already come on"). **Touch 1** = the initial emails above. Touches 2–4 below.
+
+> **Touch 3 judgment call:** the Day-14 value-add assumes the WA guide is the right asset for everyone. For your strongest HIGH targets, swapping in something more personal — a one-line reaction to something specific about their practice or firm — will outperform the generic guide. The generic version is the floor, not the ceiling.
+
+### ATTORNEY — Touch 2 (Day 6, short bump)
+
+> **Subject:** Re: Your listing on My Wealth Maps — [Attorney Name]
+>
+> Hi [First Name],
+>
+> Just making sure this didn't get buried. Short version: a free directory listing plus free founding access to run a few client households through the platform — it surfaces each household's WA estate-tax exposure and a one-page meeting brief. Happy to send the claim link or do a quick 20-minute walkthrough whenever's useful.
+>
+> Al
+
+### ATTORNEY — Touch 3 (Day 14, value-add)
+
+> **Subject:** Re: Your listing on My Wealth Maps — [Attorney Name]
+>
+> Hi [First Name],
+>
+> Useful regardless of the platform: a plain-language WA estate-tax guide covering the ESB 6347 changes that took effect this year and a worked $6M-couple bypass-trust scenario — mywealthmaps.com/learn/washington-estate-tax. The thing most households miss is that the $3M state exemption catches them once home equity and retirement accounts are counted; the guide lays that out in numbers you can hand a client.
+>
+> Still glad to set up your free founding access if the timing works.
+>
+> Al
+
+### ATTORNEY — Touch 4 (Day 22, soft close)
+
+> **Subject:** Re: Your listing on My Wealth Maps — [Attorney Name]
+>
+> Hi [First Name],
+>
+> I'll stop here so I'm not cluttering your inbox. If estate-tax-aware client prep becomes useful down the line, the door's open — just reply and I'll set you up with founding access. Either way, the WA estate-tax guide is yours to use with clients.
+>
+> Wishing you well,
+> Al
+
+---
+
+### ADVISOR — Touch 2 (Day 6, short bump)
+
+> **Subject:** Re: A Washington estate-tax tool for your HNW clients
+>
+> Hi [First Name],
+>
+> Making sure this didn't slip by. The one-line version: free founding access to run your client households through a tool that shows each one's WA estate-tax exposure — and lets you send a strategy (SLAT, ILIT, bypass trust) the client accepts and watches the number move. Twenty minutes to see it live?
+>
+> Al
+
+### ADVISOR — Touch 3 (Day 14, value-add)
+
+> **Subject:** Re: A Washington estate-tax tool for your HNW clients
+>
+> Hi [First Name],
+>
+> One concrete reason it might be worth a look: for business-owner clients heading toward a liquidity event, WA's $3M exemption (separate from federal) creates exposure most planning tools surface as an abstract number — not as something the client sees move when they accept a strategy. That accept-and-recompute loop is the part eMoney and RightCapital don't do. [Optional standout line — e.g. for Cook: "Given Parcion's liquidity-event focus, this is the exact client profile it's built for."]
+>
+> Happy to set up your free founding access whenever's good.
+>
+> Al
+
+### ADVISOR — Touch 4 (Day 22, soft close)
+
+> **Subject:** Re: A Washington estate-tax tool for your HNW clients
+>
+> Hi [First Name],
+>
+> I'll leave it here rather than keep nudging. If it'd ever help to show a client their WA estate-tax exposure and model a strategy against it, reply anytime and I'll set up founding access — no rush. Appreciate your time either way.
+>
+> Al
+
+---
+
 ## BUCKET 3 — CONSUMERS *(stage now, gate-check before onboarding)*
 
 **The recommended path: route consumer pilots through your pilot advisors.** Don't run a separate cold consumer campaign for the first wave. Reasons:
@@ -217,7 +292,7 @@ await stripe.promotionCodes.create({
 | **Now — week 1** | Confirm tax caveat with accountant. Finalize the 5 attorneys + 5 advisors (FINRA/WSBA verification). Send Bucket 1 (attorneys) + Bucket 2 (advisors). |
 | **Now — week 1** | Clear the two consumer compliance gates (copy review + MHMD) so consumer pilots are unblocked. |
 | **Weeks 1–2** | As advisors say yes, onboard them free; have them invite 1–3 client households each. Onboard your 5–10 direct consumer pilots. |
-| **Ongoing** | 4-touch follow-up cadence (Day 0 / 6 / 14 / 22) on non-responders. Reference early momentum in later waves ("a few Seattle EP attorneys have already come on..."). |
+| **Ongoing** | [4-touch follow-up cadence](#four-touch-follow-up-cadence-bucket-12) (Day 0 / 6 / 14 / 22) on non-responders. Reference early momentum in later waves ("a few Seattle EP attorneys have already come on..."). |
 | **B&O RULING CLEARS** | Configure Stripe Tax. `PUBLIC_SIGNUP_OPEN=true`. Send founding members their "rate is live" conversion email. Open self-serve paid signup. |
 
 ---
@@ -227,6 +302,7 @@ await stripe.promotionCodes.create({
 - [ ] Tax caveat confirmed with accountant (free pilot ≠ filing wrinkle).
 - [ ] Final 5 attorneys chosen + WSBA verified; directory listings live.
 - [ ] Final 5 advisors chosen + CRD verified via FINRA BrokerCheck.
+- [x] Bucket 1/2 outreach copy staged — initial emails + [4-touch follow-up cadence](#four-touch-follow-up-cadence-bucket-12) + [B&O-day conversion emails](#bo-day-conversion-emails-staged--fire-on-ruling-day).
 - [ ] All emails personalized (standout-specific lines filled for Cervantes/Cook/Parisio Roy etc.).
 - [ ] WA_Estate_Tax_Explainer.pdf attached and current.
 - [ ] Invite/beta comp path tested — grants Tier 3 with **no** Stripe charge.
@@ -235,7 +311,7 @@ await stripe.promotionCodes.create({
 - [ ] Founding promo codes created in Stripe (`active: false` until B&O clears).
 - [ ] Consumer copy review (GRAT/Roth) cleared.
 - [ ] WA MHMD determination answered.
-- [x] Conversion emails drafted — see [B&O-Day Conversion Emails](#bo-day-conversion-emails-staged--fire-on-ruling-day) below.
+- [x] Conversion emails drafted — see [B&O-Day Conversion Emails](#bo-day-conversion-emails-staged--fire-on-ruling-day).
 - [ ] Send-from-personal-email, reply-to al@mywealthmaps.com confirmed.
 
 ---
