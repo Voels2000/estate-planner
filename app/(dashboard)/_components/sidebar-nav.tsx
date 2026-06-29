@@ -67,6 +67,19 @@ function findActiveGroupLabel(pathname: string): string {
   }
   return 'Overview'
 }
+
+function isGroupTierLocked(
+  group: NavGroup,
+  tier: number,
+  isSuperuser: boolean,
+  isAdvisor: boolean,
+): boolean {
+  if (isSuperuser || isAdvisor) return false
+  if (!group.locked) return false
+  if (group.label === 'Retirement Planning') return tier < 2
+  if (group.label === 'Estate Planning') return tier < 3
+  return false
+}
 const SECTION_HEADER =
   'text-xs font-semibold tracking-widest text-[color:var(--mwm-text-muted)] uppercase'
 const YOUR_PLAN_BADGE =
@@ -171,9 +184,11 @@ export function SidebarNav({
   const resolvedOpenGroups: Record<string, boolean> = Object.fromEntries(
     NAV_GROUPS.map((group) => {
       const hasActiveChild = groupContainsActiveItem(group, pathname)
+      const groupIsLocked = isGroupTierLocked(group, tier, isSuperuser, isAdvisor)
       const defaultOpen =
         group.label === 'Overview' ||
         hasActiveChild ||
+        groupIsLocked ||
         (!DEFAULT_CLOSED_GROUPS.has(group.label) && group.label === activeGroup)
       const toggled = openGroups[group.label]
       return [group.label, hasActiveChild ? true : (toggled ?? defaultOpen)]
@@ -244,22 +259,17 @@ function billingHrefForNavItem(href: string): string {
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV_GROUPS.map((group) => {
           const isOpen = resolvedOpenGroups[group.label] ?? false
-          const groupIsLocked =
-            !isSuperuser &&
-            group.locked === true &&
-            !isAdvisor &&
-            ((group.label === 'Retirement Planning' && tier < 2) ||
-              (group.label === 'Estate Planning' && tier < 3))
+          const groupIsLocked = isGroupTierLocked(group, tier, isSuperuser, isAdvisor)
 
           return (
             <div key={group.label}>
               <button
                 type="button"
-                disabled={groupIsLocked}
                 onClick={() => toggleGroup(group.label)}
+                aria-expanded={isOpen}
                 className={`w-full flex items-center gap-2 rounded-lg px-3 py-2 transition-colors hover:bg-[var(--mwm-off-white)] ${
-                  groupIsLocked ? 'cursor-not-allowed' : ''
-                } disabled:cursor-not-allowed disabled:opacity-100`}
+                  groupIsLocked ? 'text-[color:var(--mwm-text-muted)]' : ''
+                }`}
               >
                 <span className={`flex-1 text-left ${SECTION_HEADER}`}>{group.label}</span>
                 {!groupIsLocked && group.label !== 'Overview' && (
@@ -270,7 +280,9 @@ function billingHrefForNavItem(href: string): string {
                   )
                 )}
                 {groupIsLocked && (
-                  <span className="text-amber-400 text-sm mr-1">🔒</span>
+                  <span className="text-amber-500 text-sm mr-1" title="Upgrade to unlock this section">
+                    🔒
+                  </span>
                 )}
                 <span className="text-[color:var(--mwm-text-muted)]">{isOpen ? '▾' : '▸'}</span>
               </button>
@@ -338,16 +350,16 @@ function billingHrefForNavItem(href: string): string {
                     }
                     if (groupIsLocked) {
                       return (
-                        <Link
+                        <div
                           key={item.href}
-                          href={billingHrefForNavItem(item.href)}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-neutral-400 hover:bg-[var(--mwm-off-white)] hover:text-[color:var(--mwm-navy)] transition-colors"
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[color:var(--mwm-text-muted)] opacity-60 cursor-default"
+                          aria-disabled
                         >
                           <span className="flex-1 truncate">{item.label}</span>
-                          <span className="shrink-0 text-amber-400 text-sm" aria-hidden>
+                          <span className="shrink-0 text-amber-500 text-sm" aria-hidden>
                             🔒
                           </span>
-                        </Link>
+                        </div>
                       )
                     }
                     if (

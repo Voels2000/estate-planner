@@ -125,8 +125,22 @@ test.beforeAll(async ({}, testInfo) => {
       ].filter(Boolean))
     }
   } else {
-    linkedClientHouseholdId = advisorClientHouseholdId
-    advisorForeignHouseholdId = consumerHouseholdId
+    if (process.env.TEST_ENV === 'production') {
+      linkedClientHouseholdId = consumerHouseholdId
+      advisorForeignHouseholdId = advisorClientHouseholdId
+    } else {
+      linkedClientHouseholdId = advisorClientHouseholdId
+      advisorForeignHouseholdId = consumerHouseholdId
+    }
+    consumerOwnerUserId = process.env.PLAYWRIGHT_CONSUMER_USER_ID?.trim() ?? ''
+    advisorClientOwnerUserId = process.env.PLAYWRIGHT_ADVISOR_CLIENT_USER_ID?.trim() ?? ''
+    linkedClientOwnerUserId =
+      process.env.PLAYWRIGHT_CONSUMER_LINK_USER_ID?.trim() ?? consumerOwnerUserId
+    if (process.env.TEST_ENV === 'production') {
+      advisorForeignOwnerUserId = advisorClientOwnerUserId
+    } else {
+      advisorForeignOwnerUserId = consumerOwnerUserId
+    }
   }
 
   if (!consumerHouseholdId || !advisorClientHouseholdId) {
