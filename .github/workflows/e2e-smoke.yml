@@ -177,6 +177,7 @@ jobs:
     needs:
       - e2e-prepare
       - e2e-security-smoke
+      - e2e-b4-gate
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
