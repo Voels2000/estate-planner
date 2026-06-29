@@ -32,14 +32,42 @@ const hasTier1Consumer =
 const setupTimeout = 120_000
 
 const TEST_ENV = process.env.TEST_ENV ?? 'local'
+const authPrebaked = process.env.E2E_AUTH_PREBAKED === '1'
+
+const SETUP_PROJECTS = new Set([
+  'advisor-setup',
+  'advisor-empty-setup',
+  'consumer-setup',
+  'consumer-canceled-setup',
+  'attorney-setup',
+  'advisor-client-setup',
+  'consumer-link-setup',
+  'consumer-advisor-link-setup',
+  'consumer-tier1-setup',
+  'consumer-app-trial-setup',
+  'consumer-plan-export-setup',
+])
+
+function resolveDependencies(deps: string[] | undefined): string[] | undefined {
+  if (!deps?.length) return deps
+  if (!authPrebaked) return deps
+  const filtered = deps.filter((d) => !SETUP_PROJECTS.has(d))
+  return filtered.length ? filtered : undefined
+}
 
 function resolveProjects(all: Project[]): Project[] {
-  if (TEST_ENV !== 'production') return all
-  return all.map((p) => {
+  const withDeps = all.map((p) => ({
+    ...p,
+    dependencies: resolveDependencies(p.dependencies as string[] | undefined),
+  }))
+  if (TEST_ENV !== 'production') return withDeps
+  return withDeps.map((p) => {
     if (p.name !== 'security') return p
     return {
       ...p,
-      dependencies: ['consumer-setup', 'advisor-setup', 'advisor-empty-setup'],
+      dependencies: authPrebaked
+        ? undefined
+        : ['consumer-setup', 'advisor-setup', 'advisor-empty-setup'],
     }
   })
 }

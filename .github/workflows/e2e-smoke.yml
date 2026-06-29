@@ -11,6 +11,7 @@ on:
 env:
   REQUIRE_PRIVILEGED_MFA: 'false'
   PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
+  E2E_AUTH_PREBAKED: '1'
 
 jobs:
   e2e-prepare:
@@ -19,6 +20,7 @@ jobs:
     timeout-minutes: 30
 
     env:
+      E2E_AUTH_PREBAKED: '0'
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -58,13 +60,17 @@ jobs:
           RESEND_API_KEY: re_placeholder_ci_build_only
           STRIPE_SECRET_KEY: sk_test_placeholder_ci_build_only
 
+      - name: Pre-bake E2E auth (serial — parallel jobs reuse .auth from artifact)
+        run: npm run test:e2e:ci-prepare-auth -- --workers=1
+
       - name: Stage CI E2E prepare artifact
         run: |
           set -euo pipefail
           test -d .next
           test -f .env.local
           test -f .env.test.local
-          tar -czf e2e-smoke-prepare.tar.gz .next .env.local .env.test.local
+          test -d .auth
+          tar -czf e2e-smoke-prepare.tar.gz .next .env.local .env.test.local .auth
 
       - name: Upload CI E2E prepare artifact
         uses: actions/upload-artifact@v4
@@ -136,7 +142,9 @@ jobs:
 
   e2e-b4-gate:
     if: vars.E2E_SMOKE_IN_CI == 'true'
-    needs: e2e-prepare
+    needs:
+      - e2e-prepare
+      - e2e-security-smoke
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -166,7 +174,9 @@ jobs:
 
   e2e-security-isolation:
     if: vars.E2E_SMOKE_IN_CI == 'true'
-    needs: e2e-prepare
+    needs:
+      - e2e-prepare
+      - e2e-security-smoke
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
