@@ -54,11 +54,11 @@ Account is reset — log in at https://www.mywealthmaps.com/login (no new signup
 
 ### 4. Infrastructure hardening (pre-real-customers)
 
-- [ ] **PITR / backups ON** on prod Supabase — retention known, rollback path documented ([PRE_FLIP §A](./PRE_FLIP_CHECKLIST.md#a-hard-blockers--broken-product-or-serious-exposure-if-skipped))
-- [ ] **`verify-env?live=1` prod gates** — `PUBLIC_SIGNUP_OPEN=false`, no `SIGNUP_SKIP_EMAIL_CONFIRM` (attest: __ / __)
-- [ ] **Webhook failure visibility** — alert on Stripe webhook 5xx / timeout; handlers idempotent (attest: __ / __)
-- [ ] **`UPSTASH_REDIS_*` on prod** — durable email-capture / referral rate limits (optional but recommended)
-- [ ] **`CRON_SECRET` on `estate-planner-staging`** — staging crons fail-closed without it
+- [ ] **PITR / backups ON** on prod Supabase — `WALG=true` attested 2026-06-29; **`PITR=false`** — enable in Dashboard ([DEPLOYMENT §10](./DEPLOYMENT.md#10-production-backups-and-pitr-pre-flip-gate))
+- [x] **`verify-env?live=1` prod gates** — `PUBLIC_SIGNUP_OPEN=false`, no `SIGNUP_SKIP_EMAIL_CONFIRM`, `REQUIRE_PRIVILEGED_MFA=true`, 12/12 prices active, `LIVE_OK` (attest: Al / 2026-06-29)
+- [x] **Webhook failure visibility** — Sentry `captureStripeWebhookSupabaseFailure` on all Supabase write paths; prod endpoint enabled at `www.mywealthmaps.com/api/stripe/webhook` (attest: Al / 2026-06-29). Idempotency table deferred post-launch ([WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md](./WEBHOOK_IDEMPOTENCY_RETRY_PLAN.md)).
+- [ ] **`UPSTASH_REDIS_*` on prod** — not set (in-memory rate limits per instance); create Upstash Redis + add to Vercel **`estate-planner`** Production, redeploy
+- [x] **`CRON_SECRET` on `estate-planner-staging`** — cron routes return 401 (not 500) when bearer wrong → secret present (attest: Al / 2026-06-29)
 
 ### 5. Email & comms (non-signup)
 
