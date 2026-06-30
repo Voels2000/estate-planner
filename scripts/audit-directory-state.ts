@@ -42,7 +42,14 @@ const DUMP_PATH = process.env.AUDIT_DUMP ?? null;
 const TABLES = ['attorney_listings', 'advisor_directory'] as const;
 
 // Expected E2E fixture markers (so we can tell fixture rows from real ones).
-const E2E_MARKERS = ['e2eatt01', 'e2eadv01'];
+type SchemaColumn = {
+  column_name: string
+  data_type: string
+  is_nullable: string
+  column_default: string | null
+}
+
+type DirectoryRow = Record<string, unknown>
 
 function fail(msg: string): never {
   console.error(`\n[FATAL] ${msg}\n`);
@@ -88,12 +95,12 @@ async function main() {
     // Requires a SECURITY DEFINER RPC OR direct PostgREST access to information_schema.
     // PostgREST doesn't expose information_schema by default, so we try an RPC first
     // and fall back to inferring columns from a sample row.
-    let columns: any[] | null = null;
+    let columns: SchemaColumn[] | null = null;
     const { data: schemaData, error: schemaErr } = await db.rpc('describe_table_columns', {
       p_table: table,
     });
     if (!schemaErr && Array.isArray(schemaData)) {
-      columns = schemaData;
+      columns = schemaData as SchemaColumn[];
       console.log('\n-- SCHEMA (from information_schema) --');
       for (const c of columns) {
         console.log(
@@ -123,7 +130,7 @@ async function main() {
       console.log(`  could not sample: ${sampleErr.message}`);
       continue;
     }
-    const rows = sample ?? [];
+    const rows = (sample ?? []) as DirectoryRow[];
 
     // Infer columns if schema RPC was unavailable.
     if (!columns && rows.length) {
@@ -139,7 +146,7 @@ async function main() {
     for (const flag of presentFlags) {
       const dist: Record<string, number> = {};
       for (const r of rows) {
-        const k = String((r as any)[flag] ?? 'null');
+        const k = String(r[flag] ?? 'null');
         dist[k] = (dist[k] ?? 0) + 1;
       }
       console.log(`  ${flag} distribution (in sample of ${rows.length}): ${JSON.stringify(dist)}`);
@@ -167,7 +174,7 @@ async function main() {
       for (const r of rows.slice(0, 5)) {
         const view: Record<string, string> = {};
         for (const c of cols) {
-          const val = (r as any)[c];
+          const val = r[c];
           view[c] = EMAILISH.test(c) ? maskEmail(val) : PHONEISH.test(c) ? maskPhone(val) : String(val ?? '');
         }
         console.log('  ' + JSON.stringify(view));
