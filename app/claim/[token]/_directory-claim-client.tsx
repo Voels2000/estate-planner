@@ -46,6 +46,11 @@ export function DirectoryClaimClient({ listing, isLoggedIn, userEmail }: Props) 
   const loginHref = `/login?redirectTo=${encodeURIComponent(claimPath)}`
   const signupHref = `/signup?redirectTo=${encodeURIComponent(claimPath)}`
 
+  const portalHref =
+    listing.type === 'attorney'
+      ? '/attorney/requests?claimed=true'
+      : '/advisor?claimed=true'
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!isLoggedIn) return
@@ -126,8 +131,8 @@ export function DirectoryClaimClient({ listing, isLoggedIn, userEmail }: Props) 
             — no obligation.
           </p>
           <div className="mt-6">
-            <Button onClick={() => router.push(listing.type === 'attorney' ? '/attorney' : '/advisor')}>
-              Go to dashboard
+            <Button onClick={() => router.push(portalHref)}>
+              {listing.type === 'attorney' ? 'Go to attorney portal' : 'Go to advisor portal'}
             </Button>
           </div>
         </Card>

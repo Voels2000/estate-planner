@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyClaimIdentity } from '@/lib/directory/claimIdentity'
 import { resolveDirectoryClaimToken } from '@/lib/directory/resolveClaimToken'
-import { notifyDirectoryClaim } from '@/lib/directory/notifyDirectoryClaim'
+import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
 
 type ClaimBody = {
   claimToken: string
@@ -117,6 +117,10 @@ export async function POST(req: NextRequest) {
     }
 
     await admin.from('profiles').update({ is_attorney: true }).eq('id', user.id)
+
+    void ensureAttorneyActivationDripStep1(admin, user.id).catch((err) => {
+      console.error('attorney drip step 1 (directory claim):', err instanceof Error ? err.message : err)
+    })
 
     try {
       await notifyDirectoryClaim({
