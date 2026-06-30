@@ -306,7 +306,7 @@ Run rules: reply in the **same thread** (subject becomes `Re:`). Stop the moment
 ## Pre-flight checklist — have these staged so launch is one motion
 
 - [ ] Tax caveat confirmed with accountant (free pilot ≠ filing wrinkle).
-- [ ] Final 5 attorneys chosen + WSBA verified; directory listings live.
+- [ ] Final 5 attorneys chosen + WSBA verified; directory listings live *(blocked on [DIRECTORY_SEED_CLAIM_PLAN.md](./DIRECTORY_SEED_CLAIM_PLAN.md) — importer + claim flow)*.
 - [ ] Final 5 advisors chosen + CRD verified via FINRA BrokerCheck.
 - [x] Bucket 1/2 outreach copy staged — initial emails + [4-touch follow-up cadence](#four-touch-follow-up-cadence-bucket-12) + [B&O-day conversion emails](#bo-day-conversion-emails-staged--fire-on-ruling-day).
 - [ ] All emails personalized (standout-specific lines filled for Cervantes/Cook/Parisio Roy etc.).

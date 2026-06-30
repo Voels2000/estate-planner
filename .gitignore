@@ -65,5 +65,10 @@ audit-summary.txt
 security-audit-results.txt
 tools/launch-tracker-state.json
 
+# Directory outreach seed spreadsheets (PII — local handoff only)
+/data/directory-seed/*.xlsx
+/data/directory-seed/*.xls
+/data/directory-seed/*.csv
+
 # Sentry Config File
 .env.sentry-build-plugin
