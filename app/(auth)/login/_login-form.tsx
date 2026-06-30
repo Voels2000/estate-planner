@@ -13,6 +13,7 @@ export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get('redirectTo') ?? '/dashboard'
+  const claimRedirect = redirectTo.startsWith('/claim/') ? redirectTo : null
   const emailFromQuery = searchParams.get('email') ?? ''
   const intakeTokenParam = searchParams.get('intake_token')?.trim() ?? ''
   const signupHref = getSignupHref()
@@ -78,10 +79,13 @@ export function LoginForm() {
       }
 
       if (profile?.role === 'attorney') {
-        router.push('/attorney')
+        router.push(claimRedirect ?? '/attorney')
         router.refresh()
       } else if (profile?.role === 'advisor') {
-        if (profile?.firm_role === 'member') {
+        if (claimRedirect) {
+          router.push(claimRedirect)
+          router.refresh()
+        } else if (profile?.firm_role === 'member') {
           router.push('/advisor')
           router.refresh()
         } else {

@@ -22,6 +22,7 @@ type Attorney = {
   languages: string[]
   serves_remote: boolean
   is_verified: boolean
+  credential_verified_at: string | null
 }
 
 type Props = {
@@ -271,7 +272,7 @@ export function AttorneyDirectoryClient({
                         </div>
                       )}
                     </div>
-                    {attorney.is_verified && (
+                    {attorney.credential_verified_at && (
                       <span style={{ background: '#f0fdf4', color: '#16a34a',
                         fontSize: 11, fontWeight: 600, padding: '3px 8px',
                         borderRadius: 20, border: '1px solid #bbf7d0',
