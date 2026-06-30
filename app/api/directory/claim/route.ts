@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { verifyClaimIdentity } from '@/lib/directory/claimIdentity'
 import { resolveDirectoryClaimToken } from '@/lib/directory/resolveClaimToken'
+import { notifyDirectoryClaim } from '@/lib/directory/notifyDirectoryClaim'
 import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
 
 type ClaimBody = {
