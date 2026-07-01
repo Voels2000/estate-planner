@@ -158,3 +158,16 @@ resolveFirmStripeBillableQuantity(firm):
 
 ## Definition of done
 Staging, flag ON: connect tracks up to limit, disconnect holds the floor, exceeding gates, raise unlocks, reset lowers+rebands with confirmation, 3rd reset blocked, sync never lowers the floor — and flag-off behavior is byte-identical to today.
+
+## Post-merge staging proof (live, in order)
+
+1. **Core fix:** checkout 5 seats → connect 1 client → **Stripe quantity stays 5** (does not drop to connected count). Proves deployed sync path, not just unit tests.
+2. **Gate + raise round-trip:** connect to 5 → 6th returns `402 limit_raise_required` (no `advisor_clients` row, no consumer handoff) → raise limit via API → 6th connects → qty ratchets to 6.
+3. **Reset re-band:** ratchet across a band boundary (e.g. 11+), disconnect, bill holds at floor → reset with preview showing rate increase → floor drops and re-bands.
+4. **Frequency cap:** 3rd self-serve reset blocked; admin `POST /api/admin/firm-connection-reset-count` clears counter.
+
+**Fixture reset:** `TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/reset-staging-e2e-advisor-empty-billing.ts`
+
+## Launch-required gap (not deferred)
+
+**`/billing` raise + reset UI** must ship before real advisors use connection billing. The advisor workspace limit-reached modal links to `/billing`, but v1 is API-only — professionals cannot complete raise/reset in-product. Staging proof via API is fine; **prod launch to real advisors is blocked** until forms land (re-band confirmation copy required on reset).

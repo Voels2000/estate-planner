@@ -16,6 +16,16 @@
 
 **Reasoning.** Usage-fair going up; no surprise bills (gate vs auto-bill); discount gaming closed by sticky floor + re-band on reset; reset valve capped at 2 without support.
 
+**Launch-required (not deferred):** `/billing` raise + reset UI forms. Advisor limit-reached modal links to `/billing`, but APIs-only v1 means professionals cannot complete raise/reset in-product — staging proof via API is sufficient; **real advisor launch blocked** until billing UI ships.
+
+**Post-merge staging proof (flag on, in order):**
+1. **5-seat checkout → connect 1 → Stripe qty stays 5** (sticky floor end-to-end, not unit-only).
+2. **Gate + raise round-trip:** connect to limit → 6th returns 402 `limit_raise_required` (no row, no handoff) → raise limit → 6th connects, qty ratchets to 6.
+3. **Reset re-band live:** ratchet across band boundary, disconnect, bill holds → reset with preview → floor drops + rate re-bands up.
+4. **3rd reset blocked;** admin endpoint clears `reset_count`.
+
+Reset E2E fixture: `npx tsx scripts/reset-staging-e2e-advisor-empty-billing.ts` (with `.env.test.staging`).
+
 ---
 
 ## Staging-first branch policy (2026-07-01)
