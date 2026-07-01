@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
 import { ensureAttorneyClientRequestRow } from '@/lib/attorney/createAttorneyClientRequest'
+import { verifyClaimIdentity } from '@/lib/directory/claimIdentity'
 
 interface Props {
   params: Promise<{ token: string }>
@@ -29,11 +30,22 @@ export default async function ClaimListingPage({ params }: Props) {
 
   // 2. Fetch the listing from the correct table
   const listingTable = isAttorney ? 'attorney_listings' : 'advisor_directory'
-  const { data: listing } = await admin
-    .from(listingTable)
-    .select('id, firm_name, email, profile_id')
-    .eq('id', connectionRequest.listing_id)
-    .single()
+  const { data: attorneyListing } = isAttorney
+    ? await admin
+        .from('attorney_listings')
+        .select('id, firm_name, email, profile_id, website')
+        .eq('id', connectionRequest.listing_id)
+        .single()
+    : { data: null }
+  const { data: advisorListing } = !isAttorney
+    ? await admin
+        .from('advisor_directory')
+        .select('id, firm_name, email, profile_id, website, adv_link')
+        .eq('id', connectionRequest.listing_id)
+        .single()
+    : { data: null }
+
+  const listing = isAttorney ? attorneyListing : advisorListing
 
   if (!listing) redirect('/claim-listing/invalid')
 
@@ -60,8 +72,23 @@ export default async function ClaimListingPage({ params }: Props) {
     redirect('/claim-listing/already-claimed')
   }
 
-  // 6. Claim the listing — link profile_id in the correct table
+  // 6. Claim the listing — link profile_id only after identity matches listing email/domain
   if (!listing.profile_id) {
+    if (!user.email) {
+      redirect('/claim-listing/identity-mismatch')
+    }
+    const listingWebsite = isAttorney
+      ? String(listing.website ?? '')
+      : String(
+          listing.website ??
+            ('adv_link' in listing ? listing.adv_link : null) ??
+            '',
+        )
+    const identity = verifyClaimIdentity(user.email, listing.email, listingWebsite)
+    if (!identity.ok) {
+      redirect('/claim-listing/identity-mismatch')
+    }
+
     await admin
       .from(listingTable)
       .update({ profile_id: user.id })
