@@ -5,6 +5,7 @@ import { verifyClaimIdentity } from '@/lib/directory/claimIdentity'
 import { resolveDirectoryClaimToken } from '@/lib/directory/resolveClaimToken'
 import { notifyDirectoryClaim } from '@/lib/directory/notifyDirectoryClaim'
 import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
+import { bootstrapAdvisorFirm } from '@/lib/firm/bootstrapAdvisorFirm'
 
 type ClaimBody = {
   claimToken: string
@@ -82,6 +83,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'This listing has already been claimed.' }, { status: 409 })
   }
 
+  const isFirstClaim = !existingProfileId
   const now = new Date().toISOString()
   const shared = {
     contact_name: body.contact_name?.trim() || listing.contact_name,
@@ -109,6 +111,9 @@ export async function POST(req: NextRequest) {
         states_licensed: withBarState,
         specializations: body.specializations ?? listing.specializations ?? [],
         serves_remote: body.serves_remote ?? listing.serves_remote ?? false,
+        ...(isFirstClaim
+          ? { client_limit: 1, billing_floor: 0, reset_count: 0 }
+          : {}),
       })
       .eq('id', listing.id)
 
@@ -152,6 +157,15 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('directory claim advisor:', error)
       return NextResponse.json({ error: 'Failed to save claim.' }, { status: 500 })
+    }
+
+    if (isFirstClaim) {
+      await bootstrapAdvisorFirm(
+        admin,
+        user.id,
+        user.email,
+        body.firm_name?.trim() || String(listing.firm_name ?? ''),
+      )
     }
 
     try {

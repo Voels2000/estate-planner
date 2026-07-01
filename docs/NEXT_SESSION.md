@@ -1,6 +1,6 @@
 # NEXT_SESSION.md — session handoff
 
-**Last updated:** 2026-07-01 (attorney billing closed; claim v2 spec landed)
+**Last updated:** 2026-07-01 (claim walk + billing seed in flight)
 
 ---
 
@@ -27,7 +27,8 @@
 | Advisor checkout redirect (#197) | ✅ Merged |
 | Invite-send capacity warning (#198) | ✅ Merged |
 | `/advisor/firm` connection copy | `[~]` | PR #207 |
-| Claim v2 magic-link entry | `[~]` | PR #208 |
+| Claim v2 magic-link entry | `[~]` | PR #208 — walk script #209 |
+| Claim billing seed at claim | `[~]` | PR #209 — advisor firm bootstrap |
 | Prod connection billing flip | 🚫 After staging green |
 
 ---
@@ -57,6 +58,8 @@
 | Command | Purpose |
 |---------|---------|
 | `npm run reset:staging-e2e-attorney-connection-billing` | Clean attorney billing fixture + seed pending requests |
+| `npm run reset:staging-e2e-directory-claim` | Unclaimed directory listings for claim walk |
+| `npm run walk:staging-directory-claim-magic-link` | Magic-link session → POST claim → billing seed checks |
 | `npx tsx scripts/walk-staging-attorney-connection-accepts.ts` | List pending accepts + API walk |
 | `npx tsx scripts/inspect-staging-attorney-billing-state.ts` | DB + Stripe snapshot |
 

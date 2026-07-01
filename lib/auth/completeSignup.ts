@@ -4,6 +4,7 @@ import { notifyAdvisorForReferralCode } from '@/lib/advisor/notifyAdvisorOfRefer
 import { shouldSyncFirmStripeOnRosterChange } from '@/lib/billing/firmConnectionBilling'
 import { syncFirmStripeQuantity } from '@/lib/stripe/syncFirmQuantity'
 import { countFirmRosterSeats, getFirmTierMaxSeats } from '@/lib/firm/firmRoster'
+import { bootstrapAdvisorFirm } from '@/lib/firm/bootstrapAdvisorFirm'
 import { recordTermsAcceptance } from '@/lib/terms/recordTermsAcceptance'
 import { BETA_SIGNUP_ACCOUNT_SOURCE } from '@/lib/waitlist-mode'
 import type { SignupAdmissionPayload, SignupRole } from '@/lib/auth/signupAdmission'
@@ -39,61 +40,12 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
 }
 
-async function bootstrapAdvisorFirm(
+async function bootstrapAdvisorFirmOnSignup(
   admin: SupabaseClient,
   userId: string,
   email: string,
 ): Promise<void> {
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('role, firm_id')
-    .eq('id', userId)
-    .maybeSingle()
-
-  if (profile?.role !== 'advisor' || profile.firm_id != null) return
-
-  const prefix = email.includes('@')
-    ? email.slice(0, email.indexOf('@')).trim()
-    : email.trim() || 'Advisor'
-  const defaultFirmName = `${prefix} Firm`
-
-  const { data: newFirm, error: firmError } = await admin
-    .from('firms')
-    .insert({
-      name: defaultFirmName,
-      owner_id: userId,
-      tier: 'starter',
-      seat_count: 1,
-      subscription_status: null,
-    })
-    .select('id')
-    .single()
-
-  if (firmError || !newFirm?.id) {
-    console.error('advisor firm bootstrap error:', firmError)
-    return
-  }
-
-  const now = new Date().toISOString()
-  const { error: memberError } = await admin.from('firm_members').insert({
-    firm_id: newFirm.id,
-    user_id: userId,
-    firm_role: 'owner',
-    status: 'active',
-    joined_at: now,
-  })
-  if (memberError) {
-    console.error('advisor firm member bootstrap error:', memberError)
-    return
-  }
-
-  const { error: profileError } = await admin
-    .from('profiles')
-    .update({ firm_id: newFirm.id, firm_role: 'owner' })
-    .eq('id', userId)
-  if (profileError) {
-    console.error('advisor firm profile bootstrap error:', profileError)
-  }
+  await bootstrapAdvisorFirm(admin, userId, email)
 }
 
 async function joinFirmFromInvite(
@@ -227,7 +179,7 @@ export async function completeSignupAfterCreate(
     input.role === 'advisor' &&
     ADVISOR_FIRM_BOOTSTRAP_ADMISSIONS.has(input.admission.type)
   ) {
-    await bootstrapAdvisorFirm(admin, input.userId, input.email)
+    await bootstrapAdvisorFirmOnSignup(admin, input.userId, input.email)
   }
 
   if (input.admission.type === 'firm_member_invite') {

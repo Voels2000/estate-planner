@@ -62,6 +62,8 @@
     "reset:staging-e2e-attorney-connection-billing": "TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/reset-staging-e2e-attorney-connection-billing.ts",
     "walk:staging-attorney-connection-accepts": "TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/walk-staging-attorney-connection-accepts.ts",
     "walk:staging-attorney-step4": "TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/walk-staging-attorney-step4-complete.ts",
+    "reset:staging-e2e-directory-claim": "TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/reset-staging-e2e-directory-claim.ts",
+    "walk:staging-directory-claim-magic-link": "TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/walk-staging-directory-claim-magic-link.ts",
     "verify:e2e-persona-matrix": "dotenv -o -e .env.local -e .env.test.local -- npx tsx scripts/verify-e2e-persona-matrix.ts",
     "seed:e2e:persona-matrix": "dotenv -o -e .env.local -e .env.test.local -- npx tsx scripts/seed-e2e-fixtures.ts --only=consumer,consumer-linked,advisor,tier1,tier2,app-trial,plan-export,canceled",
     "seed:e2e:staging": "TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/seed-e2e-fixtures.ts",
