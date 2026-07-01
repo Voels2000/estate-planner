@@ -23,7 +23,7 @@ export default async function ClaimListingPage({ params }: Props) {
     .maybeSingle()
 
   if (!connectionRequest || connectionRequest.status !== 'pending') {
-    redirect('/claim-listing/invalid')
+    redirect('/respond-request/invalid')
   }
 
   const isAttorney = connectionRequest.listing_type === 'attorney'
@@ -47,13 +47,13 @@ export default async function ClaimListingPage({ params }: Props) {
 
   const listing = isAttorney ? attorneyListing : advisorListing
 
-  if (!listing) redirect('/claim-listing/invalid')
+  if (!listing) redirect('/respond-request/invalid')
 
   // 3. Check if user is logged in
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/login?claim=${token}&next=/claim-listing/${token}`)
+    redirect(`/login?claim=${token}&next=/respond-request/${token}`)
   }
 
   // 4. Verify the logged-in user has an appropriate role
@@ -69,13 +69,13 @@ export default async function ClaimListingPage({ params }: Props) {
 
   // 5. If listing is already claimed by someone else — block
   if (listing.profile_id && listing.profile_id !== user.id) {
-    redirect('/claim-listing/already-claimed')
+    redirect('/respond-request/already-claimed')
   }
 
   // 6. Claim the listing — link profile_id only after identity matches listing email/domain
   if (!listing.profile_id) {
     if (!user.email) {
-      redirect('/claim-listing/identity-mismatch')
+      redirect('/respond-request/identity-mismatch')
     }
     const listingWebsite = isAttorney
       ? String(listing.website ?? '')
@@ -86,7 +86,7 @@ export default async function ClaimListingPage({ params }: Props) {
         )
     const identity = verifyClaimIdentity(user.email, listing.email, listingWebsite)
     if (!identity.ok) {
-      redirect('/claim-listing/identity-mismatch')
+      redirect('/respond-request/identity-mismatch')
     }
 
     await admin
@@ -140,14 +140,14 @@ export default async function ClaimListingPage({ params }: Props) {
         p_cooldown: '1 hour',
       })
     } catch (err) {
-      console.error('claim-listing notification error:', err)
+      console.error('respond-request notification error:', err)
     }
   })()
 
   // 10. Redirect to the appropriate portal
   if (isAttorney) {
     void ensureAttorneyActivationDripStep1(admin, user.id).catch((err) => {
-      console.error('attorney drip step 1 (claim-listing):', err instanceof Error ? err.message : err)
+      console.error('attorney drip step 1 (respond-request):', err instanceof Error ? err.message : err)
     })
   }
 
