@@ -47,10 +47,14 @@ Reset **`e2e-attorney@mywealthmaps.test`** before attorney connection billing wa
 npm run reset:staging-e2e-attorney-connection-billing
 ```
 
-Seeds pending `consumer_requested` rows for `/attorney/requests`. Helpers:
+Seeds pending `consumer_requested` rows for `/attorney/requests`. Spine (after reset):
 
-- `npx tsx scripts/walk-staging-attorney-connection-accepts.ts`
-- `npx tsx scripts/inspect-staging-attorney-billing-state.ts`
+```bash
+npm run walk:staging-attorney-connection-accepts   # accept #1 + checkout gate on #2
+npm run walk:staging-attorney-step4                # checkout sim → accept #2 → raise → accept #3
+```
+
+Inspect: `npx tsx scripts/inspect-staging-attorney-billing-state.ts`
 
 Proof checklist: [ATTORNEY_RAISE_CONNECT_PARITY_FIX.md](./ATTORNEY_RAISE_CONNECT_PARITY_FIX.md) staging re-walk (step 4 = raise + accept 3rd).
 
