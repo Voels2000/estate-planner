@@ -1,4 +1,5 @@
 import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import { attorneyCheckoutQuantityFromConnected } from '@/lib/billing/attorneyBillableQuantity'
 import { resolveConnectionStripePriceIds } from '@/lib/pricing/connectionPricing'
 import { ATTORNEY_PLAN_PRICE_IDS } from '@/lib/tiers'
 
@@ -44,16 +45,13 @@ export function normalizeAttorneyCheckoutQuantity(
   if (isAttorneyConnectionCheckoutPrice(priceId)) {
     const fromBody =
       typeof requestedQuantity === 'number' && Number.isFinite(requestedQuantity)
-        ? Math.floor(requestedQuantity)
+        ? requestedQuantity
         : null
-    const floor = Math.max(0, Math.floor(billingFloor ?? 0))
-    const connected = Math.max(0, Math.floor(connectedCount))
-    const defaultQty = Math.max(connected, floor, connected + 1, 1)
-    const quantity = fromBody ?? defaultQty
-    if (quantity < 1) {
-      return { quantity: 1, error: 'quantity must be at least 1' }
-    }
-    return { quantity }
+    return attorneyCheckoutQuantityFromConnected(
+      connectedCount,
+      billingFloor,
+      fromBody,
+    )
   }
 
   return { quantity: 1 }

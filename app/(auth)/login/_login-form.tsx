@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { resolveAdvisorPostLoginPath } from '@/lib/access/advisorBillingGate'
 import { getSignupHref } from '@/lib/waitlist-mode'
 import { consumeIntakeToken, storeIntakeToken } from '@/lib/attorney/intakeTokenSession'
+import { consumerAttorneyBillingBlockedMessage } from '@/lib/billing/attorneyConnectBillingGateClient'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
@@ -27,11 +28,16 @@ export function LoginForm() {
     const token = consumeIntakeToken() ?? intakeTokenParam
     if (!token) return
     try {
-      await fetch('/api/consumer/complete-intake-request', {
+      const res = await fetch('/api/consumer/complete-intake-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ intakeToken: token }),
       })
+      const data = await res.json().catch(() => ({}))
+      const blocked = consumerAttorneyBillingBlockedMessage(data, res.status)
+      if (blocked) {
+        sessionStorage.setItem('mwm:attorney_billing_blocked', blocked)
+      }
     } catch {
       // non-fatal — profile completion may still be needed
     }
