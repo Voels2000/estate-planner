@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { test, expect } from '@playwright/test'
 import { verifyClaimIdentity } from '@/lib/directory/claimIdentity'
 
-describe('verifyClaimIdentity', () => {
-  it('accepts exact listing email match', () => {
+test.describe('verifyClaimIdentity', () => {
+  test('accepts exact listing email match', () => {
     const result = verifyClaimIdentity(
       'Partner@LawFirm.com',
       'partner@lawfirm.com',
@@ -11,7 +11,7 @@ describe('verifyClaimIdentity', () => {
     expect(result).toEqual({ ok: true, method: 'exact' })
   })
 
-  it('accepts firm domain match via listing email', () => {
+  test('accepts firm domain match via listing email', () => {
     const result = verifyClaimIdentity(
       'associate@lawfirm.com',
       'partner@lawfirm.com',
@@ -20,7 +20,7 @@ describe('verifyClaimIdentity', () => {
     expect(result).toEqual({ ok: true, method: 'domain' })
   })
 
-  it('accepts firm domain match via website', () => {
+  test('accepts firm domain match via website', () => {
     const result = verifyClaimIdentity(
       'advisor@wealthmaps.com',
       null,
@@ -29,7 +29,7 @@ describe('verifyClaimIdentity', () => {
     expect(result).toEqual({ ok: true, method: 'domain' })
   })
 
-  it('rejects free-mail domains without exact match', () => {
+  test('rejects free-mail domains without exact match', () => {
     const result = verifyClaimIdentity('user@gmail.com', 'partner@lawfirm.com', null)
     expect(result.ok).toBe(false)
     if (!result.ok) {
@@ -37,7 +37,7 @@ describe('verifyClaimIdentity', () => {
     }
   })
 
-  it('rejects mismatched corporate domains', () => {
+  test('rejects mismatched corporate domains', () => {
     const result = verifyClaimIdentity(
       'user@otherfirm.com',
       'partner@lawfirm.com',

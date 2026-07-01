@@ -30,14 +30,22 @@ export default async function ClaimListingPage({ params }: Props) {
 
   // 2. Fetch the listing from the correct table
   const listingTable = isAttorney ? 'attorney_listings' : 'advisor_directory'
-  const listingSelect = isAttorney
-    ? 'id, firm_name, email, profile_id, website'
-    : 'id, firm_name, email, profile_id, website, adv_link'
-  const { data: listing } = await admin
-    .from(listingTable)
-    .select(listingSelect)
-    .eq('id', connectionRequest.listing_id)
-    .single()
+  const { data: attorneyListing } = isAttorney
+    ? await admin
+        .from('attorney_listings')
+        .select('id, firm_name, email, profile_id, website')
+        .eq('id', connectionRequest.listing_id)
+        .single()
+    : { data: null }
+  const { data: advisorListing } = !isAttorney
+    ? await admin
+        .from('advisor_directory')
+        .select('id, firm_name, email, profile_id, website, adv_link')
+        .eq('id', connectionRequest.listing_id)
+        .single()
+    : { data: null }
+
+  const listing = isAttorney ? attorneyListing : advisorListing
 
   if (!listing) redirect('/claim-listing/invalid')
 
@@ -71,7 +79,11 @@ export default async function ClaimListingPage({ params }: Props) {
     }
     const listingWebsite = isAttorney
       ? String(listing.website ?? '')
-      : String(listing.website ?? listing.adv_link ?? '')
+      : String(
+          listing.website ??
+            ('adv_link' in listing ? listing.adv_link : null) ??
+            '',
+        )
     const identity = verifyClaimIdentity(user.email, listing.email, listingWebsite)
     if (!identity.ok) {
       redirect('/claim-listing/identity-mismatch')
