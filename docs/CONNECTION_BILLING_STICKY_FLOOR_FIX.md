@@ -166,8 +166,12 @@ Staging, flag ON: connect tracks up to limit, disconnect holds the floor, exceed
 3. **Reset re-band:** ratchet across a band boundary (e.g. 11+), disconnect, bill holds at floor → reset with preview showing rate increase → floor drops and re-bands.
 4. **Frequency cap:** 3rd self-serve reset blocked; admin `POST /api/admin/firm-connection-reset-count` clears counter.
 
-**Fixture reset:** `TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/reset-staging-e2e-advisor-empty-billing.ts`
+**Fixture reset:** `npm run reset:staging-e2e-advisor-empty-billing`
+
+**Live proof attested (2026-07-01, `e2e-advisor-empty@mywealthmaps.test`):** checkout qty 2, floor 2, 0 connected → sticky; accept #2/#3 holds qty 2; 4th accept → 402; raise to 3 → tier1 accept succeeds.
 
 ## Launch-required gap (not deferred)
 
-**`/billing` raise + reset UI** must ship before real advisors use connection billing. The advisor workspace limit-reached modal links to `/billing`, but v1 is API-only — professionals cannot complete raise/reset in-product. Staging proof via API is fine; **prod launch to real advisors is blocked** until forms land (re-band confirmation copy required on reset).
+~~**`/billing` raise + reset UI** must ship before real advisors use connection billing.~~ **Shipped #196** (2026-07-01) — `/billing` flag-ON path has raise/reset forms + re-band preview. Limit-reached modal deep-link `/billing?action=raise` works on staging.
+
+**Still open:** `/advisor/firm` Firm Summary (`_firm-client.tsx`) shows legacy `$149/mo per advisor` / "Active seats" when flag ON — same class of bug as pre-#196 `/billing`. Separate PR recommended before real-advisor launch.

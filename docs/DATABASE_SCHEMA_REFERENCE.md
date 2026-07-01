@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # My Wealth Maps — Database Schema Guide
-# Last updated: 2026-06-26 (profiles advisor SELECT status gate)
+# Last updated: 2026-07-01 (firms connection billing columns)
 
 **Session history:** [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · **Consumer journeys:** [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md)
 
@@ -158,8 +158,8 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 
 ### `firms`
 
-- **Key columns:** `id`, `name`, `owner_id`, `tier`, `seat_count`, `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`
-- **Purpose:** advisor firm billing and seat management; denormalized `profiles.firm_id` / `firm_role`.
+- **Key columns:** `id`, `name`, `owner_id`, `tier`, `seat_count` (legacy per-seat sync; **not** connection billing floor), `client_limit`, `billing_floor`, `reset_count` (connection billing B2 — migration `20260731120000`), `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`
+- **Purpose:** advisor firm billing and seat management; denormalized `profiles.firm_id` / `firm_role`. Connection billing (flag ON): `client_limit` = gated ceiling; `billing_floor` = sticky high-water-mark; `reset_count` = self-serve reset cap (2, then admin).
 - **Migration:** `20260404000000_create_firms_and_firm_members.sql`
 - **Deletion:** references `auth.users(id)` via `owner_id` — cleared by `lib/compliance/deleteUser.ts` FK scan before Auth delete (cascades `firm_members` for owned firms).
 

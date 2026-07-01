@@ -31,6 +31,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) | Auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
 | [BILLING_PAGE_COPY_SPEC.md](./BILLING_PAGE_COPY_SPEC.md) | Consumer `/billing` matrix copy and layout |
 | [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md) | **Tier 0 + app-trial enforcement** — 8-PR sequence after billing page presentation |
+| [CONNECTION_BILLING_STICKY_FLOOR_FIX.md](./CONNECTION_BILLING_STICKY_FLOOR_FIX.md) · [BILLING_PAGE_CONNECTION_REBUILD.md](./BILLING_PAGE_CONNECTION_REBUILD.md) | **Advisor connection billing** — B2 model + `/billing` UI spec |
 | [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | Privacy deletion SOP, C-6/C-7 automated checks, privacy request + appeals SOP |
 | [legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md) | Counsel Q1–Q10 → conditional engineering scope |
 
@@ -1345,6 +1346,19 @@ Use this for **all** merges. For **tax/engine** changes, also run the extra spot
 - [ ] Education links: `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs` (run against production after any education content changes)
 - [ ] After import deploy: tier 2+ smoke on `/import` (see [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) I.1–I.4) — **passed production 2026-06-02**
 - [ ] After F-2 deploy: `npm run test:import:unit` and `npm run test:import:api` (F-2 migration on test DB)
+
+## Sprint — Advisor connection billing staging track ✅ #195–#196 on staging · #197–#198 open (2026-07-01)
+
+- [x] Migration `20260731120000_firm_connection_sticky_floor.sql` — `client_limit`, `billing_floor`, `reset_count`
+- [x] Core lib — `firmConnectionStickyFloor.ts`, `syncFirmQuantity.ts`, `firmConnectionBilling.ts` gate
+- [x] Raise/reset APIs — `/api/firm/connection-limit/raise|reset`
+- [x] `/billing` connection UI (#196) — `_firm-connection-billing-client.tsx`, `firmConnectionBillingSummary.ts`
+- [x] Staging live proof — sticky floor, 402 gate, raise round-trip (`e2e-advisor-empty`)
+- [x] Reset script — `npm run reset:staging-e2e-advisor-empty-billing`
+- [~] #197 — advisor checkout redirect + `walk-staging-invite-accepts.ts` (PR open)
+- [~] #198 — invite-send capacity warning + ack modal (PR open)
+- [ ] `/advisor/firm` connection copy rebuild (legacy seat summary when flag ON)
+- [x] Master docs synced — NEXT_SESSION · DECISION_LOG · MASTER_ARCHITECTURE · ROADMAP · DEPLOYMENT · SCHEMA · E2E_TEST_RESET · CONNECTION_BILLING · BILLING_PAGE spec
 
 ## Commit hygiene
 

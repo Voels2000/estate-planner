@@ -16,7 +16,7 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 **Migration:** `20260731120000_firm_connection_sticky_floor.sql`
 
-**Change:** `firms.client_limit`, `firms.billing_floor` (default 0), `firms.reset_count` (default 0). Backfill active firms: `client_limit` + `billing_floor` = max(seat_count, connected households). Spec: `docs/CONNECTION_BILLING_STICKY_FLOOR_FIX.md`.
+**Change:** `firms.client_limit`, `firms.billing_floor` (default 0), `firms.reset_count` (default 0). Backfill active firms: `client_limit` + `billing_floor` = max(seat_count, connected households). Spec: `docs/CONNECTION_BILLING_STICKY_FLOOR_FIX.md`. **UI:** `/billing` rebuild #196 on staging.
 
 ---
 
