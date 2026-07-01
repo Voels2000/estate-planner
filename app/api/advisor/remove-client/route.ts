@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { restoreConsumerBillingOnDisconnect } from '@/lib/advisor/restoreConsumerBillingOnDisconnect'
+import {
+  getAdvisorFirmBillingContext,
+  syncFirmConnectionBillingQuantity,
+} from '@/lib/billing/firmConnectionBilling'
 
 export async function DELETE(req: NextRequest) {
   const { user, isSuperuser, isAdvisor } = await getAccessContext()
@@ -71,6 +75,9 @@ export async function DELETE(req: NextRequest) {
       sendEmail: true,
     })
   }
+
+  const { firmId } = await getAdvisorFirmBillingContext(admin, user.id)
+  await syncFirmConnectionBillingQuantity(firmId)
 
   if (isSuperuser) {
     await admin.from('superuser_action_log').insert({

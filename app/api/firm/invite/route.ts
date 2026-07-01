@@ -5,6 +5,7 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { getAppUrl } from '@/lib/app-url'
 import { countFirmRosterSeats, getFirmTierMaxSeats } from '@/lib/firm/firmRoster'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
 import { EMAIL_FROM, EMAIL_REPLY_TO } from '@/lib/email/config'
 
 function normalizeEmail(email: string) {
@@ -81,7 +82,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    if (!['active', 'trialing'].includes(firmRowBefore.subscription_status ?? '')) {
+    if (
+      !isConnectionBillingEnabled() &&
+      !['active', 'trialing'].includes(firmRowBefore.subscription_status ?? '')
+    ) {
       return NextResponse.json(
         { error: 'An active firm subscription is required to invite advisors.' },
         { status: 403 },
@@ -110,7 +114,10 @@ export async function POST(request: Request) {
       )
     }
 
-    if (roster.total >= purchasedSeats) {
+    if (
+      !isConnectionBillingEnabled() &&
+      roster.total >= purchasedSeats
+    ) {
       return NextResponse.json(
         {
           error: `All ${purchasedSeats} purchased seats are reserved. Add seats via Manage firm billing before inviting more advisors.`,
