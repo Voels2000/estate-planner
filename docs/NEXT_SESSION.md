@@ -1,16 +1,14 @@
 # NEXT_SESSION.md — session handoff
 
-**Last updated:** 2026-07-01 (claim walk + billing seed in flight)
+**Last updated:** 2026-07-01 (#206–#210 merged; step-up in flight)
 
 ---
 
 ## Start here
 
-**Attorney connection billing:** ✅ **Closed** — #200–#201 on `staging`; step-4 spine proven (`walk:staging-attorney-step4`). API contract is source of truth.
+**Attorney connection billing:** ✅ **Closed** — step-4 spine proven.
 
-**Claim v2:** [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) — PR #206 (identity fix) + #208 (magic-link claim) in flight; billing seed + step-up next.
-
-**Advisor track:** #197/#198 merged · `/advisor/firm` copy fix in #207.
+**Claim v2:** #206–#210 merged (identity, magic-link claim, billing seed, login link). **Next:** action-gated step-up (#211), credential verification, rename `/claim-listing`.
 
 ---
 
@@ -22,13 +20,11 @@
 | Walk helpers | ✅ `walk:staging-attorney-connection-accepts` + `walk:staging-attorney-step4` (#203) |
 | Claim v2 discovery | ✅ [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) |
 | Claim v2 spec (locked auth) | ✅ [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) |
-| Claim v2 implementation | `[~]` | PR #208 magic-link claim; staging walk per spec |
-| `/claim-listing/` identity-skip | `[~]` | P0 fix in PR #206 |
-| Advisor checkout redirect (#197) | ✅ Merged |
-| Invite-send capacity warning (#198) | ✅ Merged |
-| `/advisor/firm` connection copy | `[~]` | PR #207 |
-| Claim v2 magic-link entry | `[~]` | PR #208 — walk script #209 |
-| Claim billing seed at claim | `[~]` | PR #209 — advisor firm bootstrap |
+| Claim v2 implementation | `[~]` | Step-up #211; credential + rename remain |
+| `/claim-listing/` identity-skip | ✅ #206 |
+| `/advisor/firm` connection copy | ✅ #207 |
+| Claim v2 magic-link entry | ✅ #208–#210 merged |
+| Action-gated step-up | `[~]` | PR #211 — `ACTION_GATED_PRIVILEGED_MFA` |
 | Prod connection billing flip | 🚫 After staging green |
 
 ---

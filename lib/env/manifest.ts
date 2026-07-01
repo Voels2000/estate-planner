@@ -219,6 +219,11 @@ export const ENV_MANIFEST: EnvVarEntry[] = [
     secret: false,
     shape: { production: 'true' },
   }),
+  entry('ACTION_GATED_PRIVILEGED_MFA', {
+    scopes: ALL_SCOPES,
+    requiredInScopes: [],
+    secret: false,
+  }),
   entry('PUBLIC_SIGNUP_OPEN', {
     scopes: ALL_SCOPES,
     requiredInScopes: ['production'],

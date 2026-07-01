@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { applyAttorneyConnectionBilling } from '@/lib/attorney/applyAttorneyConnectionBilling'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { requireActionStepUpApi } from '@/lib/security/requireActionStepUpApi'
 import { NextResponse } from 'next/server'
 import { resend } from '@/lib/resend'
 import { getAppUrl } from '@/lib/app-url'
@@ -30,6 +31,9 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createClient()
+  const stepUpBlock = await requireActionStepUpApi(supabase)
+  if (stepUpBlock) return stepUpBlock
+
   const admin = createAdminClient()
 
   const { data: profile } = await supabase
