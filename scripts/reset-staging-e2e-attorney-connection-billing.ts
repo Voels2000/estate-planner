@@ -7,16 +7,24 @@
  * - Listing → client_limit=1, billing_floor=0, reset_count=0
  * - Profile → unpaid attorney_tier=0, clears Stripe columns
  * - Removes attorney_clients rows for this listing
+ * - Re-seeds 3 consumer_requested rows for manual /attorney/requests walk
  */
 
 import Stripe from 'stripe'
 import { createAdminClient } from '../lib/supabase/admin'
+import { ensureAttorneyClientRequestRow } from '../lib/attorney/createAttorneyClientRequest'
 import { E2E_IDENTITIES } from './e2e-test-identities'
 import {
   ensureAttorneyListingAndPortal,
   findUserIdByEmail,
   initSupabaseEnv,
 } from './seed-e2e-lib'
+
+const WALK_CONSUMER_EMAILS = [
+  E2E_IDENTITIES.consumerTier1.email,
+  E2E_IDENTITIES.consumer.email,
+  E2E_IDENTITIES.advisorClient.email,
+] as const
 
 async function main() {
   initSupabaseEnv()
@@ -109,7 +117,31 @@ async function main() {
 
   console.log('\nAfter listing:', afterListing)
   console.log('After profile:', afterProfile)
-  console.log('\nReady for walk:')
+
+  console.log('\nSeeding consumer_requested rows for manual walk:')
+  for (const email of WALK_CONSUMER_EMAILS) {
+    const consumerId = await findUserIdByEmail(email)
+    if (!consumerId) {
+      console.log(`  SKIP — no auth user: ${email}`)
+      continue
+    }
+    const result = await ensureAttorneyClientRequestRow(admin, {
+      attorneyListingId: listing.id,
+      consumerUserId: consumerId,
+      requestMessage: `E2E connection request from ${email}`,
+    })
+    console.log(`  ${email} → row ${result.rowId ?? 'failed'}`)
+  }
+
+  const { count: pendingCount } = await admin
+    .from('attorney_clients')
+    .select('id', { count: 'exact', head: true })
+    .eq('attorney_id', listing.id)
+    .eq('status', 'consumer_requested')
+
+  console.log(`\nPending connection requests: ${pendingCount ?? 0}`)
+  console.log(`  UI: https://estate-planner-staging.vercel.app/attorney/requests`)
+  console.log('\nOptional automated walk:')
   console.log(
     '  TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/walk-staging-attorney-connection-accepts.ts',
   )

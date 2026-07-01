@@ -10,6 +10,7 @@ type MockConfig = {
   profileId: string | null
   subscriptionStatus: string | null
   clientLimit: number | null
+  billingFloor?: number
   connectedHouseholdIds: string[]
 }
 
@@ -26,7 +27,7 @@ function mockAdmin(config: MockConfig): SupabaseClient {
                       data: {
                         profile_id: config.profileId,
                         client_limit: config.clientLimit,
-                        billing_floor: 0,
+                        billing_floor: config.billingFloor ?? 0,
                         reset_count: 0,
                       },
                       error: null,
@@ -134,6 +135,27 @@ test.describe('attorneyConnectionBilling gate', () => {
     expect(result.ok).toBe(false)
     if (result.ok) return
     expect(result.response.status).toBe(403)
+  })
+
+  test('active subscription at capacity → limit_raise_required (not checkout)', async () => {
+    process.env.CONNECTION_BILLING_ENABLED = 'true'
+    const admin = mockAdmin({
+      listingId: 'listing-1',
+      profileId: 'profile-1',
+      subscriptionStatus: 'active',
+      clientLimit: 2,
+      billingFloor: 1,
+      connectedHouseholdIds: ['hh-1', 'hh-2'],
+    })
+    const result = await evaluateAttorneyConnectionBillingGate(admin, 'listing-1', 'hh-3')
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.failure).toEqual({
+      kind: 'limit_raise_required',
+      currentLimit: 2,
+      connected_count: 2,
+      billing_floor: 1,
+    })
   })
 
   test('flag off is inert', async () => {

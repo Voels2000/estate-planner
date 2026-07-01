@@ -12,12 +12,14 @@ import {
 import {
   MAX_SELF_SERVE_RESETS,
   buildRebandPreview as buildStickyRebandPreview,
+  resolveStickyBillableQuantity,
 } from '@/lib/billing/firmConnectionStickyFloor'
 import type { ConnectionBillingPageState } from '@/lib/billing/firmConnectionBillingSummary'
 import {
   formatBandRangeLabel,
   resolveConnectionBillingPageState,
 } from '@/lib/billing/firmConnectionBillingSummary'
+import { buildConnectionRaiseLimitPreview } from '@/lib/billing/connectionRaiseLimitPreview'
 
 export type AttorneyConnectionBillingSummary = {
   connectedCount: number
@@ -35,6 +37,7 @@ export type AttorneyConnectionBillingSummary = {
   planLine: string
   connectedCapacityLine: string
   billingLine: string
+  atCapacityRaiseHint: string | null
   canLowerLimit: boolean
   canRaiseLimit: boolean
 }
@@ -56,6 +59,25 @@ export function buildAttorneyConnectionBillingSummary(opts: {
   const pageState = resolveConnectionBillingPageState(connectedCount, clientLimit, billingFloor)
   const rangeLabel = formatBandRangeLabel(band)
   const freeClientsCount = Math.min(connectedCount, ATTORNEY_FREE_CLIENTS)
+  const atCapacity = pageState === 'at_capacity'
+  const nextClientRate = rateForCount(
+    attorneyBillableBeforeFloor(connectedCount + 1),
+    ATTORNEY_BANDS,
+    ATTORNEY_FLOOR,
+  )
+
+  const connectedCapacityLine = atCapacity
+    ? `You've connected ${connectedCount} of ${clientLimit} clients (${freeClientsCount} free)`
+    : `${connectedCount} of ${clientLimit} client capacity`
+
+  const billingLine =
+    billableQuantity > 0
+      ? atCapacity
+        ? `Billing for ${billableQuantity} at $${estimatedMonthly}/mo`
+        : `${connectedCount} clients · ${freeClientsCount} free · billing for ${billableQuantity} · $${estimatedMonthly}/mo`
+      : connectedCount > 0
+        ? `${connectedCount} client${connectedCount === 1 ? '' : 's'} · 1 free · $0/mo`
+        : 'No connected clients yet · 1 free client included'
 
   return {
     connectedCount,
@@ -71,13 +93,11 @@ export function buildAttorneyConnectionBillingSummary(opts: {
     selfServeResetsRemaining: Math.max(0, MAX_SELF_SERVE_RESETS - resetCount),
     pageState,
     planLine: `Connection billing — ${band.label} band (${rangeLabel})`,
-    connectedCapacityLine: `${connectedCount} of ${clientLimit} client capacity`,
-    billingLine:
-      billableQuantity > 0
-        ? `${connectedCount} clients · ${freeClientsCount} free · billing for ${billableQuantity} · $${estimatedMonthly}/mo`
-        : connectedCount > 0
-          ? `${connectedCount} client${connectedCount === 1 ? '' : 's'} · 1 free · $0/mo`
-          : 'No connected clients yet · 1 free client included',
+    connectedCapacityLine,
+    billingLine,
+    atCapacityRaiseHint: atCapacity
+      ? `Raise your limit to connect more — each additional billable client is $${nextClientRate}/mo.`
+      : null,
     canLowerLimit: connectedCount < clientLimit && resetCount < MAX_SELF_SERVE_RESETS,
     canRaiseLimit: true,
   }
@@ -88,27 +108,16 @@ export function buildAttorneyRaiseLimitPreview(opts: {
   billingFloor: number | null | undefined
   newLimit: number
 }) {
-  const connectedCount = Math.max(0, Math.floor(opts.connectedCount))
-  const billingFloor = Math.max(0, Math.floor(opts.billingFloor ?? 0))
-  const newLimit = Math.max(1, Math.floor(opts.newLimit))
-  const billableQuantity = resolveAttorneyBillableQuantity(connectedCount, billingFloor)
-  const newBillableCeiling = attorneyBillableBeforeFloor(newLimit)
-  const currentBand = bandForCount(billableQuantity, ATTORNEY_BANDS)
-  const newBand = bandForCount(newBillableCeiling, ATTORNEY_BANDS)
-  const currentRate = rateForCount(billableQuantity, ATTORNEY_BANDS, ATTORNEY_FLOOR)
-  const newRate = rateForCount(newBillableCeiling, ATTORNEY_BANDS, ATTORNEY_FLOOR)
-
-  return {
-    newLimit,
-    currentBandLabel: currentBand.label,
-    newBandLabel: newBand.label,
-    currentRatePerClient: currentRate,
-    newRatePerClient: newRate,
-    currentMonthly: billableQuantity * currentRate,
-    newMonthly: billableQuantity * newRate,
-    rateImproved: newRate < currentRate,
-    billableQuantity,
-  }
+  return buildConnectionRaiseLimitPreview({
+    connectedCount: opts.connectedCount,
+    billingFloor: opts.billingFloor,
+    newLimit: opts.newLimit,
+    bands: ATTORNEY_BANDS,
+    rateFloor: ATTORNEY_FLOOR,
+    billableQuantity: resolveAttorneyBillableQuantity,
+    bandCountForNewLimit: attorneyBillableBeforeFloor,
+    billableAfterOneMoreConnect: (connected) => attorneyBillableBeforeFloor(connected + 1),
+  })
 }
 
 export function buildAttorneyRebandPreview(opts: {

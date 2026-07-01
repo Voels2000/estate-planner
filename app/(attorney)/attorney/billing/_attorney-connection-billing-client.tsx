@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 import { Button, ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { ConnectionLimitRaiseForm } from '@/components/billing/ConnectionLimitRaiseForm'
 import type { AttorneyConnectionBillingSummary } from '@/lib/billing/attorneyConnectionBillingSummary'
 import { buildAttorneyRaiseLimitPreview } from '@/lib/billing/attorneyConnectionBillingSummary'
 import { attorneyProjectedBillableAfterConnect } from '@/lib/billing/attorneyBillableQuantity'
@@ -51,7 +52,6 @@ export function AttorneyConnectionBillingClient({
 
   const [showRaiseForm, setShowRaiseForm] = useState(initialAction === 'raise')
   const [showLowerForm, setShowLowerForm] = useState(initialAction === 'lower')
-  const [raiseLimitInput, setRaiseLimitInput] = useState(summary.clientLimit + 1)
   const [lowerLimitInput, setLowerLimitInput] = useState(
     Math.max(summary.connectedCount, summary.clientLimit - 1),
   )
@@ -63,11 +63,7 @@ export function AttorneyConnectionBillingClient({
         : attorneyProjectedBillableAfterConnect(summary.connectedCount) || 1,
     ),
   )
-  const [raisePreview, setRaisePreview] = useState<ReturnType<typeof buildAttorneyRaiseLimitPreview> | null>(
-    null,
-  )
   const [resetPreview, setResetPreview] = useState<ResetPreview | null>(null)
-  const [submittingRaise, setSubmittingRaise] = useState(false)
   const [submittingReset, setSubmittingReset] = useState(false)
 
   const isActive =
@@ -83,32 +79,6 @@ export function AttorneyConnectionBillingClient({
     if (initialAction === 'raise') setShowRaiseForm(true)
     if (initialAction === 'lower') setShowLowerForm(true)
   }, [initialAction])
-
-  useEffect(() => {
-    if (!showRaiseForm || !isOwner || !isActive) {
-      setRaisePreview(null)
-      return
-    }
-    if (raiseLimitInput <= summary.clientLimit) {
-      setRaisePreview(null)
-      return
-    }
-    setRaisePreview(
-      buildAttorneyRaiseLimitPreview({
-        connectedCount: summary.connectedCount,
-        billingFloor: summary.billingFloor,
-        newLimit: raiseLimitInput,
-      }),
-    )
-  }, [
-    showRaiseForm,
-    isOwner,
-    isActive,
-    raiseLimitInput,
-    summary.clientLimit,
-    summary.connectedCount,
-    summary.billingFloor,
-  ])
 
   useEffect(() => {
     if (!showLowerForm || !isOwner || !isActive) {
@@ -210,30 +180,11 @@ export function AttorneyConnectionBillingClient({
     }
   }
 
-  async function handleRaiseConfirm() {
-    setError(null)
-    setSuccess(null)
-    setSubmittingRaise(true)
-    try {
-      const res = await fetch('/api/attorney/connection-limit/raise', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ new_client_limit: raiseLimitInput }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setError(typeof data.error === 'string' ? data.error : 'Raise failed.')
-        return
-      }
-      setSuccess('Client limit raised.')
-      setShowRaiseForm(false)
-      clearActionParam()
-      router.refresh()
-    } catch {
-      setError('Something went wrong.')
-    } finally {
-      setSubmittingRaise(false)
-    }
+  async function handleRaiseSuccess() {
+    setSuccess('Client limit raised.')
+    setShowRaiseForm(false)
+    clearActionParam()
+    router.refresh()
   }
 
   async function handleResetConfirm() {
@@ -309,13 +260,21 @@ export function AttorneyConnectionBillingClient({
       )}
 
       {summary.pageState === 'at_capacity' && isActive && (
-        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          You&apos;ve connected all {summary.clientLimit} clients in your plan.
-          {isOwner && (
-            <>
-              {' '}
-              Raise your limit to connect more households.
-            </>
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 space-y-2">
+          <p>{summary.connectedCapacityLine}. {summary.billingLine}.</p>
+          {summary.atCapacityRaiseHint && <p>{summary.atCapacityRaiseHint}</p>}
+          {isOwner && !showRaiseForm && (
+            <Button
+              type="button"
+              onClick={() => {
+                setShowRaiseForm(true)
+                setShowLowerForm(false)
+              }}
+              variant="primary"
+              className="mt-2 rounded-lg px-4 py-2 text-sm"
+            >
+              Raise limit to connect more
+            </Button>
           )}
         </div>
       )}
@@ -463,74 +422,19 @@ export function AttorneyConnectionBillingClient({
       {isOwner && showRaiseForm && isActive && (
         <Card className="mt-6 space-y-4 rounded-2xl p-6">
           <h2 className="text-lg font-semibold text-neutral-900">Raise client limit</h2>
-          <p className="text-sm text-neutral-600">
-            Add prepaid headroom before connecting more households. Your bill updates
-            when you connect into the new capacity.
-          </p>
-          <div>
-            <label
-              htmlFor="raise-limit"
-              className="mb-1.5 block text-sm font-medium text-neutral-700"
-            >
-              New client limit (current: {summary.clientLimit})
-            </label>
-            <input
-              id="raise-limit"
-              type="number"
-              min={summary.clientLimit + 1}
-              max={250}
-              value={raiseLimitInput}
-              onChange={(e) => {
-                const parsed = parseInt(e.target.value, 10)
-                setRaiseLimitInput(
-                  Number.isNaN(parsed) ? summary.clientLimit + 1 : parsed,
-                )
-              }}
-              className="w-full max-w-xs rounded-lg border border-neutral-300 px-3 py-2 text-sm"
-            />
-          </div>
-          {raisePreview && (
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-800">
-              <p>
-                {raisePreview.currentBandLabel} (${raisePreview.currentRatePerClient}
-                /client) → {raisePreview.newBandLabel} ($
-                {raisePreview.newRatePerClient}/client)
-              </p>
-              <p className="mt-2">
-                Est. monthly now: ${raisePreview.newMonthly.toLocaleString('en-US')}
-                {raisePreview.rateImproved && (
-                  <span className="text-green-700">
-                    {' '}
-                    — lower per-client rate in the {raisePreview.newBandLabel} band
-                  </span>
-                )}
-              </p>
-            </div>
-          )}
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              onClick={() => void handleRaiseConfirm()}
-              disabled={
-                submittingRaise || raiseLimitInput <= summary.clientLimit || !raisePreview
-              }
-              variant="primary"
-              className="rounded-lg px-4 py-2.5 text-sm"
-            >
-              {submittingRaise ? 'Saving…' : 'Confirm raise'}
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setShowRaiseForm(false)
-                clearActionParam()
-              }}
-              variant="outline"
-              className="rounded-lg px-4 py-2.5 text-sm"
-            >
-              Cancel
-            </Button>
-          </div>
+          <ConnectionLimitRaiseForm
+            raiseApiPath="/api/attorney/connection-limit/raise"
+            currentLimit={summary.clientLimit}
+            connectedCount={summary.connectedCount}
+            billingFloor={summary.billingFloor}
+            buildPreview={buildAttorneyRaiseLimitPreview}
+            nextClientHint={summary.atCapacityRaiseHint}
+            onSuccess={() => void handleRaiseSuccess()}
+            onCancel={() => {
+              setShowRaiseForm(false)
+              clearActionParam()
+            }}
+          />
         </Card>
       )}
 

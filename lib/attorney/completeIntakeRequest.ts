@@ -26,6 +26,7 @@ export async function completeIntakeRequestForUser(
       quantity?: number
       currentLimit?: number
       connected_count?: number
+      billing_floor?: number
     }
 > {
   const admin = createAdminClient()
@@ -128,6 +129,7 @@ export async function completeIntakeRequestForUser(
               status: 402,
               currentLimit: failure.currentLimit,
               connected_count: failure.connected_count,
+              billing_floor: failure.billing_floor,
             }
           }
           return { ok: false, error: 'Forbidden', status: 403 }

@@ -109,7 +109,10 @@ export function AttorneyRequestsClient({
         onConfirmCheckout={(quantity) => {
           void startAttorneyConnectionCheckout(quantity)
         }}
-        onConfirmRaise={() => setLimitRaiseModal(null)}
+        onRaiseSuccess={() => {
+          setLimitRaiseModal(null)
+          router.refresh()
+        }}
       />
       <div>
         <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Requests</h1>
