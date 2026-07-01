@@ -154,7 +154,7 @@ Wired for **firm_member** invites at signup (`joinFirmFromInvite` in `completeSi
 
 ## Surprises / bugs (not fixed)
 
-1. **Two claim URL families:** `/claim/` (directory outreach) vs `/claim-listing/` (consumer request) — easy to conflate in v2 spec.
+1. **Two claim URL families:** `/claim/` (directory outreach) vs `/claim-listing/` (professional **respond to consumer request-connect** — not a consumer path; see [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) Part 5). Naming collision + `/claim-listing/` skips `verifyClaimIdentity`.
 2. **Claim-listing** does not set `claimed_at` or run `verifyClaimIdentity` — weaker than `/api/directory/claim`.
 3. **No claim token expiry** on directory tokens (invite tokens do expire).
 4. **Attorney signup role:** Directory claim requires attorney account already; outreach must use attorney signup with `redirectTo`, not consumer signup.
