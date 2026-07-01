@@ -16,6 +16,16 @@ export type FirmCheckoutRequiredBody = {
   quantity: number
 }
 
+export type LimitRaiseRequiredInviteWarnBody = LimitRaiseRequiredBody & {
+  /** Invite send at capacity — client may retry with acknowledge_at_capacity. Accept stays hard-blocked. */
+  invite_warn?: true
+}
+
+export type ConnectionBillingGateFailure =
+  | { kind: 'forbidden' }
+  | { kind: 'firm_checkout_required'; quantity: number }
+  | { kind: 'limit_raise_required'; currentLimit: number; connected_count: number }
+
 export function hasActiveFirmBillingSubscription(
   subscriptionStatus: string | null | undefined,
 ): boolean {
@@ -86,30 +96,70 @@ export async function wouldConnectAddBillableHousehold(
   return (links ?? []).length === 0
 }
 
+/** Whether accepting an invite to invitedEmail would add a new billable household for the firm. */
+export async function wouldInviteEmailAddBillableHousehold(
+  admin: SupabaseClient,
+  firmId: string,
+  invitedEmail: string,
+): Promise<boolean> {
+  const normalized = invitedEmail.trim().toLowerCase()
+  if (!normalized) return true
+
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('id')
+    .ilike('email', normalized)
+    .maybeSingle()
+
+  if (!profile?.id) return true
+  return wouldConnectAddBillableHousehold(admin, firmId, profile.id)
+}
+
+function connectionBillingGateFailureToResponse(
+  failure: ConnectionBillingGateFailure,
+  opts?: { inviteWarn?: boolean },
+): NextResponse {
+  if (failure.kind === 'forbidden') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  if (failure.kind === 'firm_checkout_required') {
+    return NextResponse.json(
+      { error: 'firm_checkout_required', quantity: failure.quantity } satisfies FirmCheckoutRequiredBody,
+      { status: 402 },
+    )
+  }
+  return NextResponse.json(
+    {
+      error: 'limit_raise_required',
+      currentLimit: failure.currentLimit,
+      connected_count: failure.connected_count,
+      ...(opts?.inviteWarn ? { invite_warn: true as const } : {}),
+    } satisfies LimitRaiseRequiredInviteWarnBody,
+    { status: 402 },
+  )
+}
+
 /**
- * When CONNECTION_BILLING_ENABLED:
- * - Unpaid firm → firm_checkout_required
- * - Paid firm at client_limit → limit_raise_required (no connect, no handoff)
+ * Canonical connection-billing capacity evaluation for connect and invite-send paths.
+ * Flag-off callers should skip this and use legacy getAdvisorClientCapacity instead.
  */
-export async function assessFirmConnectionBillingGate(
+export async function evaluateFirmConnectionBillingGate(
   admin: SupabaseClient,
   advisorId: string,
-  clientUserId: string,
-): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
-  if (!isConnectionBillingEnabled()) {
-    return { ok: true }
-  }
-
+  target: { clientUserId: string } | { invitedEmail: string },
+): Promise<{ ok: true } | { ok: false; failure: ConnectionBillingGateFailure }> {
   const { firmId, subscriptionStatus, clientLimit } =
     await getAdvisorFirmBillingContext(admin, advisorId)
+
   if (!firmId) {
-    return {
-      ok: false,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    }
+    return { ok: false, failure: { kind: 'forbidden' } }
   }
 
-  const addsNew = await wouldConnectAddBillableHousehold(admin, firmId, clientUserId)
+  const addsNew =
+    'clientUserId' in target
+      ? await wouldConnectAddBillableHousehold(admin, firmId, target.clientUserId)
+      : await wouldInviteEmailAddBillableHousehold(admin, firmId, target.invitedEmail)
+
   if (!addsNew) {
     return { ok: true }
   }
@@ -120,26 +170,77 @@ export async function assessFirmConnectionBillingGate(
     if (wouldExceedClientLimit(connected, clientLimit, true)) {
       return {
         ok: false,
-        response: NextResponse.json(
-          {
-            error: 'limit_raise_required',
-            currentLimit: Math.max(1, Math.floor(clientLimit ?? 1)),
-            connected_count: connected,
-          } satisfies LimitRaiseRequiredBody,
-          { status: 402 },
-        ),
+        failure: {
+          kind: 'limit_raise_required',
+          currentLimit: Math.max(1, Math.floor(clientLimit ?? 1)),
+          connected_count: connected,
+        },
       }
     }
     return { ok: true }
   }
 
-  const quantity = connected + 1
   return {
     ok: false,
-    response: NextResponse.json(
-      { error: 'firm_checkout_required', quantity } satisfies FirmCheckoutRequiredBody,
-      { status: 402 },
-    ),
+    failure: { kind: 'firm_checkout_required', quantity: connected + 1 },
+  }
+}
+
+/**
+ * When CONNECTION_BILLING_ENABLED:
+ * - Unpaid firm → firm_checkout_required
+ * - Paid firm at client_limit → limit_raise_required (hard block — billable moment)
+ */
+export async function assessFirmConnectionBillingGate(
+  admin: SupabaseClient,
+  advisorId: string,
+  clientUserId: string,
+): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
+  if (!isConnectionBillingEnabled()) {
+    return { ok: true }
+  }
+
+  const evaluation = await evaluateFirmConnectionBillingGate(admin, advisorId, {
+    clientUserId,
+  })
+  if (evaluation.ok) return { ok: true }
+  return {
+    ok: false,
+    response: connectionBillingGateFailureToResponse(evaluation.failure),
+  }
+}
+
+/**
+ * Invite send — same capacity rule as accept, but at-capacity is a warn (retry with acknowledge_at_capacity).
+ * Pending invites are not billable; accept remains the hard enforcement point.
+ */
+export async function assessFirmConnectionBillingGateForInvite(
+  admin: SupabaseClient,
+  advisorId: string,
+  invitedEmail: string,
+  options: { acknowledgeAtCapacity?: boolean },
+): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
+  if (!isConnectionBillingEnabled()) {
+    return { ok: true }
+  }
+
+  const evaluation = await evaluateFirmConnectionBillingGate(admin, advisorId, {
+    invitedEmail,
+  })
+  if (evaluation.ok) return { ok: true }
+
+  if (
+    evaluation.failure.kind === 'limit_raise_required' &&
+    options.acknowledgeAtCapacity
+  ) {
+    return { ok: true }
+  }
+
+  return {
+    ok: false,
+    response: connectionBillingGateFailureToResponse(evaluation.failure, {
+      inviteWarn: evaluation.failure.kind === 'limit_raise_required',
+    }),
   }
 }
 

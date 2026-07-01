@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   assessFirmConnectionBillingGate,
+  assessFirmConnectionBillingGateForInvite,
   hasActiveFirmBillingSubscription,
   shouldSyncFirmStripeOnRosterChange,
   syncFirmConnectionBillingQuantity,
@@ -41,6 +42,9 @@ function mockAdmin(config: MockConfig): SupabaseClient {
               }
               throw new Error(`profiles.select(${columns}).eq(${column})`)
             },
+            ilike: () => ({
+              maybeSingle: async () => ({ data: null, error: null }),
+            }),
           }),
         }
       }
@@ -196,6 +200,51 @@ test.describe('firmConnectionBilling', () => {
     const result = await assessFirmConnectionBillingGate(admin, 'adv-1', 'client-new')
     expect(result).toEqual({ ok: true })
   })
+
+  test('assessFirmConnectionBillingGateForInvite warns at capacity with invite_warn', async () => {
+    process.env.CONNECTION_BILLING_ENABLED = 'true'
+    const admin = mockAdmin({
+      firmId: 'firm-1',
+      subscriptionStatus: 'active',
+      clientLimit: 3,
+      connectedClientIds: ['c1', 'c2', 'c3'],
+      advisorIds: ['adv-1'],
+    })
+    const result = await assessFirmConnectionBillingGateForInvite(
+      admin,
+      'adv-1',
+      'new-client@example.com',
+      { acknowledgeAtCapacity: false },
+    )
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.response.status).toBe(402)
+    const body = await result.response.json()
+    expect(body).toEqual({
+      error: 'limit_raise_required',
+      currentLimit: 3,
+      connected_count: 3,
+      invite_warn: true,
+    })
+  })
+
+  test('assessFirmConnectionBillingGateForInvite allows send when acknowledge_at_capacity', async () => {
+    process.env.CONNECTION_BILLING_ENABLED = 'true'
+    const admin = mockAdmin({
+      firmId: 'firm-1',
+      subscriptionStatus: 'active',
+      clientLimit: 3,
+      connectedClientIds: ['c1', 'c2', 'c3'],
+      advisorIds: ['adv-1'],
+    })
+    const result = await assessFirmConnectionBillingGateForInvite(
+      admin,
+      'adv-1',
+      'new-client@example.com',
+      { acknowledgeAtCapacity: true },
+    )
+    expect(result).toEqual({ ok: true })
+  })
 })
 
 test.describe('Phase 4b flag-off contract', () => {
@@ -238,6 +287,18 @@ test.describe('Phase 4b flag-off contract', () => {
     expect(updateIdx).toBeLessThan(afterIdx)
     expect(handoffIdx).toBeGreaterThan(afterIdx)
     expect(src.indexOf('if (!gate.ok) return gate.response')).toBeGreaterThan(-1)
+  })
+
+  test('advisor client invite uses connection billing gate when flag on', () => {
+    const src = readFileSync(join(process.cwd(), 'app/api/advisor/invite/route.ts'), 'utf8')
+    expect(src).toContain('isConnectionBillingEnabled()')
+    expect(src).toContain('assessFirmConnectionBillingGateForInvite')
+    expect(src).toMatch(
+      /isConnectionBillingEnabled\(\)[\s\S]*assessFirmConnectionBillingGateForInvite/,
+    )
+    expect(src).toMatch(
+      /else\s*\{[\s\S]*getAdvisorClientCapacity/,
+    )
   })
 
   test('firm invite relaxes billing sub and purchased-seat gates only when flag on', () => {

@@ -159,6 +159,8 @@ export default function AdvisorClientPage({
   const [limitRaiseModal, setLimitRaiseModal] = useState<{
     currentLimit: number
     connected_count: number
+    /** Invite at capacity — offer send-anyway; accept paths omit this. */
+    inviteWarnEmail?: string
   } | null>(null)
   const [firmCheckoutLoading, setFirmCheckoutLoading] = useState(false)
 
@@ -196,7 +198,17 @@ export default function AdvisorClientPage({
     setFirmCheckoutModal({ quantity })
   }
 
-  function handleConnectBillingError(data: { error?: string; quantity?: number; currentLimit?: number; connected_count?: number }, status: number): boolean {
+  function handleConnectBillingError(
+    data: {
+      error?: string
+      quantity?: number
+      currentLimit?: number
+      connected_count?: number
+      invite_warn?: boolean
+    },
+    status: number,
+    opts?: { inviteEmail?: string },
+  ): boolean {
     if (status === 402 && data.error === 'firm_checkout_required' && typeof data.quantity === 'number') {
       handleFirmCheckoutRequired(data.quantity)
       return true
@@ -209,14 +221,16 @@ export default function AdvisorClientPage({
       setLimitRaiseModal({
         currentLimit: data.currentLimit,
         connected_count: typeof data.connected_count === 'number' ? data.connected_count : data.currentLimit,
+        inviteWarnEmail: data.invite_warn && opts?.inviteEmail ? opts.inviteEmail : undefined,
       })
       return true
     }
     return false
   }
 
-  async function handleInvite() {
-    if (!inviteEmail.trim()) return
+  async function submitInvite(acknowledgeAtCapacity = false) {
+    const email = inviteEmail.trim()
+    if (!email) return
     setIsInviting(true)
     setInviteError(null)
     setInviteMessage(null)
@@ -225,13 +239,16 @@ export default function AdvisorClientPage({
       const response = await fetch('/api/advisor/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invitedEmail: inviteEmail.trim() }),
+        body: JSON.stringify({
+          invitedEmail: email,
+          ...(acknowledgeAtCapacity ? { acknowledge_at_capacity: true } : {}),
+        }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        if (handleConnectBillingError(data, response.status)) return
+        if (handleConnectBillingError(data, response.status, { inviteEmail: email })) return
         if (data.error === 'tier_limit_reached') {
           setTierLimitModal({
             current_count: data.current_count,
@@ -244,6 +261,7 @@ export default function AdvisorClientPage({
         return
       }
 
+      setLimitRaiseModal(null)
       setInviteMessage(data.message)
       setInviteEmail('')
       setTimeout(() => router.refresh(), 500)
@@ -252,6 +270,10 @@ export default function AdvisorClientPage({
     } finally {
       setIsInviting(false)
     }
+  }
+
+  async function handleInvite() {
+    await submitInvite(false)
   }
 
   async function handleStatusChange(clientRecordId: string, clientId: string | null, newStatus: string) {
@@ -468,21 +490,47 @@ export default function AdvisorClientPage({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
             <div className="mb-1 text-2xl">📈</div>
-            <h2 className="text-lg font-bold text-neutral-900">Client limit reached</h2>
+            <h2 className="text-lg font-bold text-neutral-900">
+              {limitRaiseModal.inviteWarnEmail ? 'At client capacity' : 'Client limit reached'}
+            </h2>
             <p className="mt-2 text-sm text-neutral-600">
-              You have{' '}
-              <span className="font-medium">{limitRaiseModal.connected_count}</span> connected{' '}
-              {limitRaiseModal.connected_count === 1 ? 'household' : 'households'} at your limit of{' '}
-              <span className="font-medium">{limitRaiseModal.currentLimit}</span>. Raise your limit
-              on billing before connecting another client.
+              {limitRaiseModal.inviteWarnEmail ? (
+                <>
+                  You&apos;re at{' '}
+                  <span className="font-medium">{limitRaiseModal.connected_count}</span> of{' '}
+                  <span className="font-medium">{limitRaiseModal.currentLimit}</span> connected{' '}
+                  {limitRaiseModal.connected_count === 1 ? 'household' : 'households'}.{' '}
+                  <span className="font-medium">{limitRaiseModal.inviteWarnEmail}</span> won&apos;t
+                  be able to connect until you raise your limit. Send the invitation anyway, or
+                  raise your limit first.
+                </>
+              ) : (
+                <>
+                  You have{' '}
+                  <span className="font-medium">{limitRaiseModal.connected_count}</span> connected{' '}
+                  {limitRaiseModal.connected_count === 1 ? 'household' : 'households'} at your limit of{' '}
+                  <span className="font-medium">{limitRaiseModal.currentLimit}</span>. Raise your limit
+                  on billing before connecting another client.
+                </>
+              )}
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <a
                 href="/billing?action=raise"
                 className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-neutral-800 transition"
               >
-                Manage firm billing →
+                Raise limit on billing →
               </a>
+              {limitRaiseModal.inviteWarnEmail && (
+                <button
+                  type="button"
+                  onClick={() => void submitInvite(true)}
+                  disabled={isInviting}
+                  className="w-full rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50 transition disabled:opacity-60"
+                >
+                  {isInviting ? 'Sending…' : 'Send invitation anyway'}
+                </button>
+              )}
               <button
                 onClick={() => setLimitRaiseModal(null)}
                 className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition"
