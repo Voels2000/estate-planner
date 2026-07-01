@@ -39,6 +39,21 @@ Requires `.env.test.staging` (staging Supabase + Stripe test keys). Clears conne
 
 **Invite-accept walk helper** (after #197 merge): `TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/walk-staging-invite-accepts.ts` — lists pending invite URLs for the empty-advisor firm.
 
+### Attorney connection billing (staging)
+
+Reset **`e2e-attorney@mywealthmaps.test`** before attorney connection billing walks:
+
+```bash
+npm run reset:staging-e2e-attorney-connection-billing
+```
+
+Seeds pending `consumer_requested` rows for `/attorney/requests`. Helpers:
+
+- `npx tsx scripts/walk-staging-attorney-connection-accepts.ts`
+- `npx tsx scripts/inspect-staging-attorney-billing-state.ts`
+
+Proof checklist: [ATTORNEY_RAISE_CONNECT_PARITY_FIX.md](./ATTORNEY_RAISE_CONNECT_PARITY_FIX.md) staging re-walk (step 4 = raise + accept 3rd).
+
 See [CONNECTION_BILLING_STICKY_FLOOR_FIX.md § Post-merge staging proof](./CONNECTION_BILLING_STICKY_FLOOR_FIX.md#post-merge-staging-proof-live-in-order).
 
 ---

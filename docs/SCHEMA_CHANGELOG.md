@@ -8,7 +8,15 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-# Last updated: 2026-07-01 (firm connection sticky-floor B2)
+# Last updated: 2026-07-01 (attorney connection billing #199–#201)
+
+---
+
+## Attorney connection sticky-floor columns (2026-07-01)
+
+**Migration:** `20260801120000_attorney_connection_sticky_floor.sql`
+
+**Change:** `attorney_listings.client_limit`, `attorney_listings.billing_floor`, `attorney_listings.reset_count`. Listing-scoped connection billing (Phase 6). App: free-client offset (#200), raise-connect parity (#201), gate on connect APIs.
 
 ---
 
