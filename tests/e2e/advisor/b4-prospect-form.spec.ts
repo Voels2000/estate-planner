@@ -97,8 +97,8 @@ test.describe('B4 prospect form logic', () => {
     expect(stateText).not.toBe('$0')
   })
 
-  test('prospect PDF route includes advisor name in header', async ({ request }) => {
-    const res = await request.get(
+  test('prospect PDF route includes advisor name in header', async ({ page }) => {
+    const res = await page.request.get(
       '/api/advisor/prospect-pdf?state=CA&range=md&marital=married&biz=1&age=58&name=Test%20Prospect',
     )
     expect(res.ok(), await res.text()).toBeTruthy()
