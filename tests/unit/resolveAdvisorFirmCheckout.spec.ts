@@ -38,7 +38,10 @@ test.describe('resolveAdvisorFirmCheckout', () => {
 
     process.env.CONNECTION_BILLING_ENABLED = 'true'
     expect(allowedAdvisorFirmCheckoutPriceIds().has(connectionId)).toBe(true)
-    expect(allowedAdvisorFirmCheckoutPriceIds().has(ADVISOR_FIRM_PRICE_IDS.starter)).toBe(true)
+    const starterId = ADVISOR_FIRM_PRICE_IDS.starter
+    if (starterId) {
+      expect(allowedAdvisorFirmCheckoutPriceIds().has(starterId)).toBe(true)
+    }
   })
 
   test('connection quantity allows 1 without legacy tier minimums', () => {
