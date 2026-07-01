@@ -141,10 +141,9 @@ async function main() {
 
   console.log(`\nPending connection requests: ${pendingCount ?? 0}`)
   console.log(`  UI: https://estate-planner-staging.vercel.app/attorney/requests`)
-  console.log('\nOptional automated walk:')
-  console.log(
-    '  TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/walk-staging-attorney-connection-accepts.ts',
-  )
+  console.log('\nSpine (after reset):')
+  console.log('  npm run walk:staging-attorney-connection-accepts')
+  console.log('  npm run walk:staging-attorney-step4')
 }
 
 main().catch((err) => {

@@ -5,6 +5,7 @@
  *
  * Manual UI path: sign in as attorney → /attorney/requests → accept pending requests.
  * This script automates POST /api/attorney/accept-request for repeatable spine checks.
+ * After checkout gate on accept #2, continue with: npm run walk:staging-attorney-step4
  */
 
 import Stripe from 'stripe'
