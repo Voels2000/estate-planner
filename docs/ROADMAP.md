@@ -19,15 +19,27 @@
 
 ## Current sprint
 
-### Attorney connection billing — staging track (2026-07-01) `[~]` **on staging — manual proof**
+### Attorney connection billing — staging track (2026-07-01) `[x]` **closed**
 
 | Item | Status | Notes |
 |------|--------|-------|
 | Phase 6 attorney sticky floor (#199) | `[x]` | Gate + sync + listing-scoped billing |
-| Free-client offset + gate UI (#200) | `[x]` | `billable = connected − 1`; consumer blocked copy on invite + intake |
-| Raise-connect parity (#201) | `[x]` | Shared raise form; inline modal; Stripe sync on connect only |
-| Staging walk step 4 | `[ ]` | Raise 2→3 → accept 3rd → qty 2 / $150, no checkout |
-| Claim-flow v2 spec | `[ ]` | Discovery: [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) |
+| Free-client offset + gate UI (#200) | `[x]` | `billable = connected − 1`; consumer blocked copy |
+| Raise-connect parity (#201) | `[x]` | Shared raise form; inline modal |
+| Step-4 walk helper (#203) | `[x]` | `npm run walk:staging-attorney-step4` |
+| Staging walk step 4 | `[x]` | API spine PASS — qty 2 / $150 |
+
+### Claim-flow v2 (2026-07-01) `[ ]` **spec locked — implementation queued**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Discovery audit | `[x]` | [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) |
+| Complete spec + locked auth | `[x]` | [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) |
+| Magic-link claim entry | `[ ]` | Remove signup-before-claim gate |
+| Login "email me a link" | `[ ]` | Professional return path |
+| Explicit billing seed at claim | `[ ]` | Attorney + advisor firm bootstrap |
+| Action-gated step-up (password+MFA) | `[ ]` | Extend privileged MFA policy |
+| Two-URL rename + identity unify | `[ ]` | `/claim-listing` → respond-request |
 
 ### Advisor connection billing — staging track (2026-07-01) `[~]` **PRs → staging**
 

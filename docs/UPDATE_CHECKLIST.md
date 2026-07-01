@@ -32,7 +32,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [BILLING_PAGE_COPY_SPEC.md](./BILLING_PAGE_COPY_SPEC.md) | Consumer `/billing` matrix copy and layout |
 | [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md) | **Tier 0 + app-trial enforcement** — 8-PR sequence after billing page presentation |
 | [CONNECTION_BILLING_STICKY_FLOOR_FIX.md](./CONNECTION_BILLING_STICKY_FLOOR_FIX.md) · [BILLING_PAGE_CONNECTION_REBUILD.md](./BILLING_PAGE_CONNECTION_REBUILD.md) | **Advisor connection billing** — B2 model + `/billing` UI spec |
-| [ATTORNEY_RAISE_CONNECT_PARITY_FIX.md](./ATTORNEY_RAISE_CONNECT_PARITY_FIX.md) · [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) | **Attorney connection billing** parity + claim v2 discovery |
+| [ATTORNEY_RAISE_CONNECT_PARITY_FIX.md](./ATTORNEY_RAISE_CONNECT_PARITY_FIX.md) · [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) · [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) | Attorney billing parity + claim v2 |
 | [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | Privacy deletion SOP, C-6/C-7 automated checks, privacy request + appeals SOP |
 | [legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md) | Counsel Q1–Q10 → conditional engineering scope |
 
@@ -621,6 +621,13 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Claim v2 discovery — [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md)
 - [ ] Manual staging walk step 4
 - [x] Master docs: NEXT_SESSION · ROADMAP · DECISION_LOG · MASTER_ARCHITECTURE · E2E_TEST_RESET · ATTORNEY_RAISE_CONNECT_PARITY_FIX
+
+## Claim-flow v2 (2026-07-01) — spec locked
+
+- [x] Discovery audit — [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md)
+- [x] Complete spec — [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) (magic link entry, action-gated MFA, billing seed at claim)
+- [ ] Implementation PR sequence (Part 6 build plan)
+- [x] Master docs: NEXT_SESSION · ROADMAP · DECISION_LOG · UPDATE_CHECKLIST
 
 ## Projections empty state fix (2026-05-29) — shipped
 

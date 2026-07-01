@@ -3658,6 +3658,16 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### July 2026 — Claim-flow v2 auth model (LOCKED)
+
+**Decision:** Claim v2 uses **Supabase magic link for entry** (passwordless session at click — account created by link, not signup form). **Password + TOTP MFA step-up is action-gated** at first sensitive data touch (attorney: connect/view client; advisor: own plan data), atomic with the action. Claim itself is un-gated. Repeat return while un-secured = another magic link; login page must offer **"email me a link"** prominently.
+
+**Alternatives rejected:** Genuine account-less "approved" intermediate state (no `profile_id` until trial) — everything assumes auth user today; magic link collapses approval + session creation.
+
+**Implication:** Build plan in [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md). Explicit billing seed at claim (attorney `client_limit=1/floor=0`; advisor `bootstrapAdvisorFirm` at claim). `/claim-listing/` is professional respond-to-consumer path (naming collision) — rename + unify `verifyClaimIdentity`.
+
+---
+
 ### July 2026 — Attorney connection billing gate UI + raise-connect parity (#200, #201)
 
 **Decision:** Wire attorney connection billing gates on all **live** connect surfaces: attorney `accept-request` (checkout + raise modals); consumer `attorney-invite`, `intake-complete` (friendly blocked copy). Share `ConnectionLimitRaiseForm` for attorney raise parity with advisor. Stripe qty sync on **connect**, not on raise.
