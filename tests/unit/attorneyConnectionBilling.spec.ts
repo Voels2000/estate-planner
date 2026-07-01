@@ -106,7 +106,7 @@ test.describe('attorneyConnectionBilling gate', () => {
     expect(result).toEqual({ ok: true })
   })
 
-  test('second connect without subscription → attorney_checkout_required qty 2', async () => {
+  test('second connect without subscription → attorney_checkout_required qty 1 (billable)', async () => {
     process.env.CONNECTION_BILLING_ENABLED = 'true'
     const admin = mockAdmin({
       listingId: 'listing-1',
@@ -118,7 +118,7 @@ test.describe('attorneyConnectionBilling gate', () => {
     const result = await evaluateAttorneyConnectionBillingGate(admin, 'listing-1', 'hh-2')
     expect(result.ok).toBe(false)
     if (result.ok) return
-    expect(result.failure).toEqual({ kind: 'attorney_checkout_required', quantity: 2 })
+    expect(result.failure).toEqual({ kind: 'attorney_checkout_required', quantity: 1 })
   })
 
   test('unclaimed listing → listing_unclaimed', async () => {

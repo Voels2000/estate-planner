@@ -59,6 +59,7 @@
     "verify:pr5-staging-gate": "TEST_ENV=staging dotenv -e .env.test.staging -- npx tsx scripts/verify-pr5-staging-gate.ts",
     "verify:connection-billing-spine-staging": "TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/verify-connection-billing-spine-staging.ts",
     "reset:staging-e2e-advisor-empty-billing": "TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/reset-staging-e2e-advisor-empty-billing.ts",
+    "reset:staging-e2e-attorney-connection-billing": "TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/reset-staging-e2e-attorney-connection-billing.ts",
     "verify:e2e-persona-matrix": "dotenv -o -e .env.local -e .env.test.local -- npx tsx scripts/verify-e2e-persona-matrix.ts",
     "seed:e2e:persona-matrix": "dotenv -o -e .env.local -e .env.test.local -- npx tsx scripts/seed-e2e-fixtures.ts --only=consumer,consumer-linked,advisor,tier1,tier2,app-trial,plan-export,canceled",
     "seed:e2e:staging": "TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/seed-e2e-fixtures.ts",

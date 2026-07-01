@@ -2,8 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type Stripe from 'stripe'
 import { withHasEverSubscribed } from '@/lib/access/hasEverSubscribed'
 import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
-import { connectionLimitSeedFromCheckoutQuantity } from '@/lib/billing/firmConnectionStickyFloor'
 import { isAttorneyConnectionCheckoutPrice } from '@/lib/billing/resolveAttorneyCheckout'
+import { attorneyConnectionLimitSeedFromCheckoutQuantity } from '@/lib/billing/attorneyBillableQuantity'
 import { mapConsumerSubscriptionStatus } from '@/lib/stripe/consumerSubscriptionStatus'
 import { subscriptionPeriodEndIso } from '@/lib/stripe/subscriptionPeriod'
 
@@ -29,7 +29,7 @@ export function buildAttorneyListingCheckoutCompletedUpdate(opts: {
     opts.priceId &&
     isAttorneyConnectionCheckoutPrice(opts.priceId)
   ) {
-    const seed = connectionLimitSeedFromCheckoutQuantity(opts.stripeQuantity)
+    const seed = attorneyConnectionLimitSeedFromCheckoutQuantity(opts.stripeQuantity)
     return {
       client_limit: seed.client_limit,
       billing_floor: seed.billing_floor,

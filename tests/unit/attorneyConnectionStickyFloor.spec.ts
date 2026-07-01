@@ -219,27 +219,27 @@ test.describe('attorney ratchet-gate — pre-subscription floor invariant', () =
     expect(state.billing_floor).toBe(0)
   })
 
-  test('after paid subscription ratchet applies normally', async () => {
+  test('after paid subscription ratchet applies on billable count', async () => {
     const state: ListingStickyState = {
       profile_id: 'profile-1',
       billing_floor: 2,
-      client_limit: 2,
+      client_limit: 3,
       reset_count: 0,
       subscription_status: 'active',
     }
     const admin = mockAttorneyStickyAdmin(listingId, state, ['hh-1', 'hh-2', 'hh-3'])
 
     await ratchetAttorneyBillingFloorUp(admin, listingId, 3)
-    expect(state.billing_floor).toBe(3)
+    expect(state.billing_floor).toBe(2)
 
     const billable = await resolveAttorneyStickyFloorBillableQuantity(admin, listingId)
-    expect(billable).toBe(3)
+    expect(billable).toBe(2)
   })
 
-  test('post-subscription disconnect — floor pins, sync does not lower', async () => {
+  test('lone free client — billable 0 ignores floor (Q2)', async () => {
     const state: ListingStickyState = {
       profile_id: 'profile-1',
-      billing_floor: 3,
+      billing_floor: 2,
       client_limit: 5,
       reset_count: 0,
       subscription_status: 'active',
@@ -247,8 +247,8 @@ test.describe('attorney ratchet-gate — pre-subscription floor invariant', () =
     const admin = mockAttorneyStickyAdmin(listingId, state, ['hh-1'])
 
     const billable = await resolveAttorneyStickyFloorBillableQuantity(admin, listingId)
-    expect(billable).toBe(3)
-    expect(state.billing_floor).toBe(3)
+    expect(billable).toBe(0)
+    expect(state.billing_floor).toBe(2)
   })
 })
 
@@ -266,7 +266,7 @@ test.describe('attorney checkout webhook invariants', () => {
       stripeQuantity: 2,
       priceId: 'price_att_conn',
     })
-    expect(listingUpdate).toEqual({ client_limit: 2, billing_floor: 2 })
+    expect(listingUpdate).toEqual({ client_limit: 3, billing_floor: 2 })
 
     const profileUpdate = buildAttorneySubscriptionUpdatedProfileUpdate({
       mappedStatus: 'active',

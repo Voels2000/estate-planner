@@ -17,7 +17,17 @@ export async function completeIntakeRequestForUser(
   userId: string,
   userEmail: string,
   intakeToken: string,
-): Promise<{ ok: true; listingId: string } | { ok: false; error: string; status: number }> {
+): Promise<
+  | { ok: true; listingId: string }
+  | {
+      ok: false
+      error: string
+      status: number
+      quantity?: number
+      currentLimit?: number
+      connected_count?: number
+    }
+> {
   const admin = createAdminClient()
   const token = intakeToken.trim()
 
@@ -104,10 +114,21 @@ export async function completeIntakeRequestForUser(
             }
           }
           if (failure.kind === 'attorney_checkout_required') {
-            return { ok: false, error: 'attorney_checkout_required', status: 402 }
+            return {
+              ok: false,
+              error: 'attorney_checkout_required',
+              status: 402,
+              quantity: failure.quantity,
+            }
           }
           if (failure.kind === 'limit_raise_required') {
-            return { ok: false, error: 'limit_raise_required', status: 402 }
+            return {
+              ok: false,
+              error: 'limit_raise_required',
+              status: 402,
+              currentLimit: failure.currentLimit,
+              connected_count: failure.connected_count,
+            }
           }
           return { ok: false, error: 'Forbidden', status: 403 }
         }

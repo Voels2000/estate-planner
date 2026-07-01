@@ -1,8 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { attorneyConnectedHouseholds } from '@/lib/billing/connectedHouseholdCount'
 import {
-  computeRatchetedBillingFloor,
-  resolveStickyBillableQuantity,
+  computeAttorneyRatchetedBillingFloor,
+  resolveAttorneyBillableQuantity,
+  attorneyBillingFloorFromClientLimit,
+} from '@/lib/billing/attorneyBillableQuantity'
+import {
   validateRaiseClientLimit,
   validateSelfServeReset,
 } from '@/lib/billing/firmConnectionStickyFloor'
@@ -125,7 +128,7 @@ export async function ratchetAttorneyBillingFloorUp(
     return priorFloor
   }
 
-  const nextFloor = computeRatchetedBillingFloor(priorFloor, connectedCount)
+  const nextFloor = computeAttorneyRatchetedBillingFloor(priorFloor, connectedCount)
 
   if (nextFloor > priorFloor) {
     const { error: updateError } = await admin
@@ -159,7 +162,7 @@ export async function resolveAttorneyStickyFloorBillableQuantity(
     connected,
     ctx.subscriptionStatus,
   )
-  return resolveStickyBillableQuantity(connected, floor)
+  return resolveAttorneyBillableQuantity(connected, floor)
 }
 
 export async function applyAttorneyConnectionLimitReset(
@@ -186,11 +189,12 @@ export async function applyAttorneyConnectionLimitReset(
   }
 
   const limit = Math.max(1, Math.floor(newLimit))
+  const billableFloor = attorneyBillingFloorFromClientLimit(limit)
   const { error: updateError } = await admin
     .from('attorney_listings')
     .update({
       client_limit: limit,
-      billing_floor: limit,
+      billing_floor: billableFloor,
       reset_count: (listing.reset_count ?? 0) + 1,
       updated_at: new Date().toISOString(),
     })

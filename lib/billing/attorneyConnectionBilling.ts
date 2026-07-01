@@ -7,6 +7,7 @@ import {
   getAttorneyListingBillingContext,
   hasActiveAttorneyBillingSubscription,
 } from '@/lib/billing/attorneyConnectionStickyFloor'
+import { attorneyProjectedBillableAfterConnect } from '@/lib/billing/attorneyBillableQuantity'
 import { wouldExceedClientLimit } from '@/lib/billing/firmConnectionStickyFloor'
 import { syncAttorneyStripeQuantity } from '@/lib/stripe/syncAttorneyQuantity'
 
@@ -111,7 +112,10 @@ export async function evaluateAttorneyConnectionBillingGate(
   if (wouldExceedClientLimit(connected, clientLimit, true)) {
     return {
       ok: false,
-      failure: { kind: 'attorney_checkout_required', quantity: connected + 1 },
+      failure: {
+        kind: 'attorney_checkout_required',
+        quantity: attorneyProjectedBillableAfterConnect(connected),
+      },
     }
   }
 

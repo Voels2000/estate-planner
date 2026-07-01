@@ -4,6 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AttorneyUpgradePrompt } from '@/components/attorney/AttorneyUpgradePrompt'
+import {
+  AttorneyConnectionBillingGateModals,
+  useAttorneyConnectionBillingGateHandlers,
+} from '@/components/attorney/AttorneyConnectionBillingGateModals'
 
 type IncomingRequest = {
   id: string
@@ -39,6 +43,15 @@ export function AttorneyRequestsClient({
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [capError, setCapError] = useState(false)
+  const {
+    checkoutModal,
+    setCheckoutModal,
+    limitRaiseModal,
+    setLimitRaiseModal,
+    checkoutLoading,
+    handleConnectBillingError,
+    startAttorneyConnectionCheckout,
+  } = useAttorneyConnectionBillingGateHandlers()
 
   async function handleAccept(id: string) {
     setLoadingId(id)
@@ -53,6 +66,7 @@ export function AttorneyRequestsClient({
       const data = await res.json()
       if (!res.ok) {
         if (res.status === 403) setCapError(true)
+        if (handleConnectBillingError(data, res.status)) return
         throw new Error(data.error ?? 'Unable to accept')
       }
       setIncoming((prev) => prev.filter((r) => r.id !== id))
@@ -86,6 +100,17 @@ export function AttorneyRequestsClient({
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <AttorneyConnectionBillingGateModals
+        checkoutModal={checkoutModal}
+        limitRaiseModal={limitRaiseModal}
+        checkoutLoading={checkoutLoading}
+        onCloseCheckout={() => setCheckoutModal(null)}
+        onCloseRaise={() => setLimitRaiseModal(null)}
+        onConfirmCheckout={(quantity) => {
+          void startAttorneyConnectionCheckout(quantity)
+        }}
+        onConfirmRaise={() => setLimitRaiseModal(null)}
+      />
       <div>
         <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Requests</h1>
         <p className="text-sm text-neutral-500 mt-1">

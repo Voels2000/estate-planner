@@ -7,6 +7,7 @@ import { Button, ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import type { AttorneyConnectionBillingSummary } from '@/lib/billing/attorneyConnectionBillingSummary'
 import { buildAttorneyRaiseLimitPreview } from '@/lib/billing/attorneyConnectionBillingSummary'
+import { attorneyProjectedBillableAfterConnect } from '@/lib/billing/attorneyBillableQuantity'
 import { MAX_SELF_SERVE_RESETS } from '@/lib/billing/firmConnectionStickyFloor'
 
 type ResetPreview = {
@@ -54,8 +55,13 @@ export function AttorneyConnectionBillingClient({
   const [lowerLimitInput, setLowerLimitInput] = useState(
     Math.max(summary.connectedCount, summary.clientLimit - 1),
   )
-  const [checkoutCapacity, setCheckoutCapacity] = useState(
-    Math.max(1, summary.clientLimit || 1),
+  const [checkoutCapacity, setCheckoutCapacity] = useState(() =>
+    Math.max(
+      1,
+      summary.billableQuantity > 0
+        ? summary.billableQuantity
+        : attorneyProjectedBillableAfterConnect(summary.connectedCount) || 1,
+    ),
   )
   const [raisePreview, setRaisePreview] = useState<ReturnType<typeof buildAttorneyRaiseLimitPreview> | null>(
     null,
@@ -347,6 +353,7 @@ export function AttorneyConnectionBillingClient({
           <div>
             <h3 className="text-sm font-medium text-neutral-500">Connected now</h3>
             <p className="mt-1 text-neutral-900">{summary.connectedCapacityLine}</p>
+            <p className="mt-1 text-sm text-neutral-600">{summary.billingLine}</p>
           </div>
           <div>
             <h3 className="text-sm font-medium text-neutral-500">Billing floor</h3>

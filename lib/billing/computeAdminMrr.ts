@@ -1,6 +1,6 @@
 import { findConsumerPriceByPriceId } from '@/lib/billing/stripePrices'
 import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
-import { resolveStickyBillableQuantity } from '@/lib/billing/firmConnectionStickyFloor'
+import { resolveAttorneyBillableQuantity } from '@/lib/billing/attorneyBillableQuantity'
 import { rateForCount, ATTORNEY_BANDS, ATTORNEY_FLOOR } from '@/lib/pricing/connectionPricing'
 import {
   ADVISOR_FIRM_SEAT_RATES,
@@ -56,7 +56,7 @@ function attorneyPlanKey(tier: number): AttorneyPlanKey {
 export function attorneyListingMonthlyRevenue(listing: ActiveAttorneyListing): number {
   const connected = Math.max(0, Math.floor(listing.connected_count ?? 0))
   const floor = Math.max(0, Math.floor(listing.billing_floor ?? 0))
-  const billable = resolveStickyBillableQuantity(connected, floor)
+  const billable = resolveAttorneyBillableQuantity(connected, floor)
   if (billable < 1) return 0
   const rate = rateForCount(billable, ATTORNEY_BANDS, ATTORNEY_FLOOR)
   return billable * rate

@@ -53,6 +53,7 @@ import { QuickAddAssetModal } from '@/components/dashboard/QuickAddAssetModal'
 import { PersonaInsightCard } from '@/components/dashboard/PersonaInsightCard'
 import { TermsBackfillBanner } from '@/components/dashboard/TermsBackfillBanner'
 import { AdvisorConnectedBanner } from '@/components/dashboard/AdvisorConnectedBanner'
+import { ConsumerAttorneyBillingBlockedBanner } from '@/components/attorney/ConsumerAttorneyBillingBlockedBanner'
 import type { PlanStageResult, DashboardState } from '@/lib/dashboard/determinePlanStage'
 import type { OnboardingPersona } from '@/lib/onboarding/personaConfig'
 // ---------------------------------------------------------------------------
@@ -527,6 +528,8 @@ export function DashboardClient(props: Props) {
       {!isAdvisor && (
         <TermsBackfillBanner initialTermsAcceptedAt={termsAcceptedAt} />
       )}
+
+      {!isAdvisor && <ConsumerAttorneyBillingBlockedBanner />}
 
       {!isAdvisor && advisorConnectionSummary && (
         <div className="mt-4">
