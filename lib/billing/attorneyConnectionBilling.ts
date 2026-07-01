@@ -22,13 +22,19 @@ export type LimitRaiseRequiredBody = {
   error: 'limit_raise_required'
   currentLimit: number
   connected_count: number
+  billing_floor: number
 }
 
 export type AttorneyConnectionBillingGateFailure =
   | { kind: 'forbidden' }
   | { kind: 'listing_unclaimed' }
   | { kind: 'attorney_checkout_required'; quantity: number }
-  | { kind: 'limit_raise_required'; currentLimit: number; connected_count: number }
+  | {
+      kind: 'limit_raise_required'
+      currentLimit: number
+      connected_count: number
+      billing_floor: number
+    }
 
 /** True when connecting householdId would increase listing billable count. */
 export async function wouldConnectAddBillableAttorneyHousehold(
@@ -69,6 +75,7 @@ function gateFailureToResponse(failure: AttorneyConnectionBillingGateFailure): N
       error: 'limit_raise_required',
       currentLimit: failure.currentLimit,
       connected_count: failure.connected_count,
+      billing_floor: failure.billing_floor,
     } satisfies LimitRaiseRequiredBody,
     { status: 402 },
   )
@@ -103,6 +110,7 @@ export async function evaluateAttorneyConnectionBillingGate(
           kind: 'limit_raise_required',
           currentLimit: clientLimit,
           connected_count: connected,
+          billing_floor: Math.max(0, Math.floor(ctx.billingFloor ?? 0)),
         },
       }
     }

@@ -1,20 +1,28 @@
 'use client'
 
 import { useCallback, useState } from 'react'
+import { ConnectionLimitRaiseForm } from '@/components/billing/ConnectionLimitRaiseForm'
+import { buildAttorneyRaiseLimitPreview } from '@/lib/billing/attorneyConnectionBillingSummary'
 import {
   attorneyCheckoutGateCopy,
   consumerAttorneyBillingBlockedMessage,
   type AttorneyConnectBillingGatePayload,
 } from '@/lib/billing/attorneyConnectBillingGateClient'
 
+type LimitRaiseModalState = {
+  currentLimit: number
+  connected_count: number
+  billing_floor: number
+}
+
 type Props = {
   checkoutModal: { quantity: number } | null
-  limitRaiseModal: { currentLimit: number; connected_count: number } | null
+  limitRaiseModal: LimitRaiseModalState | null
   checkoutLoading: boolean
   onCloseCheckout: () => void
   onCloseRaise: () => void
   onConfirmCheckout: (quantity: number) => void | Promise<void>
-  onConfirmRaise: () => void
+  onRaiseSuccess: () => void
 }
 
 export function AttorneyConnectionBillingGateModals({
@@ -24,7 +32,7 @@ export function AttorneyConnectionBillingGateModals({
   onCloseCheckout,
   onCloseRaise,
   onConfirmCheckout,
-  onConfirmRaise,
+  onRaiseSuccess,
 }: Props) {
   const checkoutCopy = checkoutModal ? attorneyCheckoutGateCopy(checkoutModal.quantity) : null
 
@@ -61,28 +69,24 @@ export function AttorneyConnectionBillingGateModals({
 
       {limitRaiseModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="mb-1 text-2xl">📈</div>
             <h2 className="text-lg font-bold text-neutral-900">Client limit reached</h2>
             <p className="mt-2 text-sm text-neutral-600">
-              You have {limitRaiseModal.connected_count} of {limitRaiseModal.currentLimit} connected
-              households at your limit. Raise your client limit to connect more.
+              You have {limitRaiseModal.connected_count} of {limitRaiseModal.currentLimit} clients at
+              your limit (1 is always free). Raise your ceiling to connect more — no checkout.
             </p>
-            <div className="mt-6 flex flex-col gap-3">
-              <a
-                href="/attorney/billing?action=raise"
-                onClick={onConfirmRaise}
-                className="w-full rounded-lg bg-[color:var(--mwm-navy)] px-4 py-2.5 text-center text-sm font-medium text-white hover:opacity-90 transition"
-              >
-                Raise limit →
-              </a>
-              <button
-                type="button"
-                onClick={onCloseRaise}
-                className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition"
-              >
-                Cancel
-              </button>
+            <div className="mt-6">
+              <ConnectionLimitRaiseForm
+                compact
+                raiseApiPath="/api/attorney/connection-limit/raise"
+                currentLimit={limitRaiseModal.currentLimit}
+                connectedCount={limitRaiseModal.connected_count}
+                billingFloor={limitRaiseModal.billing_floor}
+                buildPreview={buildAttorneyRaiseLimitPreview}
+                onSuccess={onRaiseSuccess}
+                onCancel={onCloseRaise}
+              />
             </div>
           </div>
         </div>
@@ -93,14 +97,17 @@ export function AttorneyConnectionBillingGateModals({
 
 export function useAttorneyConnectionBillingGateHandlers() {
   const [checkoutModal, setCheckoutModal] = useState<{ quantity: number } | null>(null)
-  const [limitRaiseModal, setLimitRaiseModal] = useState<{
-    currentLimit: number
-    connected_count: number
-  } | null>(null)
+  const [limitRaiseModal, setLimitRaiseModal] = useState<LimitRaiseModalState | null>(null)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
 
   function handleConnectBillingError(
-    data: { error?: string; quantity?: number; currentLimit?: number; connected_count?: number },
+    data: {
+      error?: string
+      quantity?: number
+      currentLimit?: number
+      connected_count?: number
+      billing_floor?: number
+    },
     status: number,
   ): boolean {
     if (status === 402 && data.error === 'attorney_checkout_required' && typeof data.quantity === 'number') {
@@ -116,6 +123,7 @@ export function useAttorneyConnectionBillingGateHandlers() {
         currentLimit: data.currentLimit,
         connected_count:
           typeof data.connected_count === 'number' ? data.connected_count : data.currentLimit,
+        billing_floor: typeof data.billing_floor === 'number' ? data.billing_floor : 0,
       })
       return true
     }

@@ -9,6 +9,7 @@ import {
   MAX_SELF_SERVE_RESETS,
   resolveStickyBillableQuantity,
 } from '@/lib/billing/firmConnectionStickyFloor'
+import { buildConnectionRaiseLimitPreview, type ConnectionRaiseLimitPreview } from '@/lib/billing/connectionRaiseLimitPreview'
 
 export type ConnectionBillingPageState =
   | 'below_capacity'
@@ -88,17 +89,7 @@ export function buildFirmConnectionBillingSummary(opts: {
   }
 }
 
-export type RaiseLimitPreview = {
-  newLimit: number
-  currentBandLabel: string
-  newBandLabel: string
-  currentRatePerClient: number
-  newRatePerClient: number
-  currentMonthly: number
-  newMonthly: number
-  rateImproved: boolean
-  billableQuantity: number
-}
+export type RaiseLimitPreview = ConnectionRaiseLimitPreview
 
 /** Preview raising headroom — billable qty unchanged until new clients connect. */
 export function buildRaiseLimitPreview(opts: {
@@ -106,24 +97,14 @@ export function buildRaiseLimitPreview(opts: {
   billingFloor: number | null | undefined
   newLimit: number
 }): RaiseLimitPreview {
-  const connectedCount = Math.max(0, Math.floor(opts.connectedCount))
-  const billingFloor = Math.max(0, Math.floor(opts.billingFloor ?? 0))
-  const newLimit = Math.max(1, Math.floor(opts.newLimit))
-  const billableQuantity = resolveStickyBillableQuantity(connectedCount, billingFloor)
-  const currentBand = bandForCount(billableQuantity, ADVISOR_BANDS)
-  const newBand = bandForCount(newLimit, ADVISOR_BANDS)
-  const currentRate = rateForCount(billableQuantity, ADVISOR_BANDS, ADVISOR_FLOOR)
-  const newRate = rateForCount(newLimit, ADVISOR_BANDS, ADVISOR_FLOOR)
-
-  return {
-    newLimit,
-    currentBandLabel: currentBand.label,
-    newBandLabel: newBand.label,
-    currentRatePerClient: currentRate,
-    newRatePerClient: newRate,
-    currentMonthly: billableQuantity * currentRate,
-    newMonthly: billableQuantity * newRate,
-    rateImproved: newRate < currentRate,
-    billableQuantity,
-  }
+  return buildConnectionRaiseLimitPreview({
+    connectedCount: opts.connectedCount,
+    billingFloor: opts.billingFloor,
+    newLimit: opts.newLimit,
+    bands: ADVISOR_BANDS,
+    rateFloor: ADVISOR_FLOOR,
+    billableQuantity: resolveStickyBillableQuantity,
+    bandCountForNewLimit: (limit) => limit,
+    billableAfterOneMoreConnect: (connected) => connected + 1,
+  })
 }

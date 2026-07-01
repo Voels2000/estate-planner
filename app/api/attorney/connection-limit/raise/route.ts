@@ -9,7 +9,6 @@ import {
   hasActiveAttorneyBillingSubscription,
 } from '@/lib/billing/attorneyConnectionStickyFloor'
 import { validateRaiseClientLimit } from '@/lib/billing/firmConnectionStickyFloor'
-import { syncAttorneyConnectionBillingQuantity } from '@/lib/billing/attorneyConnectionBilling'
 import { attorneyConnectedHouseholds } from '@/lib/billing/connectedHouseholdCount'
 import { buildAttorneyRaiseLimitPreview } from '@/lib/billing/attorneyConnectionBillingSummary'
 import { rateForCount, ATTORNEY_BANDS, ATTORNEY_FLOOR } from '@/lib/pricing/connectionPricing'
@@ -66,7 +65,6 @@ export async function POST(request: Request) {
 
   try {
     await applyAttorneyConnectionLimitRaise(admin, listingId, raw)
-    await syncAttorneyConnectionBillingQuantity(listingId)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Raise failed'
     return NextResponse.json({ error: message }, { status: 400 })
