@@ -8,7 +8,7 @@
 
 **Attorney connection billing:** ✅ **Closed** — #200–#201 on `staging`; step-4 spine proven (`walk:staging-attorney-step4`). API contract is source of truth.
 
-**Claim-flow v2:** Spec locked — [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md). Load-bearing choice: **magic link creates session at claim; password+MFA step-up on first data action.** Implementation not started.
+**Claim v2:** [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) — PR #1 magic-link claim when ready; **verify `/claim-listing/` identity-skip before rename** (security, not cosmetic).
 
 **Advisor track (parallel):** #197/#198 merge queue · `/advisor/firm` legacy copy still open.
 
@@ -22,9 +22,22 @@
 | Walk helpers | ✅ `walk:staging-attorney-connection-accepts` + `walk:staging-attorney-step4` (#203) |
 | Claim v2 discovery | ✅ [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) |
 | Claim v2 spec (locked auth) | ✅ [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) |
-| Claim v2 implementation | `[ ]` | Build plan Part 6 — magic link claim first |
+| Claim v2 implementation | `[ ]` | PR #1 magic-link claim; staging walk per spec |
+| `/claim-listing/` identity-skip | `[!]` | P0 security — verify scope before rename |
 | Advisor checkout redirect (#197) | 🔄 PR open |
 | Prod connection billing flip | 🚫 After staging green |
+
+---
+
+## Handoff (fresh chat)
+
+**Proven on staging:** advisor connection billing, attorney connection billing (step 4 green), Path A.
+
+**Specced, ready to build:** [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) — start PR #1 (magic-link claim entry); staging walk is the contract for auth + Stripe seams.
+
+**Verify before v2 rename:** `/claim-listing/` identity-skip scope — [DECISION_LOG](./DECISION_LOG.md).
+
+**Before launch:** v2 build · pricing surface mechanical fixes · prod cutover checklist · P0 outreach copy.
 
 ---
 

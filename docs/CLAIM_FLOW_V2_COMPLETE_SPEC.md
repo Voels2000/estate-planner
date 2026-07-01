@@ -112,22 +112,34 @@ Account security (password/MFA) protects the **account**. Credential verificatio
 
 ---
 
-## Part 5 — Two-URL cleanup (LOCKED after code review)
+## Part 5 — `/claim-listing/` identity-skip (SECURITY — before rename)
 
-Audit found two families. **Code review confirms:**
+Audit found two professional-facing URL families. Code review confirms `/claim-listing/` is **not** a consumer path — it is the **professional respond-to-consumer** link emailed to the listing address when a consumer uses request-connect (`app/api/attorney-directory/request-connect/route.ts` L103).
 
-| URL | Token source | Who receives link | Purpose |
-|-----|--------------|-------------------|---------|
-| `/claim/[token]` | `attorney_listings.claim_token` / `advisor_directory.claim_token` | Professional (outreach seed) | Directory outreach claim — runs `verifyClaimIdentity`, sets `claimed_at` |
-| `/claim-listing/[token]` | `connection_requests.claim_token` | **Professional** (listing email) | Consumer **request-connect** response — email from `request-connect` APIs (`claimUrl = /claim-listing/{token}`) |
+**This is a security item first, not a naming cleanup.**
 
-**Not a consumer path.** Both URLs are professional-facing. The collision is **naming** (`claim-listing` sounds like listing claim) plus **behavior drift**: `/claim-listing/` skips `verifyClaimIdentity` and `claimed_at` while still setting `profile_id` and creating `consumer_requested` rows.
+### What the path does today (`app/claim-listing/[token]/page.tsx`)
 
-### v2 requirements
+On visit (authenticated advisor or `is_attorney`):
 
-1. **Rename or document** `/claim-listing/` → e.g. `/respond-request/[token]` (or equivalent) so it is not confused with directory outreach `/claim/`.
-2. **Unify identity hygiene:** professional listing claim paths must run `verifyClaimIdentity` (or equivalent) before `profile_id` is set — including consumer-initiated respond flow.
-3. **Directory outreach** uses `/claim/[token]` exclusively for seed/outreach magic-link claim.
+1. Sets `profile_id` on the listing if unclaimed — **no** `verifyClaimIdentity`, **no** `claimed_at`
+2. Creates `consumer_requested` row (attorney or advisor)
+3. Marks `connection_requests` accepted
+4. Redirects to `/attorney/requests` or `/advisor`
+
+**Gate today:** possession of `connection_requests.claim_token` + any professional-role session. **No** check that `user.email` matches `listing.email`.
+
+### Risk (verify deliberately — do not assume benign)
+
+If a token leaks or is forwarded, a professional account that is **not** the listing owner could bind an unclaimed listing or queue a consumer request without identity verification. Confirm exploitability and sensitive reach **before** full v2; fix identity check **ahead of** cosmetic rename.
+
+### Sequencing (locked)
+
+| Priority | Work |
+|----------|------|
+| **P0 (pre-v2 or parallel)** | **Confirm-then-fix:** audit what an unverified actor can reach via `/claim-listing/`; add `verifyClaimIdentity` (or equivalent) before `profile_id` write if scope is sensitive |
+| P1 (v2) | Rename route (e.g. `/respond-request/[token]`) |
+| P2 (v2) | Directory outreach stays on `/claim/[token]` with full claim + billing seed |
 
 ---
 
@@ -135,13 +147,14 @@ Audit found two families. **Code review confirms:**
 
 | # | Work | Key files / primitives |
 |---|------|------------------------|
+| **0** | **`/claim-listing/` identity-skip — confirm-then-fix** | `app/claim-listing/[token]/page.tsx`; `verifyClaimIdentity` — **before rename, before assuming benign** |
 | 1 | Discovery confirmations | This spec + audit; Part 5 locked above |
 | 2 | Magic-link claim entry | `signInWithOtp` / Supabase magic link; `/claim/[token]`; `POST /api/directory/claim` |
 | 3 | Login "email me a link" | `app/(auth)/login/_login-form.tsx` |
 | 4 | Per-type claim seed | `app/api/directory/claim/route.ts` — attorney listing cols; `bootstrapAdvisorFirm` at claim |
 | 5 | Action-gated step-up | Extend `lib/security/privilegedMfaPolicy.ts`; `mfa-enroll` / `mfa-challenge`; gate attorney client view + advisor own-plan paths |
 | 6 | Credential verification | WSBA/CRD at first client connect; `credential_verified_at` |
-| 7 | Two-URL rename + identity | `claim-listing` → respond route; shared identity check |
+| 7 | Two-URL rename | `claim-listing` → respond route (after P0 identity fix) |
 | 8 | Tests + staging walk | See staging walk below |
 
 ### Code readiness (2026-07-01)

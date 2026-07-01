@@ -36,10 +36,11 @@
 | Discovery audit | `[x]` | [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) |
 | Complete spec + locked auth | `[x]` | [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) |
 | Magic-link claim entry | `[ ]` | Remove signup-before-claim gate |
+| `/claim-listing/` identity verify + fix | `[!]` | **P0 security** — before rename |
 | Login "email me a link" | `[ ]` | Professional return path |
 | Explicit billing seed at claim | `[ ]` | Attorney + advisor firm bootstrap |
 | Action-gated step-up (password+MFA) | `[ ]` | Extend privileged MFA policy |
-| Two-URL rename + identity unify | `[ ]` | `/claim-listing` → respond-request |
+| Two-URL rename | `[ ]` | After P0 identity fix |
 
 ### Advisor connection billing — staging track (2026-07-01) `[~]` **PRs → staging**
 
