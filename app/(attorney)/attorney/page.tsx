@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { AttorneyDashboardClient } from './_attorney-dashboard-client'
 import { buildAllAttorneyEventReferralUrls } from '@/lib/events/referral'
-import { attorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
+import { resolveAttorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
 import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { countDocumentsOnFile, summarizeMissingDocs } from '@/lib/attorney/clientDocHealth'
@@ -88,9 +88,12 @@ export default async function AttorneyDashboardPage() {
     : { data: [] }
 
   // 5. Fetch household details for each client
-  const tierFeatures = attorneyTierFeatures(profile?.attorney_tier ?? 0)
+  const tierFeatures = resolveAttorneyTierFeatures(profile?.attorney_tier ?? 0)
   const clientRows = (clients ?? []) as AttorneyClientRow[]
-  const visibleClients = clientRows.slice(0, tierFeatures.maxClients)
+  const visibleClients =
+    tierFeatures.maxClients >= Number.MAX_SAFE_INTEGER / 2
+      ? clientRows
+      : clientRows.slice(0, tierFeatures.maxClients)
 
   const householdIds = visibleClients.map((c) => c.client_id).filter(Boolean)
 

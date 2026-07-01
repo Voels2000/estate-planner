@@ -5,6 +5,11 @@ import { applyAttorneyConnectionBilling } from '@/lib/attorney/applyAttorneyConn
 import { createClient } from '@/lib/supabase/server'
 import { resolveAttorneyProfileId } from '@/lib/attorney/resolveAttorneyProfileId'
 import { resolveConsumerHouseholdId } from '@/lib/attorney/verifyAttorneyHouseholdAccess'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import {
+  afterAttorneyConnectionBillingConnect,
+  assessAttorneyConnectionBillingGate,
+} from '@/lib/billing/attorneyConnectionBilling'
 
 interface Props {
   params: Promise<{ token: string }>
@@ -34,6 +39,17 @@ export default async function AttorneyInvitePage({ params }: Props) {
       redirect('/dashboard?attorney_invite=missing_household')
     }
 
+    if (isConnectionBillingEnabled()) {
+      const gate = await assessAttorneyConnectionBillingGate(
+        admin,
+        invite.attorney_id,
+        householdId,
+      )
+      if (!gate.ok) {
+        redirect('/dashboard?attorney_invite=capacity_blocked')
+      }
+    }
+
     const { error: acceptError } = await admin
       .from('attorney_clients')
       .update({
@@ -51,6 +67,10 @@ export default async function AttorneyInvitePage({ params }: Props) {
         clientId,
         attorneyClientRowId: invite.id,
       })
+
+      if (isConnectionBillingEnabled()) {
+        await afterAttorneyConnectionBillingConnect(admin, invite.attorney_id)
+      }
 
       after(() => {
         const admin = createAdminClient()

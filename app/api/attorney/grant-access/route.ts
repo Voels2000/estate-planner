@@ -10,6 +10,11 @@ import {
   FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
   isAtAttorneyClientCap,
 } from '@/lib/attorney/attorneyClientCap'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import {
+  afterAttorneyConnectionBillingConnect,
+  assessAttorneyConnectionBillingGate,
+} from '@/lib/billing/attorneyConnectionBilling'
 
 export async function POST(req: NextRequest) {
   const { user, isSuperuser, isConsumer } = await getAccessContext()
@@ -73,16 +78,30 @@ export async function POST(req: NextRequest) {
   }
 
   if (attorneyListing.profile_id) {
-    const { data: attorneyProfile } = await supabase
-      .from('profiles')
-      .select('attorney_tier')
-      .eq('id', attorneyListing.profile_id)
-      .single()
+    if (isConnectionBillingEnabled()) {
+      const gate = await assessAttorneyConnectionBillingGate(
+        createAdminClient(),
+        attorney_id,
+        household.id,
+      )
+      if (!gate.ok) return gate.response
+    } else {
+      const { data: attorneyProfile } = await supabase
+        .from('profiles')
+        .select('attorney_tier')
+        .eq('id', attorneyListing.profile_id)
+        .single()
 
-    const activeCount = await countActiveAttorneyClients(supabase, attorney_id)
-    if (isAtAttorneyClientCap(attorneyProfile?.attorney_tier ?? 0, activeCount)) {
-      return NextResponse.json({ error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE }, { status: 403 })
+      const activeCount = await countActiveAttorneyClients(supabase, attorney_id)
+      if (isAtAttorneyClientCap(attorneyProfile?.attorney_tier ?? 0, activeCount)) {
+        return NextResponse.json({ error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE }, { status: 403 })
+      }
     }
+  } else if (isConnectionBillingEnabled()) {
+    return NextResponse.json(
+      { error: 'Claim your attorney listing before connecting clients.' },
+      { status: 403 },
+    )
   }
 
   // ── 6. Write the connection ─────────────────────────────────
@@ -109,6 +128,10 @@ export async function POST(req: NextRequest) {
     clientId: user.id,
     attorneyClientRowId: connection.id,
   })
+
+  if (isConnectionBillingEnabled()) {
+    await afterAttorneyConnectionBillingConnect(createAdminClient(), attorney_id)
+  }
 
   // ── 7. Get consumer profile ─────────────────────────────────
   const { data: consumerProfile } = await supabase

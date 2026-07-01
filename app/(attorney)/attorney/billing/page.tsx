@@ -1,12 +1,19 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { ATTORNEY_PLAN_LIMITS } from '@/lib/tiers'
 import { AttorneyBillingClient } from './_attorney-billing-client'
+import { AttorneyConnectionBillingClient } from './_attorney-connection-billing-client'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import { getAttorneyListingIdForUser } from '@/lib/attorney/attorneyClientCap'
+import { attorneyConnectedHouseholds } from '@/lib/billing/connectedHouseholdCount'
+import { buildAttorneyConnectionBillingSummary } from '@/lib/billing/attorneyConnectionBillingSummary'
+import { attorneyConnectionCheckoutPriceId } from '@/lib/billing/resolveAttorneyCheckout'
 
 export default async function AttorneyBillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ checkout?: string; canceled?: string }>
+  searchParams: Promise<{ checkout?: string; canceled?: string; action?: string }>
 }) {
   const supabase = await createClient()
   const {
@@ -15,6 +22,45 @@ export default async function AttorneyBillingPage({
   if (!user) redirect('/login')
 
   const sp = await searchParams
+  const connectionBillingAction =
+    sp.action === 'raise' || sp.action === 'lower' ? sp.action : null
+
+  if (isConnectionBillingEnabled()) {
+    const listingId = await getAttorneyListingIdForUser(supabase, user.id)
+    if (!listingId) redirect('/attorney')
+
+    const admin = createAdminClient()
+    const connectedCount = await attorneyConnectedHouseholds(admin, listingId)
+    const { data: listing } = await admin
+      .from('attorney_listings')
+      .select('firm_name, client_limit, billing_floor, reset_count')
+      .eq('id', listingId)
+      .single()
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('subscription_status')
+      .eq('id', user.id)
+      .single()
+
+    const summary = buildAttorneyConnectionBillingSummary({
+      connectedCount,
+      clientLimit: listing?.client_limit,
+      billingFloor: listing?.billing_floor,
+      resetCount: listing?.reset_count,
+    })
+
+    return (
+      <AttorneyConnectionBillingClient
+        firmName={listing?.firm_name ?? 'Your practice'}
+        summary={summary}
+        subscriptionStatus={profile?.subscription_status ?? null}
+        attorneyCheckoutPriceId={attorneyConnectionCheckoutPriceId()}
+        initialAction={connectionBillingAction}
+        checkoutSuccess={sp.checkout === 'success'}
+        canceled={sp.canceled === 'true'}
+      />
+    )
+  }
 
   const { data: profile } = await supabase
     .from('profiles')

@@ -37,6 +37,14 @@ import {
   buildFirmCheckoutCompletedUpdate,
   buildFirmSubscriptionUpdatedUpdate,
 } from '@/lib/billing/firmCheckoutWebhook'
+import {
+  applyAttorneyListingCheckoutCompletedUpdate,
+  buildAttorneyListingCheckoutCompletedUpdate,
+  buildAttorneyProfileCheckoutFields,
+  buildAttorneySubscriptionUpdatedProfileUpdate,
+} from '@/lib/billing/attorneyCheckoutWebhook'
+import { isAttorneyConnectionCheckoutPrice } from '@/lib/billing/resolveAttorneyCheckout'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
 
 type WebhookCaptureStage = 'signature' | 'handler' | 'processing'
 
@@ -300,6 +308,57 @@ export async function POST(req: NextRequest) {
           }
           break
         }
+
+        const attorneyListingId = session.metadata?.attorney_listing_id
+        if (attorneyListingId && isConnectionBillingEnabled()) {
+          const subscriptionId = session.subscription as string | null
+          const userId = session.metadata?.userId
+          if (subscriptionId && userId) {
+            const stripeCustomerId = resolveStripeCustomerId(session.customer)
+            const sub = await stripe.subscriptions.retrieve(subscriptionId)
+            const priceId = sub.items.data[0]?.price.id ?? null
+            const stripeQuantity = sub.items.data[0]?.quantity ?? 1
+            const listingUpdate = buildAttorneyListingCheckoutCompletedUpdate({
+              stripeQuantity,
+              priceId,
+            })
+            const { error: listingError } = await applyAttorneyListingCheckoutCompletedUpdate(
+              supabase,
+              attorneyListingId,
+              listingUpdate,
+            )
+            if (listingError) {
+              console.error('Attorney listing checkout update error:', listingError)
+              captureStripeWebhookFailure(new Error(`Attorney listing checkout: ${listingError}`), {
+                stage: 'processing',
+                event,
+              })
+            }
+            if (stripeCustomerId) {
+              const profileFields = buildAttorneyProfileCheckoutFields(
+                sub,
+                stripeCustomerId,
+                priceId,
+              )
+              const { error: profileError } = await supabase
+                .from('profiles')
+                .update(profileFields)
+                .eq('id', userId)
+              if (profileError) {
+                console.error('Attorney profile checkout update error:', profileError)
+                captureStripeWebhookSupabaseFailure(
+                  'attorney connection checkout profile update',
+                  profileError,
+                  event,
+                )
+              }
+            }
+          } else {
+            console.log('checkout.session.completed — attorney listing without subscription or userId')
+          }
+          break
+        }
+
         const userId = session.metadata?.userId
         if (userId) {
           const { data: priorProfile } = await supabase
@@ -574,6 +633,42 @@ export async function POST(req: NextRequest) {
           }
           break
         }
+
+        const attorneyListingId = subscription.metadata?.attorney_listing_id
+        if (attorneyListingId) {
+          const mappedStatus = subscription.cancel_at_period_end
+            ? 'canceling'
+            : mapConsumerSubscriptionStatus(subscription)
+          const stripePriceId = subscription.items.data[0]?.price?.id
+          const profileUpdate = buildAttorneySubscriptionUpdatedProfileUpdate({
+            mappedStatus,
+            priceId: stripePriceId,
+          })
+          const attorneyUserId = subscription.metadata?.userId
+          if (attorneyUserId) {
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .update({
+                ...profileUpdate,
+                stripe_subscription_id: subscription.id,
+              })
+              .eq('id', attorneyUserId)
+            if (profileError) {
+              console.error(
+                'customer.subscription.updated — attorney profile update failed:',
+                profileError.message,
+              )
+              captureStripeWebhookSupabaseFailure(
+                'attorney subscription updated',
+                profileError,
+                event,
+              )
+            }
+          }
+          console.log('customer.subscription.updated — attorney connection subscription updated')
+          break
+        }
+
         const customerId = resolveStripeCustomerId(subscription.customer)
         if (!customerId) {
           console.log('customer.subscription.updated — no customer id, skip consumer update')
@@ -593,6 +688,8 @@ export async function POST(req: NextRequest) {
         const priceId = subscription.items.data[0]?.price.id ?? null
         const consumerTier = priceId ? getTierFromPriceId(priceId) : null
         const attorneyTier = priceId ? getAttorneyTierFromPriceId(priceId) : 0
+        const isAttorneyConnectionPrice =
+          priceId != null && isAttorneyConnectionCheckoutPrice(priceId)
         const status = mapConsumerSubscriptionStatus(subscription)
         const consumerUpdate = withHasEverSubscribed({
           subscription_status: status,
@@ -600,7 +697,7 @@ export async function POST(req: NextRequest) {
           ...(renewalIso != null ? { subscription_period_end: renewalIso } : {}),
           ...(priceId ? { subscription_plan: priceId } : {}),
           ...(consumerTier ? { consumer_tier: consumerTier } : {}),
-          ...(attorneyTier > 0 ? { attorney_tier: attorneyTier } : {}),
+          ...(attorneyTier > 0 && !isAttorneyConnectionPrice ? { attorney_tier: attorneyTier } : {}),
         })
         const { error: consumerUpdateError } = await supabase
           .from('profiles')

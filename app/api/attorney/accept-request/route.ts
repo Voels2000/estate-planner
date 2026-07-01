@@ -11,6 +11,11 @@ import {
   getAttorneyListingIdForUser,
   isAtAttorneyClientCap,
 } from '@/lib/attorney/attorneyClientCap'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import {
+  afterAttorneyConnectionBillingConnect,
+  assessAttorneyConnectionBillingGate,
+} from '@/lib/billing/attorneyConnectionBilling'
 import { EMAIL_FROM } from '@/lib/email/config'
 
 export const dynamic = 'force-dynamic'
@@ -39,8 +44,10 @@ export async function POST(request: Request) {
   }
 
   const activeCount = await countActiveAttorneyClients(admin, attorneyListingId)
-  if (isAtAttorneyClientCap(profile?.attorney_tier ?? 0, activeCount)) {
-    return NextResponse.json({ error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE }, { status: 403 })
+  if (!isConnectionBillingEnabled()) {
+    if (isAtAttorneyClientCap(profile?.attorney_tier ?? 0, activeCount)) {
+      return NextResponse.json({ error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE }, { status: 403 })
+    }
   }
 
   const { attorney_client_id } = await request.json()
@@ -58,6 +65,11 @@ export async function POST(request: Request) {
 
   if (fetchError || !row) {
     return NextResponse.json({ error: 'Request not found' }, { status: 404 })
+  }
+
+  if (isConnectionBillingEnabled()) {
+    const gate = await assessAttorneyConnectionBillingGate(admin, attorneyListingId, row.client_id)
+    if (!gate.ok) return gate.response
   }
 
   const { data: household } = await admin
@@ -101,6 +113,10 @@ export async function POST(request: Request) {
       clientId: household.owner_id,
       attorneyClientRowId: row.id,
     })
+  }
+
+  if (isConnectionBillingEnabled()) {
+    await afterAttorneyConnectionBillingConnect(admin, attorneyListingId)
   }
 
   await admin

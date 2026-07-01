@@ -240,7 +240,7 @@ test.describe('B2 adversarial — sync never lowers billing_floor', () => {
     expect(src).toContain('buildFirmSubscriptionUpdatedUpdate')
     const checkoutIdx = src.indexOf("case 'checkout.session.completed'")
     const updatedIdx = src.indexOf("case 'customer.subscription.updated'")
-    const seedIdx = src.indexOf('buildFirmCheckoutCompletedUpdate')
+    const seedIdx = src.indexOf('buildFirmCheckoutCompletedUpdate', checkoutIdx)
     expect(checkoutIdx).toBeGreaterThan(-1)
     expect(seedIdx).toBeGreaterThan(checkoutIdx)
     expect(seedIdx).toBeLessThan(updatedIdx)

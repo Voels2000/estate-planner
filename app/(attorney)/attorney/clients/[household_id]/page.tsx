@@ -12,7 +12,7 @@ import { getCachedComposition } from '@/lib/estate/getCachedComposition'
 import { triggerEstateHealthRecompute } from '@/lib/estate/triggerEstateHealthRecompute'
 import { getConsumerAppUrl } from '@/lib/consumer/afterHouseholdWrite'
 import { getMissingDocumentAlerts } from '@/lib/attorney/getMissingDocumentAlerts'
-import { attorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
+import { resolveAttorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
 
 /** Fields read from `real_estate` rows for primary-residence value rollup. */
 type RealEstatePrimaryResidenceRow = {
@@ -168,7 +168,7 @@ export default async function AttorneyClientPage({
     return sum > 0 ? sum : null
   })()
 
-  const tierFeatures = attorneyTierFeatures(attorneyProfile?.attorney_tier ?? 0)
+  const tierFeatures = resolveAttorneyTierFeatures(attorneyProfile?.attorney_tier ?? 0)
   const documentGaps = getMissingDocumentAlerts(documents ?? [], gapDismissals ?? [])
 
   const matterStage = (connection.matter_stage ?? 'intake') as AttorneyMatterStage

@@ -6,6 +6,7 @@ import {
   ADVISOR_FLOOR,
   bandForCount,
   rateForCount,
+  type ConnectionBand,
 } from '@/lib/pricing/connectionPricing'
 
 /** Self-serve resets allowed before admin intervention (lifetime until admin reset). */
@@ -80,14 +81,18 @@ export function buildRebandPreview(opts: {
   newLimit: number
   connectedCount: number
   resetCount: number
+  bands?: ConnectionBand[]
+  rateFloor?: number
 }): RebandPreview {
+  const bands = opts.bands ?? ADVISOR_BANDS
+  const rateFloor = opts.rateFloor ?? ADVISOR_FLOOR
   const newLimit = Math.max(1, Math.floor(opts.newLimit))
   const currentLimit = Math.max(1, Math.floor(opts.currentLimit))
   const connectedCount = Math.max(0, Math.floor(opts.connectedCount))
-  const oldBand = bandForCount(currentLimit, ADVISOR_BANDS)
-  const newBand = bandForCount(newLimit, ADVISOR_BANDS)
-  const oldRate = rateForCount(currentLimit, ADVISOR_BANDS, ADVISOR_FLOOR)
-  const newRate = rateForCount(newLimit, ADVISOR_BANDS, ADVISOR_FLOOR)
+  const oldBand = bandForCount(currentLimit, bands)
+  const newBand = bandForCount(newLimit, bands)
+  const oldRate = rateForCount(currentLimit, bands, rateFloor)
+  const newRate = rateForCount(newLimit, bands, rateFloor)
   return {
     newLimit,
     connectedCount,
