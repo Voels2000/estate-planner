@@ -3658,6 +3658,27 @@ Pass = at least one row with referral code matching a test signup.
 
 ---
 
+### July 2026 — Attorney connection billing gate UI + raise-connect parity (#200, #201)
+
+**Decision:** Wire attorney connection billing gates on all **live** connect surfaces: attorney `accept-request` (checkout + raise modals); consumer `attorney-invite`, `intake-complete` (friendly blocked copy). Share `ConnectionLimitRaiseForm` for attorney raise parity with advisor. Stripe qty sync on **connect**, not on raise.
+
+**Gate UI coverage:**
+
+| API path | UI surface | Status |
+|----------|------------|--------|
+| `accept-request` | `/attorney/requests` | ✅ #200 + #201 inline raise |
+| `attorney-invite` | `/attorney-invite/[token]` | ✅ #200 |
+| `intake-complete` | profile save + login + dashboard banner | ✅ #200 |
+| `grant-access` | **No production UI** (hook exists; find-attorney uses request-connect) | API 402 only |
+
+**Reasoning:** Raw `attorney_checkout_required` strings were a launch blocker on connect paths. `grant-access` consumer UI was removed with legacy dashboard directory (2026); API retained for E2E/cross-role.
+
+**Implication:** Staging proof step 4 is requests-accept raise+connect. Claim v2 discovery: [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md).
+
+**Attestation:** Pending manual staging walk after #201 deploy.
+
+---
+
 ## Template for new entries
 
 ### [Date] — [Topic]

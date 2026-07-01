@@ -1358,6 +1358,28 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 
 ---
 
+## Attorney connection billing (2026-07-01, flag `CONNECTION_BILLING_ENABLED`)
+
+**Staging:** PRs #199–#201 on `staging`. Attorney model mirrors advisor sticky-floor with **one free client** (`billable = max(0, connected − 1)`).
+
+| Surface | Implementation |
+|---------|----------------|
+| Gate eval | `lib/billing/attorneyConnectionBilling.ts` — `listing_unclaimed`, `attorney_checkout_required`, `limit_raise_required` |
+| Billable math | `lib/billing/attorneyBillableQuantity.ts` |
+| Listing billing | `attorney_listings.client_limit`, `billing_floor`, `reset_count` |
+| `/attorney/billing` | `_attorney-connection-billing-client.tsx` + shared `ConnectionLimitRaiseForm` |
+| Attorney accept gate UI | `components/attorney/AttorneyConnectionBillingGateModals.tsx` — checkout + inline raise on `/attorney/requests` |
+| Consumer blocked copy | `lib/billing/attorneyConnectBillingGateClient.ts` — invite accept, intake-complete, dashboard banner |
+| Connect APIs gated | `accept-request`, `accept-invite`, `grant-access`, `completeIntakeRequest` |
+| Raise API | `POST /api/attorney/connection-limit/raise` — DB limit only; Stripe sync on connect |
+| Spec / proof | [ATTORNEY_RAISE_CONNECT_PARITY_FIX.md](./ATTORNEY_RAISE_CONNECT_PARITY_FIX.md) |
+
+**Gate UI note:** `grant-access` returns 402 with structured body but has **no production consumer UI** (find-attorney uses `request-connect`); hook `useConsumerGrantAttorneyAccess` ready for programmatic/E2E callers.
+
+**Claim seam:** Directory claim (`POST /api/directory/claim`) sets `profile_id` + `is_attorney` only — does **not** seed `client_limit`/`billing_floor`. See [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md).
+
+---
+
 ## Known Transitional Exceptions
 
 1. Legacy `lib/calculations/projection.ts` has been removed; canonical projection path is `projection-complete.ts`.

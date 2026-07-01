@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-07-01 (advisor connection billing staging track)
+# Last updated: 2026-07-01 (attorney connection billing #200–#201 on staging)
 
 ---
 
@@ -18,6 +18,16 @@
 ---
 
 ## Current sprint
+
+### Attorney connection billing — staging track (2026-07-01) `[~]` **on staging — manual proof**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Phase 6 attorney sticky floor (#199) | `[x]` | Gate + sync + listing-scoped billing |
+| Free-client offset + gate UI (#200) | `[x]` | `billable = connected − 1`; consumer blocked copy on invite + intake |
+| Raise-connect parity (#201) | `[x]` | Shared raise form; inline modal; Stripe sync on connect only |
+| Staging walk step 4 | `[ ]` | Raise 2→3 → accept 3rd → qty 2 / $150, no checkout |
+| Claim-flow v2 spec | `[ ]` | Discovery: [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) |
 
 ### Advisor connection billing — staging track (2026-07-01) `[~]` **PRs → staging**
 

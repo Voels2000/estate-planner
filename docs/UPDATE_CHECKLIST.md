@@ -32,6 +32,7 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [BILLING_PAGE_COPY_SPEC.md](./BILLING_PAGE_COPY_SPEC.md) | Consumer `/billing` matrix copy and layout |
 | [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md) | **Tier 0 + app-trial enforcement** — 8-PR sequence after billing page presentation |
 | [CONNECTION_BILLING_STICKY_FLOOR_FIX.md](./CONNECTION_BILLING_STICKY_FLOOR_FIX.md) · [BILLING_PAGE_CONNECTION_REBUILD.md](./BILLING_PAGE_CONNECTION_REBUILD.md) | **Advisor connection billing** — B2 model + `/billing` UI spec |
+| [ATTORNEY_RAISE_CONNECT_PARITY_FIX.md](./ATTORNEY_RAISE_CONNECT_PARITY_FIX.md) · [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) | **Attorney connection billing** parity + claim v2 discovery |
 | [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | Privacy deletion SOP, C-6/C-7 automated checks, privacy request + appeals SOP |
 | [legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md) | Counsel Q1–Q10 → conditional engineering scope |
 
@@ -611,6 +612,15 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Attorney drip — `sendAttorneyDripStep`, cron steps 2–3, migration `20260529130000_attorney_drip_columns.sql`
 - [ ] **Stripe products** — manual creation in Dashboard
 - [x] Master docs sync (this pass)
+
+## Attorney connection billing (#199–#201, 2026-07-01) — on staging
+
+- [x] Listing-scoped `client_limit` / `billing_floor` + gate APIs (#199)
+- [x] Free-client offset + gate UI on live connect surfaces (#200)
+- [x] Raise-connect parity — shared `ConnectionLimitRaiseForm` (#201)
+- [x] Claim v2 discovery — [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md)
+- [ ] Manual staging walk step 4
+- [x] Master docs: NEXT_SESSION · ROADMAP · DECISION_LOG · MASTER_ARCHITECTURE · E2E_TEST_RESET · ATTORNEY_RAISE_CONNECT_PARITY_FIX
 
 ## Projections empty state fix (2026-05-29) — shipped
 
