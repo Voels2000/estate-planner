@@ -1,6 +1,40 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-29 (public function search_path batch)
+# Last updated: 2026-07-01 (B2 sticky-floor connection billing)
+
+---
+
+## Connection billing B2 sticky-floor model (2026-07-01)
+
+**Problem.** Staging spine walk (#194) proved checkout + connect gates work, but `resolveFirmStripeBillableQuantity` (flag on) uses connected households only — ignores prepaid checkout quantity. Sync can **lower** Stripe qty below what the advisor purchased (e.g. checkout 5 → connect 1 → qty 1). Pure usage-metering; conflicts with purchase-ahead UX.
+
+**Decision.** Implement **B2 sticky-floor, gated ceiling** per `docs/CONNECTION_BILLING_STICKY_FLOOR_FIX.md`. Three new firm columns — `client_limit`, `billing_floor`, `reset_count` — **not** `seat_count`. Billable qty = `max(connected, billing_floor)`. **Load-bearing invariant:** sync may ratchet `billing_floor` **up** only; **only explicit reset** may lower it. Exceeding `client_limit` → 402 `limit_raise_required` (gate, no auto-bill). Self-serve reset: `new_limit >= connected_count`, re-band confirmation, max 2 resets then admin reset required.
+
+**Confirmed:**
+- `reset_count` clears **only on admin reset** (not per billing period).
+- Attorney parallel deferred to Phase 6 (same mechanics, listing-scoped).
+
+**Reasoning.** Usage-fair going up; no surprise bills (gate vs auto-bill); discount gaming closed by sticky floor + re-band on reset; reset valve capped at 2 without support.
+
+**Launch-required (not deferred):** `/billing` raise + reset UI forms. Advisor limit-reached modal links to `/billing`, but APIs-only v1 means professionals cannot complete raise/reset in-product — staging proof via API is sufficient; **real advisor launch blocked** until billing UI ships.
+
+**Post-merge staging proof (flag on, in order):**
+1. **5-seat checkout → connect 1 → Stripe qty stays 5** (sticky floor end-to-end, not unit-only).
+2. **Gate + raise round-trip:** connect to limit → 6th returns 402 `limit_raise_required` (no row, no handoff) → raise limit → 6th connects, qty ratchets to 6.
+3. **Reset re-band live:** ratchet across band boundary, disconnect, bill holds → reset with preview → floor drops + rate re-bands up.
+4. **3rd reset blocked;** admin endpoint clears `reset_count`.
+
+Reset E2E fixture: `npx tsx scripts/reset-staging-e2e-advisor-empty-billing.ts` (with `.env.test.staging`).
+
+---
+
+## Staging-first branch policy (2026-07-01)
+
+**Problem.** Connection billing (#190–#193) and firm-checkout (#193) merged to **`main`** without landing on **`staging`**. Vercel staging env vars (`CONNECTION_BILLING_ENABLED`, connection price IDs) were set, but `estate-planner-staging` still deployed the #187 build — spine walk failed until `main` → `staging` promotion.
+
+**Decision.** Reinforce documented flow: **feature PRs → `staging` only**; **promotion PRs → `staging` → `main`** for production. Agents follow `.cursor/rules/staging-first.mdc`. `DEPLOYMENT.md` § Branch flow updated with explicit warning. **Enforcement:** CI check **`staging-first-gate`** (workflow + duplicate step in **`verify`** on PRs to `main`) rejects any head branch other than `staging`. Add **`staging-first-gate`** to ruleset **`main-no-direct-push`** required checks after the workflow is on `main` (via staging → main promotion). Prior rulesets only required CI passes — they did not restrict PR head branch, which allowed #190–#193 to merge feature branches directly to `main`.
+
+**Reasoning.** `staging` branch = staging Vercel deploy; `main` = production path. Env-only changes on Vercel do not ship code that never merged to `staging`.
 
 ---
 

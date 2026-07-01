@@ -32,6 +32,11 @@ import {
   scheduleDeletionOnSubscriptionCancelled,
 } from '@/lib/compliance/scheduleDeletionOnCancel'
 import { rejectNonUsBillingCheckout } from '@/lib/billing/rejectNonUsBillingCheckout'
+import {
+  applyFirmCheckoutCompletedUpdate,
+  buildFirmCheckoutCompletedUpdate,
+  buildFirmSubscriptionUpdatedUpdate,
+} from '@/lib/billing/firmCheckoutWebhook'
 
 type WebhookCaptureStage = 'signature' | 'handler' | 'processing'
 
@@ -255,29 +260,24 @@ export async function POST(req: NextRequest) {
             const firmTier = priceId
               ? FIRM_PRICE_ID_TO_TIER[priceId]
               : undefined
-            const update: {
-              stripe_subscription_id: string
-              subscription_status: 'active'
-              seat_count: number
-              tier?: string
-            } = {
-              stripe_subscription_id: subscriptionId,
-              subscription_status: 'active',
-              seat_count: stripeQuantity,
-            }
-            if (firmTier) {
-              update.tier = firmTier
-            }
-            const { data, error } = await supabase
-              .from('firms')
-              .update(update)
-              .eq('id', firmId)
-              .select()
+            const update = buildFirmCheckoutCompletedUpdate({
+              subscriptionId,
+              stripeQuantity,
+              priceId,
+              firmTier,
+            })
+            const { ownerId, error } = await applyFirmCheckoutCompletedUpdate(
+              supabase,
+              firmId,
+              update,
+            )
             if (error) {
-              console.error('Firm Supabase update error:', error.message)
-              captureStripeWebhookSupabaseFailure('firm checkout update', error, event)
+              console.error('Firm Supabase update error:', error)
+              captureStripeWebhookFailure(new Error(`Firm checkout update: ${error}`), {
+                stage: 'processing',
+                event,
+              })
             }
-            const ownerId = data?.[0]?.owner_id as string | undefined
             if (ownerId) {
               const { error: profileError } = await supabase
                 .from('profiles')
@@ -531,13 +531,15 @@ export async function POST(req: NextRequest) {
           const firmTier = stripePriceId
             ? FIRM_PRICE_ID_TO_TIER[stripePriceId]
             : undefined
+          const firmUpdate = buildFirmSubscriptionUpdatedUpdate({
+            mappedStatus,
+            stripeQuantity,
+            stripePriceId,
+            firmTier,
+          })
           const { data: firmRows, error: firmError } = await supabase
             .from('firms')
-            .update({
-              subscription_status: mappedStatus,
-              seat_count: stripeQuantity,
-              ...(firmTier ? { tier: firmTier } : {}),
-            })
+            .update(firmUpdate)
             .eq('id', firmId)
             .select('owner_id')
           if (firmError) {
