@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { BillingClient } from './_billing-client'
 import { FirmBillingClient } from './_firm-billing-client'
+import { FirmConnectionBillingClient } from './_firm-connection-billing-client'
 import { redirect } from 'next/navigation'
 import { ButtonLink } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -24,13 +25,40 @@ import { shouldOfferPlanAndExportPurchase } from '@/lib/billing/shouldOfferPlanA
 import { hasDeliverableDownloadAccess } from '@/lib/billing/planExportAccess'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { DELIVERABLE_MIN_TIER } from '@/lib/tiers'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import { firmConnectedHouseholds } from '@/lib/billing/connectedHouseholdCount'
+import { buildFirmConnectionBillingSummary } from '@/lib/billing/firmConnectionBillingSummary'
+
+async function loadFirmConnectionBillingProps(firmId: string) {
+  const admin = createAdminClient()
+  const connectedCount = await firmConnectedHouseholds(admin, firmId)
+  const { data: firmRow } = await admin
+    .from('firms')
+    .select('client_limit, billing_floor, reset_count, subscription_status')
+    .eq('id', firmId)
+    .single()
+
+  const summary = buildFirmConnectionBillingSummary({
+    connectedCount,
+    clientLimit: firmRow?.client_limit,
+    billingFloor: firmRow?.billing_floor,
+    resetCount: firmRow?.reset_count,
+  })
+
+  return {
+    summary,
+    subscriptionStatus: firmRow?.subscription_status ?? null,
+  }
+}
 
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string; returnTo?: string }>
+  searchParams: Promise<{ plan?: string; returnTo?: string; action?: string }>
 }) {
   const params = await searchParams
+  const connectionBillingAction =
+    params.action === 'raise' || params.action === 'lower' ? params.action : null
   const recommendedPlanId =
     params.plan === 'financial' || params.plan === 'retirement' || params.plan === 'estate'
       ? params.plan
@@ -46,6 +74,23 @@ export default async function BillingPage({
   })
 
   if (billingExperience === 'firm_member') {
+    if (isConnectionBillingEnabled() && access.firm_id) {
+      const { summary, subscriptionStatus } = await loadFirmConnectionBillingProps(
+        access.firm_id,
+      )
+      const firmCheckoutPriceId = resolveAdvisorFirmCheckoutPriceId(access.firm_tier)
+
+      return (
+        <FirmConnectionBillingClient
+          firmName={access.firm_name ?? 'Your firm'}
+          summary={summary}
+          subscriptionStatus={subscriptionStatus}
+          firmCheckoutPriceId={firmCheckoutPriceId}
+          isOwner={false}
+        />
+      )
+    }
+
     return (
         <div className="mx-auto max-w-lg px-4 py-24 text-center">
           <Card className="p-8">
@@ -100,6 +145,24 @@ export default async function BillingPage({
         : 'starter'
     ) as FirmTierKey
     const firmCheckoutPriceId = resolveAdvisorFirmCheckoutPriceId(firmTierKey)
+
+    if (isConnectionBillingEnabled()) {
+      const { summary, subscriptionStatus } = await loadFirmConnectionBillingProps(
+        access.firm_id!,
+      )
+
+      return (
+        <FirmConnectionBillingClient
+          firmName={access.firm_name ?? 'Your firm'}
+          summary={summary}
+          subscriptionStatus={subscriptionStatus}
+          firmCheckoutPriceId={firmCheckoutPriceId}
+          isOwner
+          initialAction={connectionBillingAction}
+        />
+      )
+    }
+
     const checkoutTier =
       FIRM_PRICE_ID_TO_TIER[firmCheckoutPriceId as keyof typeof FIRM_PRICE_ID_TO_TIER]
     const perSeatRate = ADVISOR_FIRM_SEAT_RATES[firmTierKey]

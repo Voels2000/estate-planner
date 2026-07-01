@@ -4,10 +4,11 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
 import {
   applyFirmConnectionLimitRaise,
-  buildRebandPreview,
   validateRaiseClientLimit,
 } from '@/lib/billing/firmConnectionStickyFloor'
 import { syncFirmConnectionBillingQuantity } from '@/lib/billing/firmConnectionBilling'
+import { firmConnectedHouseholds } from '@/lib/billing/connectedHouseholdCount'
+import { buildRaiseLimitPreview } from '@/lib/billing/firmConnectionBillingSummary'
 import { rateForCount, ADVISOR_BANDS, ADVISOR_FLOOR } from '@/lib/pricing/connectionPricing'
 
 export const dynamic = 'force-dynamic'
@@ -86,19 +87,27 @@ export async function GET(request: Request) {
   }
 
   const admin = createAdminClient()
+  const connected = await firmConnectedHouseholds(admin, ctx.firm_id)
   const { data: firm } = await admin
     .from('firms')
-    .select('client_limit, reset_count')
+    .select('client_limit, billing_floor')
     .eq('id', ctx.firm_id)
     .single()
 
   if (!firm) return NextResponse.json({ error: 'Firm not found' }, { status: 404 })
 
-  const preview = buildRebandPreview({
-    currentLimit: firm.client_limit ?? 1,
+  const validation = validateRaiseClientLimit({
+    currentLimit: firm.client_limit,
     newLimit,
-    connectedCount: 0,
-    resetCount: firm.reset_count ?? 0,
+  })
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.error }, { status: 400 })
+  }
+
+  const preview = buildRaiseLimitPreview({
+    connectedCount: connected,
+    billingFloor: firm.billing_floor,
+    newLimit,
   })
 
   return NextResponse.json({
