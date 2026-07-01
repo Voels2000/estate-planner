@@ -11,7 +11,7 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { buildAllEventReferralUrls } from '@/lib/events/referral'
 import { loadRosterNetWorthByOwner } from '@/lib/roster/rosterNetWorth'
 import { loadRosterAlertCounts } from '@/lib/advisor/rosterAlertCounts'
-import { ADVISOR_FIRM_PRICE_IDS } from '@/lib/tiers'
+import { resolveAdvisorFirmCheckoutPriceId } from '@/lib/billing/resolveAdvisorFirmCheckout'
 import AdvisorClient from './_advisor-client-wrapper'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ensureAdvisorActivationDripStep1 } from '@/lib/advisor/sendAdvisorDripStep'
@@ -101,9 +101,7 @@ export default async function AdvisorPage() {
     : null
 
   const firmTierKey = access.firm_tier ?? 'starter'
-  const firmCheckoutPriceId =
-    ADVISOR_FIRM_PRICE_IDS[firmTierKey as keyof typeof ADVISOR_FIRM_PRICE_IDS] ||
-    ADVISOR_FIRM_PRICE_IDS.starter
+  const firmCheckoutPriceId = resolveAdvisorFirmCheckoutPriceId(firmTierKey)
 
   return (
     <AdvisorClient
