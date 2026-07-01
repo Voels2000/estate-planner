@@ -827,9 +827,12 @@ export async function ensureAdvisorFirmBootstrap(
     console.log(`  firms: existing ${firmId}`)
     const { error: firmErr } = await admin
       .from('firms')
-      .update({ subscription_status: subscriptionStatus, updated_at: new Date().toISOString() })
+      .update({
+        subscription_status: subscriptionStatus,
+        owner_id: advisorUserId,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', firmId)
-      .or('subscription_status.is.null,subscription_status.in.(inactive,canceled,past_due)')
     if (firmErr) console.warn('  firms subscription_status:', firmErr.message)
   }
 
@@ -866,7 +869,7 @@ export async function ensureAdvisorFirmBootstrap(
   return firmId
 }
 
-/** E2E advisors need active firm billing so invite/accept API paths pass capacity gate. */
+/** E2E advisors need active firm billing so invite/accept and /prospect paths pass the gate. */
 export async function ensureE2eAdvisorFirmSubscriptionActive(advisorUserId: string): Promise<void> {
   const admin = createAdminClient()
   const { data: profile } = await admin
@@ -880,7 +883,6 @@ export async function ensureE2eAdvisorFirmSubscriptionActive(advisorUserId: stri
     .from('firms')
     .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
     .eq('id', profile.firm_id)
-    .or('subscription_status.is.null,subscription_status.in.(inactive,canceled,past_due)')
 }
 
 function supabaseProjectRef(url: string): string {
@@ -1097,14 +1099,27 @@ export async function ensureAdvisorEmptyForE2e(): Promise<string> {
   await admin
     .from('profiles')
     .update({
-      subscription_status: 'active',
-      consumer_tier: 3,
+      subscription_status: null,
+      consumer_tier: null,
       is_superuser: false,
       updated_at: new Date().toISOString(),
     })
     .eq('id', advisorId)
 
   await ensureAdvisorFirmForE2e(advisorId, empty.firmName)
+
+  const { data: profileAfterFirm } = await admin
+    .from('profiles')
+    .select('firm_id')
+    .eq('id', advisorId)
+    .single()
+
+  if (profileAfterFirm?.firm_id) {
+    await admin
+      .from('firms')
+      .update({ subscription_status: null, updated_at: new Date().toISOString() })
+      .eq('id', profileAfterFirm.firm_id)
+  }
 
   const { error } = await admin.from('advisor_clients').delete().eq('advisor_id', advisorId)
   if (error) console.warn('  advisor-empty links purge:', error.message)
@@ -1470,9 +1485,6 @@ export async function verifyE2eAccounts(): Promise<void> {
     }
     if (account.role === 'consumer' && account.consumer_tier === null) {
       issues.push(`${account.email}: consumer_tier is null`)
-    }
-    if (account.role === 'advisor' && account.subscription_status === null) {
-      issues.push(`${account.email}: subscription_status is null`)
     }
   }
 

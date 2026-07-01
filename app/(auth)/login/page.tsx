@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { resolveAdvisorPostLoginPath } from '@/lib/access/advisorBillingGate'
 import { LoginForm } from './_login-form'
 
 function LoginFallback() {
@@ -26,7 +27,7 @@ export default async function LoginPage() {
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role, subscription_status, firm_role, is_superuser')
+      .select('role, subscription_status, firm_role, is_superuser, firm_id')
       .eq('id', user.id)
       .single()
 
@@ -35,11 +36,25 @@ export default async function LoginPage() {
     if (profile?.role === 'attorney') redirect('/attorney')
 
     if (profile?.role === 'advisor') {
-      if (profile?.firm_role === 'member') redirect('/advisor')
-      const hasActiveSub = ['active', 'trialing', 'canceling'].includes(
-        profile?.subscription_status ?? ''
+      let firmSubscriptionStatus: string | null = null
+      if (profile.firm_id) {
+        const { data: firm } = await supabase
+          .from('firms')
+          .select('subscription_status')
+          .eq('id', profile.firm_id)
+          .maybeSingle()
+        firmSubscriptionStatus = firm?.subscription_status ?? null
+      }
+
+      redirect(
+        resolveAdvisorPostLoginPath({
+          redirectTo: '/dashboard',
+          claimRedirect: null,
+          firmRole: profile.firm_role,
+          profileSubscriptionStatus: profile.subscription_status,
+          firmSubscriptionStatus,
+        }),
       )
-      redirect(hasActiveSub ? '/advisor' : '/billing')
     }
 
     redirect('/dashboard')

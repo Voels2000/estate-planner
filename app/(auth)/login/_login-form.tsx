@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { resolveAdvisorPostLoginPath } from '@/lib/access/advisorBillingGate'
 import { getSignupHref } from '@/lib/waitlist-mode'
 import { consumeIntakeToken, storeIntakeToken } from '@/lib/attorney/intakeTokenSession'
 import { Button } from '@/components/ui/Button'
@@ -67,7 +68,7 @@ export function LoginForm() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role, subscription_status, firm_role, is_superuser')
+        .select('role, subscription_status, firm_role, is_superuser, firm_id')
         .eq('id', data.user.id)
         .single()
 
@@ -81,21 +82,26 @@ export function LoginForm() {
         router.push('/attorney')
         router.refresh()
       } else if (profile?.role === 'advisor') {
-        if (profile?.firm_role === 'member') {
-          router.push('/advisor')
-          router.refresh()
-        } else {
-          const hasActiveSub = ['active', 'trialing', 'canceling'].includes(
-            profile?.subscription_status ?? ''
-          )
-          if (hasActiveSub) {
-            router.push('/advisor')
-            router.refresh()
-          } else {
-            router.push('/billing')
-            router.refresh()
-          }
+        let firmSubscriptionStatus: string | null = null
+        if (profile.firm_id) {
+          const { data: firm } = await supabase
+            .from('firms')
+            .select('subscription_status')
+            .eq('id', profile.firm_id)
+            .maybeSingle()
+          firmSubscriptionStatus = firm?.subscription_status ?? null
         }
+
+        router.push(
+          resolveAdvisorPostLoginPath({
+            redirectTo,
+            claimRedirect: null,
+            firmRole: profile.firm_role,
+            profileSubscriptionStatus: profile.subscription_status,
+            firmSubscriptionStatus,
+          }),
+        )
+        router.refresh()
       } else {
         await tryCompleteIntakeAfterLogin()
         router.push(redirectTo)
