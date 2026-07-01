@@ -8,7 +8,7 @@ import {
 } from '../../../scripts/seed-e2e-lib'
 import { syncE2ePasswordForEmail } from '../helpers/e2e-auth'
 
-const emptyAdvisor = E2E_IDENTITIES.advisorEmpty
+const emptyAdvisor = E2E_IDENTITIES.advisor
 
 test.describe.configure({ mode: 'serial', timeout: 120_000 })
 

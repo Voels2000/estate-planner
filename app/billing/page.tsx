@@ -9,6 +9,7 @@ import {
   FIRM_PRICE_ID_TO_TIER,
   ADVISOR_FIRM_SEAT_RATES,
 } from '@/lib/tiers'
+import { resolveAdvisorFirmCheckoutPriceId } from '@/lib/billing/resolveAdvisorFirmCheckout'
 import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resolveBillingExperience } from '@/lib/billing/resolveBillingExperience'
 import { isAnnualBillingConfigured } from '@/lib/billing/stripePrices'
@@ -98,8 +99,7 @@ export default async function BillingPage({
         ? (firmRow?.tier ?? access.firm_tier)
         : 'starter'
     ) as FirmTierKey
-    const firmCheckoutPriceId =
-      ADVISOR_FIRM_PRICE_IDS[firmTierKey as keyof typeof ADVISOR_FIRM_PRICE_IDS]
+    const firmCheckoutPriceId = resolveAdvisorFirmCheckoutPriceId(firmTierKey)
     const checkoutTier =
       FIRM_PRICE_ID_TO_TIER[firmCheckoutPriceId as keyof typeof FIRM_PRICE_ID_TO_TIER]
     const perSeatRate = ADVISOR_FIRM_SEAT_RATES[firmTierKey]

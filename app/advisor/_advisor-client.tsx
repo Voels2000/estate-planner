@@ -94,6 +94,7 @@ type Props = {
   isFirmOwner?: boolean
   firm_name?: string | null
   firm_id?: string | null
+  firmCheckoutPriceId?: string | null
   referralCode?: string | null
   eventReferralUrls?: Record<string, string> | null
 }
@@ -129,6 +130,7 @@ export default function AdvisorClientPage({
   isFirmOwner,
   firm_name,
   firm_id,
+  firmCheckoutPriceId,
   referralCode,
   eventReferralUrls,
 }: Props) {
@@ -152,6 +154,51 @@ export default function AdvisorClientPage({
     max_clients: number
     tier_name: string
   } | null>(null)
+  const [ownerBillingRequiredModal, setOwnerBillingRequiredModal] = useState(false)
+  const [firmCheckoutModal, setFirmCheckoutModal] = useState<{ quantity: number } | null>(null)
+  const [firmCheckoutLoading, setFirmCheckoutLoading] = useState(false)
+
+  async function startFirmConnectionCheckout(quantity: number) {
+    if (!firmCheckoutPriceId) {
+      setError('Firm billing is not configured. Contact support.')
+      return
+    }
+    setFirmCheckoutLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/stripe/firm-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId: firmCheckoutPriceId, seatCount: quantity }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && typeof data.url === 'string') {
+        window.location.href = data.url
+        return
+      }
+      setError(typeof data.error === 'string' ? data.error : 'Checkout failed. Please try again.')
+    } catch {
+      setError('Something went wrong.')
+    } finally {
+      setFirmCheckoutLoading(false)
+    }
+  }
+
+  function handleFirmCheckoutRequired(quantity: number) {
+    if (isFirmOwner !== true) {
+      setOwnerBillingRequiredModal(true)
+      return
+    }
+    setFirmCheckoutModal({ quantity })
+  }
+
+  function handleConnectBillingError(data: { error?: string; quantity?: number }, status: number): boolean {
+    if (status === 402 && data.error === 'firm_checkout_required' && typeof data.quantity === 'number') {
+      handleFirmCheckoutRequired(data.quantity)
+      return true
+    }
+    return false
+  }
 
   async function handleInvite() {
     if (!inviteEmail.trim()) return
@@ -169,6 +216,15 @@ export default function AdvisorClientPage({
       const data = await response.json()
 
       if (!response.ok) {
+        if (handleConnectBillingError(data, response.status)) return
+        if (data.error === 'tier_limit_reached') {
+          setTierLimitModal({
+            current_count: data.current_count,
+            max_clients: data.max_clients,
+            tier_name: data.tier_name,
+          })
+          return
+        }
         setInviteError(data.error ?? 'Something went wrong.')
         return
       }
@@ -236,6 +292,7 @@ export default function AdvisorClientPage({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        if (handleConnectBillingError(data, res.status)) return
         if (data.error === 'tier_limit_reached') {
           setTierLimitModal({
             current_count: data.current_count,
@@ -328,6 +385,61 @@ export default function AdvisorClientPage({
               </a>
               <button
                 onClick={() => setTierLimitModal(null)}
+                className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {ownerBillingRequiredModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+            <div className="mb-1 text-2xl">🏢</div>
+            <h2 className="text-lg font-bold text-neutral-900">Firm billing required</h2>
+            <p className="mt-2 text-sm text-neutral-600">
+              Your firm owner must enable billing before you can connect clients.
+              {firm_name ? (
+                <> Ask the owner of <span className="font-medium">{firm_name}</span> to complete firm checkout.</>
+              ) : (
+                <> Ask your firm owner to complete checkout.</>
+              )}
+            </p>
+            <div className="mt-6">
+              <button
+                onClick={() => setOwnerBillingRequiredModal(false)}
+                className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {firmCheckoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+            <div className="mb-1 text-2xl">💳</div>
+            <h2 className="text-lg font-bold text-neutral-900">Enable firm billing</h2>
+            <p className="mt-2 text-sm text-neutral-600">
+              Connect your first client by subscribing for{' '}
+              <span className="font-medium">{firmCheckoutModal.quantity}</span>{' '}
+              connected {firmCheckoutModal.quantity === 1 ? 'household' : 'households'}.
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                onClick={() => void startFirmConnectionCheckout(firmCheckoutModal.quantity)}
+                disabled={firmCheckoutLoading}
+                className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-neutral-800 transition disabled:opacity-60"
+              >
+                {firmCheckoutLoading ? 'Redirecting…' : 'Continue to checkout →'}
+              </button>
+              <button
+                onClick={() => setFirmCheckoutModal(null)}
+                disabled={firmCheckoutLoading}
                 className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition"
               >
                 Cancel

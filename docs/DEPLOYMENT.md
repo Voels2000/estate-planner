@@ -131,7 +131,9 @@ feature/* ──PR (verify: lint+tsc+unit)──► staging ──PR (verify+e2e
 
 **Promotion checklist:** [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) — use for staging→`main` PRs that ship migrations or fail-closed auth (#28–#38 batch).
 
-After merging CI changes to `main`, merge **`main` → `staging`** so branch workflows stay in sync — avoids “branch out of date” on the next staging → main PR.
+> **Staging-first policy (2026-07-01):** Feature and billing work must land on **`staging`** first (`estate-planner-staging`). PRs that merge directly to **`main`** bypass the staging app even when Vercel staging env vars are updated — the staging branch is what deploys. Only **promotion PRs (`staging` → `main`)** may target `main` for shippable work. Cursor rule: `.cursor/rules/staging-first.mdc`. Incident: connection billing #190–#193 merged to `main` without staging → spine walk blocked until `main` → `staging` promotion.
+
+After merging CI changes to `main`, merge **`main` → `staging`** so branch workflows stay in sync — avoids “branch out of date” on the next staging → main PR. **This sync is not a substitute for staging-first delivery** — it only realigns branches after a promotion or doc-only `main` commit.
 
 **Vercel cron secrets (2026-06-17):** `CRON_SECRET` and `INTERNAL_API_KEY` are **load-bearing** — auth is fail-closed (missing secret → 500). Set on **both** `estate-planner` (prod) and **`estate-planner-staging`** Production scopes before relying on crons. Manifest: `lib/env/manifest.ts` (`requiredInScopes: ALL_DEPLOYED`).
 

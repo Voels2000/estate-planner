@@ -99,7 +99,7 @@ test.describe('consumer trialing grep audit (PR 5)', () => {
     'lib/stripe/consumerSubscriptionStatus.ts',
     'app/billing/_billing-client.tsx',
     'lib/access/hasEverSubscribed.ts',
-    'middleware.ts',
+    'lib/access/advisorBillingGate.ts',
   ]
 
   test('intentional consumer trialing readers still present', () => {

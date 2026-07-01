@@ -5,22 +5,11 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { ADVISOR_FIRM_PRICE_IDS } from '@/lib/tiers'
 import { getAppUrl } from '@/lib/app-url'
 import { createStripeClient } from '@/lib/stripe/config'
-
-const VALID_FIRM_PRICE_IDS = new Set(
-  Object.values(ADVISOR_FIRM_PRICE_IDS).filter((id): id is string => Boolean(id)),
-)
-
-const tierBandMax: Record<string, number> = {
-  [ADVISOR_FIRM_PRICE_IDS.starter]: 10,
-  [ADVISOR_FIRM_PRICE_IDS.growth]: 50,
-  [ADVISOR_FIRM_PRICE_IDS.enterprise]: 250,
-}
-
-const tierBandMin: Record<string, number> = {
-  [ADVISOR_FIRM_PRICE_IDS.starter]: 1,
-  [ADVISOR_FIRM_PRICE_IDS.growth]: 11,
-  [ADVISOR_FIRM_PRICE_IDS.enterprise]: 51,
-}
+import {
+  allowedAdvisorFirmCheckoutPriceIds,
+  isAdvisorConnectionCheckoutPrice,
+  normalizeFirmCheckoutQuantity,
+} from '@/lib/billing/resolveAdvisorFirmCheckout'
 
 export async function POST(req: Request) {
   try {
@@ -39,12 +28,16 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}))
     const priceId = typeof body.priceId === 'string' ? body.priceId : undefined
+    const validPriceIds = allowedAdvisorFirmCheckoutPriceIds()
 
-    if (!priceId || !VALID_FIRM_PRICE_IDS.has(priceId)) {
+    if (!priceId || !validPriceIds.has(priceId)) {
       return NextResponse.json({ error: 'Bad request' }, { status: 400 })
     }
 
-    if (priceId === ADVISOR_FIRM_PRICE_IDS.enterprise) {
+    if (
+      !isAdvisorConnectionCheckoutPrice(priceId) &&
+      priceId === ADVISOR_FIRM_PRICE_IDS.enterprise
+    ) {
       return NextResponse.json(
         { error: 'Enterprise plans require contacting sales at support@mywealthmaps.com.' },
         { status: 403 },
@@ -95,24 +88,13 @@ export async function POST(req: Request) {
       }
     }
 
-    const seatCount =
-      typeof body.seatCount === 'number'
-        ? Math.min(Math.max(1, body.seatCount), 250)
-        : Math.max(1, ctx.seat_count ?? 1)
-
-    const maxSeats = tierBandMax[priceId] ?? 250
-    const minSeats = tierBandMin[priceId] ?? 1
-    if (seatCount < minSeats) {
-      return NextResponse.json(
-        { error: `Minimum seat count for this plan is ${minSeats}` },
-        { status: 400 },
-      )
-    }
-    if (seatCount > maxSeats) {
-      return NextResponse.json(
-        { error: `Seat count exceeds maximum for this plan (${maxSeats})` },
-        { status: 400 },
-      )
+    const quantityResult = normalizeFirmCheckoutQuantity(
+      priceId,
+      body.seatCount,
+      ctx.seat_count ?? 1,
+    )
+    if (quantityResult.error) {
+      return NextResponse.json({ error: quantityResult.error }, { status: 400 })
     }
 
     const siteUrl = getAppUrl()
@@ -120,7 +102,7 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       mode: 'subscription',
-      line_items: [{ price: priceId, quantity: seatCount }],
+      line_items: [{ price: priceId, quantity: quantityResult.quantity }],
       billing_address_collection: 'required',
       allow_promotion_codes: true,
       success_url: `${siteUrl}/billing?session_id={CHECKOUT_SESSION_ID}`,

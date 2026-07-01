@@ -1,0 +1,29 @@
+---
+description: All feature work merges to staging before main (production path)
+alwaysApply: true
+---
+
+# Staging-first promotion
+
+**`staging` → Vercel `estate-planner-staging` (test). `main` → Vercel `estate-planner` (production).**
+
+## Required workflow
+
+1. Branch from **`staging`** (or merge latest `staging` before opening a PR).
+2. Open PR with base **`staging`** — never open feature PRs directly to **`main`**.
+3. Prove on staging (E2E, spine walks, manual smoke) after merge + Vercel deploy.
+4. Promote **`staging` → `main`** only via a dedicated promotion PR when staging is green.
+
+## Agent must not
+
+- Merge or recommend merging feature work directly to **`main`**.
+- Assume env vars on staging apply if the code never merged to **`staging`**.
+- Run staging integration tests against `estate-planner-staging.vercel.app` until the change is on the **`staging`** branch.
+
+## Exception (sync only)
+
+After a promotion **`staging` → `main`**, if `main` gained doc-only or CI-only commits, merge **`main` → `staging`** to keep branches aligned — not as a substitute for staging-first feature delivery.
+
+## Incident reference (2026-07-01)
+
+Connection billing (#190–#193) merged to **`main`** without staging. Staging env was updated but the app was still on #187 until **`main` → `staging`** promotion. See `docs/DEPLOYMENT.md` § Branch flow.
