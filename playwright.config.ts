@@ -94,7 +94,7 @@ function buildProjects(): Project[] {
     },
     {
       name: 'advisor',
-      dependencies: ['consumer-advisor-link-setup', 'advisor-empty-setup'],
+      dependencies: ['consumer-advisor-link-setup', 'advisor-setup', 'advisor-empty-setup'],
       testMatch: /advisor\/.*\.spec\.ts/,
       testIgnore: /advisor-consumer-sync\.spec\.ts/,
       use: { storageState: '.auth/advisor.json' },

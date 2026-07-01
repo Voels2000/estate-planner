@@ -866,7 +866,7 @@ export async function ensureAdvisorFirmBootstrap(
   return firmId
 }
 
-/** E2E advisors need active firm billing so invite/accept API paths pass capacity gate. */
+/** E2E advisors need active firm billing so invite/accept and /prospect paths pass the gate. */
 export async function ensureE2eAdvisorFirmSubscriptionActive(advisorUserId: string): Promise<void> {
   const admin = createAdminClient()
   const { data: profile } = await admin
@@ -880,7 +880,6 @@ export async function ensureE2eAdvisorFirmSubscriptionActive(advisorUserId: stri
     .from('firms')
     .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
     .eq('id', profile.firm_id)
-    .or('subscription_status.is.null,subscription_status.in.(inactive,canceled,past_due)')
 }
 
 function supabaseProjectRef(url: string): string {
