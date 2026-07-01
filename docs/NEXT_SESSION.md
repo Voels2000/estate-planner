@@ -1,6 +1,6 @@
 # NEXT_SESSION.md — session handoff
 
-**Last updated:** 2026-07-01 (#206–#210 merged; step-up in flight)
+**Last updated:** 2026-07-01 (#206–#211 merged; credential + respond rename on branch)
 
 ---
 
@@ -8,7 +8,7 @@
 
 **Attorney connection billing:** ✅ **Closed** — step-4 spine proven.
 
-**Claim v2:** #206–#210 merged (identity, magic-link claim, billing seed, login link). **Next:** action-gated step-up (#211), credential verification, rename `/claim-listing`.
+**Claim v2:** #206–#211 merged. **On branch `feat/claim-v2-credential-respond-stepup`:** credential at first connect, `/respond-request` rename, `walk:staging-action-step-up`. **Then:** merge PR → set `ACTION_GATED_PRIVILEGED_MFA=true` on staging → run walks → promotion `staging` → `main` for prod cutover.
 
 ---
 
@@ -20,24 +20,23 @@
 | Walk helpers | ✅ `walk:staging-attorney-connection-accepts` + `walk:staging-attorney-step4` (#203) |
 | Claim v2 discovery | ✅ [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) |
 | Claim v2 spec (locked auth) | ✅ [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) |
-| Claim v2 implementation | `[~]` | Step-up #211; credential + rename remain |
-| `/claim-listing/` identity-skip | ✅ #206 |
+| Claim v2 implementation | `[~]` | Credential + respond rename + step-up walk on branch; prod cutover after staging green |
+| `/claim-listing/` identity-skip | ✅ #206 → route renamed `/respond-request` (redirect from old path) |
 | `/advisor/firm` connection copy | ✅ #207 |
 | Claim v2 magic-link entry | ✅ #208–#210 merged |
-| Action-gated step-up | `[~]` | PR #211 — `ACTION_GATED_PRIVILEGED_MFA` |
-| Prod connection billing flip | 🚫 After staging green |
+| Action-gated step-up | ✅ #211 — `ACTION_GATED_PRIVILEGED_MFA` (enable on staging before walk) |
+| Credential at first connect | `[~]` | WSBA/CRD on accept-request; sets `credential_verified_at` |
+| Prod connection billing flip | 🚫 After staging green — see [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) |
 
 ---
 
 ## Handoff (fresh chat)
 
-**Proven on staging:** advisor connection billing, attorney connection billing (step 4 green), Path A.
+**Proven on staging:** advisor connection billing, attorney connection billing (step 4 green), Path A, directory magic-link claim + billing seed (#209).
 
-**In flight:** PR #206 claim-listing identity · #207 advisor/firm copy · #208 magic-link claim entry.
+**Next merge:** PR from `feat/claim-v2-credential-respond-stepup` → `staging`. After deploy: `npm run walk:staging-action-step-up` (requires `ACTION_GATED_PRIVILEGED_MFA=true` on Vercel staging).
 
-**Specced, next after #208:** explicit billing seed at claim · action-gated MFA step-up · login "email me a link".
-
-**Before launch:** v2 build · pricing surface mechanical fixes · prod cutover checklist · P0 outreach copy.
+**Before launch:** enable staging flag · run walks · promotion PR `staging` → `main` · prod cutover checklist · P0 outreach copy.
 
 ---
 

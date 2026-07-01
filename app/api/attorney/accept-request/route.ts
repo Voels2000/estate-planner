@@ -18,6 +18,10 @@ import {
   assessAttorneyConnectionBillingGate,
 } from '@/lib/billing/attorneyConnectionBilling'
 import { EMAIL_FROM } from '@/lib/email/config'
+import {
+  assertProfessionalCredentialForConnect,
+  type ConnectCredentialInput,
+} from '@/lib/directory/professionalCredential'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,7 +58,10 @@ export async function POST(request: Request) {
     }
   }
 
-  const { attorney_client_id } = await request.json()
+  const body = (await request.json()) as {
+    attorney_client_id?: string
+  } & ConnectCredentialInput
+  const { attorney_client_id, bar_number, bar_state, crd_number: _crd } = body
   if (!attorney_client_id) {
     return NextResponse.json({ error: 'attorney_client_id is required' }, { status: 400 })
   }
@@ -74,6 +81,15 @@ export async function POST(request: Request) {
   if (isConnectionBillingEnabled()) {
     const gate = await assessAttorneyConnectionBillingGate(admin, attorneyListingId, row.client_id)
     if (!gate.ok) return gate.response
+  }
+
+  const credentialGate = await assertProfessionalCredentialForConnect(admin, {
+    type: 'attorney',
+    listingId: attorneyListingId,
+    input: { bar_number, bar_state },
+  })
+  if (!credentialGate.ok) {
+    return NextResponse.json(credentialGate.body, { status: credentialGate.status })
   }
 
   const { data: household } = await admin

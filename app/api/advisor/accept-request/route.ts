@@ -15,6 +15,11 @@ import {
   syncFirmConnectionBillingQuantity,
 } from '@/lib/billing/firmConnectionBilling'
 import { EMAIL_FROM } from '@/lib/email/config'
+import {
+  assertProfessionalCredentialForConnect,
+  getAdvisorDirectoryListingIdForUser,
+  type ConnectCredentialInput,
+} from '@/lib/directory/professionalCredential'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,7 +41,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Advisor access required' }, { status: 403 })
   }
 
-  const { advisor_client_id } = await request.json()
+  const body = (await request.json()) as {
+    advisor_client_id?: string
+  } & ConnectCredentialInput
+  const { advisor_client_id, crd_number, bar_number: _bar, bar_state: _state } = body
   if (!advisor_client_id) {
     return NextResponse.json({ error: 'advisor_client_id is required' }, { status: 400 })
   }
@@ -67,6 +75,20 @@ export async function POST(request: Request) {
         tier_name: tierName,
       }, { status: 403 })
     }
+  }
+
+  const advisorListingId = await getAdvisorDirectoryListingIdForUser(admin, user.id)
+  if (!advisorListingId) {
+    return NextResponse.json({ error: 'Advisor listing not found' }, { status: 404 })
+  }
+
+  const credentialGate = await assertProfessionalCredentialForConnect(admin, {
+    type: 'advisor',
+    listingId: advisorListingId,
+    input: { crd_number },
+  })
+  if (!credentialGate.ok) {
+    return NextResponse.json(credentialGate.body, { status: credentialGate.status })
   }
 
   // Fetch consumer profile for notification email

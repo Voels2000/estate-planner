@@ -28,7 +28,7 @@ export default function robots(): MetadataRoute.Robots {
           '/signup',
           '/settings',
           '/print',
-          '/claim-listing',
+          '/respond-request',
           '/billing',
         ],
       },

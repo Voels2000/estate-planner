@@ -43,6 +43,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/claim-listing/:path*",
+        destination: "/respond-request/:path*",
+        permanent: true,
+      },
+      {
         source: "/advisor/prospect",
         destination: "/prospect",
         permanent: true,

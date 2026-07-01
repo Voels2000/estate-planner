@@ -19,6 +19,8 @@ import { RosterNetWorthColumnHeader } from '@/components/shared/RosterNetWorthCo
 import { formatRosterNetWorth } from '@/lib/roster/rosterNetWorth'
 import { AdvisorValuePropBanner } from '@/components/advisor/AdvisorValuePropBanner'
 import { ReferralImpactPanel } from '@/components/advisor/ReferralImpactPanel'
+import { ProfessionalCredentialModal } from '@/components/directory/ProfessionalCredentialModal'
+import type { CredentialGateType } from '@/lib/directory/professionalCredential'
 
 type AdvisorClient = {
   id: string
@@ -163,6 +165,10 @@ export default function AdvisorClientPage({
     inviteWarnEmail?: string
   } | null>(null)
   const [firmCheckoutLoading, setFirmCheckoutLoading] = useState(false)
+  const [credentialModal, setCredentialModal] = useState<{
+    requestId: string
+    credentialType: CredentialGateType
+  } | null>(null)
 
   async function startFirmConnectionCheckout(quantity: number) {
     if (!firmCheckoutPriceId) {
@@ -317,18 +323,31 @@ export default function AdvisorClientPage({
     }
   }
 
-  async function handleAcceptRequest(advisorClientId: string) {
+  async function handleAcceptRequest(
+    advisorClientId: string,
+    credential?: { crd_number?: string },
+  ) {
     setLoading(`${advisorClientId}-accept`)
     setError(null)
     try {
       const res = await fetch('/api/advisor/accept-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ advisor_client_id: advisorClientId }),
+        body: JSON.stringify({
+          advisor_client_id: advisorClientId,
+          ...credential,
+        }),
       })
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        if (data.credential_required && data.credential_type) {
+          setCredentialModal({
+            requestId: advisorClientId,
+            credentialType: data.credential_type as CredentialGateType,
+          })
+          return
+        }
         if (handleConnectBillingError(data, res.status)) return
         if (data.error === 'tier_limit_reached') {
           setTierLimitModal({
@@ -342,9 +361,9 @@ export default function AdvisorClientPage({
         return
       }
 
-      // Move from incoming to pending (invite sent, awaiting acceptance)
+      setCredentialModal(null)
       setClients(prev =>
-        prev.map(c => c.id === advisorClientId ? { ...c, status: 'pending' } : c)
+        prev.map(c => c.id === advisorClientId ? { ...c, status: 'active' } : c)
       )
     } catch {
       setError('Something went wrong.')
@@ -399,6 +418,16 @@ export default function AdvisorClientPage({
 
   return (
     <div className="space-y-8">
+      <ProfessionalCredentialModal
+        open={credentialModal !== null}
+        credentialType={credentialModal?.credentialType ?? 'crd'}
+        loading={loading === `${credentialModal?.requestId}-accept`}
+        onClose={() => setCredentialModal(null)}
+        onSubmit={(values) => {
+          if (!credentialModal) return
+          void handleAcceptRequest(credentialModal.requestId, values)
+        }}
+      />
       {/* Tier limit upgrade modal */}
       {tierLimitModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
