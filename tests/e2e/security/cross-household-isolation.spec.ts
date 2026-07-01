@@ -12,7 +12,7 @@ import {
 } from '../helpers/e2e-households'
 import { resolveAdvisorLinkFixtureEnv } from '../helpers/e2e-advisor-link-env'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { findUserIdByEmail, initSupabaseEnv, pruneStrayE2eAdvisorClientLinks } from '../../../scripts/seed-e2e-lib'
+import { findUserIdByEmail, initSupabaseEnv, linkAdvisorToClient, pruneStrayE2eAdvisorClientLinks, ensureE2eAdvisorFirmSubscriptionActive } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword } from '../helpers/e2e-auth'
 import { getWithAuthRetry } from '../helpers/request-auth-retry'
 import {
@@ -118,6 +118,10 @@ test.beforeAll(async ({}, testInfo) => {
     const advisorId = (await findUserIdByEmail(advisorEmail)) ?? ''
     const tier1UserId = (await findUserIdByEmail(E2E_IDENTITIES.consumerTier1.email)) ?? ''
     if (advisorId) {
+      await ensureE2eAdvisorFirmSubscriptionActive(advisorId)
+      if (advisorClientOwnerUserId) {
+        await linkAdvisorToClient(advisorId, advisorClientOwnerUserId)
+      }
       await pruneStrayE2eAdvisorClientLinks(advisorId, [
         advisorClientOwnerUserId,
         linkedClientOwnerUserId,
@@ -269,8 +273,8 @@ test.describe('Advisor isolation @production', () => {
 test.describe('Advisor access to linked client @production', () => {
   test.use({ storageState: '.auth/advisor.json' })
 
-  test('POST estate-composition on advisor client household returns 200', async ({ request }) => {
-    const res = await request.post('/api/estate-composition', {
+  test('POST estate-composition on advisor client household returns 200', async ({ page }) => {
+    const res = await page.request.post('/api/estate-composition', {
       ...apiOpts(),
       data: { householdId: linkedClientHouseholdId, sourceRole: 'advisor' },
     })
