@@ -478,7 +478,7 @@ export default function AdvisorClientPage({
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <a
-                href="/billing"
+                href="/billing?action=raise"
                 className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-neutral-800 transition"
               >
                 Manage firm billing →
