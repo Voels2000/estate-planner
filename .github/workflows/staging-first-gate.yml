@@ -1,0 +1,20 @@
+# Fail closed: only promotion PRs (head = staging) may target main.
+# Feature branches must merge to staging first. See docs/DEPLOYMENT.md § Branch flow.
+name: Staging-first gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+
+jobs:
+  staging-first-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require PR head branch staging
+        if: github.head_ref != 'staging'
+        run: |
+          echo "::error::PRs to main must use head branch staging (staging → main promotion only). Merge feature work to staging first. See .cursor/rules/staging-first.mdc and docs/DEPLOYMENT.md."
+          exit 1
+      - name: Promotion PR allowed
+        run: echo "Head branch is staging — promotion PR to main allowed."

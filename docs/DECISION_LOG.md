@@ -8,7 +8,7 @@
 
 **Problem.** Connection billing (#190–#193) and firm-checkout (#193) merged to **`main`** without landing on **`staging`**. Vercel staging env vars (`CONNECTION_BILLING_ENABLED`, connection price IDs) were set, but `estate-planner-staging` still deployed the #187 build — spine walk failed until `main` → `staging` promotion.
 
-**Decision.** Reinforce documented flow: **feature PRs → `staging` only**; **promotion PRs → `staging` → `main`** for production. Agents follow `.cursor/rules/staging-first.mdc`. `DEPLOYMENT.md` § Branch flow updated with explicit warning. GitHub rulesets today require CI on both branches but do **not** block arbitrary head branches into `main` — process + agent rule until a ruleset limits `main` PR base to `staging` only.
+**Decision.** Reinforce documented flow: **feature PRs → `staging` only**; **promotion PRs → `staging` → `main`** for production. Agents follow `.cursor/rules/staging-first.mdc`. `DEPLOYMENT.md` § Branch flow updated with explicit warning. **Enforcement:** CI check **`staging-first-gate`** (workflow + duplicate step in **`verify`** on PRs to `main`) rejects any head branch other than `staging`. Add **`staging-first-gate`** to ruleset **`main-no-direct-push`** required checks after the workflow is on `main` (via staging → main promotion). Prior rulesets only required CI passes — they did not restrict PR head branch, which allowed #190–#193 to merge feature branches directly to `main`.
 
 **Reasoning.** `staging` branch = staging Vercel deploy; `main` = production path. Env-only changes on Vercel do not ship code that never merged to `staging`.
 

@@ -17,8 +17,13 @@ alwaysApply: true
 ## Agent must not
 
 - Merge or recommend merging feature work directly to **`main`**.
+- Open a PR with base **`main`** unless head is **`staging`** (promotion only).
 - Assume env vars on staging apply if the code never merged to **`staging`**.
 - Run staging integration tests against `estate-planner-staging.vercel.app` until the change is on the **`staging`** branch.
+
+## CI enforcement
+
+PRs targeting **`main`** must fail **`staging-first-gate`** (and **`verify`**) unless head is **`staging`**. Feature branches → **`staging`** first; then **`staging` → `main`** promotion.
 
 ## Exception (sync only)
 
