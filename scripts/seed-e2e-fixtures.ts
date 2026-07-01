@@ -165,8 +165,10 @@ async function main() {
 
   if (run('advisor')) {
     console.log('3. Advisor portal + directory listing')
+    const advisorEmail =
+      process.env.PLAYWRIGHT_ADVISOR_EMAIL?.trim() || E2E_IDENTITIES.advisor.email
     advisorId = await ensureAuthUser({
-      email: E2E_IDENTITIES.advisor.email,
+      email: advisorEmail,
       password: E2E_IDENTITIES.advisor.password,
       fullName: E2E_IDENTITIES.advisor.fullName,
       role: 'advisor',

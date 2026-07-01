@@ -827,9 +827,12 @@ export async function ensureAdvisorFirmBootstrap(
     console.log(`  firms: existing ${firmId}`)
     const { error: firmErr } = await admin
       .from('firms')
-      .update({ subscription_status: subscriptionStatus, updated_at: new Date().toISOString() })
+      .update({
+        subscription_status: subscriptionStatus,
+        owner_id: advisorUserId,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', firmId)
-      .or('subscription_status.is.null,subscription_status.in.(inactive,canceled,past_due)')
     if (firmErr) console.warn('  firms subscription_status:', firmErr.message)
   }
 
