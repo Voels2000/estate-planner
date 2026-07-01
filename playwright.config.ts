@@ -94,7 +94,7 @@ function buildProjects(): Project[] {
     },
     {
       name: 'advisor',
-      dependencies: ['consumer-advisor-link-setup'],
+      dependencies: ['consumer-advisor-link-setup', 'advisor-empty-setup'],
       testMatch: /advisor\/.*\.spec\.ts/,
       testIgnore: /advisor-consumer-sync\.spec\.ts/,
       use: { storageState: '.auth/advisor.json' },
@@ -135,7 +135,7 @@ function buildProjects(): Project[] {
     {
       name: 'import-unit',
       testDir: './tests/unit',
-      testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|simpleRateLimit|waitlist-mode|signupAdmission|signupPolicy|site-url|roth-analysis|tax-year-selection|privilegedMfaPolicy|verifyEnv|stripeWebhookVerify|stripePricesProdGuard|stripeAccountGuard|stripeAccountGuardCallSite|deleteUserSchema|waRegime|estateMcMfj|attorneyClientCap|consumerCheckoutBlockReason|processConsumerCheckout|requirePaidDownloadAccess|oneTimePurchases|stripeOneTimeSkus|planExportWarnings|planExportAppTrialDeliverable|shouldOfferPlanAndExportPurchase|app-url|internalApiAuth|applyEmailUnsubscribe|monteCarloAssumptionsFromRow|estateHouseholdAlerts|cronDripEligibility|readGpcOptOut|promotionSchemaVerification|consumerSubscriptionStatus|subscriptionPeriod|stripeIds|activateConsumerSubscription|resolveEffectiveTier|hasEverSubscribed|inputComputedBoundary|inputExportPayload|netWorthSummary|tier0Dashboard|armGate1VerifyFixture|canUnlockDashboard|projectionsContentSplit|getUserAccessProfile|retireStripeConsumerTrial|e2ePersonaMatrix|reportingCanary).*\.spec\.ts/,
+      testMatch: /(import|wizard-onboarding-gate|guided-onboarding-href|type-normalizer|projectionReadiness|estate-health-score|prospectSummary|advisorPlaybookStorage|advisorBillingGate|simpleRateLimit|waitlist-mode|signupAdmission|signupPolicy|site-url|roth-analysis|tax-year-selection|privilegedMfaPolicy|verifyEnv|stripeWebhookVerify|stripePricesProdGuard|stripeAccountGuard|stripeAccountGuardCallSite|deleteUserSchema|waRegime|estateMcMfj|attorneyClientCap|consumerCheckoutBlockReason|processConsumerCheckout|requirePaidDownloadAccess|oneTimePurchases|stripeOneTimeSkus|planExportWarnings|planExportAppTrialDeliverable|shouldOfferPlanAndExportPurchase|app-url|internalApiAuth|applyEmailUnsubscribe|monteCarloAssumptionsFromRow|estateHouseholdAlerts|cronDripEligibility|readGpcOptOut|promotionSchemaVerification|consumerSubscriptionStatus|subscriptionPeriod|stripeIds|activateConsumerSubscription|resolveEffectiveTier|hasEverSubscribed|inputComputedBoundary|inputExportPayload|netWorthSummary|tier0Dashboard|armGate1VerifyFixture|canUnlockDashboard|projectionsContentSplit|getUserAccessProfile|retireStripeConsumerTrial|e2ePersonaMatrix|reportingCanary).*\.spec\.ts/,
       use: {
         baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
       },

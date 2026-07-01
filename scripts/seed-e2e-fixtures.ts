@@ -28,6 +28,7 @@ import {
   ensureAuthUser,
   ensureAdvisorFirmForE2e,
   ensureAdvisorEmptyForE2e,
+  ensureE2eAdvisorFirmSubscriptionActive,
   ensureE2eAppTrialConsumer,
   ensureE2eCanceledSubscriber,
   ensureE2eConsumerLinked,
@@ -175,13 +176,15 @@ async function main() {
     await admin
       .from('profiles')
       .update({
-        subscription_status: 'active',
-        consumer_tier: 3,
+        subscription_status: null,
+        consumer_tier: null,
         is_superuser: false,
+        updated_at: new Date().toISOString(),
       })
       .eq('id', advisorId)
     await ensureAdvisorDirectoryListing()
     await ensureAdvisorFirmForE2e(advisorId, E2E_IDENTITIES.advisor.firmName)
+    await ensureE2eAdvisorFirmSubscriptionActive(advisorId)
     console.log('')
   }
 

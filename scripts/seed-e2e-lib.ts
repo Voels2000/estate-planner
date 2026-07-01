@@ -1097,14 +1097,27 @@ export async function ensureAdvisorEmptyForE2e(): Promise<string> {
   await admin
     .from('profiles')
     .update({
-      subscription_status: 'active',
-      consumer_tier: 3,
+      subscription_status: null,
+      consumer_tier: null,
       is_superuser: false,
       updated_at: new Date().toISOString(),
     })
     .eq('id', advisorId)
 
   await ensureAdvisorFirmForE2e(advisorId, empty.firmName)
+
+  const { data: profileAfterFirm } = await admin
+    .from('profiles')
+    .select('firm_id')
+    .eq('id', advisorId)
+    .single()
+
+  if (profileAfterFirm?.firm_id) {
+    await admin
+      .from('firms')
+      .update({ subscription_status: null, updated_at: new Date().toISOString() })
+      .eq('id', profileAfterFirm.firm_id)
+  }
 
   const { error } = await admin.from('advisor_clients').delete().eq('advisor_id', advisorId)
   if (error) console.warn('  advisor-empty links purge:', error.message)
@@ -1470,9 +1483,6 @@ export async function verifyE2eAccounts(): Promise<void> {
     }
     if (account.role === 'consumer' && account.consumer_tier === null) {
       issues.push(`${account.email}: consumer_tier is null`)
-    }
-    if (account.role === 'advisor' && account.subscription_status === null) {
-      issues.push(`${account.email}: subscription_status is null`)
     }
   }
 
