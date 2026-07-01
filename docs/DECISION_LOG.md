@@ -1,10 +1,44 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-07-01 (B2 sticky-floor connection billing)
+# Last updated: 2026-07-01 (connection billing staging track #195–#198)
 
 ---
 
-## Connection billing B2 sticky-floor model (2026-07-01)
+## Invite-send capacity warning — soft gate (2026-07-01)
+
+**Problem.** At `client_limit`, `POST /api/advisor/invite` used legacy `getAdvisorClientCapacity()` (paid firms → `atLimit: false`), so advisors could send invites with no warning while accept correctly returned 402 `limit_raise_required`.
+
+**Decision.** Canonical rule lives in `evaluateFirmConnectionBillingGate()` (`lib/billing/firmConnectionBilling.ts`). **Send path:** `assessFirmConnectionBillingGateForInvite()` — first attempt at capacity → 402 with `invite_warn: true`; retry with `acknowledge_at_capacity: true` allows send. **Accept path:** hard block unchanged (no ack). **UI:** advisor portal "At client capacity" modal with "Send invitation anyway" (#198). **Flag-off:** invite path unchanged (legacy capacity helper).
+
+**Reasoning.** Accept must stay hard-gated (consumer handoff is irreversible). Send is reversible — warn + explicit ack beats silent over-capacity invites.
+
+**Shipped:** PR [#198](https://github.com/Voels2000/estate-planner/pull/198) → `staging` (pending merge at doc time).
+
+---
+
+## Advisor portal redirects after firm checkout (2026-07-01)
+
+**Decision.** Firm checkout success → `/advisor?checkout=success` (not `/dashboard`). Billing nav for advisor identity → "← Advisor portal". Consumers unchanged on `/dashboard`.
+
+**Reasoning.** Advisors who subscribe from `/billing` should land in their workspace, not the consumer dashboard.
+
+**Shipped:** PR [#197](https://github.com/Voels2000/estate-planner/pull/197) → `staging` (pending merge at doc time). Includes `scripts/walk-staging-invite-accepts.ts` for staging invite-accept walks.
+
+---
+
+## `/billing` connection-billing UI rebuild (#196, 2026-07-01)
+
+**Problem.** Flag ON but `/billing` still rendered legacy `$149/advisor` seat math over connection-model data; raise/reset APIs existed but no in-product forms (limit-reached modal dead-ended).
+
+**Decision.** Flag-gated rebuild per `docs/BILLING_PAGE_CONNECTION_REBUILD.md`: `firmConnectionBillingSummary.ts` (pure display helpers) + `_firm-connection-billing-client.tsx` — connected/capacity/floor/band rate/est monthly; raise + reset forms with re-band preview; `/billing?action=raise` deep-link; member read-only. Flag-off branch byte-identical to legacy `_firm-billing-client.tsx`.
+
+**Attestation:** Al / 2026-07-01 — staging manual walk on `e2e-advisor-empty@mywealthmaps.test`; unit tests `tests/unit/firmConnectionBillingSummary.spec.ts` (11 passing).
+
+**Remaining gap:** `/advisor/firm` (`_firm-client.tsx`) still shows legacy per-seat copy — **not in #196 scope**; separate PR before real-advisor launch recommended.
+
+---
+
+## Connection billing B2 sticky-floor model (#195, 2026-07-01)
 
 **Problem.** Staging spine walk (#194) proved checkout + connect gates work, but `resolveFirmStripeBillableQuantity` (flag on) uses connected households only — ignores prepaid checkout quantity. Sync can **lower** Stripe qty below what the advisor purchased (e.g. checkout 5 → connect 1 → qty 1). Pure usage-metering; conflicts with purchase-ahead UX.
 
@@ -16,7 +50,7 @@
 
 **Reasoning.** Usage-fair going up; no surprise bills (gate vs auto-bill); discount gaming closed by sticky floor + re-band on reset; reset valve capped at 2 without support.
 
-**Launch-required (not deferred):** `/billing` raise + reset UI forms. Advisor limit-reached modal links to `/billing`, but APIs-only v1 means professionals cannot complete raise/reset in-product — staging proof via API is sufficient; **real advisor launch blocked** until billing UI ships.
+**`/billing` UI:** Shipped #196 (see entry above). Staging proof may use in-product forms or API.
 
 **Post-merge staging proof (flag on, in order):**
 1. **5-seat checkout → connect 1 → Stripe qty stays 5** (sticky floor end-to-end, not unit-only).

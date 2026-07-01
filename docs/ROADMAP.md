@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-24 (billing capability matrix)
+# Last updated: 2026-07-01 (advisor connection billing staging track)
 
 ---
 
@@ -18,6 +18,19 @@
 ---
 
 ## Current sprint
+
+### Advisor connection billing — staging track (2026-07-01) `[~]` **PRs → staging**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| B2 sticky-floor backend (#195) | `[x]` | Migration + sync + raise/reset APIs · live proof on staging |
+| `/billing` connection UI (#196) | `[x]` | Flag-gated rebuild · raise/reset forms · unit tests |
+| Advisor checkout redirect (#197) | `[~]` | PR open — `/advisor?checkout=success` · walk script |
+| Invite-send capacity warning (#198) | `[~]` | PR open — soft warn + ack modal at capacity |
+| `/advisor/firm` connection copy | `[ ]` | Still legacy per-seat summary when flag ON |
+| Prod flip + checkout repoint | `[ ]` | After staging green · `automatic_tax` |
+
+Specs: [CONNECTION_BILLING_STICKY_FLOOR_FIX.md](./CONNECTION_BILLING_STICKY_FLOOR_FIX.md) · [BILLING_PAGE_CONNECTION_REBUILD.md](./BILLING_PAGE_CONNECTION_REBUILD.md)
 
 ### Consumer billing capability matrix (2026-06-24) `[~]` **PR → staging**
 

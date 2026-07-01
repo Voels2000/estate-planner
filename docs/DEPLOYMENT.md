@@ -133,6 +133,18 @@ feature/* ──PR (verify: lint+tsc+unit)──► staging ──PR (verify+e2e
 
 > **Staging-first policy (2026-07-01):** Feature and billing work must land on **`staging`** first (`estate-planner-staging`). PRs that merge directly to **`main`** bypass the staging app even when Vercel staging env vars are updated — the staging branch is what deploys. Only **promotion PRs (`staging` → `main`)** may target `main` for shippable work. **Enforcement:** CI check **`staging-first-gate`** blocks PRs to `main` unless `head` is `staging` (also duplicated in **`verify`**). Cursor rule: `.cursor/rules/staging-first.mdc`. Incident: connection billing #190–#193 merged to `main` without staging → spine walk blocked until `main` → `staging` promotion. Prior branch protection required CI only — not staging-first head branch.
 
+**Connection billing PR track (2026-07-01, target `staging`):**
+
+| PR | Status | Scope |
+|----|--------|-------|
+| #194 | ✅ merged | Staging spine walk + env alignment |
+| #195 | ✅ merged | B2 sticky-floor — `client_limit`, `billing_floor`, sync, raise/reset APIs |
+| #196 | ✅ merged | `/billing` connection UI rebuild (flag-gated) |
+| #197 | 🔄 open | Advisor portal redirects after firm checkout + walk script |
+| #198 | 🔄 open | Invite-send capacity warning (soft gate + ack modal) |
+
+Staging at `4673da0b` includes #195–#196. Flag: `CONNECTION_BILLING_ENABLED` on staging Vercel. Prod flip deferred.
+
 After merging CI changes to `main`, merge **`main` → `staging`** so branch workflows stay in sync — avoids “branch out of date” on the next staging → main PR. **This sync is not a substitute for staging-first delivery** — it only realigns branches after a promotion or doc-only `main` commit.
 
 **Vercel cron secrets (2026-06-17):** `CRON_SECRET` and `INTERNAL_API_KEY` are **load-bearing** — auth is fail-closed (missing secret → 500). Set on **both** `estate-planner` (prod) and **`estate-planner-staging`** Production scopes before relying on crons. Manifest: `lib/env/manifest.ts` (`requiredInScopes: ALL_DEPLOYED`).

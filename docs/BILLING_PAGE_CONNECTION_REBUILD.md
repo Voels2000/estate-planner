@@ -1,6 +1,7 @@
 # MWM — `/billing` Firm Page: Connection-Billing Rebuild Spec
 
 **Owner:** Al Voels · **For:** Cursor · **Depends on:** #195 (sticky-floor backend, on staging)
+**Status:** ✅ **Shipped #196** → `staging` (2026-07-01). Flag-gated rebuild live on `estate-planner-staging.vercel.app`.
 **Closes two launch blockers at once:** (1) the display bug (page shows legacy `$149/advisor` seat math over new-model data) and (2) the missing raise/reset forms (the limit-reached modal links here but the action can't be completed).
 **Flag-gated:** when `CONNECTION_BILLING_ENABLED` is OFF, the page renders exactly as today (legacy seat view). When ON, it renders the connection-billing view below. No change to flag-off behavior.
 
@@ -139,3 +140,4 @@ On staging, flag ON: the Firm page shows connected/capacity/floor/band-rate/corr
 - Attorney billing UI (Phase 6, parallel, listing-scoped, same pattern).
 - Prod flag flip + checkout price repoint + `automatic_tax` (after staging green).
 - Consumer billing page (separate, trivial pre-launch).
+- **`/advisor/firm` legacy copy** — still shows per-seat math when flag ON; follow-up PR (see NEXT_SESSION.md).
