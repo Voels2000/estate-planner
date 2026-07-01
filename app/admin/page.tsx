@@ -2,6 +2,8 @@ import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { computeAdminMrr } from '@/lib/billing/computeAdminMrr'
+import { countDistinctClientIds } from '@/lib/billing/connectedHouseholdCount'
+import { ACTIVE_ATTORNEY_CLIENT_STATUSES } from '@/lib/attorney/attorneyClientCap'
 import { getCanonicalTerms } from '@/lib/terms/getCanonicalTerms'
 import { computeOpsTaskUrgency } from '@/lib/admin/opsTasks'
 import { filterReportingProfiles, isReportingExcludedCanaryEmail } from '@/lib/admin/reportingCanary'
@@ -270,9 +272,49 @@ export default async function AdminPage() {
     (f) => !f.owner_id || !excludedOwnerIds.has(f.owner_id),
   )
 
+  const { data: activeAttorneyListingsRaw } = await admin
+    .from('attorney_listings')
+    .select('id, billing_floor, profile_id, profiles!inner(subscription_status)')
+    .not('profile_id', 'is', null)
+    .in('profiles.subscription_status', ['active', 'trialing'])
+
+  const activeAttorneyListingRows = (activeAttorneyListingsRaw ?? []).filter(
+    (row) => !row.profile_id || !excludedOwnerIds.has(row.profile_id),
+  )
+
+  const attorneyListingIds = activeAttorneyListingRows.map((row) => row.id)
+  const connectedByAttorneyListingId = new Map<string, number>()
+
+  if (attorneyListingIds.length > 0) {
+    const { data: attorneyClientLinks } = await admin
+      .from('attorney_clients')
+      .select('attorney_id, client_id')
+      .in('attorney_id', attorneyListingIds)
+      .in('status', [...ACTIVE_ATTORNEY_CLIENT_STATUSES])
+
+    const linksByListingId = new Map<string, { client_id: string }[]>()
+    for (const link of attorneyClientLinks ?? []) {
+      const bucket = linksByListingId.get(link.attorney_id) ?? []
+      bucket.push({ client_id: link.client_id })
+      linksByListingId.set(link.attorney_id, bucket)
+    }
+    for (const listingId of attorneyListingIds) {
+      connectedByAttorneyListingId.set(
+        listingId,
+        countDistinctClientIds(linksByListingId.get(listingId) ?? []),
+      )
+    }
+  }
+
+  const activeAttorneyListings = activeAttorneyListingRows.map((row) => ({
+    billing_floor: row.billing_floor,
+    connected_count: connectedByAttorneyListingId.get(row.id) ?? 0,
+  }))
+
   const { consumerMrr, firmMrr, attorneyMrr, mrr } = computeAdminMrr(
     profiles ?? [],
     activeFirms ?? [],
+    activeAttorneyListings,
   )
 
   const nowIso = new Date().toISOString()

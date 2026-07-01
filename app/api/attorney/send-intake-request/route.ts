@@ -5,6 +5,8 @@ import { getAppUrl } from '@/lib/app-url'
 import { buildIntakeRequestEmail } from '@/lib/email/buildIntakeRequestEmail'
 import { resend } from '@/lib/resend'
 import { EMAIL_FROM, EMAIL_REPLY_TO } from '@/lib/email/config'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import { ATTORNEY_UNIVERSAL_INTAKE_MONTHLY_CAP } from '@/lib/attorney/attorneyTierLimits'
 
 function isAttorneyProfile(profile: { role?: string | null; is_attorney?: boolean | null }) {
   return profile.role === 'attorney' || profile.is_attorney === true
@@ -39,7 +41,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Professional role required' }, { status: 403 })
     }
 
-    if (isAttorneyProfile(profile ?? {}) && (profile?.attorney_tier ?? 0) === 0) {
+    const intakeMonthlyCap = isConnectionBillingEnabled()
+      ? ATTORNEY_UNIVERSAL_INTAKE_MONTHLY_CAP
+      : isAttorneyProfile(profile ?? {}) && (profile?.attorney_tier ?? 0) === 0
+        ? ATTORNEY_UNIVERSAL_INTAKE_MONTHLY_CAP
+        : null
+
+    if (intakeMonthlyCap != null) {
       const startOfMonth = new Date()
       startOfMonth.setDate(1)
       startOfMonth.setHours(0, 0, 0, 0)
@@ -50,9 +58,13 @@ export async function POST(req: NextRequest) {
         .eq('attorney_id', user.id)
         .gte('created_at', startOfMonth.toISOString())
 
-      if ((count ?? 0) >= 5) {
+      if ((count ?? 0) >= intakeMonthlyCap) {
         return NextResponse.json(
-          { error: 'Free plan limited to 5 intake requests per month. Upgrade to send more.' },
+          {
+            error: isConnectionBillingEnabled()
+              ? `Limited to ${intakeMonthlyCap} intake requests per month.`
+              : 'Free plan limited to 5 intake requests per month. Upgrade to send more.',
+          },
           { status: 403 },
         )
       }

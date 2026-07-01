@@ -6,6 +6,11 @@ import {
   isAtAttorneyClientCap,
 } from '@/lib/attorney/attorneyClientCap'
 import { applyAttorneyConnectionBilling } from '@/lib/attorney/applyAttorneyConnectionBilling'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import {
+  afterAttorneyConnectionBillingConnect,
+  evaluateAttorneyConnectionBillingGate,
+} from '@/lib/billing/attorneyConnectionBilling'
 
 export async function completeIntakeRequestForUser(
   userSupabase: SupabaseClient,
@@ -83,15 +88,46 @@ export async function completeIntakeRequestForUser(
       .single()
 
     if (attorneyListing?.profile_id) {
-      const { data: attorneyProfile } = await userSupabase
-        .from('profiles')
-        .select('attorney_tier')
-        .eq('id', attorneyListing.profile_id)
-        .single()
+      if (isConnectionBillingEnabled()) {
+        const evaluation = await evaluateAttorneyConnectionBillingGate(
+          admin,
+          attorneyListingId,
+          household.id,
+        )
+        if (!evaluation.ok) {
+          const { failure } = evaluation
+          if (failure.kind === 'listing_unclaimed') {
+            return {
+              ok: false,
+              error: 'Claim your attorney listing before connecting clients.',
+              status: 403,
+            }
+          }
+          if (failure.kind === 'attorney_checkout_required') {
+            return { ok: false, error: 'attorney_checkout_required', status: 402 }
+          }
+          if (failure.kind === 'limit_raise_required') {
+            return { ok: false, error: 'limit_raise_required', status: 402 }
+          }
+          return { ok: false, error: 'Forbidden', status: 403 }
+        }
+      } else {
+        const { data: attorneyProfile } = await userSupabase
+          .from('profiles')
+          .select('attorney_tier')
+          .eq('id', attorneyListing.profile_id)
+          .single()
 
-      const activeCount = await countActiveAttorneyClients(userSupabase, attorneyListingId)
-      if (isAtAttorneyClientCap(attorneyProfile?.attorney_tier ?? 0, activeCount)) {
-        return { ok: false, error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE, status: 403 }
+        const activeCount = await countActiveAttorneyClients(userSupabase, attorneyListingId)
+        if (isAtAttorneyClientCap(attorneyProfile?.attorney_tier ?? 0, activeCount)) {
+          return { ok: false, error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE, status: 403 }
+        }
+      }
+    } else if (isConnectionBillingEnabled()) {
+      return {
+        ok: false,
+        error: 'Claim your attorney listing before connecting clients.',
+        status: 403,
       }
     }
 
@@ -114,6 +150,9 @@ export async function completeIntakeRequestForUser(
         clientId: userId,
         attorneyClientRowId: inserted.id,
       })
+      if (isConnectionBillingEnabled()) {
+        await afterAttorneyConnectionBillingConnect(admin, attorneyListingId)
+      }
     }
   }
 

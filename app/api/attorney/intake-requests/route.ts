@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import { ATTORNEY_UNIVERSAL_INTAKE_MONTHLY_CAP } from '@/lib/attorney/attorneyTierLimits'
 
 function isAttorneyProfile(profile: { role?: string | null; is_attorney?: boolean | null }) {
   return profile.role === 'attorney' || profile.is_attorney === true
@@ -61,6 +63,10 @@ export async function GET() {
   return NextResponse.json({
     requests: rows,
     sentThisMonth: sentThisMonth ?? 0,
-    monthlyCap: (profile?.attorney_tier ?? 0) === 0 ? 5 : null,
+    monthlyCap: isConnectionBillingEnabled()
+      ? ATTORNEY_UNIVERSAL_INTAKE_MONTHLY_CAP
+      : (profile?.attorney_tier ?? 0) === 0
+        ? ATTORNEY_UNIVERSAL_INTAKE_MONTHLY_CAP
+        : null,
   })
 }
