@@ -1,11 +1,29 @@
 import { test, expect } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
+import {
+  ensureE2eAdvisorFirmSubscriptionActive,
+  findUserIdByEmail,
+  initSupabaseEnv,
+} from '../../../scripts/seed-e2e-lib'
+import { resolveE2eEmail } from '../helpers/e2e-auth'
 
 /**
  * B4 Prospect Track 1 (steps 3–8, 4b) — form logic + PDF route content.
  * Step 10 (BCC inbox) stays manual.
  */
 test.describe('B4 prospect form logic', () => {
+  test.beforeAll(async () => {
+    initSupabaseEnv()
+    const email = resolveE2eEmail(
+      process.env.PLAYWRIGHT_ADVISOR_EMAIL,
+      E2E_IDENTITIES.advisor.email,
+    )
+    const advisorUserId = await findUserIdByEmail(email)
+    if (advisorUserId) {
+      await ensureE2eAdvisorFirmSubscriptionActive(advisorUserId)
+    }
+  })
+
   test('CA married business owner — tax figures, sunset delta, no state card', async ({ page }) => {
     await page.goto('/prospect')
     await expect(page.getByRole('heading', { name: 'Prospect Mode' })).toBeVisible()

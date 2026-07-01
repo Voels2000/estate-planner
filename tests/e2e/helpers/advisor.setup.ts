@@ -1,6 +1,10 @@
 import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
-import { ensureAdvisorFirmForE2e, findUserIdByEmail } from '../../../scripts/seed-e2e-lib'
+import {
+  ensureAdvisorFirmForE2e,
+  ensureE2eAdvisorFirmSubscriptionActive,
+  findUserIdByEmail,
+} from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
 
 setup('authenticate advisor', async ({ page }) => {
@@ -17,6 +21,7 @@ setup('authenticate advisor', async ({ page }) => {
     throw new Error(`advisor-setup: no profile for ${email}`)
   }
   await ensureAdvisorFirmForE2e(advisorUserId, E2E_IDENTITIES.advisor.firmName)
+  await ensureE2eAdvisorFirmSubscriptionActive(advisorUserId)
 
   await page.goto('/login')
   await page.waitForSelector('input[id="email"]', { state: 'visible' })
