@@ -22,6 +22,12 @@ import {
   userHasVerifiedTotpFactor,
 } from '@/lib/security/privilegedMfaPolicy'
 import {
+  actionStepUpSatisfied,
+  isActionGatedStepUpEnabled,
+  isActionStepUpFlowPath,
+  pathnameRequiresActionStepUp,
+} from '@/lib/security/actionGatedStepUp'
+import {
   getRequestCountry,
   isBlockedNonUsCountry,
   isGeoExemptPath,
@@ -65,6 +71,7 @@ const PUBLIC_PATHS = [
   '/event',
   '/mfa-enroll',
   '/mfa-challenge',
+  '/security-step-up',
   '/settings/security',
   '/education',
   '/learn',
@@ -230,6 +237,7 @@ export async function middleware(request: NextRequest) {
   const isMfaFlowPath =
     pathname === '/mfa-challenge' ||
     pathname === '/mfa-enroll' ||
+    isActionStepUpFlowPath(pathname) ||
     pathname.startsWith('/auth/')
   if (
     aal?.nextLevel === 'aal2' &&
@@ -274,8 +282,9 @@ export async function middleware(request: NextRequest) {
     return redirectPreservingCookies(request, '/billing', supabaseResponse)
   }
 
-  // Mandatory MFA for privileged roles — off until go-live (REQUIRE_PRIVILEGED_MFA=true)
+  // Mandatory MFA for privileged roles — legacy blanket enroll (skip when action-gated mode)
   if (
+    !isActionGatedStepUpEnabled() &&
     isPrivilegedMfaEnforcementEnabled() &&
     profile &&
     profileRequiresPrivilegedMfa(profile) &&
@@ -289,6 +298,25 @@ export async function middleware(request: NextRequest) {
       return redirectPreservingCookies(
         request,
         enrollUrl.pathname + enrollUrl.search,
+        supabaseResponse,
+      )
+    }
+  }
+
+  // Claim v2 — password + MFA step-up before sensitive data (attorney client / advisor own plan)
+  if (
+    isActionGatedStepUpEnabled() &&
+    profile &&
+    pathnameRequiresActionStepUp(pathname, profile) &&
+    !isActionStepUpFlowPath(pathname)
+  ) {
+    const stepUpOk = await actionStepUpSatisfied(supabase, user)
+    if (!stepUpOk) {
+      const stepUpUrl = new URL('/security-step-up', request.url)
+      stepUpUrl.searchParams.set('redirectTo', pathname)
+      return redirectPreservingCookies(
+        request,
+        stepUpUrl.pathname + stepUpUrl.search,
         supabaseResponse,
       )
     }
