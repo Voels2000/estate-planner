@@ -1,6 +1,6 @@
 # NEXT_SESSION.md — session handoff
 
-**Last updated:** 2026-07-01 (#206–#211 merged; credential + respond rename on branch)
+**Last updated:** 2026-07-01 (#212–#213 merged; claim v2 staging walks green)
 
 ---
 
@@ -8,7 +8,7 @@
 
 **Attorney connection billing:** ✅ **Closed** — step-4 spine proven.
 
-**Claim v2:** #206–#211 merged. **On branch `feat/claim-v2-credential-respond-stepup`:** credential at first connect, `/respond-request` rename, `walk:staging-action-step-up`. **Then:** merge PR → set `ACTION_GATED_PRIVILEGED_MFA=true` on staging → run walks → promotion `staging` → `main` for prod cutover.
+**Claim v2:** ✅ **Closed on staging** (#206–#213). Staging walks green (`walk:staging-action-step-up`, `walk:staging-directory-claim-magic-link`). **Next:** promotion PR **`staging` → `main`** → prod deploy → prod env flags (`CONNECTION_BILLING_ENABLED`, `ACTION_GATED_PRIVILEGED_MFA`) when ready for cutover.
 
 ---
 
@@ -17,26 +17,22 @@
 | Area | Status |
 |------|--------|
 | Attorney connection billing | ✅ Closed — step 4 PASS on staging |
-| Walk helpers | ✅ `walk:staging-attorney-connection-accepts` + `walk:staging-attorney-step4` (#203) |
-| Claim v2 discovery | ✅ [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) |
-| Claim v2 spec (locked auth) | ✅ [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) |
-| Claim v2 implementation | `[~]` | Credential + respond rename + step-up walk on branch; prod cutover after staging green |
-| `/claim-listing/` identity-skip | ✅ #206 → route renamed `/respond-request` (redirect from old path) |
-| `/advisor/firm` connection copy | ✅ #207 |
-| Claim v2 magic-link entry | ✅ #208–#210 merged |
-| Action-gated step-up | ✅ #211 — `ACTION_GATED_PRIVILEGED_MFA` (enable on staging before walk) |
-| Credential at first connect | `[~]` | WSBA/CRD on accept-request; sets `credential_verified_at` |
-| Prod connection billing flip | 🚫 After staging green — see [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) |
+| Walk helpers | ✅ attorney connection + directory claim + action step-up walks |
+| Claim v2 implementation | ✅ #206–#213 on staging; walks green 2026-07-01 |
+| `/respond-request` rename | ✅ #212 (redirect from `/claim-listing`) |
+| Action-gated step-up | ✅ #211 + `ACTION_GATED_PRIVILEGED_MFA=true` on staging |
+| Credential at first connect | ✅ #212 — WSBA/CRD on accept; sets `credential_verified_at` |
+| Prod connection billing flip | 🚫 After promotion + prod deploy — [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) |
 
 ---
 
 ## Handoff (fresh chat)
 
-**Proven on staging:** advisor connection billing, attorney connection billing (step 4 green), Path A, directory magic-link claim + billing seed (#209).
+**Proven on staging (2026-07-01):** advisor + attorney connection billing, Path A, directory magic-link claim + billing seed, action step-up + credential at connect.
 
-**Next merge:** PR from `feat/claim-v2-credential-respond-stepup` → `staging`. After deploy: `npm run walk:staging-action-step-up` (requires `ACTION_GATED_PRIVILEGED_MFA=true` on Vercel staging).
+**Next:** merge promotion PR **`staging` → `main`**; after prod deploy set prod env flags for connection billing / action-gated step-up when cutover-ready.
 
-**Before launch:** enable staging flag · run walks · promotion PR `staging` → `main` · prod cutover checklist · P0 outreach copy.
+**Before launch:** prod cutover checklist · P0 outreach copy · real-card smoke.
 
 ---
 
@@ -55,6 +51,7 @@
 | `npm run reset:staging-e2e-attorney-connection-billing` | Clean attorney billing fixture + seed pending requests |
 | `npm run reset:staging-e2e-directory-claim` | Unclaimed directory listings for claim walk |
 | `npm run walk:staging-directory-claim-magic-link` | Magic-link session → POST claim → billing seed checks |
+| `npm run walk:staging-action-step-up` | Step-up block + credential gate + accept with bar (#212–#213) |
 | `npx tsx scripts/walk-staging-attorney-connection-accepts.ts` | List pending accepts + API walk |
 | `npx tsx scripts/inspect-staging-attorney-billing-state.ts` | DB + Stripe snapshot |
 
