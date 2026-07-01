@@ -1,5 +1,6 @@
 import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
+import { ensureE2eAdvisorFirmSubscriptionActive, findUserIdByEmail } from '../../../scripts/seed-e2e-lib'
 import { resolveE2eEmail, resolveE2ePassword, syncE2ePasswordForEmail } from './e2e-auth'
 
 setup('authenticate advisor', async ({ page }) => {
@@ -10,6 +11,11 @@ setup('authenticate advisor', async ({ page }) => {
   const password = resolveE2ePassword(email, process.env.PLAYWRIGHT_ADVISOR_PASSWORD)
 
   await syncE2ePasswordForEmail(email, password)
+
+  const advisorUserId = await findUserIdByEmail(email)
+  if (advisorUserId) {
+    await ensureE2eAdvisorFirmSubscriptionActive(advisorUserId)
+  }
 
   await page.goto('/login')
   await page.waitForSelector('input[id="email"]', { state: 'visible' })
