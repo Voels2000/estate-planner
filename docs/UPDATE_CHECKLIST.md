@@ -626,7 +626,8 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 
 - [x] Discovery audit — [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md)
 - [x] Complete spec — [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) (magic link entry, action-gated MFA, billing seed at claim)
-- [ ] Implementation PR sequence (Part 6 build plan)
+- [ ] **`/claim-listing/` identity-skip** — confirm-then-fix (P0 security, before rename)
+- [ ] Implementation PR sequence (Part 6 build plan; PR #1 magic-link claim)
 - [x] Master docs: NEXT_SESSION · ROADMAP · DECISION_LOG · UPDATE_CHECKLIST
 
 ## Projections empty state fix (2026-05-29) — shipped

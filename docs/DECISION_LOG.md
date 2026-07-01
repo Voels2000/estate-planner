@@ -3664,7 +3664,19 @@ Pass = at least one row with referral code matching a test signup.
 
 **Alternatives rejected:** Genuine account-less "approved" intermediate state (no `profile_id` until trial) — everything assumes auth user today; magic link collapses approval + session creation.
 
-**Implication:** Build plan in [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md). Explicit billing seed at claim (attorney `client_limit=1/floor=0`; advisor `bootstrapAdvisorFirm` at claim). `/claim-listing/` is professional respond-to-consumer path (naming collision) — rename + unify `verifyClaimIdentity`.
+**Implication:** Build plan in [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md). Explicit billing seed at claim (attorney `client_limit=1/floor=0`; advisor `bootstrapAdvisorFirm` at claim). **Verify scope of `/claim-listing/` identity-skip before rename** — see security entry below.
+
+---
+
+### July 2026 — `/claim-listing/` identity-skip (verify before rename)
+
+**Decision:** Treat `/claim-listing/` skipping `verifyClaimIdentity` as a **security item**, not a naming collision. The path is professional-facing (respond-to-consumer request-connect email). Today it sets `profile_id` on an unclaimed listing and creates `consumer_requested` rows with only **token possession + professional role** — no email match to `listing.email` (`app/claim-listing/[token]/page.tsx`).
+
+**Action:** **Confirm-then-fix ahead of v2 rename** — document what an unverified actor can reach; if sensitive, add `verifyClaimIdentity` (or equivalent) before any listing bind. Do not assume benign because the link was emailed to the listing address (forwarding/leak remains a threat model).
+
+**Scope of writes (for verification):** `profile_id` on listing; `consumer_requested` queue entry; `connection_requests` → `accepted`. Does not directly accept/connect client household data — but listing hijack on unclaimed rows is in scope.
+
+**Alternatives rejected:** Deferring identity fix until v2 rename-only PR.
 
 ---
 
