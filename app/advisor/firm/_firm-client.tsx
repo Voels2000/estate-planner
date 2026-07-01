@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ADVISOR_FIRM_SEAT_RATES, ADVISOR_FIRM_SEAT_RANGES } from '@/lib/tiers'
 import { getFirmTierMaxSeats } from '@/lib/firm/firmRoster'
+import type { FirmConnectionBillingSummary } from '@/lib/billing/firmConnectionBillingSummary'
 import type { FirmMemberRow } from './page'
 
 type Props = {
@@ -18,6 +19,8 @@ type Props = {
   seatCount: number | null
   members: FirmMemberRow[]
   rosterError?: boolean
+  connectionBillingEnabled?: boolean
+  connectionBillingSummary?: FirmConnectionBillingSummary | null
 }
 
 const TIER_LABELS: Record<string, string> = {
@@ -49,6 +52,8 @@ export default function FirmClient({
   seatCount,
   members: initialMembers,
   rosterError = false,
+  connectionBillingEnabled = false,
+  connectionBillingSummary = null,
 }: Props) {
   const [members, setMembers] = useState(initialMembers)
   const [removingId, setRemovingId] = useState<string | null>(null)
@@ -216,7 +221,9 @@ export default function FirmClient({
         </a>
         <h1 className="mt-2 text-2xl font-bold text-[color:var(--mwm-navy)]">Firm</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Manage your firm subscription and advisor roster.
+          {connectionBillingEnabled
+            ? 'Manage your advisor roster and client connection capacity.'
+            : 'Manage your firm subscription and advisor roster.'}
         </p>
       </div>
 
@@ -284,22 +291,64 @@ export default function FirmClient({
             <span className="text-neutral-500">Tier</span>
             <span className="font-medium text-neutral-900">{tierLabel(firmTier)}</span>
           </div>
-          <div className="flex flex-wrap justify-between gap-2">
-            <span className="text-neutral-500">Per-seat rate</span>
-            <span className="font-medium text-neutral-900">
-              ${rate.toLocaleString()}/mo per advisor
-            </span>
-          </div>
-          <div className="flex flex-wrap justify-between gap-2">
-            <span className="text-neutral-500">Active seats</span>
-            <span className="font-medium text-neutral-900">{seats}</span>
-          </div>
-          <div className="flex flex-wrap justify-between gap-2 border-t border-neutral-100 pt-3 mt-1">
-            <span className="text-neutral-700 font-medium">Total monthly (est.)</span>
-            <span className="font-semibold text-neutral-900">
-              ${monthly.toLocaleString()}/mo
-            </span>
-          </div>
+          {connectionBillingEnabled && connectionBillingSummary ? (
+            <>
+              <div className="flex flex-wrap justify-between gap-2">
+                <span className="text-neutral-500">Plan</span>
+                <span className="font-medium text-neutral-900 text-right max-w-md">
+                  {connectionBillingSummary.planLine}
+                </span>
+              </div>
+              <div className="flex flex-wrap justify-between gap-2">
+                <span className="text-neutral-500">Connected clients</span>
+                <span className="font-medium text-neutral-900">
+                  {connectionBillingSummary.connectedCapacityLine}
+                </span>
+              </div>
+              <div className="flex flex-wrap justify-between gap-2">
+                <span className="text-neutral-500">Billing floor</span>
+                <span className="font-medium text-neutral-900">
+                  {connectionBillingSummary.billingFloor}
+                </span>
+              </div>
+              <div className="flex flex-wrap justify-between gap-2">
+                <span className="text-neutral-500">Rate</span>
+                <span className="font-medium text-neutral-900">
+                  ${connectionBillingSummary.ratePerClient}/connected client/mo
+                </span>
+              </div>
+              <div className="flex flex-wrap justify-between gap-2 border-t border-neutral-100 pt-3 mt-1">
+                <span className="text-neutral-700 font-medium">Est. monthly</span>
+                <span className="font-semibold text-neutral-900">
+                  ${connectionBillingSummary.estimatedMonthly.toLocaleString()}/mo
+                </span>
+              </div>
+              <p className="text-xs text-neutral-500">
+                {connectionBillingSummary.billableQuantity} billable × $
+                {connectionBillingSummary.ratePerClient}/client. Advisor seats are not billed
+                separately — you pay per connected client household.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-wrap justify-between gap-2">
+                <span className="text-neutral-500">Per-seat rate</span>
+                <span className="font-medium text-neutral-900">
+                  ${rate.toLocaleString()}/mo per advisor
+                </span>
+              </div>
+              <div className="flex flex-wrap justify-between gap-2">
+                <span className="text-neutral-500">Active seats</span>
+                <span className="font-medium text-neutral-900">{seats}</span>
+              </div>
+              <div className="flex flex-wrap justify-between gap-2 border-t border-neutral-100 pt-3 mt-1">
+                <span className="text-neutral-700 font-medium">Total monthly (est.)</span>
+                <span className="font-semibold text-neutral-900">
+                  ${monthly.toLocaleString()}/mo
+                </span>
+              </div>
+            </>
+          )}
         </div>
         {showStarterUpgrade && (
           <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -426,8 +475,9 @@ export default function FirmClient({
             className="block w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-500 disabled:opacity-50"
           />
           <p className="text-sm text-neutral-500">
-            Enter an advisor&apos;s email address above to send them an invite. Each accepted invite
-            adds one seat to your firm subscription.
+            {connectionBillingEnabled
+              ? 'Invite another advisor to your firm. Team members share your client connection capacity — billing is per connected household, not per seat.'
+              : "Enter an advisor's email address above to send them an invite. Each accepted invite adds one seat to your firm subscription."}
           </p>
           <button
             type="button"
