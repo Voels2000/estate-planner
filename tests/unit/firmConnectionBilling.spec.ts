@@ -13,6 +13,7 @@ import {
 type MockConfig = {
   firmId: string | null
   subscriptionStatus: string | null
+  clientLimit: number | null
   advisorIds: string[]
   connectedClientIds: string[]
 }
@@ -48,7 +49,10 @@ function mockAdmin(config: MockConfig): SupabaseClient {
           select: () => ({
             eq: () => ({
               maybeSingle: async () => ({
-                data: { subscription_status: config.subscriptionStatus },
+                data: {
+                  subscription_status: config.subscriptionStatus,
+                  client_limit: config.clientLimit,
+                },
                 error: null,
               }),
             }),
@@ -108,6 +112,7 @@ test.describe('firmConnectionBilling', () => {
     const admin = mockAdmin({
       firmId: 'firm-1',
       subscriptionStatus: null,
+      clientLimit: null,
       connectedClientIds: ['client-a'],
       advisorIds: ['adv-1'],
     })
@@ -120,6 +125,7 @@ test.describe('firmConnectionBilling', () => {
     const admin = mockAdmin({
       firmId: 'firm-1',
       subscriptionStatus: null,
+      clientLimit: null,
       connectedClientIds: [],
       advisorIds: ['adv-1'],
     })
@@ -131,11 +137,46 @@ test.describe('firmConnectionBilling', () => {
     expect(body).toEqual({ error: 'firm_checkout_required', quantity: 1 })
   })
 
-  test('assessFirmConnectionBillingGate allows connect when firm sub is active', async () => {
+  test('assessFirmConnectionBillingGate allows connect when firm sub is active and under limit', async () => {
     process.env.CONNECTION_BILLING_ENABLED = 'true'
     const admin = mockAdmin({
       firmId: 'firm-1',
       subscriptionStatus: 'active',
+      clientLimit: 5,
+      connectedClientIds: ['c1', 'c2'],
+      advisorIds: ['adv-1'],
+    })
+    const result = await assessFirmConnectionBillingGate(admin, 'adv-1', 'client-new')
+    expect(result).toEqual({ ok: true })
+  })
+
+  test('assessFirmConnectionBillingGate returns limit_raise_required at client_limit', async () => {
+    process.env.CONNECTION_BILLING_ENABLED = 'true'
+    const admin = mockAdmin({
+      firmId: 'firm-1',
+      subscriptionStatus: 'active',
+      clientLimit: 5,
+      connectedClientIds: ['c1', 'c2', 'c3', 'c4', 'c5'],
+      advisorIds: ['adv-1'],
+    })
+    const result = await assessFirmConnectionBillingGate(admin, 'adv-1', 'client-new')
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.response.status).toBe(402)
+    const body = await result.response.json()
+    expect(body).toEqual({
+      error: 'limit_raise_required',
+      currentLimit: 5,
+      connected_count: 5,
+    })
+  })
+
+  test('assessFirmConnectionBillingGate allows connect when firm sub is active (no limit set)', async () => {
+    process.env.CONNECTION_BILLING_ENABLED = 'true'
+    const admin = mockAdmin({
+      firmId: 'firm-1',
+      subscriptionStatus: 'active',
+      clientLimit: null,
       connectedClientIds: [],
       advisorIds: ['adv-1'],
     })
@@ -148,6 +189,7 @@ test.describe('firmConnectionBilling', () => {
     const admin = mockAdmin({
       firmId: 'firm-1',
       subscriptionStatus: null,
+      clientLimit: null,
       connectedClientIds: [],
       advisorIds: ['adv-1'],
     })

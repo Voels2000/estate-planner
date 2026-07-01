@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
-import { firmConnectedHouseholds } from '@/lib/billing/connectedHouseholdCount'
+import { resolveFirmStickyFloorBillableQuantity } from '@/lib/billing/firmConnectionStickyFloor'
 import { createStripeClient } from '@/lib/stripe/config'
 
 /** Billable Stripe quantity for a firm subscription item. Flag-off: seat_count (legacy). */
@@ -12,7 +12,7 @@ export async function resolveFirmStripeBillableQuantity(
   if (!isConnectionBillingEnabled()) {
     return seatCount ?? 1
   }
-  return firmConnectedHouseholds(admin, firmId)
+  return resolveFirmStickyFloorBillableQuantity(admin, firmId)
 }
 
 export async function syncFirmStripeQuantity(firmId: string): Promise<void> {

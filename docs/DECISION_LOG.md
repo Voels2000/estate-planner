@@ -1,6 +1,20 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-07-01 (staging-first policy)
+# Last updated: 2026-07-01 (B2 sticky-floor connection billing)
+
+---
+
+## Connection billing B2 sticky-floor model (2026-07-01)
+
+**Problem.** Staging spine walk (#194) proved checkout + connect gates work, but `resolveFirmStripeBillableQuantity` (flag on) uses connected households only — ignores prepaid checkout quantity. Sync can **lower** Stripe qty below what the advisor purchased (e.g. checkout 5 → connect 1 → qty 1). Pure usage-metering; conflicts with purchase-ahead UX.
+
+**Decision.** Implement **B2 sticky-floor, gated ceiling** per `docs/CONNECTION_BILLING_STICKY_FLOOR_FIX.md`. Three new firm columns — `client_limit`, `billing_floor`, `reset_count` — **not** `seat_count`. Billable qty = `max(connected, billing_floor)`. **Load-bearing invariant:** sync may ratchet `billing_floor` **up** only; **only explicit reset** may lower it. Exceeding `client_limit` → 402 `limit_raise_required` (gate, no auto-bill). Self-serve reset: `new_limit >= connected_count`, re-band confirmation, max 2 resets then admin reset required.
+
+**Confirmed:**
+- `reset_count` clears **only on admin reset** (not per billing period).
+- Attorney parallel deferred to Phase 6 (same mechanics, listing-scoped).
+
+**Reasoning.** Usage-fair going up; no surprise bills (gate vs auto-bill); discount gaming closed by sticky floor + re-band on reset; reset valve capped at 2 without support.
 
 ---
 
