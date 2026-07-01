@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
 import { ensureAttorneyClientRequestRow } from '@/lib/attorney/createAttorneyClientRequest'
+import { verifyClaimIdentity } from '@/lib/directory/claimIdentity'
 
 interface Props {
   params: Promise<{ token: string }>
@@ -29,9 +30,12 @@ export default async function ClaimListingPage({ params }: Props) {
 
   // 2. Fetch the listing from the correct table
   const listingTable = isAttorney ? 'attorney_listings' : 'advisor_directory'
+  const listingSelect = isAttorney
+    ? 'id, firm_name, email, profile_id, website'
+    : 'id, firm_name, email, profile_id, website, adv_link'
   const { data: listing } = await admin
     .from(listingTable)
-    .select('id, firm_name, email, profile_id')
+    .select(listingSelect)
     .eq('id', connectionRequest.listing_id)
     .single()
 
@@ -60,8 +64,19 @@ export default async function ClaimListingPage({ params }: Props) {
     redirect('/claim-listing/already-claimed')
   }
 
-  // 6. Claim the listing — link profile_id in the correct table
+  // 6. Claim the listing — link profile_id only after identity matches listing email/domain
   if (!listing.profile_id) {
+    if (!user.email) {
+      redirect('/claim-listing/identity-mismatch')
+    }
+    const listingWebsite = isAttorney
+      ? String(listing.website ?? '')
+      : String(listing.website ?? listing.adv_link ?? '')
+    const identity = verifyClaimIdentity(user.email, listing.email, listingWebsite)
+    if (!identity.ok) {
+      redirect('/claim-listing/identity-mismatch')
+    }
+
     await admin
       .from(listingTable)
       .update({ profile_id: user.id })
