@@ -11,6 +11,7 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { buildAllEventReferralUrls } from '@/lib/events/referral'
 import { loadRosterNetWorthByOwner } from '@/lib/roster/rosterNetWorth'
 import { loadRosterAlertCounts } from '@/lib/advisor/rosterAlertCounts'
+import { ADVISOR_FIRM_PRICE_IDS } from '@/lib/tiers'
 import AdvisorClient from './_advisor-client-wrapper'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ensureAdvisorActivationDripStep1 } from '@/lib/advisor/sendAdvisorDripStep'
@@ -99,6 +100,11 @@ export default async function AdvisorPage() {
     ? buildAllEventReferralUrls(referralCode)
     : null
 
+  const firmTierKey = access.firm_tier ?? 'starter'
+  const firmCheckoutPriceId =
+    ADVISOR_FIRM_PRICE_IDS[firmTierKey as keyof typeof ADVISOR_FIRM_PRICE_IDS] ||
+    ADVISOR_FIRM_PRICE_IDS.starter
+
   return (
     <AdvisorClient
       advisorClients={(advisorClients ?? []).map(ac => ({
@@ -110,6 +116,7 @@ export default async function AdvisorPage() {
       isFirmOwner={isFirmOwner}
       firm_name={firm_name}
       firm_id={firm_id}
+      firmCheckoutPriceId={firmCheckoutPriceId || null}
       healthScoreMap={healthScoreMap}
       householdIdMap={ownerToHousehold}
       alertCountsMap={alertCountsMap}

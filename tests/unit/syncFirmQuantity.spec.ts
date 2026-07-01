@@ -114,9 +114,10 @@ test.describe('syncFirmStripeQuantity call sites (Phase 4a contract)', () => {
     'app/api/firm/join/route.ts',
     'app/api/firm/remove-member/route.ts',
     'lib/auth/completeSignup.ts',
+    'lib/billing/firmConnectionBilling.ts',
   ] as const
 
-  const FORBIDDEN_PHASE4B_ONLY = [
+  const CONNECT_DISCONNECT_ROUTES = [
     'app/api/advisor/accept-request/route.ts',
     'app/api/invite/accept/route.ts',
     'app/api/advisor/link-pending/route.ts',
@@ -124,7 +125,7 @@ test.describe('syncFirmStripeQuantity call sites (Phase 4a contract)', () => {
     'app/api/consumer/disconnect-advisor/route.ts',
   ] as const
 
-  test('syncFirmStripeQuantity is only invoked from roster join/remove paths', () => {
+  test('syncFirmStripeQuantity is only invoked from roster paths and connection billing wrapper', () => {
     const callers: string[] = []
     walkTs(join(process.cwd(), 'app'), (file) => {
       const rel = file.replace(process.cwd() + '/', '')
@@ -142,13 +143,16 @@ test.describe('syncFirmStripeQuantity call sites (Phase 4a contract)', () => {
     expect([...callers].sort()).toEqual([...ALLOWED_CALLERS].sort())
   })
 
-  test('client connect/disconnect routes do not call sync yet (4b scope)', () => {
-    const offenders: string[] = []
-    for (const rel of FORBIDDEN_PHASE4B_ONLY) {
+  test('connect/disconnect routes use syncFirmConnectionBillingQuantity wrapper, not direct sync', () => {
+    const missingWrapper: string[] = []
+    const directSync: string[] = []
+    for (const rel of CONNECT_DISCONNECT_ROUTES) {
       const src = readFileSync(join(process.cwd(), rel), 'utf8')
-      if (src.includes('syncFirmStripeQuantity')) offenders.push(rel)
+      if (!src.includes('syncFirmConnectionBillingQuantity')) missingWrapper.push(rel)
+      if (src.includes('syncFirmStripeQuantity')) directSync.push(rel)
     }
-    expect(offenders, `premature sync wiring: ${offenders.join(', ')}`).toEqual([])
+    expect(missingWrapper, `missing wrapper: ${missingWrapper.join(', ')}`).toEqual([])
+    expect(directSync, `direct sync in connect/disconnect: ${directSync.join(', ')}`).toEqual([])
   })
 })
 

@@ -3,6 +3,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { applyAdvisorConnectionBilling } from '@/lib/advisor/applyAdvisorConnectionBilling'
 import { notifyAdvisorFirstClientConnected } from '@/lib/advisor/notifyFirstClientConnected'
+import {
+  assessFirmConnectionBillingGate,
+  getAdvisorFirmBillingContext,
+  syncFirmConnectionBillingQuantity,
+} from '@/lib/billing/firmConnectionBilling'
 
 export async function POST() {
   try {
@@ -29,6 +34,9 @@ export async function POST() {
     }
 
     const admin = createAdminClient()
+
+    const gate = await assessFirmConnectionBillingGate(admin, invite.advisor_id, user.id)
+    if (!gate.ok) return gate.response
 
     const { error: linkError } = await admin
       .from('advisor_clients')
@@ -78,6 +86,9 @@ export async function POST() {
             clientId,
             clientName: clientProfile?.full_name ?? null,
           })
+
+          const { firmId } = await getAdvisorFirmBillingContext(adminAfter, advisorId)
+          await syncFirmConnectionBillingQuantity(firmId)
         } catch (err) {
           console.error('link-pending after():', err)
         }

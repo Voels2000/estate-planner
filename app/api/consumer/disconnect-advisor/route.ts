@@ -3,6 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { restoreConsumerBillingOnDisconnect } from '@/lib/advisor/restoreConsumerBillingOnDisconnect'
+import {
+  getAdvisorFirmBillingContext,
+  syncFirmConnectionBillingQuantity,
+} from '@/lib/billing/firmConnectionBilling'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,6 +49,9 @@ export async function POST() {
     advisorId: connection.advisor_id,
     sendEmail: true,
   })
+
+  const { firmId } = await getAdvisorFirmBillingContext(admin, connection.advisor_id)
+  await syncFirmConnectionBillingQuantity(firmId)
 
   return NextResponse.json({
     success: true,
