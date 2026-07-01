@@ -67,7 +67,7 @@ async function main() {
     updated_at: new Date().toISOString(),
   }
 
-  let { error: firmErr } = await admin.from('firms').update(firmUpdate).eq('id', firm.id)
+  const { error: firmErr } = await admin.from('firms').update(firmUpdate).eq('id', firm.id)
 
   if (!firmErr) {
     const stickyUpdate = {
