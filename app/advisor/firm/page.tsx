@@ -7,6 +7,12 @@
 import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import { firmConnectedHouseholds } from '@/lib/billing/connectedHouseholdCount'
+import {
+  buildFirmConnectionBillingSummary,
+  type FirmConnectionBillingSummary,
+} from '@/lib/billing/firmConnectionBillingSummary'
 import FirmClient from './_firm-client'
 
 export type FirmMemberRow = {
@@ -95,6 +101,23 @@ export default async function AdvisorFirmPage() {
     }))
   }
 
+  let connectionBillingSummary: FirmConnectionBillingSummary | null = null
+  if (isConnectionBillingEnabled()) {
+    const connectedCount = await firmConnectedHouseholds(adminClient, firmId)
+    const { data: firmBilling } = await adminClient
+      .from('firms')
+      .select('client_limit, billing_floor, reset_count')
+      .eq('id', firmId)
+      .single()
+
+    connectionBillingSummary = buildFirmConnectionBillingSummary({
+      connectedCount,
+      clientLimit: firmBilling?.client_limit,
+      billingFloor: firmBilling?.billing_floor,
+      resetCount: firmBilling?.reset_count,
+    })
+  }
+
   return (
     <FirmClient
       firm_name={firmName ?? 'Firm'}
@@ -102,6 +125,8 @@ export default async function AdvisorFirmPage() {
       seatCount={seatCount}
       members={memberRows}
       rosterError={rosterError}
+      connectionBillingEnabled={isConnectionBillingEnabled()}
+      connectionBillingSummary={connectionBillingSummary}
     />
   )
 }
