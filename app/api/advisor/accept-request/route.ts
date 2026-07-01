@@ -7,7 +7,13 @@ import { getAppUrl } from '@/lib/app-url'
 import { pickConnectionLifeEvent } from '@/lib/life-events/connectionContext'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { applyAdvisorConnectionBilling } from '@/lib/advisor/applyAdvisorConnectionBilling'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
 import { getAdvisorClientCapacity } from '@/lib/advisor/advisorClientLimits'
+import {
+  assessFirmConnectionBillingGate,
+  getAdvisorFirmBillingContext,
+  syncFirmConnectionBillingQuantity,
+} from '@/lib/billing/firmConnectionBilling'
 import { EMAIL_FROM } from '@/lib/email/config'
 
 export const dynamic = 'force-dynamic'
@@ -48,15 +54,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Request not found' }, { status: 404 })
   }
 
-  const { cap, current, atLimit, tierName } = await getAdvisorClientCapacity(admin, user.id)
-
-  if (atLimit) {
-    return NextResponse.json({
-      error: 'tier_limit_reached',
-      current_count: current,
-      max_clients: cap,
-      tier_name: tierName,
-    }, { status: 403 })
+  if (isConnectionBillingEnabled()) {
+    const gate = await assessFirmConnectionBillingGate(admin, user.id, row.client_id)
+    if (!gate.ok) return gate.response
+  } else {
+    const { cap, current, atLimit, tierName } = await getAdvisorClientCapacity(admin, user.id)
+    if (atLimit) {
+      return NextResponse.json({
+        error: 'tier_limit_reached',
+        current_count: current,
+        max_clients: cap,
+        tier_name: tierName,
+      }, { status: 403 })
+    }
   }
 
   // Fetch consumer profile for notification email
@@ -120,6 +130,9 @@ export async function POST(request: Request) {
             p_cooldown: '1 hour',
           })
         }
+
+        const { firmId } = await getAdvisorFirmBillingContext(adminAfter, user.id)
+        await syncFirmConnectionBillingQuantity(firmId)
       } catch (err) {
         console.error('accept-request billing after():', err)
       }

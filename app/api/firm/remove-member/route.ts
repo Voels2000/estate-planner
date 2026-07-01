@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { shouldSyncFirmStripeOnRosterChange } from '@/lib/billing/firmConnectionBilling'
 import { syncFirmStripeQuantity } from '@/lib/stripe/syncFirmQuantity'
 import { countFirmRosterSeats } from '@/lib/firm/firmRoster'
 
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    if (row.status === 'active') {
+    if (row.status === 'active' && shouldSyncFirmStripeOnRosterChange()) {
       await syncFirmStripeQuantity(ctx.firm_id)
     }
 

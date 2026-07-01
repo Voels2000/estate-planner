@@ -31,6 +31,12 @@ jobs:
       - name: Unit tests (import-unit project)
         run: npm run test:unit
 
+      - name: Staging-first gate (PRs to main)
+        if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main' && github.head_ref != 'staging'
+        run: |
+          echo "::error::PRs to main must use head branch staging. Merge to staging first, then open staging → main promotion. See docs/DEPLOYMENT.md § Branch flow."
+          exit 1
+
       - name: Production build
         if: github.event_name == 'push' || github.event.pull_request.base.ref == 'main'
         run: npm run build

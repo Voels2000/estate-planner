@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { shouldSyncFirmStripeOnRosterChange } from '@/lib/billing/firmConnectionBilling'
 import { syncFirmStripeQuantity } from '@/lib/stripe/syncFirmQuantity'
 import { countFirmRosterSeats, getFirmTierMaxSeats } from '@/lib/firm/firmRoster'
 
@@ -113,7 +114,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 
-    await syncFirmStripeQuantity(firm_id)
+    if (shouldSyncFirmStripeOnRosterChange()) {
+      await syncFirmStripeQuantity(firm_id)
+    }
 
     return NextResponse.json({ success: true })
   } catch (err) {

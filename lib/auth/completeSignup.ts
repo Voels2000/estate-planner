@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { notifyAdvisorForReferralCode } from '@/lib/advisor/notifyAdvisorOfReferredSignup'
+import { shouldSyncFirmStripeOnRosterChange } from '@/lib/billing/firmConnectionBilling'
 import { syncFirmStripeQuantity } from '@/lib/stripe/syncFirmQuantity'
 import { countFirmRosterSeats, getFirmTierMaxSeats } from '@/lib/firm/firmRoster'
 import { recordTermsAcceptance } from '@/lib/terms/recordTermsAcceptance'
@@ -150,7 +151,9 @@ async function joinFirmFromInvite(
   const nextSeatCount = Math.max(activeAfterJoin, firmRow.seat_count ?? 1)
   await admin.from('firms').update({ seat_count: nextSeatCount }).eq('id', firmId)
 
-  await syncFirmStripeQuantity(firmId)
+  if (shouldSyncFirmStripeOnRosterChange()) {
+    await syncFirmStripeQuantity(firmId)
+  }
 }
 
 async function claimAdvisorConnectInvite(
