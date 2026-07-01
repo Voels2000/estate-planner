@@ -156,6 +156,10 @@ export default function AdvisorClientPage({
   } | null>(null)
   const [ownerBillingRequiredModal, setOwnerBillingRequiredModal] = useState(false)
   const [firmCheckoutModal, setFirmCheckoutModal] = useState<{ quantity: number } | null>(null)
+  const [limitRaiseModal, setLimitRaiseModal] = useState<{
+    currentLimit: number
+    connected_count: number
+  } | null>(null)
   const [firmCheckoutLoading, setFirmCheckoutLoading] = useState(false)
 
   async function startFirmConnectionCheckout(quantity: number) {
@@ -192,9 +196,20 @@ export default function AdvisorClientPage({
     setFirmCheckoutModal({ quantity })
   }
 
-  function handleConnectBillingError(data: { error?: string; quantity?: number }, status: number): boolean {
+  function handleConnectBillingError(data: { error?: string; quantity?: number; currentLimit?: number; connected_count?: number }, status: number): boolean {
     if (status === 402 && data.error === 'firm_checkout_required' && typeof data.quantity === 'number') {
       handleFirmCheckoutRequired(data.quantity)
+      return true
+    }
+    if (
+      status === 402 &&
+      data.error === 'limit_raise_required' &&
+      typeof data.currentLimit === 'number'
+    ) {
+      setLimitRaiseModal({
+        currentLimit: data.currentLimit,
+        connected_count: typeof data.connected_count === 'number' ? data.connected_count : data.currentLimit,
+      })
       return true
     }
     return false
@@ -440,6 +455,36 @@ export default function AdvisorClientPage({
               <button
                 onClick={() => setFirmCheckoutModal(null)}
                 disabled={firmCheckoutLoading}
+                className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {limitRaiseModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+            <div className="mb-1 text-2xl">📈</div>
+            <h2 className="text-lg font-bold text-neutral-900">Client limit reached</h2>
+            <p className="mt-2 text-sm text-neutral-600">
+              You have{' '}
+              <span className="font-medium">{limitRaiseModal.connected_count}</span> connected{' '}
+              {limitRaiseModal.connected_count === 1 ? 'household' : 'households'} at your limit of{' '}
+              <span className="font-medium">{limitRaiseModal.currentLimit}</span>. Raise your limit
+              on billing before connecting another client.
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <a
+                href="/billing"
+                className="w-full rounded-lg bg-neutral-900 px-4 py-2.5 text-center text-sm font-medium text-white hover:bg-neutral-800 transition"
+              >
+                Manage firm billing →
+              </a>
+              <button
+                onClick={() => setLimitRaiseModal(null)}
                 className="w-full rounded-lg border border-neutral-200 px-4 py-2.5 text-sm font-medium text-neutral-600 hover:bg-neutral-50 transition"
               >
                 Cancel

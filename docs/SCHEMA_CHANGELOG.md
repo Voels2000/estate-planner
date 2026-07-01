@@ -8,7 +8,15 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-# Last updated: 2026-06-29 (public function search_path hardening)
+# Last updated: 2026-07-01 (firm connection sticky-floor B2)
+
+---
+
+## Firm connection sticky-floor columns (2026-07-01)
+
+**Migration:** `20260731120000_firm_connection_sticky_floor.sql`
+
+**Change:** `firms.client_limit`, `firms.billing_floor` (default 0), `firms.reset_count` (default 0). Backfill active firms: `client_limit` + `billing_floor` = max(seat_count, connected households). Spec: `docs/CONNECTION_BILLING_STICKY_FLOOR_FIX.md`.
 
 ---
 

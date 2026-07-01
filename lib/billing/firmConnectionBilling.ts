@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server'
 import { CONNECTED_ADVISOR_CLIENT_STATUSES } from '@/lib/advisor/clientConnectionStatus'
 import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
 import { firmConnectedHouseholds } from '@/lib/billing/connectedHouseholdCount'
+import {
+  type LimitRaiseRequiredBody,
+  wouldExceedClientLimit,
+} from '@/lib/billing/firmConnectionStickyFloor'
 import { syncFirmStripeQuantity } from '@/lib/stripe/syncFirmQuantity'
 
 export const ACTIVE_FIRM_BILLING_STATUSES = ['active', 'trialing'] as const
@@ -28,7 +32,11 @@ export function shouldSyncFirmStripeOnRosterChange(): boolean {
 export async function getAdvisorFirmBillingContext(
   admin: SupabaseClient,
   advisorId: string,
-): Promise<{ firmId: string | null; subscriptionStatus: string | null }> {
+): Promise<{
+  firmId: string | null
+  subscriptionStatus: string | null
+  clientLimit: number | null
+}> {
   const { data: profile } = await admin
     .from('profiles')
     .select('firm_id')
@@ -36,18 +44,19 @@ export async function getAdvisorFirmBillingContext(
     .maybeSingle()
 
   if (!profile?.firm_id) {
-    return { firmId: null, subscriptionStatus: null }
+    return { firmId: null, subscriptionStatus: null, clientLimit: null }
   }
 
   const { data: firm } = await admin
     .from('firms')
-    .select('subscription_status')
+    .select('subscription_status, client_limit')
     .eq('id', profile.firm_id)
     .maybeSingle()
 
   return {
     firmId: profile.firm_id,
     subscriptionStatus: firm?.subscription_status ?? null,
+    clientLimit: firm?.client_limit ?? null,
   }
 }
 
@@ -78,8 +87,9 @@ export async function wouldConnectAddBillableHousehold(
 }
 
 /**
- * When CONNECTION_BILLING_ENABLED, block connects that would add a billable household
- * while the firm has no active subscription.
+ * When CONNECTION_BILLING_ENABLED:
+ * - Unpaid firm → firm_checkout_required
+ * - Paid firm at client_limit → limit_raise_required (no connect, no handoff)
  */
 export async function assessFirmConnectionBillingGate(
   admin: SupabaseClient,
@@ -90,7 +100,8 @@ export async function assessFirmConnectionBillingGate(
     return { ok: true }
   }
 
-  const { firmId, subscriptionStatus } = await getAdvisorFirmBillingContext(admin, advisorId)
+  const { firmId, subscriptionStatus, clientLimit } =
+    await getAdvisorFirmBillingContext(admin, advisorId)
   if (!firmId) {
     return {
       ok: false,
@@ -98,18 +109,31 @@ export async function assessFirmConnectionBillingGate(
     }
   }
 
-  if (hasActiveFirmBillingSubscription(subscriptionStatus)) {
-    return { ok: true }
-  }
-
   const addsNew = await wouldConnectAddBillableHousehold(admin, firmId, clientUserId)
   if (!addsNew) {
     return { ok: true }
   }
 
-  const current = await firmConnectedHouseholds(admin, firmId)
-  const quantity = current + 1
+  const connected = await firmConnectedHouseholds(admin, firmId)
 
+  if (hasActiveFirmBillingSubscription(subscriptionStatus)) {
+    if (wouldExceedClientLimit(connected, clientLimit, true)) {
+      return {
+        ok: false,
+        response: NextResponse.json(
+          {
+            error: 'limit_raise_required',
+            currentLimit: Math.max(1, Math.floor(clientLimit ?? 1)),
+            connected_count: connected,
+          } satisfies LimitRaiseRequiredBody,
+          { status: 402 },
+        ),
+      }
+    }
+    return { ok: true }
+  }
+
+  const quantity = connected + 1
   return {
     ok: false,
     response: NextResponse.json(
