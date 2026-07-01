@@ -11,7 +11,7 @@
  * (password + TOTP), then verifies credential gate + accept with bar number.
  */
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type Session } from '@supabase/supabase-js'
 import { createHmac } from 'node:crypto'
 import { createAdminClient } from '../lib/supabase/admin'
 import { ensureAttorneyClientRequestRow } from '../lib/attorney/createAttorneyClientRequest'
@@ -148,7 +148,7 @@ async function createMagicLinkSession(email: string) {
   if (error || !data.session) {
     throw new Error(`verifyOtp ${email}: ${error?.message ?? 'no session'}`)
   }
-  return { session: data.session, supabaseUrl, accessToken: data.session.access_token }
+  return { session: data.session, supabaseUrl }
 }
 
 async function clearStepUpState(userId: string) {
@@ -168,7 +168,7 @@ async function clearStepUpState(userId: string) {
   })
 }
 
-async function completeSecurityStepUp(accessToken: string) {
+async function completeSecurityStepUp(session: Session) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   if (!supabaseUrl || !anonKey) {
@@ -176,9 +176,14 @@ async function completeSecurityStepUp(accessToken: string) {
   }
 
   const supabase = createClient(supabaseUrl, anonKey, {
-    auth: { persistSession: false },
-    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
   })
+
+  const { error: sessionError } = await supabase.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  })
+  if (sessionError) throw new Error(`setSession: ${sessionError.message}`)
 
   const { error: passwordError } = await supabase.auth.updateUser({ password: WALK_PASSWORD })
   if (passwordError) throw new Error(`updateUser password: ${passwordError.message}`)
@@ -253,7 +258,7 @@ async function main() {
 
   if (!seedListing?.claim_token) fail('fixture', 'missing attorney claim token after reset')
 
-  const { session, supabaseUrl, accessToken } = await createMagicLinkSession(ATTORNEY.email)
+  const { session, supabaseUrl } = await createMagicLinkSession(ATTORNEY.email)
   const cookie = buildSupabaseAuthCookieHeader(supabaseUrl, session)
   const userId = await findUserIdByEmail(ATTORNEY.email)
   if (!userId) fail('auth', 'walk attorney user missing')
@@ -320,7 +325,7 @@ async function main() {
     fail('step-up-block-page', `expected redirect, got HTTP ${pageRes.status}`)
   }
 
-  await completeSecurityStepUp(accessToken)
+  await completeSecurityStepUp(session)
 
   const { session: steppedSession, supabaseUrl: steppedUrl } =
     await createMagicLinkSession(ATTORNEY.email)
