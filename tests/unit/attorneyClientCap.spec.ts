@@ -5,6 +5,7 @@
 import { test, expect } from '@playwright/test'
 import {
   FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
+  getAttorneyClientCapMessage,
   isAtAttorneyClientCap,
 } from '../../lib/attorney/attorneyClientCap'
 import { attorneyTierFeatures } from '../../lib/attorney/attorneyTierLimits'
@@ -30,5 +31,10 @@ test.describe('attorneyClientCap', () => {
 
   test('cap message is stable for API responses', () => {
     expect(FREE_ATTORNEY_CLIENT_CAP_MESSAGE).toBe('Free plan limited to 3 client households')
+    delete process.env.CONNECTION_BILLING_ENABLED
+    expect(getAttorneyClientCapMessage()).toBe(FREE_ATTORNEY_CLIENT_CAP_MESSAGE)
+    process.env.CONNECTION_BILLING_ENABLED = 'true'
+    expect(getAttorneyClientCapMessage()).toBe('Free plan limited to 1 client household')
+    delete process.env.CONNECTION_BILLING_ENABLED
   })
 })

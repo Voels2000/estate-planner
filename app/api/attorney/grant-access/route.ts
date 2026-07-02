@@ -7,7 +7,7 @@ import { getAppUrl } from '@/lib/app-url'
 import { internalApiHeaders } from '@/lib/api/internalApiAuth'
 import {
   countActiveAttorneyClients,
-  FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
+  getAttorneyClientCapMessage,
   isAtAttorneyClientCap,
 } from '@/lib/attorney/attorneyClientCap'
 import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
 
       const activeCount = await countActiveAttorneyClients(supabase, attorney_id)
       if (isAtAttorneyClientCap(attorneyProfile?.attorney_tier ?? 0, activeCount)) {
-        return NextResponse.json({ error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE }, { status: 403 })
+        return NextResponse.json({ error: getAttorneyClientCapMessage() }, { status: 403 })
       }
     }
   } else if (isConnectionBillingEnabled()) {

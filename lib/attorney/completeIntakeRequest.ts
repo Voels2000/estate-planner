@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
   countActiveAttorneyClients,
-  FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
+  getAttorneyClientCapMessage,
   isAtAttorneyClientCap,
 } from '@/lib/attorney/attorneyClientCap'
 import { applyAttorneyConnectionBilling } from '@/lib/attorney/applyAttorneyConnectionBilling'
@@ -143,7 +143,7 @@ export async function completeIntakeRequestForUser(
 
         const activeCount = await countActiveAttorneyClients(userSupabase, attorneyListingId)
         if (isAtAttorneyClientCap(attorneyProfile?.attorney_tier ?? 0, activeCount)) {
-          return { ok: false, error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE, status: 403 }
+          return { ok: false, error: getAttorneyClientCapMessage(), status: 403 }
         }
       }
     } else if (isConnectionBillingEnabled()) {

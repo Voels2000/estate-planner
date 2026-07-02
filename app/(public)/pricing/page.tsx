@@ -6,6 +6,10 @@ import { PricingConsumerPlans } from './_pricing-consumer-plans'
 import { PricingPlanAndExportSection } from './_pricing-plan-and-export-section'
 import { PricingAdvisorCheckout } from './_pricing-advisor-checkout'
 import { PricingAttorneyCheckout } from './_pricing-attorney-checkout'
+import {
+  pricingFaqAdvisorCoverageLine,
+  pricingFaqAttorneyFreeLine,
+} from '@/lib/copy/connectionBillingMarketing'
 import { TIER_PRICES } from '@/lib/tiers'
 import {
   getPublicAdvisorPlans,
@@ -391,8 +395,8 @@ export default async function PricingPage() {
               q: 'Can I try before I pay?',
               a:
                 ESTATE_TRIAL_DAYS > 0
-                  ? `The Estate plan includes a ${ESTATE_TRIAL_DAYS}-day free trial — full access to estate tax snapshot, strategies, and the execution checklist. Financial and Retirement plans start billing when you subscribe. Attorneys can start free with up to 3 client households.`
-                  : 'Start free to enter your full financial picture and export your data anytime. Estate, Financial, and Retirement subscriptions bill when you subscribe. Attorneys can start free with up to 3 client households.',
+                  ? `The Estate plan includes a ${ESTATE_TRIAL_DAYS}-day free trial — full access to estate tax snapshot, strategies, and the execution checklist. Financial and Retirement plans start billing when you subscribe. ${pricingFaqAttorneyFreeLine()}`
+                  : `Start free to enter your full financial picture and export your data anytime. Estate, Financial, and Retirement subscriptions bill when you subscribe. ${pricingFaqAttorneyFreeLine()}`,
             },
             {
               q: 'Can I change plans later?',
@@ -404,7 +408,7 @@ export default async function PricingPage() {
             },
             {
               q: 'Do I need to pay if my advisor invited me?',
-              a: 'No. If your financial advisor invited you as a client, your access is covered under their advisor seat — you get full Estate-tier access at no cost.',
+              a: pricingFaqAdvisorCoverageLine(),
             },
             {
               q: 'Is this financial advice?',

@@ -1,3 +1,8 @@
+import {
+  attorneyFreeTierFeatureLabel,
+  connectionAdvisorPricingBlurb,
+  connectionAttorneyPricingBlurb,
+} from '@/lib/copy/connectionBillingMarketing'
 import { ATTORNEY_FREE_CLIENTS } from '@/lib/billing/attorneyBillableQuantity'
 import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
 import {
@@ -133,13 +138,13 @@ function bandMaxClients(band: ConnectionBand): number {
 
 export function getPublicAdvisorPricingSubtitle(): string {
   return isConnectionBillingEnabled()
-    ? 'Per connected household. Connected clients get full Estate-tier access — no separate consumer subscription needed.'
+    ? connectionAdvisorPricingBlurb()
     : 'Per-seat pricing. Connected clients get full Estate-tier access — no separate consumer subscription needed.'
 }
 
 export function getPublicAttorneyPricingSubtitle(): string {
   return isConnectionBillingEnabled()
-    ? 'Per connected household. Clients control what you can see — pay only for connected client households.'
+    ? connectionAttorneyPricingBlurb()
     : 'Read access and document tools. Flat monthly fee — no per-client billing. Clients control what you can see.'
 }
 
@@ -212,7 +217,7 @@ export function getPublicAttorneyPlans(): PublicAttorneyPlan[] {
         popular: false,
         isEnterprise: false,
         features: [
-          `${ATTORNEY_FREE_CLIENTS} client household`,
+          attorneyFreeTierFeatureLabel(),
           'Consumer-approved read access',
           'Attorney directory listing',
           'Document gap visibility',
