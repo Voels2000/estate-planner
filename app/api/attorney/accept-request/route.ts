@@ -8,7 +8,7 @@ import { resend } from '@/lib/resend'
 import { getAppUrl } from '@/lib/app-url'
 import {
   countActiveAttorneyClients,
-  FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
+  getAttorneyClientCapMessage,
   getAttorneyListingIdForUser,
   isAtAttorneyClientCap,
 } from '@/lib/attorney/attorneyClientCap'
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
   const activeCount = await countActiveAttorneyClients(admin, attorneyListingId)
   if (!isConnectionBillingEnabled()) {
     if (isAtAttorneyClientCap(profile?.attorney_tier ?? 0, activeCount)) {
-      return NextResponse.json({ error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE }, { status: 403 })
+      return NextResponse.json({ error: getAttorneyClientCapMessage() }, { status: 403 })
     }
   }
 
