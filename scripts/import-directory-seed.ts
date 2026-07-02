@@ -7,12 +7,26 @@
  *     npx tsx scripts/import-directory-seed.ts --state WA
  *
  *   ...same... --commit
+ *
+ * Re-import upserts unclaimed rows only (claimed_at IS NULL). Does not touch
+ * outreach_sent_at / outreach_send_count / outreach_reminder_sent_at.
  */
 
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import * as XLSX from 'xlsx'
+import {
+  buildAdvisorDirectorySeedPayload,
+  buildAttorneyListingSeedPayload,
+  DIRECTORY_SEED_PRESERVED_LISTING_FIELDS,
+  extractCredentials,
+  extractSpecializations,
+  parseCrdNumber,
+  parseEmailWebsite,
+  parseWsbaBarNumber,
+  type DirectorySeedParsedRow,
+} from '@/lib/directory/directorySeedImport'
 
 const REFS: Record<string, 'staging' | 'production'> = {
   cmzyxpxfyvdvbsykjvsg: 'staging',
@@ -25,21 +39,6 @@ const US_STATES = new Set([
   'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
   'DC',
 ])
-
-type ParsedRow = {
-  kind: 'attorney' | 'advisor'
-  contact_name: string
-  firm_name: string
-  city: string | null
-  state: string
-  email: string
-  website: string | null
-  phone: string | null
-  bio: string | null
-  credentials: string[]
-  specializations: string[]
-  adv_link: string | null
-}
 
 function fail(msg: string): never {
   console.error(`\n[FATAL] ${msg}\n`)
@@ -76,59 +75,6 @@ function isLegendRow(values: string): boolean {
   )
 }
 
-function parseEmailWebsite(raw: string): { email: string; website: string | null } {
-  const parts = raw
-    .split(/\s*\/\s*|\s*\|\s*/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-
-  let email: string | null = null
-  let website: string | null = null
-
-  for (const part of parts) {
-    if (part.includes('@') && !part.includes(' ')) {
-      email = part.toLowerCase()
-      continue
-    }
-    if (/facebook|lawyer\.com listing/i.test(part)) continue
-    const normalized = part.includes('://') ? part : `https://${part.replace(/^\/*/, '')}`
-    try {
-      const url = new URL(normalized)
-      website = url.href
-      if (!email) {
-        const host = url.hostname.replace(/^www\./i, '')
-        email = `contact@${host}`
-      }
-    } catch {
-      const host = part.replace(/^www\./i, '').split('/')[0]
-      if (host.includes('.')) {
-        website = `https://${part.replace(/^\/*/, '')}`
-        if (!email) email = `contact@${host}`
-      }
-    }
-  }
-
-  if (!email) email = 'listing@directory-placeholder.mywealthmaps.com'
-  return { email, website }
-}
-
-function extractCredentials(text: string): string[] {
-  const found = new Set<string>()
-  for (const m of text.matchAll(/\b(CFP®?|CFA®?|ChFC|CPA|JD|LL\.M\.|AEP|CIMA|CPWA|RICP|CLU)\b/gi)) {
-    found.add(m[1].replace('®', '').toUpperCase())
-  }
-  return [...found]
-}
-
-function extractSpecializations(text: string): string[] {
-  const specs: string[] = []
-  if (/estate planning|estate-planning/i.test(text)) specs.push('estate-planning')
-  if (/probate/i.test(text)) specs.push('probate')
-  if (/trust/i.test(text)) specs.push('trusts')
-  if (/tax/i.test(text)) specs.push('tax')
-  return specs
-}
-
 function naturalKey(firm: string, contact: string, state: string): string {
   return `${firm.trim().toLowerCase()}|${contact.trim().toLowerCase()}|${state.toUpperCase()}`
 }
@@ -147,14 +93,14 @@ function newClaimToken(): string {
   return randomBytes(24).toString('base64url')
 }
 
-function parseAttorneySheet(path: string, defaultState: string | null): ParsedRow[] {
+function parseAttorneySheet(path: string, defaultState: string | null): DirectorySeedParsedRow[] {
   const wb = XLSX.read(readFileSync(path), { type: 'buffer' })
   const rows = XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[wb.SheetNames[0]], {
     range: 3,
     defval: '',
   })
 
-  const out: ParsedRow[] = []
+  const out: DirectorySeedParsedRow[] = []
   for (const row of rows) {
     const name = String(row.Name ?? '').trim()
     const firm = String(row.Firm ?? '').trim()
@@ -168,6 +114,7 @@ function parseAttorneySheet(path: string, defaultState: string | null): ParsedRo
     if (!US_STATES.has(state)) fail(`Unrecognized state "${state}" for attorney "${name}"`)
 
     const notes = String(row['Credential / Notes'] ?? '').trim()
+    const wsbaColumn = String(row['WSBA #'] ?? '').trim()
     const { email, website } = parseEmailWebsite(String(row['Email / Website'] ?? ''))
 
     out.push({
@@ -182,20 +129,22 @@ function parseAttorneySheet(path: string, defaultState: string | null): ParsedRo
       bio: notes || null,
       credentials: extractCredentials(notes),
       specializations: extractSpecializations(notes),
+      bar_number: parseWsbaBarNumber(wsbaColumn, notes),
+      crd_number: null,
       adv_link: null,
     })
   }
   return out
 }
 
-function parseAdvisorSheet(path: string, defaultState: string | null): ParsedRow[] {
+function parseAdvisorSheet(path: string, defaultState: string | null): DirectorySeedParsedRow[] {
   const wb = XLSX.read(readFileSync(path), { type: 'buffer' })
   const rows = XLSX.utils.sheet_to_json<Record<string, string>>(wb.Sheets[wb.SheetNames[0]], {
     range: 3,
     defval: '',
   })
 
-  const out: ParsedRow[] = []
+  const out: DirectorySeedParsedRow[] = []
   for (const row of rows) {
     const name = String(row['Lead Advisor'] ?? '').trim()
     const firm = String(row.Firm ?? '').trim()
@@ -209,6 +158,7 @@ function parseAdvisorSheet(path: string, defaultState: string | null): ParsedRow
     if (!US_STATES.has(state)) fail(`Unrecognized state "${state}" for advisor "${name}"`)
 
     const notes = String(row['Credentials / Notes'] ?? '').trim()
+    const crdColumn = String(row['CRD #'] ?? '').trim()
     const websiteRaw = String(row.Website ?? '').trim()
     const { email, website } = parseEmailWebsite(websiteRaw)
 
@@ -224,6 +174,8 @@ function parseAdvisorSheet(path: string, defaultState: string | null): ParsedRow
       bio: notes || null,
       credentials: extractCredentials(notes),
       specializations: extractSpecializations(notes),
+      bar_number: null,
+      crd_number: parseCrdNumber(crdColumn, notes),
       adv_link: website,
     })
   }
@@ -259,12 +211,20 @@ async function main() {
   console.log('='.repeat(70))
   console.log(`DIRECTORY SEED IMPORT — ${env.toUpperCase()} (${dbRef})`)
   console.log(`Mode: ${commit ? 'COMMIT' : 'DRY RUN'}  ${new Date().toISOString()}`)
+  console.log(
+    `Preserved on re-import (not in upsert payload): ${DIRECTORY_SEED_PRESERVED_LISTING_FIELDS.join(', ')}`,
+  )
   console.log('='.repeat(70))
   console.log('\nPer-state breakdown:')
   for (const [st, counts] of Object.entries(stateBreakdown).sort()) {
     console.log(`  ${st}: ${counts.attorneys} attorneys, ${counts.advisors} advisors`)
   }
   console.log(`\nTotal: ${attorneys.length} attorneys, ${advisors.length} advisors`)
+
+  const withBar = attorneys.filter((r) => r.bar_number)
+  const withCrd = advisors.filter((r) => r.crd_number)
+  console.log(`\nParsed credentials: ${withBar.length}/${attorneys.length} attorneys with bar_number`)
+  console.log(`Parsed credentials: ${withCrd.length}/${advisors.length} advisors with crd_number`)
 
   const admin = createClient(supabaseUrl, serviceRole, { auth: { persistSession: false } })
 
@@ -293,8 +253,12 @@ async function main() {
 
   console.log('\nSample mapped rows (PII masked):')
   for (const row of allRows.slice(0, 3)) {
+    const cred =
+      row.kind === 'attorney'
+        ? `bar=${row.bar_number ?? '—'}`
+        : `crd=${row.crd_number ?? '—'}`
     console.log(
-      `  [${row.kind}] ${row.contact_name} @ ${row.firm_name} (${row.state}) email=${maskEmail(row.email)} phone=${maskPhone(row.phone)}`,
+      `  [${row.kind}] ${row.contact_name} @ ${row.firm_name} (${row.state}) email=${maskEmail(row.email)} phone=${maskPhone(row.phone)} ${cred} credentials=${row.credentials.join(',') || '—'}`,
     )
   }
 
@@ -319,25 +283,11 @@ async function main() {
     const key = naturalKey(row.firm_name, row.contact_name, row.state)
     const existing = attIndex.get(key)
     const token = existing?.claim_token ?? newClaimToken()
-    const payload: Record<string, unknown> = {
-      contact_name: row.contact_name,
-      firm_name: row.firm_name,
-      city: row.city,
-      state: row.state,
-      email: row.email,
-      website: row.website,
-      phone: row.phone,
-      bio: row.bio,
-      specializations: row.specializations,
-      bar_number: null,
-      is_active: true,
-      is_verified: true,
-      profile_id: existing?.profile_id ?? null,
-      submitted_by: null,
-      source: 'outreach_seed',
-      claim_token: token,
-    }
-    if (!existing?.claim_token) payload.claim_token_created_at = new Date().toISOString()
+    const payload = buildAttorneyListingSeedPayload(row, {
+      claimToken: token,
+      existingProfileId: existing?.profile_id ?? null,
+      setTokenCreatedAt: !existing?.claim_token,
+    })
 
     if (existing?.id) {
       const { error } = await admin
@@ -348,10 +298,7 @@ async function main() {
       if (error) fail(`Attorney update failed (${row.contact_name}): ${error.message}`)
       attUpdate++
     } else {
-      const { error } = await admin.from('attorney_listings').insert({
-        ...payload,
-        claim_token_created_at: new Date().toISOString(),
-      })
+      const { error } = await admin.from('attorney_listings').insert(payload)
       if (error) fail(`Attorney insert failed (${row.contact_name}): ${error.message}`)
       attInsert++
     }
@@ -361,25 +308,11 @@ async function main() {
     const key = naturalKey(row.firm_name, row.contact_name, row.state)
     const existing = advIndex.get(key)
     const token = existing?.claim_token ?? newClaimToken()
-    const payload: Record<string, unknown> = {
-      contact_name: row.contact_name,
-      firm_name: row.firm_name,
-      city: row.city,
-      state: row.state,
-      email: row.email,
-      website: row.website,
-      bio: row.bio,
-      credentials: row.credentials,
-      specializations: row.specializations,
-      adv_link: row.adv_link,
-      crd_number: null,
-      is_active: true,
-      is_verified: true,
-      profile_id: existing?.profile_id ?? null,
-      source: 'outreach_seed',
-      claim_token: token,
-    }
-    if (!existing?.claim_token) payload.claim_token_created_at = new Date().toISOString()
+    const payload = buildAdvisorDirectorySeedPayload(row, {
+      claimToken: token,
+      existingProfileId: existing?.profile_id ?? null,
+      setTokenCreatedAt: !existing?.claim_token,
+    })
 
     if (existing?.id) {
       const { error } = await admin
@@ -390,10 +323,7 @@ async function main() {
       if (error) fail(`Advisor update failed (${row.contact_name}): ${error.message}`)
       advUpdate++
     } else {
-      const { error } = await admin.from('advisor_directory').insert({
-        ...payload,
-        claim_token_created_at: new Date().toISOString(),
-      })
+      const { error } = await admin.from('advisor_directory').insert(payload)
       if (error) fail(`Advisor insert failed (${row.contact_name}): ${error.message}`)
       advInsert++
     }

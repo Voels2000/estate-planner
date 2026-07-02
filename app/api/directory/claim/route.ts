@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
       .update({
         ...shared,
         bar_number: body.bar_number?.trim() || listing.bar_number || null,
+        credentials: body.credentials ?? listing.credentials ?? [],
         states_licensed: withBarState,
         specializations: body.specializations ?? listing.specializations ?? [],
         serves_remote: body.serves_remote ?? listing.serves_remote ?? false,
