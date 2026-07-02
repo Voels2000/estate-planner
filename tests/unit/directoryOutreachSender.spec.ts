@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test'
-import { claimMagicLinkRedirectTo } from '@/lib/auth/generateClaimMagicLink'
+import {
+  buildClaimMagicConfirmUrl,
+  claimMagicLinkRedirectTo,
+} from '@/lib/auth/generateClaimMagicLink'
 import { outreachFirstNameFromContact } from '@/lib/directory/outreachRecipient'
 import {
   buildAttorneyDirectoryOutreachEmail,
@@ -12,6 +15,38 @@ test.describe('generateClaimMagicLink helpers', () => {
     expect(url).toBe(
       'https://staging.mywealthmaps.com/auth/callback?next=%2Fclaim%2Ftok_abc123',
     )
+  })
+
+  test('buildClaimMagicConfirmUrl is role-agnostic for attorney and advisor outreach', () => {
+    const prev = process.env.NEXT_PUBLIC_APP_URL
+    process.env.NEXT_PUBLIC_APP_URL = 'https://staging.mywealthmaps.com'
+    try {
+      const attorneyUrl = buildClaimMagicConfirmUrl('hash_att', 'tok_attorney')
+      const advisorUrl = buildClaimMagicConfirmUrl('hash_adv', 'tok_advisor')
+      expect(new URL(attorneyUrl).searchParams.get('next')).toBe('/claim/tok_attorney')
+      expect(new URL(advisorUrl).searchParams.get('next')).toBe('/claim/tok_advisor')
+      expect(new URL(attorneyUrl).searchParams.get('type')).toBe('magiclink')
+      expect(new URL(advisorUrl).searchParams.get('type')).toBe('magiclink')
+    } finally {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_APP_URL
+      else process.env.NEXT_PUBLIC_APP_URL = prev
+    }
+  })
+
+  test('buildClaimMagicConfirmUrl uses token_hash for server-side verify', () => {
+    const prev = process.env.NEXT_PUBLIC_APP_URL
+    process.env.NEXT_PUBLIC_APP_URL = 'https://staging.mywealthmaps.com'
+    try {
+      const url = buildClaimMagicConfirmUrl('hash_xyz', 'tok_abc123')
+      const parsed = new URL(url)
+      expect(parsed.pathname).toBe('/auth/callback')
+      expect(parsed.searchParams.get('token_hash')).toBe('hash_xyz')
+      expect(parsed.searchParams.get('type')).toBe('magiclink')
+      expect(parsed.searchParams.get('next')).toBe('/claim/tok_abc123')
+    } finally {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_APP_URL
+      else process.env.NEXT_PUBLIC_APP_URL = prev
+    }
   })
 })
 
