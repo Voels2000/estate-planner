@@ -1,5 +1,4 @@
 import { generateClaimMagicLink, type ClaimRole } from '@/lib/auth/generateClaimMagicLink'
-import { EMAIL_FROM, EMAIL_REPLY_TO } from '@/lib/email/config'
 import {
   buildAttorneyDirectoryOutreachEmail,
   buildAdvisorDirectoryOutreachEmail,
@@ -22,8 +21,16 @@ export type SendDirectoryOutreachResult = {
   error?: string
 }
 
+/** Wave-1 default: personal from matches "Alan Voels" signature and reply invitation. */
+const DIRECTORY_OUTREACH_FROM_DEFAULT = 'Alan Voels <al@mywealthmaps.com>'
+const DIRECTORY_OUTREACH_REPLY_TO_DEFAULT = 'al@mywealthmaps.com'
+
 function outreachFromAddress(): string {
-  return process.env.DIRECTORY_OUTREACH_FROM_ADDRESS?.trim() || EMAIL_FROM
+  return process.env.DIRECTORY_OUTREACH_FROM_ADDRESS?.trim() || DIRECTORY_OUTREACH_FROM_DEFAULT
+}
+
+function outreachReplyToAddress(): string {
+  return process.env.DIRECTORY_OUTREACH_REPLY_TO?.trim() || DIRECTORY_OUTREACH_REPLY_TO_DEFAULT
 }
 
 function getResendClient(): Resend {
@@ -60,7 +67,7 @@ export async function sendDirectoryOutreachEmail(
     const resend = getResendClient()
     const { data, error } = await resend.emails.send({
       from: outreachFromAddress(),
-      replyTo: EMAIL_REPLY_TO,
+      replyTo: outreachReplyToAddress(),
       to: email,
       subject: built.subject,
       html: built.bodyHtml,
