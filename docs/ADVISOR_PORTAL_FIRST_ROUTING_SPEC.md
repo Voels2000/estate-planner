@@ -33,7 +33,9 @@ hardcode dollar amounts in UI.
 
 ## Delivery — two PRs (required sequencing)
 
-### PR 1 — Middleware gate + tests (shipped in this branch)
+### PR 1 — Middleware gate + tests (merged #235)
+
+### PR 2 — Portal shell empty/unpaid state (this branch)
 
 **Scope:**
 
