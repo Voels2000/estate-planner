@@ -34,7 +34,10 @@ Opening line (aligned with outreach life-event hook):
 
 ### Per-link usage tips
 
-Derived from `lib/events/content.ts` `subhead` (first sentence, ≤140 chars) — same source as public `/event/[slug]` pages.
+Static attorney-facing **"Share when…"** copy in `ATTORNEY_EVENT_REFERRAL_USAGE_TIPS`
+(`lib/attorney/attorneyEventReferralKit.ts`) — not derived from public event subheads.
+See [ATTORNEY_MARKETING_USAGE_TIPS.md](./ATTORNEY_MARKETING_USAGE_TIPS.md). Unit test
+asserts every referral slug has a tip.
 
 ### Format tabs
 

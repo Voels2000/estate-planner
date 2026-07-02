@@ -1,4 +1,4 @@
-import { getEventContent } from '@/lib/events/content'
+import { buildAllAttorneyEventReferralUrls } from '@/lib/events/referral'
 
 /** Human labels for all 24 life-event referral slugs. */
 export const ATTORNEY_EVENT_REFERRAL_LABELS: Record<string, string> = {
@@ -85,14 +85,69 @@ export function attorneyEventReferralLabel(slug: string): string {
   return ATTORNEY_EVENT_REFERRAL_LABELS[slug] ?? slug
 }
 
-/** One-line tip from public event page copy (`subhead` first sentence). */
+/**
+ * Attorney-facing "Share when…" guidance — not consumer page copy.
+ * Keys must match `buildAllAttorneyEventReferralUrls` slugs (24 events).
+ */
+export const ATTORNEY_EVENT_REFERRAL_USAGE_TIPS: Record<string, string> = {
+  'selling-a-business':
+    'Share when a client is mid-transaction or evaluating an offer — a sale can double taxable estate value overnight.',
+  'starting-a-business':
+    'Share when a client is forming a new entity — ownership structure affects the estate plan from day one.',
+  'large-rsu-vest':
+    'Share after a vest or exit — beneficiary designations are often stale by the time the cash lands.',
+  'first-time-high-net-worth':
+    'Share when a client crosses into planning-relevant assets for the first time — they may not know they need a plan yet.',
+  'major-job-change':
+    'Share after a client changes employers — old employer benefits and beneficiary forms often get left behind.',
+  'death-of-spouse':
+    'Share early in the process — surviving spouses often need to update nearly every document at once.',
+  'serious-diagnosis':
+    'Share when a client faces a new diagnosis — powers of attorney and healthcare directives matter most here.',
+  divorce:
+    'Share once a divorce is final — beneficiary designations do not update themselves, even after the decree does.',
+  'getting-married':
+    'Share soon after the wedding — titling, beneficiaries, and powers of attorney need to catch up to the new status.',
+  'remarriage-blended-family':
+    'Share early in a blended family — without updates, a prior plan can unintentionally disinherit a new spouse or stepchildren.',
+  'new-child-grandchild':
+    'Share after a birth — guardian designations and minor trust provisions need to be added, not assumed.',
+  'child-reaching-adulthood':
+    'Share as a child turns 18 — powers of attorney no longer automatically cover them, even for their own parents.',
+  'loss-of-parent':
+    'Share during estate settlement — this is often when a client first realizes their own plan is out of date.',
+  'aging-parent-needs-care':
+    'Share when a client becomes a caregiver — update their own POA and healthcare directive, not just their parent\'s.',
+  'disability-early-retirement':
+    'Share when a client\'s income or capacity changes unexpectedly — plans built for a different timeline need a second look.',
+  'selling-a-home':
+    'Share before or during a home sale — the primary residence exclusion is easy to miscalculate without a second read.',
+  'multi-state-real-estate':
+    'Share when a client buys property in another state — it can trigger probate in two places without the right structure.',
+  'receiving-inheritance':
+    'Share after a client receives an inheritance — new assets need to be titled and folded into the existing plan, not left standalone.',
+  'approaching-retirement':
+    'Share a few years out from retirement — this is the natural checkpoint to revisit the whole plan, not just income.',
+  'rmd-start-age':
+    'Share as a client nears RMD age — required withdrawals can interact with the estate plan in ways clients do not expect.',
+  'medicare-eligibility':
+    'Share around age 65 — Medicare decisions and estate planning timelines often land in the same year.',
+  'social-security-timing':
+    'Share when a client is deciding on claiming age — the choice affects survivor benefits, not just their own income.',
+  'estate-tax-law-change':
+    'Share whenever exemption thresholds shift — plans built around an old number can leave money on the table.',
+  'five-year-plan-review':
+    'Share on a rolling basis — even clients with no life change benefit from a scheduled second look.',
+}
+
+/** One-line tip for attorneys deciding when to share a life-event link. */
 export function attorneyEventReferralUsageTip(slug: string): string | null {
-  const content = getEventContent(slug)
-  if (!content?.subhead?.trim()) return null
-  const firstSentence = content.subhead.trim().split(/(?<=[.!?])\s+/)[0]?.trim()
-  if (!firstSentence) return null
-  if (firstSentence.length <= 140) return firstSentence
-  return `${firstSentence.slice(0, 137).trim()}…`
+  return ATTORNEY_EVENT_REFERRAL_USAGE_TIPS[slug] ?? null
+}
+
+/** Slugs that must have usage tips — kept in sync with `buildAllAttorneyEventReferralUrls`. */
+export function attorneyReferralEventSlugs(): string[] {
+  return Object.keys(buildAllAttorneyEventReferralUrls('__sync_check__'))
 }
 
 export function buildAttorneyNewsletterEmailCopy(
