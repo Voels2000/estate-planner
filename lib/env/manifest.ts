@@ -1,3 +1,8 @@
+import {
+  CONNECTION_STRIPE_PRICE_ENV_VARS,
+  LEGACY_PROFESSIONAL_STRIPE_PRICE_ENV_VARS,
+} from '@/lib/pricing/connectionPricing'
+
 export type EnvScope = 'local' | 'preview' | 'production'
 
 export type EnvShape = RegExp | string
@@ -55,11 +60,8 @@ export type OneTimeStripePriceEnvVar = (typeof ONE_TIME_STRIPE_PRICE_ENV_VARS)[n
 export const STRIPE_PRICE_ENV_VARS = [
   ...CONSUMER_STRIPE_PRICE_ENV_VARS,
   ...ONE_TIME_STRIPE_PRICE_ENV_VARS,
-  'STRIPE_PRICE_ADVISOR_STARTER_MONTHLY',
-  'STRIPE_PRICE_ADVISOR_GROWTH_MONTHLY',
-  'STRIPE_PRICE_ADVISOR_ENTERPRISE_MONTHLY',
-  'STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY',
-  'STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY',
+  ...LEGACY_PROFESSIONAL_STRIPE_PRICE_ENV_VARS,
+  ...CONNECTION_STRIPE_PRICE_ENV_VARS,
 ] as const
 
 function consumerPrice(
@@ -143,7 +145,7 @@ export const ENV_MANIFEST: EnvVarEntry[] = [
   ...CONSUMER_STRIPE_PRICE_ENV_VARS.map((name) => consumerPrice(name)),
   ...ONE_TIME_STRIPE_PRICE_ENV_VARS.map((name) => consumerPrice(name)),
 
-  // --- Advisor / attorney firm prices (no safe fallbacks) ---
+  // --- Advisor / attorney legacy firm prices (required when CONNECTION_BILLING_ENABLED=false) ---
   entry('STRIPE_PRICE_ADVISOR_STARTER_MONTHLY', {
     scopes: ALL_SCOPES,
     requiredInScopes: ALL_DEPLOYED,
@@ -173,6 +175,25 @@ export const ENV_MANIFEST: EnvVarEntry[] = [
     requiredInScopes: ALL_DEPLOYED,
     secret: false,
     shape: { preview: PRICE, production: PRICE },
+  }),
+
+  // --- Connection billing prices (required when CONNECTION_BILLING_ENABLED=true; see stripePriceRequirements.ts) ---
+  entry('STRIPE_PRICE_ADVISOR_CONNECTION_MONTHLY', {
+    scopes: ALL_SCOPES,
+    requiredInScopes: [],
+    secret: false,
+    shape: { preview: PRICE, production: PRICE },
+  }),
+  entry('STRIPE_PRICE_ATTORNEY_CONNECTION_MONTHLY', {
+    scopes: ALL_SCOPES,
+    requiredInScopes: [],
+    secret: false,
+    shape: { preview: PRICE, production: PRICE },
+  }),
+  entry('CONNECTION_BILLING_ENABLED', {
+    scopes: ALL_SCOPES,
+    requiredInScopes: [],
+    secret: false,
   }),
 
   // --- Server secrets ---
