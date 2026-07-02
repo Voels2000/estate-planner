@@ -117,3 +117,25 @@ export function normalizeLicensedStates(values: string[] | null | undefined): st
   }
   return [...out].sort()
 }
+
+/** Human label for directory cards, filters, and admin tables. */
+export function formatAttorneyPracticeAreaLabel(slug: string): string {
+  const known = ATTORNEY_PRACTICE_AREAS.find((a) => a.slug === slug)
+  if (known) return known.label
+  return slug
+    .split('-')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
+/** Human label for fee_structure slug or legacy freeform value. */
+export function formatAttorneyFeeStructureLabel(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null
+  const normalized = normalizeAttorneyFeeStructure(value)
+  if (normalized) {
+    return ATTORNEY_FEE_STRUCTURE_OPTIONS.find((o) => o.value === normalized)?.label ?? value
+  }
+  return value.trim()
+}
+
+export const ATTORNEY_PRACTICE_PROFILE_FIELD_COUNT = 4

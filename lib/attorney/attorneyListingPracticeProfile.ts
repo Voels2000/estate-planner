@@ -3,6 +3,7 @@ import { attorneyConnectedHouseholds } from '@/lib/billing/connectedHouseholdCou
 import { attorneyProjectedBillableAfterConnect } from '@/lib/billing/attorneyBillableQuantity'
 import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
 import {
+  ATTORNEY_PRACTICE_PROFILE_FIELD_COUNT,
   normalizeAttorneyCredentials,
   normalizeAttorneyFeeStructure,
   normalizeAttorneySpecializations,
@@ -50,6 +51,10 @@ export function attorneyPracticeProfileMissingFields(
 
 export function isAttorneyPracticeProfileComplete(listing: AttorneyPracticeProfileRow): boolean {
   return attorneyPracticeProfileMissingFields(listing).length === 0
+}
+
+export function attorneyPracticeProfileCompletedCount(listing: AttorneyPracticeProfileRow): number {
+  return ATTORNEY_PRACTICE_PROFILE_FIELD_COUNT - attorneyPracticeProfileMissingFields(listing).length
 }
 
 export type PracticeProfileGateBlock = {

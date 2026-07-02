@@ -6,6 +6,8 @@ import {
   practiceProfileGateErrorMessage,
 } from '../../lib/attorney/attorneyListingPracticeProfile'
 import {
+  formatAttorneyFeeStructureLabel,
+  formatAttorneyPracticeAreaLabel,
   normalizeAttorneyCredentials,
   normalizeAttorneyFeeStructure,
   normalizeAttorneySpecializations,
@@ -62,6 +64,12 @@ test.describe('attorneyListingPracticeProfile', () => {
     expect(practiceProfileGateErrorMessage(['credentials', 'fee_structure'])).toContain(
       'at least one credential',
     )
+  })
+
+  test('formats practice area and fee labels', () => {
+    expect(formatAttorneyPracticeAreaLabel('estate-planning')).toBe('Estate planning')
+    expect(formatAttorneyFeeStructureLabel('hourly')).toBe('Hourly')
+    expect(formatAttorneyFeeStructureLabel('flat-fee')).toBe('Flat fee')
   })
 
   test('identifies direct paid consumer subscriptions', () => {

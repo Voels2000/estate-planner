@@ -1,6 +1,6 @@
 # MWM — Directory Seed & Claim System: Implementation Plan
 
-**Owner:** Al Voels · **For:** Cursor implementation · **Last updated:** 2026-06-30
+**Owner:** Al Voels · **For:** Cursor implementation · **Last updated:** 2026-07-02
 **Goal:** Seed the real WA outreach directories (built from public records), make the "your listing is live — claim it" email true, and let professionals claim + self-validate their credentials. Built 50-state-ready from row one; WA is just the first batch.
 
 **Related:** [GTM_FIRST_WAVE.md](./GTM_FIRST_WAVE.md) · [audit-directory-state.ts](../scripts/audit-directory-state.ts)
@@ -144,13 +144,17 @@ SUPABASE_DB_REF=cmzyxpxfyvdvbsykjvsg SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=
 ### Pre-flight before implementation
 
 - [x] Publish model: **all-publish** (locked 2026-06-30)
-- [ ] **Handoff:** download `MWM_Attorney_Directory_Seed.xlsx` + `MWM_Advisor_Directory_Seed.xlsx` from planning thread → drop in `data/directory-seed/` (gitignored; never commit PII)
-- [ ] **Fix in source file before import** (cheaper than DB after seed):
-  - Attorney: Perkins Coie row — spreadsheet has Stephanie Loomis-Price; GTM/email guide uses Sarah Bowman — reconcile before import
-  - Attorney: DWT/Flaggert — confirm specific partner before import if still flagged
-  - Advisor: four firm-level TBD rows (Occidental Bellevue, LNW Seattle lead, etc.) — import OK; expect light manual-review path on claim
-- [ ] Staging dry-run: per-state breakdown reviewed before `--commit`
-- [ ] Claim flow live before any "claim it" email sends
+- [x] **Handoff:** spreadsheets in `data/directory-seed/` (gitignored; never commit PII)
+- [x] **Fix in source file before import** — **Al signed off 2026-07-02; applied to gitignored XLSX:**
+  - **Perkins Coie** → `Sarah B. Bowman` · `(206) 359-6195` · `sarah.bowman@ashurstperkins.com` · HIGH
+  - **DWT** → `James A. Flaggert` (kept) · `(206) 757-8044` · `jimflaggert@dwt.com` · HIGH
+  - **Occidental Bellevue** → `John Wilbourne` · Bellevue · `(866) 520-4985` · occidentalasset.com/seattle
+  - **LNW** → `Brandon Smith, JD, LL.M.` (Option A — Director, Estate Planning) · HIGH
+  - **Pure Mercer Island** → `Rachel Füss, CFP®` · `(206) 710-9309` · MEDIUM
+- [x] Staging dry-run reviewed 2026-07-02: **WA: 14 attorneys, 8 advisors** — would insert 1 attorney (Sarah B. Bowman), update 13 attorneys, insert 8 advisors
+- [ ] Staging `--commit` after dry-run sign-off
+- [ ] Outreach send-tracking migration applied on staging (`20260802120000_directory_outreach_send_tracking.sql`) before sender `--commit`
+- [x] Claim flow live before any "claim it" email sends (#206–#213 on staging)
 
 ### Route naming
 

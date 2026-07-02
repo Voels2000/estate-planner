@@ -2,17 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
-const SPECIALIZATIONS = [
-  'Estate Planning',
-  'Probate',
-  'Elder Law',
-  'Trust Administration',
-  'Business Succession',
-  'Charitable Giving',
-  'Tax Law',
-  'Family Law',
-]
+import {
+  ATTORNEY_FEE_STRUCTURE_OPTIONS,
+  ATTORNEY_PRACTICE_AREAS,
+} from '@/lib/attorney/attorneyPracticeOptions'
 
 const LANGUAGES = [
   'English',
@@ -236,11 +229,12 @@ export default function AttorneyRegisterPage() {
               onChange={e => setForm(p => ({ ...p, fee_structure: e.target.value }))}
               className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)]/30"
             >
-              <option value="">Select…</option>
-              <option value="Flat fee">Flat fee</option>
-              <option value="Hourly">Hourly</option>
-              <option value="Contingency">Contingency</option>
-              <option value="Retainer">Retainer</option>
+              <option value="">Not specified</option>
+              {ATTORNEY_FEE_STRUCTURE_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -272,22 +266,19 @@ export default function AttorneyRegisterPage() {
         {/* Specializations */}
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-2">
-            Specializations
+            Practice areas
           </label>
-          <div className="flex flex-wrap gap-2">
-            {SPECIALIZATIONS.map(s => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => toggleItem('specializations', s)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                  form.specializations.includes(s)
-                    ? 'bg-[var(--mwm-navy)] text-white'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                }`}
-              >
-                {s}
-              </button>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {ATTORNEY_PRACTICE_AREAS.map(({ slug, label }) => (
+              <label key={slug} className="flex items-center gap-2 text-sm text-neutral-700">
+                <input
+                  type="checkbox"
+                  checked={form.specializations.includes(slug)}
+                  onChange={() => toggleItem('specializations', slug)}
+                  className="rounded border-neutral-300"
+                />
+                {label}
+              </label>
             ))}
           </div>
         </div>
