@@ -73,21 +73,15 @@ export function isAdvisorOwnPlanPath(pathname: string): boolean {
   )
 }
 
-/** Post-login destination for advisor accounts (SSR + client login must stay in sync). */
+/** Post-login destination for advisor accounts (SSR + client login + auth/callback must stay in sync). */
 export function resolveAdvisorPostLoginPath(input: {
   redirectTo: string
   claimRedirect: string | null
-  firmRole: string | null | undefined
-  profileSubscriptionStatus: string | null | undefined
-  firmSubscriptionStatus: string | null | undefined
+  firmRole?: string | null | undefined
+  profileSubscriptionStatus?: string | null | undefined
+  firmSubscriptionStatus?: string | null | undefined
 }): string {
   if (input.claimRedirect) return input.claimRedirect
-  if (input.firmRole === 'member') return '/advisor'
-  if (
-    isActiveAdvisorProfileSubscription(input.profileSubscriptionStatus) ||
-    isActiveAdvisorFirmSubscription(input.firmSubscriptionStatus)
-  ) {
-    return '/advisor'
-  }
-  return input.redirectTo || '/dashboard'
+  if (input.redirectTo && input.redirectTo !== '/dashboard') return input.redirectTo
+  return '/advisor'
 }

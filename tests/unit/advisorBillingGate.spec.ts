@@ -15,7 +15,7 @@ test.describe('advisorBillingGate', () => {
     expect(isAdvisorOwnPlanPath('/prospect/new')).toBe(false)
   })
 
-  test('unpaid owner login lands on dashboard or redirectTo', () => {
+  test('unpaid owner login lands on advisor portal; honors explicit redirectTo', () => {
     expect(
       resolveAdvisorPostLoginPath({
         redirectTo: '/dashboard',
@@ -24,7 +24,7 @@ test.describe('advisorBillingGate', () => {
         profileSubscriptionStatus: null,
         firmSubscriptionStatus: null,
       }),
-    ).toBe('/dashboard')
+    ).toBe('/advisor')
 
     expect(
       resolveAdvisorPostLoginPath({

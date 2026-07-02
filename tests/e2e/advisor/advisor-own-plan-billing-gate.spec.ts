@@ -67,7 +67,7 @@ test.describe('Path A — firm-paid owner with null profile sub', () => {
 test.describe('Path A — login destination for unpaid advisor owner', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
-  test('unpaid advisor owner lands on dashboard after sign-in', async ({ page }) => {
+  test('unpaid advisor owner lands on advisor portal after sign-in', async ({ page }) => {
     const empty = E2E_IDENTITIES.advisorEmpty
     await page.goto('/login')
     await page.waitForSelector('input[id="email"]', { state: 'visible' })
@@ -75,6 +75,9 @@ test.describe('Path A — login destination for unpaid advisor owner', () => {
     await page.locator('input[id="password"]').fill(empty.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
     await page.waitForURL((url) => !url.toString().includes('/login'), { timeout: 90_000 })
-    await expect(page).toHaveURL(/\/dashboard/)
+    await expect(page).toHaveURL(/\/advisor/)
+    await expect(page.getByRole('heading', { name: 'Advisor Portal' })).toBeVisible({
+      timeout: 30_000,
+    })
   })
 })
