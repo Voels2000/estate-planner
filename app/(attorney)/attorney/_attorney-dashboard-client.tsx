@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AttorneyUpgradePrompt } from '@/components/attorney/AttorneyUpgradePrompt'
+import { AttorneyDashboardMetricCards } from '@/components/attorney/AttorneyDashboardMetricCards'
 import { AttorneyValuePropBanner } from '@/components/attorney/AttorneyValuePropBanner'
 import { SendIntakeRequestModal } from '@/components/attorney/SendIntakeRequestModal'
-import { RosterNetWorthColumnHeader } from '@/components/shared/RosterNetWorthColumnHeader'
 import { formatRosterNetWorth } from '@/lib/roster/rosterNetWorth'
+import type { AttorneyConnectionBillingSummary } from '@/lib/billing/attorneyConnectionBillingSummary'
+import { attorneyPortalSubtitleLine } from '@/lib/copy/connectionBillingMarketing'
 
 type ClientCard = {
   connection_id: string
@@ -46,6 +48,9 @@ type Props = {
   attorneyTier?: number
   clientLimit?: number
   totalClients?: number
+  connectionBillingEnabled?: boolean
+  connectionBillingSummary?: AttorneyConnectionBillingSummary | null
+  documentGapsTotal?: number
 }
 
 const STATUS_BADGE: Record<IntakeRequestRow['displayStatus'], string> = {
@@ -117,6 +122,9 @@ export function AttorneyDashboardClient({
   attorneyTier = 0,
   clientLimit = 3,
   totalClients = 0,
+  connectionBillingEnabled = false,
+  connectionBillingSummary = null,
+  documentGapsTotal = 0,
 }: Props) {
   const router = useRouter()
   const [search, setSearch] = useState('')
@@ -152,7 +160,8 @@ export function AttorneyDashboardClient({
   )
 
   const FREE_TIER_CAP = 3
-  const atCap = attorneyTier === 0 && totalClients >= FREE_TIER_CAP
+  const atCap = !connectionBillingEnabled && attorneyTier === 0 && totalClients >= FREE_TIER_CAP
+  const showFullDocHealth = connectionBillingEnabled || attorneyTier >= 1
 
   function handleIntakeSent(email: string) {
     setToast(`Invitation sent to ${email}.`)
@@ -226,15 +235,21 @@ export function AttorneyDashboardClient({
         <div>
           <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Attorney Portal</h1>
           <p className="text-neutral-500 mt-1">
-            Welcome back, {attorneyName}. You have access to {totalClients || clients.length} client
-            {(totalClients || clients.length) !== 1 ? 's' : ''}.
-            {attorneyTier === 0 && totalClients > clientLimit && (
-              <span className="block text-xs text-amber-600 mt-1">
-                Free tier shows {clientLimit} clients.{' '}
-                <Link href="/attorney/billing" className="underline">
-                  Upgrade for full practice view →
-                </Link>
-              </span>
+            {connectionBillingEnabled ? (
+              attorneyPortalSubtitleLine(connectionBillingSummary?.ratePerClient)
+            ) : (
+              <>
+                Welcome back, {attorneyName}. You have access to {totalClients || clients.length} client
+                {(totalClients || clients.length) !== 1 ? 's' : ''}.
+                {attorneyTier === 0 && totalClients > clientLimit && (
+                  <span className="block text-xs text-amber-600 mt-1">
+                    Free tier shows {clientLimit} clients.{' '}
+                    <Link href="/attorney/billing" className="underline">
+                      Upgrade for full practice view →
+                    </Link>
+                  </span>
+                )}
+              </>
             )}
           </p>
         </div>
@@ -254,7 +269,13 @@ export function AttorneyDashboardClient({
         </div>
       </div>
 
-      <AttorneyValuePropBanner />
+      {connectionBillingEnabled && (
+        <AttorneyDashboardMetricCards
+          connectedCount={connectionBillingSummary?.connectedCount ?? totalClients}
+          monthlyCost={connectionBillingSummary?.estimatedMonthly ?? 0}
+          documentGapsTotal={documentGapsTotal}
+        />
+      )}
 
       {atCap && (
         <div className="mb-6">
@@ -297,22 +318,114 @@ export function AttorneyDashboardClient({
         </div>
       )}
 
-      {showDocHealth && clients.length > 0 && (
-        attorneyTier >= 1 ? (
-          <div className="mb-6 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
-            <DocHealthTable rows={filtered} />
-          </div>
-        ) : (
-          <div className="relative mb-6 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
-            <div className="pointer-events-none select-none opacity-40 blur-sm">
-              <DocHealthTable rows={clients.slice(0, 2)} />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center p-4">
-              <AttorneyUpgradePrompt feature="doc_dashboard" />
-            </div>
-          </div>
-        )
+      {clients.length > 0 && (
+        <div className="relative mb-6">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">🔍</span>
+          <input
+            type="text"
+            placeholder="Search by name, email, or state..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 border border-neutral-200 rounded-lg text-sm
+                       focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] focus:border-transparent bg-white"
+          />
+        </div>
       )}
+
+      {clients.length === 0 && (
+        <div className="text-center py-16 bg-white rounded-xl border border-neutral-200">
+          <span className="mx-auto text-4xl mb-3 block text-center">👤</span>
+          <p className="text-neutral-500 font-medium">No clients yet</p>
+          <p className="text-neutral-400 text-sm mt-1">
+            Send an intake request or share your referral links to get clients started.
+          </p>
+        </div>
+      )}
+
+      {clients.length > 0 && filtered.length === 0 && (
+        <div className="text-center py-12 bg-white rounded-xl border border-neutral-200">
+          <p className="text-neutral-500">No clients match your search.</p>
+        </div>
+      )}
+
+      <div className="space-y-3 mb-6">
+        {filtered.map((client) => (
+          <Link
+            key={client.connection_id}
+            href={`/attorney/clients/${client.household_id}`}
+            className="block bg-white border border-neutral-200 rounded-xl p-5
+                       hover:border-[color:var(--mwm-navy)]/30 hover:shadow-sm transition-all group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-4">
+                <div className="h-10 w-10 rounded-full bg-[var(--mwm-gold-pale)] flex items-center
+                                justify-center text-[color:var(--mwm-navy)] font-semibold text-sm shrink-0">
+                  {client.full_name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-medium text-neutral-900">{client.full_name}</p>
+                  <p className="text-sm text-neutral-400">{client.email}</p>
+                  <div className="flex items-center gap-3 mt-2 flex-wrap">
+                    {client.state && (
+                      <span className="flex items-center gap-1 text-xs text-neutral-500">
+                        <span className="text-xs">📍</span>
+                        {client.state}
+                      </span>
+                    )}
+                    {client.matter_stage && client.matter_stage !== 'intake' && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--mwm-gold-pale)] text-[color:var(--mwm-navy)] font-medium capitalize">
+                        {client.matter_stage.replace('_', ' ')}
+                      </span>
+                    )}
+                    {client.client_status && client.client_status !== 'active' && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 font-medium">
+                        {client.client_status.replace('_', ' ')}
+                      </span>
+                    )}
+                    {client.complexity_flag && (
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full font-medium
+                        ${complexityColor[client.complexity_flag] ?? 'bg-neutral-100 text-neutral-600'}`}
+                      >
+                        {client.complexity_flag} complexity
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1 text-xs text-neutral-500">
+                      <span className="text-xs">📄</span>
+                      {client.doc_count} document{client.doc_count !== 1 ? 's' : ''}
+                    </span>
+                    {client.granted_at && (
+                      <span className="text-xs text-neutral-400">
+                        Access granted {new Date(client.granted_at).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <span className="text-neutral-300 group-hover:text-[color:var(--mwm-navy)] transition-colors shrink-0">›</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {showDocHealth && clients.length > 0 && showFullDocHealth && (
+        <div className="mb-6 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+          <DocHealthTable rows={filtered} />
+        </div>
+      )}
+
+      {showDocHealth && clients.length > 0 && !showFullDocHealth && (
+        <div className="relative mb-6 overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+          <div className="pointer-events-none select-none opacity-40 blur-sm">
+            <DocHealthTable rows={clients.slice(0, 2)} />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <AttorneyUpgradePrompt feature="doc_dashboard" />
+          </div>
+        </div>
+      )}
+
+      <AttorneyValuePropBanner />
 
       {referralCode && eventReferralUrls && (() => {
         const emailCopy = `Subject: Estate planning resource for [life event] clients
@@ -474,96 +587,6 @@ Attorney ref: ${referralCode}`
           </div>
         )
       })()}
-
-      {clients.length > 0 && (
-        <div className="relative mb-6">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">🔍</span>
-          <input
-            type="text"
-            placeholder="Search by name, email, or state..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-neutral-200 rounded-lg text-sm
-                       focus:outline-none focus:ring-2 focus:ring-[color:var(--mwm-navy)] focus:border-transparent bg-white"
-          />
-        </div>
-      )}
-
-      {clients.length === 0 && (
-        <div className="text-center py-16 bg-white rounded-xl border border-neutral-200">
-          <span className="mx-auto text-4xl mb-3 block text-center">👤</span>
-          <p className="text-neutral-500 font-medium">No clients yet</p>
-          <p className="text-neutral-400 text-sm mt-1">
-            Send an intake request or share your referral links to get clients started.
-          </p>
-        </div>
-      )}
-
-      {clients.length > 0 && filtered.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-xl border border-neutral-200">
-          <p className="text-neutral-500">No clients match your search.</p>
-        </div>
-      )}
-
-      <div className="space-y-3">
-        {filtered.map((client) => (
-          <Link
-            key={client.connection_id}
-            href={`/attorney/clients/${client.household_id}`}
-            className="block bg-white border border-neutral-200 rounded-xl p-5
-                       hover:border-[color:var(--mwm-navy)]/30 hover:shadow-sm transition-all group"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-start gap-4">
-                <div className="h-10 w-10 rounded-full bg-[var(--mwm-gold-pale)] flex items-center
-                                justify-center text-[color:var(--mwm-navy)] font-semibold text-sm shrink-0">
-                  {client.full_name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-medium text-neutral-900">{client.full_name}</p>
-                  <p className="text-sm text-neutral-400">{client.email}</p>
-                  <div className="flex items-center gap-3 mt-2 flex-wrap">
-                    {client.state && (
-                      <span className="flex items-center gap-1 text-xs text-neutral-500">
-                        <span className="text-xs">📍</span>
-                        {client.state}
-                      </span>
-                    )}
-                    {client.matter_stage && client.matter_stage !== 'intake' && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--mwm-gold-pale)] text-[color:var(--mwm-navy)] font-medium capitalize">
-                        {client.matter_stage.replace('_', ' ')}
-                      </span>
-                    )}
-                    {client.client_status && client.client_status !== 'active' && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 font-medium">
-                        {client.client_status.replace('_', ' ')}
-                      </span>
-                    )}
-                    {client.complexity_flag && (
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-medium
-                        ${complexityColor[client.complexity_flag] ?? 'bg-neutral-100 text-neutral-600'}`}
-                      >
-                        {client.complexity_flag} complexity
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1 text-xs text-neutral-500">
-                      <span className="text-xs">📄</span>
-                      {client.doc_count} document{client.doc_count !== 1 ? 's' : ''}
-                    </span>
-                    {client.granted_at && (
-                      <span className="text-xs text-neutral-400">
-                        Access granted {new Date(client.granted_at).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <span className="text-neutral-300 group-hover:text-[color:var(--mwm-navy)] transition-colors shrink-0">›</span>
-            </div>
-          </Link>
-        ))}
-      </div>
     </div>
   )
 }

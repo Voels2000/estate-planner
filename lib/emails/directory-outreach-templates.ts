@@ -42,7 +42,7 @@ export function buildAttorneyDirectoryOutreachEmail(fields: {
   const paragraphs = [
     `Hi ${fields.firstName},`,
     `We've listed ${fields.firmName} on My Wealth Maps, a Washington estate-planning platform designed to connect attorneys with households working through their estate plans — trust funding, WA estate tax exposure, beneficiary coordination.`,
-    `Once a client connects, you'll see modeled estate tax exposure, plan completeness, and document gaps in their matter workspace — as they share their household data.`,
+    `A complex estate matter runs $7,500–$15,000+, and it's rarely the last one. Marriage, a business sale, a new grandchild, an inherited account — each triggers document updates most clients never think to schedule. Once a client connects, My Wealth Maps flags it when their situation changes, so you're back in front of them instead of waiting for them to remember.`,
     `Claiming your listing takes about five minutes and your first connected client is free, so you can see the platform before deciding if it's worth paying for. After that, it's pay-per-connection — no seats, no annual contract, no minimum. You pay only for clients actually connected to your firm.`,
     `This link logs you in automatically — no password to set up.`,
     `We built your listing from public directory information. If ${fields.firmName} isn't the right contact, just reply and let us know who is.`,

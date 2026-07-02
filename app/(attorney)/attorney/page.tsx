@@ -5,8 +5,11 @@ import { buildAllAttorneyEventReferralUrls } from '@/lib/events/referral'
 import { resolveAttorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
 import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { countDocumentsOnFile, summarizeMissingDocs } from '@/lib/attorney/clientDocHealth'
+import { countDocumentsOnFile, countOpenDocumentGaps, summarizeMissingDocs } from '@/lib/attorney/clientDocHealth'
 import { loadRosterNetWorthByOwner } from '@/lib/roster/rosterNetWorth'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import { attorneyConnectedHouseholds } from '@/lib/billing/connectedHouseholdCount'
+import { buildAttorneyConnectionBillingSummary } from '@/lib/billing/attorneyConnectionBillingSummary'
 
 type AttorneyClientRow = {
   id: string
@@ -34,6 +37,22 @@ type OwnerProfileRow = {
   id: string
   full_name: string | null
   email: string | null
+}
+
+function resolveClientDisplayName(
+  owner: OwnerProfileRow | undefined,
+  household: AttorneyHouseholdRow | undefined,
+): string {
+  const profileName = owner?.full_name?.trim()
+  if (profileName) return profileName
+  const personName = [household?.person1_first_name, household?.person1_last_name]
+    .filter(Boolean)
+    .join(' ')
+    .trim()
+  if (personName) return personName
+  const householdName = household?.name?.trim()
+  if (householdName) return householdName
+  return 'Unknown Client'
 }
 
 type LegalDocumentCountRow = {
@@ -140,10 +159,13 @@ export default async function AttorneyDashboardPage() {
   const ownerProfileRows = (ownerProfiles ?? []) as OwnerProfileRow[]
   const docCountRows = (docCounts ?? []) as LegalDocumentCountRow[]
 
+  let documentGapsTotal = 0
+
   const clientCards = visibleClients.map((client) => {
     const household = householdRows.find((h) => h.id === client.client_id)
     const owner = ownerProfileRows.find((p) => p.id === household?.owner_id)
     const clientDocs = docCountRows.filter((d) => d.household_id === client.client_id)
+    documentGapsTotal += countOpenDocumentGaps(clientDocs)
     const docHealth = countDocumentsOnFile(clientDocs)
     const ownerId = household?.owner_id
     const rosterNetWorth = ownerId ? (netWorthMap[ownerId] ?? 0) : 0
@@ -153,7 +175,7 @@ export default async function AttorneyDashboardPage() {
       household_id: client.client_id,
       granted_at: client.granted_at,
       advisor_pdf_access: client.advisor_pdf_access === true,
-      full_name: owner?.full_name ?? 'Unknown Client',
+      full_name: resolveClientDisplayName(owner, household),
       email: owner?.email ?? '',
       household_name: household?.name ?? '',
       state: household?.state_primary ?? '',
@@ -169,6 +191,24 @@ export default async function AttorneyDashboardPage() {
     }
   })
 
+  const connectionBillingEnabled = isConnectionBillingEnabled()
+  let connectionBillingSummary = null
+  if (connectionBillingEnabled && attorneyListing) {
+    const admin = createAdminClient()
+    const connectedCount = await attorneyConnectedHouseholds(admin, attorneyListing.id)
+    const { data: listingBilling } = await admin
+      .from('attorney_listings')
+      .select('client_limit, billing_floor, reset_count')
+      .eq('id', attorneyListing.id)
+      .single()
+    connectionBillingSummary = buildAttorneyConnectionBillingSummary({
+      connectedCount,
+      clientLimit: listingBilling?.client_limit,
+      billingFloor: listingBilling?.billing_floor,
+      resetCount: listingBilling?.reset_count,
+    })
+  }
+
   return (
     <AttorneyDashboardClient
       attorneyName={profile?.full_name ?? 'Attorney'}
@@ -179,6 +219,9 @@ export default async function AttorneyDashboardPage() {
       attorneyTier={profile?.attorney_tier ?? 0}
       clientLimit={tierFeatures.maxClients}
       totalClients={clientRows.length}
+      connectionBillingEnabled={connectionBillingEnabled}
+      connectionBillingSummary={connectionBillingSummary}
+      documentGapsTotal={documentGapsTotal}
     />
   )
 }
