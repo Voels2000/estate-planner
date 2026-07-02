@@ -18,6 +18,7 @@ export const EMAIL_CONFIRM_EXEMPT_PATH_PREFIXES = [
   '/waitlist',
   '/mfa-enroll',
   '/mfa-challenge',
+  '/security-step-up',
   '/settings/security',
 ] as const
 

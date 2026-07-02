@@ -9,14 +9,17 @@ test.describe('Attorney portal', () => {
     ).toBeVisible({ timeout: 30_000 })
   })
 
-  test('event referral URLs use aref when listing has code', async ({ page }) => {
-    await page.goto('/attorney')
-    const arefLink = page.locator('a[href*="/event/"][href*="aref="]').first()
-    if (!(await arefLink.isVisible().catch(() => false))) {
-      test.skip(true, 'No attorney event referral links — seed test-attorney.ts')
+  test('marketing tab shows life-event link kit with aref URLs', async ({ page }) => {
+    await page.goto('/attorney/marketing')
+    await expect(page).not.toHaveURL(/\/login/)
+    await expect(page.getByRole('heading', { name: 'Marketing' })).toBeVisible({ timeout: 30_000 })
+
+    const copyButton = page.getByRole('button', { name: /^Copy$/ }).first()
+    if (!(await copyButton.isVisible().catch(() => false))) {
+      test.skip(true, 'No referral code on test attorney listing')
       return
     }
-    const href = await arefLink.getAttribute('href')
-    expect(href).toMatch(/aref=/)
+    await expect(page.getByText(/Life-event link kit/i)).toBeVisible()
+    await expect(page.locator('text=?aref=')).toBeVisible()
   })
 })

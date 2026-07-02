@@ -18,8 +18,13 @@ function adminThatMustNotBeQueried(): SupabaseClient {
   } as unknown as SupabaseClient
 }
 
-/** Minimal mock matching firmConnectedHouseholds query shape. */
-function mockFirmConnectedHouseholdsAdmin(clientIds: string[]): SupabaseClient {
+/** Minimal mock matching firmConnectedHouseholds + sticky-floor ratchet. */
+function mockFirmConnectedHouseholdsAdmin(
+  clientIds: string[],
+  opts?: { billing_floor?: number; firmId?: string },
+): SupabaseClient {
+  const state = { billing_floor: opts?.billing_floor ?? 0 }
+  const firmId = opts?.firmId ?? 'firm-a'
   return {
     from: (table: string) => {
       if (table === 'profiles') {
@@ -29,6 +34,26 @@ function mockFirmConnectedHouseholdsAdmin(clientIds: string[]): SupabaseClient {
               data: [{ id: 'advisor-1' }],
               error: null,
             }),
+          }),
+        }
+      }
+      if (table === 'firms') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({
+                data: { billing_floor: state.billing_floor },
+                error: null,
+              }),
+            }),
+          }),
+          update: (payload: { billing_floor?: number }) => ({
+            eq: async () => {
+              if (typeof payload.billing_floor === 'number') {
+                state.billing_floor = payload.billing_floor
+              }
+              return { error: null }
+            },
           }),
         }
       }
@@ -101,10 +126,20 @@ test.describe('resolveFirmStripeBillableQuantity', () => {
     ).resolves.toBe(5)
   })
 
-  test('flag on ignores seat_count and uses connected household count', async () => {
+  test('flag on uses sticky-floor billable quantity (not raw seat_count)', async () => {
     process.env.CONNECTION_BILLING_ENABLED = 'true'
-    const admin = mockFirmConnectedHouseholdsAdmin(['client-a', 'client-b'])
+    const admin = mockFirmConnectedHouseholdsAdmin(['client-a', 'client-b'], {
+      billing_floor: 0,
+    })
     expect(await resolveFirmStripeBillableQuantity(admin, 'firm-a', 99)).toBe(2)
+  })
+
+  test('flag on pins billable at floor when connected drops below prepaid floor', async () => {
+    process.env.CONNECTION_BILLING_ENABLED = 'true'
+    const admin = mockFirmConnectedHouseholdsAdmin(['client-a'], {
+      billing_floor: 5,
+    })
+    expect(await resolveFirmStripeBillableQuantity(admin, 'firm-a', 99)).toBe(5)
   })
 })
 

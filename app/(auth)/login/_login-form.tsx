@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { resolveAdvisorPostLoginPath } from '@/lib/access/advisorBillingGate'
 import { getSignupHref } from '@/lib/waitlist-mode'
 import { consumeIntakeToken, storeIntakeToken } from '@/lib/attorney/intakeTokenSession'
+import { consumerAttorneyBillingBlockedMessage } from '@/lib/billing/attorneyConnectBillingGateClient'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { formControlClass, formLabelClass } from '@/components/ui/form'
@@ -13,7 +14,13 @@ import { formControlClass, formLabelClass } from '@/components/ui/form'
 export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirectTo') ?? '/dashboard'
+  const redirectTo =
+    searchParams.get('redirectTo') ?? searchParams.get('next') ?? '/dashboard'
+  const claimRedirect = redirectTo.startsWith('/claim/') ? redirectTo : null
+  const professionalReturn =
+    claimRedirect != null ||
+    redirectTo.startsWith('/attorney') ||
+    redirectTo.startsWith('/advisor')
   const emailFromQuery = searchParams.get('email') ?? ''
   const intakeTokenParam = searchParams.get('intake_token')?.trim() ?? ''
   const signupHref = getSignupHref()
@@ -26,11 +33,16 @@ export function LoginForm() {
     const token = consumeIntakeToken() ?? intakeTokenParam
     if (!token) return
     try {
-      await fetch('/api/consumer/complete-intake-request', {
+      const res = await fetch('/api/consumer/complete-intake-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ intakeToken: token }),
       })
+      const data = await res.json().catch(() => ({}))
+      const blocked = consumerAttorneyBillingBlockedMessage(data, res.status)
+      if (blocked) {
+        sessionStorage.setItem('mwm:attorney_billing_blocked', blocked)
+      }
     } catch {
       // non-fatal — profile completion may still be needed
     }
@@ -39,7 +51,40 @@ export function LoginForm() {
   const [email, setEmail] = useState(emailFromQuery)
   const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [magicLinkLoading, setMagicLinkLoading] = useState(false)
+  const [magicLinkSent, setMagicLinkSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  async function handleMagicLink(e: FormEvent) {
+    e.preventDefault()
+    const trimmed = email.trim()
+    if (!trimmed) {
+      setError('Enter your email address.')
+      return
+    }
+
+    setError(null)
+    setMagicLinkLoading(true)
+    try {
+      const supabase = createClient()
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: trimmed,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
+        },
+      })
+      if (otpError) {
+        setError(otpError.message)
+        return
+      }
+      setMagicLinkSent(true)
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setMagicLinkLoading(false)
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -79,7 +124,7 @@ export function LoginForm() {
       }
 
       if (profile?.role === 'attorney') {
-        router.push('/attorney')
+        router.push(claimRedirect ?? '/attorney')
         router.refresh()
       } else if (profile?.role === 'advisor') {
         let firmSubscriptionStatus: string | null = null
@@ -95,7 +140,7 @@ export function LoginForm() {
         router.push(
           resolveAdvisorPostLoginPath({
             redirectTo,
-            claimRedirect: null,
+            claimRedirect,
             firmRole: profile.firm_role,
             profileSubscriptionStatus: profile.subscription_status,
             firmSubscriptionStatus,
@@ -120,8 +165,41 @@ export function LoginForm() {
           Sign in to your account
         </h1>
         <p className="mt-2 text-sm text-neutral-600 dark:text-zinc-400">
-          Welcome back. Enter your details to access your My Wealth Maps account.
+          {professionalReturn
+            ? 'Sign in with a password, or email yourself a link — no password required.'
+            : 'Welcome back. Enter your details to access your My Wealth Maps account.'}
         </p>
+
+        {magicLinkSent ? (
+          <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-900 dark:border-green-900 dark:bg-green-950/40 dark:text-green-100">
+            <p className="font-medium">Check your email</p>
+            <p className="mt-1">
+              We sent a sign-in link to <span className="font-medium">{email}</span>. Click it to
+              continue{claimRedirect ? ' and finish your claim' : ''}.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleMagicLink} className="mt-6 space-y-3 rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-zinc-700 dark:bg-zinc-900/50">
+            <div>
+              <p className="text-sm font-medium text-neutral-900 dark:text-zinc-100">
+                Email me a sign-in link
+              </p>
+              {professionalReturn && (
+                <p className="mt-1 text-xs text-neutral-600 dark:text-zinc-400">
+                  For advisors and attorneys who haven&apos;t set a password yet.
+                </p>
+              )}
+            </div>
+            <Button
+              type="submit"
+              variant="outline"
+              disabled={magicLinkLoading || !email.trim()}
+              className="w-full rounded-lg py-2.5 text-sm font-medium"
+            >
+              {magicLinkLoading ? 'Sending…' : 'Email me a link'}
+            </Button>
+          </form>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           <div className="space-y-1.5">
@@ -139,6 +217,10 @@ export function LoginForm() {
               placeholder="you@example.com"
             />
           </div>
+
+          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-zinc-500">
+            Or sign in with password
+          </p>
 
           <div className="space-y-1.5">
             <label htmlFor="password" className={formLabelClass}>

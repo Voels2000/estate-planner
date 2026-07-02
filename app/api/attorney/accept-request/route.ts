@@ -2,16 +2,27 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { applyAttorneyConnectionBilling } from '@/lib/attorney/applyAttorneyConnectionBilling'
 import { getAccessContext } from '@/lib/access/getAccessContext'
+import { requireActionStepUpApi } from '@/lib/security/requireActionStepUpApi'
 import { NextResponse } from 'next/server'
 import { resend } from '@/lib/resend'
 import { getAppUrl } from '@/lib/app-url'
 import {
   countActiveAttorneyClients,
-  FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
+  getAttorneyClientCapMessage,
   getAttorneyListingIdForUser,
   isAtAttorneyClientCap,
 } from '@/lib/attorney/attorneyClientCap'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import {
+  afterAttorneyConnectionBillingConnect,
+  assessAttorneyConnectionBillingGate,
+} from '@/lib/billing/attorneyConnectionBilling'
 import { EMAIL_FROM } from '@/lib/email/config'
+import {
+  assertProfessionalCredentialForConnect,
+  type ConnectCredentialInput,
+} from '@/lib/directory/professionalCredential'
+import { assertAttorneyPracticeProfileForPaidConsumerConnect } from '@/lib/attorney/attorneyListingPracticeProfile'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +36,9 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createClient()
+  const stepUpBlock = await requireActionStepUpApi(supabase)
+  if (stepUpBlock) return stepUpBlock
+
   const admin = createAdminClient()
 
   const { data: profile } = await supabase
@@ -39,11 +53,16 @@ export async function POST(request: Request) {
   }
 
   const activeCount = await countActiveAttorneyClients(admin, attorneyListingId)
-  if (isAtAttorneyClientCap(profile?.attorney_tier ?? 0, activeCount)) {
-    return NextResponse.json({ error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE }, { status: 403 })
+  if (!isConnectionBillingEnabled()) {
+    if (isAtAttorneyClientCap(profile?.attorney_tier ?? 0, activeCount)) {
+      return NextResponse.json({ error: getAttorneyClientCapMessage() }, { status: 403 })
+    }
   }
 
-  const { attorney_client_id } = await request.json()
+  const body = (await request.json()) as {
+    attorney_client_id?: string
+  } & ConnectCredentialInput
+  const { attorney_client_id, bar_number, bar_state, crd_number: _crd } = body
   if (!attorney_client_id) {
     return NextResponse.json({ error: 'attorney_client_id is required' }, { status: 400 })
   }
@@ -58,6 +77,43 @@ export async function POST(request: Request) {
 
   if (fetchError || !row) {
     return NextResponse.json({ error: 'Request not found' }, { status: 404 })
+  }
+
+  if (isConnectionBillingEnabled()) {
+    const gate = await assessAttorneyConnectionBillingGate(admin, attorneyListingId, row.client_id)
+    if (!gate.ok) return gate.response
+  }
+
+  const { data: consumerProfileForGate } = await admin
+    .from('households')
+    .select('owner_id')
+    .eq('id', row.client_id)
+    .maybeSingle()
+
+  const { data: consumerSubscription } = consumerProfileForGate?.owner_id
+    ? await admin
+        .from('profiles')
+        .select('subscription_status')
+        .eq('id', consumerProfileForGate.owner_id)
+        .maybeSingle()
+    : { data: null }
+
+  const practiceGate = await assertAttorneyPracticeProfileForPaidConsumerConnect(admin, {
+    listingId: attorneyListingId,
+    householdId: row.client_id,
+    consumerSubscriptionStatus: consumerSubscription?.subscription_status,
+  })
+  if (!practiceGate.ok) {
+    return NextResponse.json(practiceGate.body, { status: practiceGate.status })
+  }
+
+  const credentialGate = await assertProfessionalCredentialForConnect(admin, {
+    type: 'attorney',
+    listingId: attorneyListingId,
+    input: { bar_number, bar_state },
+  })
+  if (!credentialGate.ok) {
+    return NextResponse.json(credentialGate.body, { status: credentialGate.status })
   }
 
   const { data: household } = await admin
@@ -101,6 +157,10 @@ export async function POST(request: Request) {
       clientId: household.owner_id,
       attorneyClientRowId: row.id,
     })
+  }
+
+  if (isConnectionBillingEnabled()) {
+    await afterAttorneyConnectionBillingConnect(admin, attorneyListingId)
   }
 
   await admin

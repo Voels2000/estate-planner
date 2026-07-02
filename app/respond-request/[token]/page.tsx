@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ensureAttorneyActivationDripStep1 } from '@/lib/attorney/sendAttorneyDripStep'
 import { ensureAttorneyClientRequestRow } from '@/lib/attorney/createAttorneyClientRequest'
+import { verifyClaimIdentity } from '@/lib/directory/claimIdentity'
 
 interface Props {
   params: Promise<{ token: string }>
@@ -22,26 +23,37 @@ export default async function ClaimListingPage({ params }: Props) {
     .maybeSingle()
 
   if (!connectionRequest || connectionRequest.status !== 'pending') {
-    redirect('/claim-listing/invalid')
+    redirect('/respond-request/invalid')
   }
 
   const isAttorney = connectionRequest.listing_type === 'attorney'
 
   // 2. Fetch the listing from the correct table
   const listingTable = isAttorney ? 'attorney_listings' : 'advisor_directory'
-  const { data: listing } = await admin
-    .from(listingTable)
-    .select('id, firm_name, email, profile_id')
-    .eq('id', connectionRequest.listing_id)
-    .single()
+  const { data: attorneyListing } = isAttorney
+    ? await admin
+        .from('attorney_listings')
+        .select('id, firm_name, email, profile_id, website')
+        .eq('id', connectionRequest.listing_id)
+        .single()
+    : { data: null }
+  const { data: advisorListing } = !isAttorney
+    ? await admin
+        .from('advisor_directory')
+        .select('id, firm_name, email, profile_id, website, adv_link')
+        .eq('id', connectionRequest.listing_id)
+        .single()
+    : { data: null }
 
-  if (!listing) redirect('/claim-listing/invalid')
+  const listing = isAttorney ? attorneyListing : advisorListing
+
+  if (!listing) redirect('/respond-request/invalid')
 
   // 3. Check if user is logged in
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/login?claim=${token}&next=/claim-listing/${token}`)
+    redirect(`/login?claim=${token}&next=/respond-request/${token}`)
   }
 
   // 4. Verify the logged-in user has an appropriate role
@@ -57,11 +69,26 @@ export default async function ClaimListingPage({ params }: Props) {
 
   // 5. If listing is already claimed by someone else — block
   if (listing.profile_id && listing.profile_id !== user.id) {
-    redirect('/claim-listing/already-claimed')
+    redirect('/respond-request/already-claimed')
   }
 
-  // 6. Claim the listing — link profile_id in the correct table
+  // 6. Claim the listing — link profile_id only after identity matches listing email/domain
   if (!listing.profile_id) {
+    if (!user.email) {
+      redirect('/respond-request/identity-mismatch')
+    }
+    const listingWebsite = isAttorney
+      ? String(listing.website ?? '')
+      : String(
+          listing.website ??
+            ('adv_link' in listing ? listing.adv_link : null) ??
+            '',
+        )
+    const identity = verifyClaimIdentity(user.email, listing.email, listingWebsite)
+    if (!identity.ok) {
+      redirect('/respond-request/identity-mismatch')
+    }
+
     await admin
       .from(listingTable)
       .update({ profile_id: user.id })
@@ -113,14 +140,14 @@ export default async function ClaimListingPage({ params }: Props) {
         p_cooldown: '1 hour',
       })
     } catch (err) {
-      console.error('claim-listing notification error:', err)
+      console.error('respond-request notification error:', err)
     }
   })()
 
   // 10. Redirect to the appropriate portal
   if (isAttorney) {
     void ensureAttorneyActivationDripStep1(admin, user.id).catch((err) => {
-      console.error('attorney drip step 1 (claim-listing):', err instanceof Error ? err.message : err)
+      console.error('attorney drip step 1 (respond-request):', err instanceof Error ? err.message : err)
     })
   }
 

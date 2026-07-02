@@ -21,6 +21,31 @@ export const CONSUMER_TIERS = {
 
 export type ConsumerTierKey = keyof typeof CONSUMER_TIERS
 
+/** Annual totals — 10× monthly (~2 months free); same rhythm as prior $290 / $790 / $1490. */
+export const CONSUMER_ANNUAL_TOTALS: Record<ConsumerTierKey, number> = {
+  financial: CONSUMER_TIERS.financial * 10,
+  retirement: CONSUMER_TIERS.retirement * 10,
+  estate: CONSUMER_TIERS.estate * 10,
+}
+
+export const CONSUMER_PLAN_TIER_TO_KEY: Record<1 | 2 | 3, ConsumerTierKey> = {
+  1: 'financial',
+  2: 'retirement',
+  3: 'estate',
+}
+
+export function consumerMonthlyPriceForPlanTier(tier: 1 | 2 | 3): number {
+  return CONSUMER_TIERS[CONSUMER_PLAN_TIER_TO_KEY[tier]]
+}
+
+export function consumerAnnualTotalForPlanTier(tier: 1 | 2 | 3): number {
+  return CONSUMER_ANNUAL_TOTALS[CONSUMER_PLAN_TIER_TO_KEY[tier]]
+}
+
+export function consumerAnnualMonthlyEquivalentForPlanTier(tier: 1 | 2 | 3): number {
+  return Math.round(consumerAnnualTotalForPlanTier(tier) / 12)
+}
+
 export const ADVISOR_BANDS: ConnectionBand[] = [
   { lo: 1, hi: 10, rate: 120, label: 'Starter' },
   { lo: 11, hi: 50, rate: 102, label: 'Growth' },

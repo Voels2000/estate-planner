@@ -8,7 +8,53 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-# Last updated: 2026-06-26 (profiles advisor SELECT status gate)
+# Last updated: 2026-07-02 (attorney settings practice profile — application layer)
+
+---
+
+## Attorney settings practice profile (2026-07-02)
+
+**Migration:** none (uses existing `attorney_listings` columns from `20260803120000_attorney_listings_credentials.sql`).
+
+**Change (application):**
+
+- `/attorney/settings` — Practice & credentials section; `PATCH /api/attorney/listing` persists `bar_number`, `credentials`, normalized `specializations` / `states_licensed` / `fee_structure`.
+- Paid-consumer connect gate — `lib/attorney/attorneyListingPracticeProfile.ts`; first free client exempt; consumer direct paid subscription always gated.
+- Unit tests: `tests/unit/attorneyListingPracticeProfile.spec.ts`.
+
+**Spec:** [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md).
+
+---
+
+## Attorney connection sticky-floor columns (2026-07-01)
+
+**Migration:** `20260801120000_attorney_connection_sticky_floor.sql`
+
+**Change:** `attorney_listings.client_limit`, `attorney_listings.billing_floor`, `attorney_listings.reset_count`. Listing-scoped connection billing (Phase 6). App: free-client offset (#200), raise-connect parity (#201), gate on connect APIs.
+
+---
+
+## Firm connection sticky-floor columns (2026-07-01)
+
+**Migration:** `20260731120000_firm_connection_sticky_floor.sql`
+
+**Change:** `firms.client_limit`, `firms.billing_floor` (default 0), `firms.reset_count` (default 0). Backfill active firms: `client_limit` + `billing_floor` = max(seat_count, connected households). Spec: `docs/CONNECTION_BILLING_STICKY_FLOOR_FIX.md`. **UI:** `/billing` rebuild #196 on staging.
+
+---
+
+## Public function `search_path` hardening (2026-06-29)
+
+**Migration:** `20260729120000_public_function_search_path.sql`
+
+**Change:** `ALTER FUNCTION … SET search_path = public` on **28** legacy `public` RPCs/triggers flagged by Supabase Security Advisor (`function_search_path_mutable`). Idempotent. Skips `public.moddatetime()` (owned by `supabase_admin` / extension — not alterable via pooler).
+
+**Apply staging:** `bash scripts/apply-migration.sh staging supabase/migrations/20260729120000_public_function_search_path.sql` — applied 2026-06-29.
+
+**Apply production:** same path with `production` — applied 2026-06-29.
+
+**Shipped:** [#184](https://github.com/Voels2000/estate-planner/pull/184) → staging · [#185](https://github.com/Voels2000/estate-planner/pull/185) → main `91ef60e5`.
+
+**Follow-up (optional):** drop typo orphan `generate_estate_recommendaions` if confirmed unused.
 
 ---
 

@@ -6,6 +6,11 @@ import {
   type ConsumerStripePriceEnvVar,
   type OneTimeStripePriceEnvVar,
 } from '@/lib/env/manifest'
+import {
+  CONSUMER_ANNUAL_TOTALS,
+  CONSUMER_TIERS,
+  consumerAnnualMonthlyEquivalentForPlanTier,
+} from '@/lib/pricing/connectionPricing'
 
 export type BillingPeriod = 'monthly' | 'annual'
 export type PlanTier = 1 | 2 | 3
@@ -37,7 +42,7 @@ const PRICE_META: Record<string, PriceMeta> = {
     legacyFallback: LEGACY_MONTHLY_PRICE_IDS.financial,
     tier: 1,
     period: 'monthly',
-    monthlyEquivalent: 29,
+    monthlyEquivalent: CONSUMER_TIERS.financial,
     annualTotal: 0,
     trialDays: 0,
   },
@@ -46,8 +51,8 @@ const PRICE_META: Record<string, PriceMeta> = {
     legacyFallback: '',
     tier: 1,
     period: 'annual',
-    monthlyEquivalent: 24,
-    annualTotal: 290,
+    monthlyEquivalent: consumerAnnualMonthlyEquivalentForPlanTier(1),
+    annualTotal: CONSUMER_ANNUAL_TOTALS.financial,
     trialDays: 0,
   },
   retirement_monthly: {
@@ -55,7 +60,7 @@ const PRICE_META: Record<string, PriceMeta> = {
     legacyFallback: LEGACY_MONTHLY_PRICE_IDS.retirement,
     tier: 2,
     period: 'monthly',
-    monthlyEquivalent: 79,
+    monthlyEquivalent: CONSUMER_TIERS.retirement,
     annualTotal: 0,
     trialDays: 0,
   },
@@ -64,8 +69,8 @@ const PRICE_META: Record<string, PriceMeta> = {
     legacyFallback: '',
     tier: 2,
     period: 'annual',
-    monthlyEquivalent: 66,
-    annualTotal: 790,
+    monthlyEquivalent: consumerAnnualMonthlyEquivalentForPlanTier(2),
+    annualTotal: CONSUMER_ANNUAL_TOTALS.retirement,
     trialDays: 0,
   },
   estate_monthly: {
@@ -73,7 +78,7 @@ const PRICE_META: Record<string, PriceMeta> = {
     legacyFallback: LEGACY_MONTHLY_PRICE_IDS.estate,
     tier: 3,
     period: 'monthly',
-    monthlyEquivalent: 149,
+    monthlyEquivalent: CONSUMER_TIERS.estate,
     annualTotal: 0,
     trialDays: 0,
   },
@@ -82,8 +87,8 @@ const PRICE_META: Record<string, PriceMeta> = {
     legacyFallback: '',
     tier: 3,
     period: 'annual',
-    monthlyEquivalent: 124,
-    annualTotal: 1490,
+    monthlyEquivalent: consumerAnnualMonthlyEquivalentForPlanTier(3),
+    annualTotal: CONSUMER_ANNUAL_TOTALS.estate,
     trialDays: 0,
   },
 }

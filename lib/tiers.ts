@@ -1,6 +1,7 @@
 // lib/tiers.ts
 // Single source of truth for consumer tier definitions and feature gating
 import { buildPriceIdToTierMap, getPriceConfig } from '@/lib/billing/stripePrices'
+import { consumerMonthlyPriceForPlanTier } from '@/lib/pricing/connectionPricing'
 
 export const CONSUMER_PRICE_IDS = {
   get starter() {
@@ -21,9 +22,9 @@ export const TIER_NAMES = {
   3: 'Estate',
 } as const
 export const TIER_PRICES = {
-  1: 29,
-  2: 79,
-  3: 149,
+  1: consumerMonthlyPriceForPlanTier(1),
+  2: consumerMonthlyPriceForPlanTier(2),
+  3: consumerMonthlyPriceForPlanTier(3),
 } as const
 export const TIER_DESCRIPTIONS = {
   1: 'Get organized and see your full financial picture',

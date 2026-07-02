@@ -31,6 +31,8 @@ Use this checklist in every PR/commit routine when architecture, data flow, or t
 | [BILLING_DISCLOSURES_CHECKLIST.md](./BILLING_DISCLOSURES_CHECKLIST.md) | Auto-renewal + cancel disclosures (code complete; manual Stripe verify) |
 | [BILLING_PAGE_COPY_SPEC.md](./BILLING_PAGE_COPY_SPEC.md) | Consumer `/billing` matrix copy and layout |
 | [TIER_RESTRUCTURE_PR_SEQUENCE.md](./TIER_RESTRUCTURE_PR_SEQUENCE.md) | **Tier 0 + app-trial enforcement** — 8-PR sequence after billing page presentation |
+| [CONNECTION_BILLING_STICKY_FLOOR_FIX.md](./CONNECTION_BILLING_STICKY_FLOOR_FIX.md) · [BILLING_PAGE_CONNECTION_REBUILD.md](./BILLING_PAGE_CONNECTION_REBUILD.md) | **Advisor connection billing** — B2 model + `/billing` UI spec |
+| [ATTORNEY_RAISE_CONNECT_PARITY_FIX.md](./ATTORNEY_RAISE_CONNECT_PARITY_FIX.md) · [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md) · [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) · [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) | Attorney billing parity + settings practice profile + claim v2 |
 | [COMPLIANCE_CALENDAR.md](./COMPLIANCE_CALENDAR.md) | Privacy deletion SOP, C-6/C-7 automated checks, privacy request + appeals SOP |
 | [legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md](./legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md) | Counsel Q1–Q10 → conditional engineering scope |
 
@@ -92,6 +94,24 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - Compliance / data deletion (privacy rights, webhook schedule, admin deletion UI) → `docs/COMPLIANCE_CALENDAR.md`, `docs/MASTER_ARCHITECTURE.md`, `docs/DATABASE_SCHEMA_REFERENCE.md`, `docs/legal/PRIVACY_COUNSEL_ENGINEERING_MATRIX.md`
 - Test data for staging smoke (Playwright + manual) → `npm run seed:e2e` ([E2E_TEST_RESET.md](./E2E_TEST_RESET.md)); document in [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md)
 
+## Pre-flip master doc sync (2026-06-29)
+
+- [x] **PRE_FLIP_REMAINING** — items 3–8 attested; PITR propagating; search_path #184/#185; quick commands incl. `check:pitr-prod`
+- [x] **PRE_FLIP_CHECKLIST** — reconcile stale ⬜ (webhook, CRON staging, verify-env, signup re-walk, billing edges, search_path)
+- [x] **LAUNCH.md** — scoreboard 52/55; B3b promotion attests; last updated
+- [x] **NEXT_SESSION.md** — current handoff + paste block
+- [x] **SCHEMA_CHANGELOG** — `20260729120000_public_function_search_path.sql`
+- [x] **DECISION_LOG** — search_path batch decision
+- [x] **Webhook alerting remainder** — closed via #34 track (all billing write paths capture failures)
+- [x] **Launch / GTM planning set** — `LAUNCH_START_HERE.md` · `GTM_FIRST_WAVE.md` · `POST_LAUNCH_REMAINING.md` · `MHMD_COMPLIANCE_DELTA.md` (cross-links from LAUNCH / NEXT_SESSION / PRE_FLIP_REMAINING)
+
+## Pre-flaunch verify scripts items 5–8 (2026-06-29) — shipped
+
+- [x] `npm run check:email-dns` · `verify:drip-cron` · `verify:billing-edges` · `verify:security-hygiene` · `verify:item-8`
+- [x] MC MFJ + WA Regime D unit gates · edge fn deploy attested
+- [x] **Docs** — PRE_FLIP_REMAINING · PRE_FLIP_CHECKLIST · LAUNCH · NEXT_SESSION
+- [x] **Shipped:** [#182](https://github.com/Voels2000/estate-planner/pull/182) → staging · [#183](https://github.com/Voels2000/estate-planner/pull/183) → main
+
 ## Pre-launch hardening batch (PRs #28–#39) — on staging (2026-06-18)
 
 - [x] **#28** — fail-closed cron/internal auth; admin MFA routes; introduce + email-capture hardening
@@ -99,7 +119,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **#30** — cross-household isolation in `e2e-smoke` CI (20 tests)
 - [x] **#31** — doc reconciliation (Sentry/CI status markers)
 - [x] **#32** — Stripe webhook failure → Sentry
-- [ ] **Webhook alerting remainder** — `captureStripeWebhookSupabaseFailure` on `subscription.deleted` / `subscription.updated` / `invoice.payment_failed` silent writes (pre-flip Tier 1 #4)
+- [x] **Webhook alerting remainder** — all billing Supabase write paths use `captureStripeWebhookSupabaseFailure` (2026-06-29)
 - [ ] **Post-launch:** cron drip correctness — **pre-flip PR** `fix/cron-drip-correctness` (launch-critical; was logged deferred)
 - [x] **#34** — `trackTierUpgrade` only after successful profile write
 - [x] **#35** — `requireRecomputeAuth` fail-closed (`RECOMPUTE_SECRET`); unit + E2E auth specs
@@ -108,7 +128,7 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] **#38** — [NOTIFICATION_HYGIENE.md](./NOTIFICATION_HYGIENE.md)
 - [x] **#39** — [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md) + master-doc cross-links (15 files)
 - [x] **Signup confirmation email (PR #111)** — branded Resend + prefetch-safe `/auth/confirm` button POST (`generateLink` + `sendSignupConfirmationEmail`); supersedes `/auth/v1/resend`-only fix. Docs: MASTER_ARCHITECTURE, DECISION_LOG, WAITLIST_HARDENING_SPEC, STAGING_PROJECT_RUNBOOK, PRE_FLIP_CHECKLIST, CONSUMER_FLOWS, SCHEMA_CHANGELOG.
-- [ ] **Prod promote** — open staging→`main` PR; follow promotion runbook (secrets, migration verify, passive post-deploy smoke)
+- [x] **Prod promote** — #181 · #183 · #185 staging→main on green CI (2026-06-29)
 
 ## Consumer billing capability matrix (2026-06-24) — shipped
 
@@ -592,6 +612,23 @@ See [MASTER_ARCHITECTURE.md § Supabase Data API access](./MASTER_ARCHITECTURE.m
 - [x] Attorney drip — `sendAttorneyDripStep`, cron steps 2–3, migration `20260529130000_attorney_drip_columns.sql`
 - [ ] **Stripe products** — manual creation in Dashboard
 - [x] Master docs sync (this pass)
+
+## Attorney connection billing (#199–#201, 2026-07-01) — on staging
+
+- [x] Listing-scoped `client_limit` / `billing_floor` + gate APIs (#199)
+- [x] Free-client offset + gate UI on live connect surfaces (#200)
+- [x] Raise-connect parity — shared `ConnectionLimitRaiseForm` (#201)
+- [x] Claim v2 discovery — [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md)
+- [ ] Manual staging walk step 4
+- [x] Master docs: NEXT_SESSION · ROADMAP · DECISION_LOG · MASTER_ARCHITECTURE · E2E_TEST_RESET · ATTORNEY_RAISE_CONNECT_PARITY_FIX
+
+## Claim-flow v2 (2026-07-01) — spec locked
+
+- [x] Discovery audit — [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md)
+- [x] Complete spec — [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) (magic link entry, action-gated MFA, billing seed at claim)
+- [ ] **`/claim-listing/` identity-skip** — confirm-then-fix (P0 security, before rename)
+- [ ] Implementation PR sequence (Part 6 build plan; PR #1 magic-link claim)
+- [x] Master docs: NEXT_SESSION · ROADMAP · DECISION_LOG · UPDATE_CHECKLIST
 
 ## Projections empty state fix (2026-05-29) — shipped
 
@@ -1327,6 +1364,19 @@ Use this for **all** merges. For **tax/engine** changes, also run the extra spot
 - [ ] Education links: `EDUCATION_LINK_BASE_URL=https://mywealthmaps.com node scripts/validate-education-links.mjs` (run against production after any education content changes)
 - [ ] After import deploy: tier 2+ smoke on `/import` (see [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEASE_SMOKE_TEST.md) I.1–I.4) — **passed production 2026-06-02**
 - [ ] After F-2 deploy: `npm run test:import:unit` and `npm run test:import:api` (F-2 migration on test DB)
+
+## Sprint — Advisor connection billing staging track ✅ #195–#196 on staging · #197–#198 open (2026-07-01)
+
+- [x] Migration `20260731120000_firm_connection_sticky_floor.sql` — `client_limit`, `billing_floor`, `reset_count`
+- [x] Core lib — `firmConnectionStickyFloor.ts`, `syncFirmQuantity.ts`, `firmConnectionBilling.ts` gate
+- [x] Raise/reset APIs — `/api/firm/connection-limit/raise|reset`
+- [x] `/billing` connection UI (#196) — `_firm-connection-billing-client.tsx`, `firmConnectionBillingSummary.ts`
+- [x] Staging live proof — sticky floor, 402 gate, raise round-trip (`e2e-advisor-empty`)
+- [x] Reset script — `npm run reset:staging-e2e-advisor-empty-billing`
+- [~] #197 — advisor checkout redirect + `walk-staging-invite-accepts.ts` (PR open)
+- [~] #198 — invite-send capacity warning + ack modal (PR open)
+- [ ] `/advisor/firm` connection copy rebuild (legacy seat summary when flag ON)
+- [x] Master docs synced — NEXT_SESSION · DECISION_LOG · MASTER_ARCHITECTURE · ROADMAP · DEPLOYMENT · SCHEMA · E2E_TEST_RESET · CONNECTION_BILLING · BILLING_PAGE spec
 
 ## Commit hygiene
 

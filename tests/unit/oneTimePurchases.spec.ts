@@ -73,7 +73,7 @@ test.describe('fulfillPlanAndExportPurchase', () => {
       userId: 'user-1',
       sessionId: 'cs_test_1',
       paymentIntentId: 'pi_1',
-      amountCents: 149000,
+      amountCents: 79000,
       currency: 'usd',
       refundAck: sampleRefundAck,
     })
@@ -92,7 +92,7 @@ test.describe('fulfillPlanAndExportPurchase', () => {
       userId: 'user-1',
       sessionId: 'cs_test_missing_ack',
       paymentIntentId: 'pi_1',
-      amountCents: 149000,
+      amountCents: 79000,
       currency: 'usd',
       refundAck: { at: '', version: '' },
     })
@@ -110,7 +110,7 @@ test.describe('fulfillPlanAndExportPurchase', () => {
       userId: 'user-1',
       sessionId: 'cs_test_1',
       paymentIntentId: 'pi_1',
-      amountCents: 149000,
+      amountCents: 79000,
       currency: 'usd',
       refundAck: sampleRefundAck,
     })
@@ -128,7 +128,7 @@ test.describe('applyPlanAndExportCreditIfEligible', () => {
     const admin = mockAdmin({
       purchase: {
         id: 'otp-1',
-        amount_cents: 149000,
+        amount_cents: 79000,
         currency: 'usd',
         credit_applied_at: null,
       },

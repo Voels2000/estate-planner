@@ -1,6 +1,4 @@
 import { createServerClient } from '@supabase/ssr'
-import { shouldRedirectAdvisorToBilling } from '@/lib/access/advisorBillingGate'
-import { isAdvisorIdentity } from '@/lib/access/isAdvisorIdentity'
 import { NextResponse, type NextRequest } from 'next/server'
 import {
   isLocalDevHost,
@@ -21,6 +19,12 @@ import {
   profileRequiresPrivilegedMfa,
   userHasVerifiedTotpFactor,
 } from '@/lib/security/privilegedMfaPolicy'
+import {
+  actionStepUpSatisfied,
+  isActionGatedStepUpEnabled,
+  isActionStepUpFlowPath,
+  pathnameRequiresActionStepUp,
+} from '@/lib/security/actionGatedStepUp'
 import {
   getRequestCountry,
   isBlockedNonUsCountry,
@@ -61,9 +65,11 @@ const PUBLIC_PATHS = [
   '/pricing',
   '/find-advisor',
   '/find-attorney',
+  '/claim/',
   '/event',
   '/mfa-enroll',
   '/mfa-challenge',
+  '/security-step-up',
   '/settings/security',
   '/education',
   '/learn',
@@ -229,6 +235,7 @@ export async function middleware(request: NextRequest) {
   const isMfaFlowPath =
     pathname === '/mfa-challenge' ||
     pathname === '/mfa-enroll' ||
+    isActionStepUpFlowPath(pathname) ||
     pathname.startsWith('/auth/')
   if (
     aal?.nextLevel === 'aal2' &&
@@ -242,39 +249,18 @@ export async function middleware(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, subscription_status, firm_role, is_superuser, is_admin, firm_id')
+    .select('role, is_superuser, is_admin')
     .eq('id', user.id)
     .single()
 
   const isSuperuser = profile?.is_superuser === true || profile?.is_admin === true
-  const isAdvisor = isAdvisorIdentity(profile?.role)
-  const isFirmMember = profile?.firm_role === 'member'
 
-  let firmSubscriptionStatus: string | null = null
-  if (profile?.firm_id) {
-    const { data: firm } = await supabase
-      .from('firms')
-      .select('subscription_status')
-      .eq('id', profile.firm_id)
-      .maybeSingle()
-    firmSubscriptionStatus = firm?.subscription_status ?? null
-  }
+  // Advisor portal shell is always reachable (Path A). Client connect/invite billing
+  // is enforced in API handlers via getAdvisorClientCapacity — not middleware.
 
+  // Mandatory MFA for privileged roles — legacy blanket enroll (skip when action-gated mode)
   if (
-    isAdvisor &&
-    shouldRedirectAdvisorToBilling({
-      isSuperuser,
-      isFirmMember,
-      profileSubscriptionStatus: profile?.subscription_status,
-      firmSubscriptionStatus,
-      pathname,
-    })
-  ) {
-    return redirectPreservingCookies(request, '/billing', supabaseResponse)
-  }
-
-  // Mandatory MFA for privileged roles — off until go-live (REQUIRE_PRIVILEGED_MFA=true)
-  if (
+    !isActionGatedStepUpEnabled() &&
     isPrivilegedMfaEnforcementEnabled() &&
     profile &&
     profileRequiresPrivilegedMfa(profile) &&
@@ -288,6 +274,25 @@ export async function middleware(request: NextRequest) {
       return redirectPreservingCookies(
         request,
         enrollUrl.pathname + enrollUrl.search,
+        supabaseResponse,
+      )
+    }
+  }
+
+  // Claim v2 — password + MFA step-up before sensitive data (attorney client / advisor own plan)
+  if (
+    isActionGatedStepUpEnabled() &&
+    profile &&
+    pathnameRequiresActionStepUp(pathname, profile) &&
+    !isActionStepUpFlowPath(pathname)
+  ) {
+    const stepUpOk = await actionStepUpSatisfied(supabase, user)
+    if (!stepUpOk) {
+      const stepUpUrl = new URL('/security-step-up', request.url)
+      stepUpUrl.searchParams.set('redirectTo', pathname)
+      return redirectPreservingCookies(
+        request,
+        stepUpUrl.pathname + stepUpUrl.search,
         supabaseResponse,
       )
     }

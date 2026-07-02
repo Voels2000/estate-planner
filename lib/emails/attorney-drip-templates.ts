@@ -1,4 +1,6 @@
 import { getAppUrl } from '@/lib/app-url'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import { connectionAttorneyPricingBlurb } from '@/lib/copy/connectionBillingMarketing'
 import { ATTORNEY_PLAN_LIMITS } from '@/lib/tiers'
 
 export type AttorneyDripEmail = {
@@ -18,6 +20,32 @@ export type AttorneyDripSequence = {
 /** Attorney onboarding drip — profiles.attorney_drip_step_*_sent_at; unsubscribe → attorney_drip_unsubscribed_at. */
 export function getAttorneyDripSequence(): AttorneyDripSequence {
   const baseUrl = getAppUrl()
+  const connectionBilling = isConnectionBillingEnabled()
+
+  const email3: AttorneyDripEmail = connectionBilling
+    ? {
+        subject: 'Ready to connect more clients?',
+        headline: 'Pay only for clients you actually connect',
+        body: `<p>Your first connected client is free. When you're ready to grow, billing is per connected household — no seats, no annual contract, no minimum.</p>
+<p>${connectionAttorneyPricingBlurb()}</p>
+<p>Raise your client limit anytime from Billing when you need more capacity.</p>`,
+        cta: 'Open attorney billing',
+        ctaUrl: `${baseUrl}/attorney/billing`,
+      }
+    : {
+        subject: 'Managing more than 3 clients? Here\'s your next step.',
+        headline: 'Scale your estate practice with My Wealth Maps',
+        body: `<p>The free plan gives you access to your first 3 client households. If you're ready to use My Wealth Maps across your practice, Attorney Starter includes:</p>
+<ul>
+  <li><strong>Up to 15 active client households</strong></li>
+  <li><strong>Intake summary PDF export</strong> — formatted client summaries you can bill against</li>
+  <li><strong>Multi-client document dashboard</strong> — see which clients are missing DPOAs, Wills, or other documents at a glance</li>
+  <li><strong>Document status tracking</strong> — Draft, Pending Execution, Executed, Recorded</li>
+</ul>
+<p>Attorney Starter is $${ATTORNEY_PLAN_LIMITS.starter.priceMonthly}/month. No contracts — cancel anytime.</p>`,
+        cta: 'View attorney plans',
+        ctaUrl: `${baseUrl}/attorney/billing`,
+      }
 
   return {
     email1: {
@@ -48,20 +76,7 @@ export function getAttorneyDripSequence(): AttorneyDripSequence {
       cta: "See your clients' intake summaries",
       ctaUrl: `${baseUrl}/attorney`,
     },
-    email3: {
-      subject: 'Managing more than 3 clients? Here\'s your next step.',
-      headline: 'Scale your estate practice with My Wealth Maps',
-      body: `<p>The free plan gives you access to your first 3 client households. If you're ready to use My Wealth Maps across your practice, Attorney Starter includes:</p>
-<ul>
-  <li><strong>Up to 15 active client households</strong></li>
-  <li><strong>Intake summary PDF export</strong> — formatted client summaries you can bill against</li>
-  <li><strong>Multi-client document dashboard</strong> — see which clients are missing DPOAs, Wills, or other documents at a glance</li>
-  <li><strong>Document status tracking</strong> — Draft, Pending Execution, Executed, Recorded</li>
-</ul>
-<p>Attorney Starter is $${ATTORNEY_PLAN_LIMITS.starter.priceMonthly}/month. No contracts — cancel anytime.</p>`,
-      cta: 'View attorney plans',
-      ctaUrl: `${baseUrl}/attorney/billing`,
-    },
+    email3,
   }
 }
 

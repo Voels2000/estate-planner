@@ -14,7 +14,14 @@ import { formControlClass, formLabelClass } from '@/components/ui/form'
 import { FILING_STATUSES, type ProfileFormInitial } from '@/lib/profile/profileFormInitial'
 import { isMinimumViableProfile, type ProfileGateHousehold, type ProfileGateMissingField } from '@/lib/estate/profileGate'
 import { consumeIntakeToken } from '@/lib/attorney/intakeTokenSession'
+import { consumerAttorneyBillingBlockedMessage } from '@/lib/billing/attorneyConnectBillingGateClient'
+import {
+  ConsumerAttorneyBillingBlockedAlert,
+  useConsumerAttorneyBillingGateMessage,
+} from '@/components/attorney/AttorneyConnectionBillingGateModals'
 import { ProfileRequiredBanner } from './_profile-required-banner'
+
+const ATTORNEY_BILLING_BLOCKED_KEY = 'mwm:attorney_billing_blocked'
 
 const FILING_STATUS_LABELS: Record<string, string> = {
   single: 'Single',
@@ -50,6 +57,7 @@ export function ProfileClient({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const { blocked, blockedMessage, applyGateResponse } = useConsumerAttorneyBillingGateMessage()
   const [success, setSuccess] = useState(false)
   const [householdId, setHouseholdId] = useState<string | null>(initial.householdId)
 
@@ -179,11 +187,21 @@ export function ProfileClient({
 
       const intakeToken = consumeIntakeToken()
       if (intakeToken) {
-        void fetch('/api/consumer/complete-intake-request', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ intakeToken }),
-        }).catch(() => {})
+        try {
+          const intakeRes = await fetch('/api/consumer/complete-intake-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ intakeToken }),
+          })
+          const intakeData = await intakeRes.json().catch(() => ({}))
+          const blockedMsg = consumerAttorneyBillingBlockedMessage(intakeData, intakeRes.status)
+          if (blockedMsg) {
+            sessionStorage.setItem(ATTORNEY_BILLING_BLOCKED_KEY, blockedMsg)
+            applyGateResponse(intakeData, intakeRes.status)
+          }
+        } catch {
+          // non-fatal — profile save succeeded
+        }
       }
 
       setSuccess(true)
@@ -540,6 +558,9 @@ export function ProfileClient({
               {validationErrors.map((e) => <li key={e}>{e}</li>)}
             </ul>
           </div>
+        )}
+        {blocked && blockedMessage && (
+          <ConsumerAttorneyBillingBlockedAlert message={blockedMessage} />
         )}
         {error && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">{error}</p>

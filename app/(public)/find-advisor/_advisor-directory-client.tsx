@@ -22,6 +22,7 @@ type Advisor = {
   serves_remote: boolean
   languages: string[]
   is_verified: boolean
+  credential_verified_at: string | null
 }
 
 type Props = {
@@ -284,7 +285,7 @@ export function PublicAdvisorDirectoryClient({
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column',
                       gap: 4, alignItems: 'flex-end', flexShrink: 0 }}>
-                      {advisor.is_verified && (
+                      {advisor.credential_verified_at && (
                         <span style={{ background: '#f0fdf4', color: '#16a34a',
                           fontSize: 11, fontWeight: 600, padding: '3px 8px',
                           borderRadius: 20, border: '1px solid #bbf7d0',

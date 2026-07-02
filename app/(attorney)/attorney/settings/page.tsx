@@ -12,7 +12,7 @@ export default async function AttorneySettingsPage() {
   const { data: listing } = await supabase
     .from('attorney_listings')
     .select(
-      'id, firm_name, contact_name, email, phone, website, city, state, bio, fee_structure',
+      'id, firm_name, contact_name, email, phone, website, city, state, bar_number, bio, fee_structure, specializations, states_licensed, credentials',
     )
     .eq('profile_id', user.id)
     .maybeSingle()

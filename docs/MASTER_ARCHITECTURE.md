@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # My Wealth Maps — Full Architecture Reference
-# Last updated: 2026-06-18 (pre-launch hardening batch PRs #28–#39 on staging; promotion runbook; staging Vercel §10 closed)
+# Last updated: 2026-07-02 (attorney settings practice profile + paid-consumer gate)
 
 ---
 
@@ -838,7 +838,11 @@ See [CONSUMER_RELEASE_SMOKE_TEST.md § Test data setup](./CONSUMER_RELEASE_SMOKE
 - Single source of truth for Stripe price IDs: `lib/billing/stripePrices.ts` (`getPriceConfig(tier, period)`, `getTierFromPriceId(priceId)`). Env vars: `STRIPE_PRICE_FINANCIAL_MONTHLY`, `_ANNUAL`, etc.
 - Plan display shared by billing and public pricing: `lib/billing/consumerPlanCatalog.ts` (names/descriptions from `TIER_NAMES` / `TIER_DESCRIPTIONS` in `lib/tiers.ts`).
 - **Public `/pricing` (2026-06-10):** Consumer plans via `_pricing-consumer-plans.tsx`; advisor **per-seat** Starter/Growth/Enterprise from `ADVISOR_FIRM_SEAT_RATES` + `ADVISOR_FIRM_SEAT_RANGES`; attorney Free/Starter/Growth from `ATTORNEY_PLAN_LIMITS`. Advisor checkout: `_pricing-advisor-checkout.tsx` → `POST /api/stripe/firm-checkout`.
-- **Advisor firm billing (2026-06-10, hardened 2026-06-09):** `POST /api/stripe/firm-checkout` — `{ priceId, seatCount }`; tier-band validation (Starter ≤10, Growth ≤50, Enterprise ≤250); **Enterprise self-serve returns 403**. Webhook `checkout.session.completed` writes `firms.seat_count` from Stripe subscription quantity; `subscription.updated` syncs quantity + tier; `payment_failed` → firm + owner `past_due`. **Seat count increments on firm join (accept), not invite send** (`lib/firm/firmRoster.ts`). Invite/remove syncs Stripe via `syncFirmStripeQuantity`. Firm owner pre-subscribe seat picker + Starter-at-cap upgrade CTA on `/billing` (`_firm-billing-client.tsx`).
+- **Advisor firm billing (2026-06-10 legacy; connection model 2026-07-01):** Two paths selected by `isConnectionBillingEnabled()`.
+
+  **Flag OFF (legacy per-seat):** `POST /api/stripe/firm-checkout` — `{ priceId, seatCount }`; tier-band validation (Starter ≤10, Growth ≤50, Enterprise ≤250); **Enterprise self-serve returns 403**. Webhook writes `firms.seat_count`; `subscription.updated` syncs quantity + tier. **Seat count increments on firm join (accept), not invite send** (`lib/firm/firmRoster.ts`). Invite/remove syncs Stripe via `syncFirmStripeQuantity`. Firm owner seat picker + Starter-at-cap upgrade CTA on `/billing` (`_firm-billing-client.tsx`).
+
+  **Flag ON (connection billing — B2 sticky-floor, #195):** Checkout seeds `client_limit` + `billing_floor` (not `seat_count`). Billable qty = `max(connected, billing_floor)` via `lib/billing/firmConnectionStickyFloor.ts` + `lib/stripe/syncFirmQuantity.ts`. Connect ratchets floor up; disconnect holds floor; exceed `client_limit` → 402 `limit_raise_required` (gate, no auto-bill). Raise/reset: `POST /api/firm/connection-limit/raise|reset` with re-band preview. **`/billing` flag-ON UI (#196):** `_firm-connection-billing-client.tsx` + `lib/billing/firmConnectionBillingSummary.ts`. **Invite send (#198):** soft warn at capacity (`invite_warn` + ack); **accept:** hard gate unchanged. **Canonical gate:** `evaluateFirmConnectionBillingGate()` in `lib/billing/firmConnectionBilling.ts`. Specs: [CONNECTION_BILLING_STICKY_FLOOR_FIX.md](./CONNECTION_BILLING_STICKY_FLOOR_FIX.md) · [BILLING_PAGE_CONNECTION_REBUILD.md](./BILLING_PAGE_CONNECTION_REBUILD.md). **Known gap:** `/advisor/firm` (`_firm-client.tsx`) still renders legacy per-seat summary when flag ON.
 - **Consumer checkout (2026-06-10, hardened 2026-06-23):** `POST /api/stripe/checkout` is **consumer-only** — rejects non-consumer price IDs; **`getOrigin(req)`** for return URLs (not `NEXT_PUBLIC_APP_URL`); **`processConsumerCheckout`** retrieves `stripe_customer_id` and self-heals stale/deleted ids (`resource_missing`) before create; blocks checkout when subscription is `active` / `trialing` / `canceling`. Advisor/attorney use firm-checkout and attorney-checkout respectively.
 - **Attorney checkout (2026-06-09):** `POST /api/stripe/attorney-checkout` — `is_attorney || role === 'attorney'` guard; reuses `stripe_customer_id`; 503 if `TODO_*` price placeholders.
 - **Cancel / portal (2026-06-09):** `POST /api/stripe/cancel` — consumer profile sub only; firm owners directed to portal. `POST /api/stripe/portal` — firm customer when firm sub is active/trialing/canceling/past_due.
@@ -1167,7 +1171,7 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 | Advisor portal | `advisor/layout.tsx` | Advisor top bar + tabs | Navy, UX-2 |
 | Advisor tools | `(advisor-tools)/layout.tsx` | Prospect Mode bar | Minimal strip; canonical route `/prospect` |
 | Prospect PDF | `GET /api/advisor/prospect-pdf` | — | Print-to-PDF HTML; query params mirror prospect form |
-| Attorney portal | `(attorney)/layout.tsx` + nav | Clients · Requests · Billing · Firm settings | Collaboration v2: matter workflow, doc requests, firm notes; consumer data read-only |
+| Attorney portal | `(attorney)/layout.tsx` + nav | Clients · Requests · Billing · **Marketing** · Firm settings | Collaboration v2 + practice profile; **Marketing** = life-event referral kit + click stats |
 | Public marketing | `(public)/layout.tsx` | `PublicNav` + footer | `/pricing`, `/assess`, `/`, etc. |
 | Education | `(public)/education/layout.tsx` | Education sticky header | Overrides `PublicNav` on `/education/*` |
 | Learn guides | `(public)/learn/layout.tsx` | Learn sticky header | Overrides `PublicNav` on `/learn/*`; WA estate tax SEO |
@@ -1354,6 +1358,30 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 
 ---
 
+## Attorney connection billing (2026-07-01, flag `CONNECTION_BILLING_ENABLED`)
+
+**Staging:** PRs #199–#201 on `staging`. Attorney model mirrors advisor sticky-floor with **one free client** (`billable = max(0, connected − 1)`).
+
+| Surface | Implementation |
+|---------|----------------|
+| Gate eval | `lib/billing/attorneyConnectionBilling.ts` — `listing_unclaimed`, `attorney_checkout_required`, `limit_raise_required` |
+| Billable math | `lib/billing/attorneyBillableQuantity.ts` |
+| Listing billing | `attorney_listings.client_limit`, `billing_floor`, `reset_count` |
+| `/attorney/billing` | `_attorney-connection-billing-client.tsx` + shared `ConnectionLimitRaiseForm` |
+| Attorney accept gate UI | `components/attorney/AttorneyConnectionBillingGateModals.tsx` — checkout + inline raise on `/attorney/requests` |
+| Consumer blocked copy | `lib/billing/attorneyConnectBillingGateClient.ts` — invite accept, intake-complete, dashboard banner |
+| Connect APIs gated | `accept-request`, `accept-invite`, `grant-access`, `completeIntakeRequest` |
+| Practice profile gate | `lib/attorney/attorneyListingPracticeProfile.ts` — 403 `practice_profile_required` when billable connect or consumer paid sub; bar # gate unchanged (`lib/directory/professionalCredential.ts`) |
+| Firm settings UI | `app/(attorney)/attorney/settings/` — practice checklist + credential tags + fee enum |
+| Raise API | `POST /api/attorney/connection-limit/raise` — DB limit only; Stripe sync on connect |
+| Spec / proof | [ATTORNEY_RAISE_CONNECT_PARITY_FIX.md](./ATTORNEY_RAISE_CONNECT_PARITY_FIX.md) |
+
+**Gate UI note:** `grant-access` returns 402 with structured body but has **no production consumer UI** (find-attorney uses `request-connect`); hook `useConsumerGrantAttorneyAccess` ready for programmatic/E2E callers.
+
+**Claim seam:** Directory claim (`POST /api/directory/claim`) sets `profile_id` + `is_attorney` only — does **not** seed `client_limit`/`billing_floor`. See [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md).
+
+---
+
 ## Known Transitional Exceptions
 
 1. Legacy `lib/calculations/projection.ts` has been removed; canonical projection path is `projection-complete.ts`.
@@ -1479,6 +1507,8 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Referral:** `lib/events/referral.ts` — advisor `?ref=` (`buildAllEventReferralUrls`) and attorney `?aref=` (`buildAllAttorneyEventReferralUrls`) for all **24** slugs; `_referral-tracker.tsx` → `POST /api/referral/track` with `type: 'advisor' | 'attorney'`; `referral_clicks` with `listing_type`.
 - **Advisor portal:** `app/advisor/page.tsx` + `_advisor-client.tsx` **Newsletter Kit** (`?ref=`).
 - **Attorney portal (Sprint 8 + v2 2026-06-07):** `app/(attorney)/attorney/` — dashboard, **`/requests`** (connection inbox), **`/settings`** (listing edit), **`/billing`**; client detail — matter workflow, firm notes, document requests, read-only estate view + document vault upload. APIs: **`/api/attorney/matter`**, **`notes`**, **`document-requests`**, **`listing`**. Consumer **`/my-attorney`** shows pending doc requests. Migration **`20260702120000`**. Newsletter kit (`?aref=`) unchanged.
+- **Attorney settings — practice & credentials (2026-07-02):** `/attorney/settings` — firm/contact + practice section; paid-consumer connect gate. Spec: [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md).
+- **Attorney Marketing tab (2026-07-02):** `/attorney/marketing` — life-event link kit relocated from Clients tab; `GET /api/attorney/referral-stats` aggregates `referral_clicks` (all-time, 30-day, per-slug/category); usage tips from `lib/events/content.ts`. Spec: [ATTORNEY_MARKETING_TAB_SPEC.md](./ATTORNEY_MARKETING_TAB_SPEC.md).
 - **Plan readiness:** `PlanStatusCard` on advisor client Overview (`estate_health_scores.score` + gap counts; replaces `PlanReadinessCard`).
 - **Gap workflow (UX-2):** `advisor_gap_statuses` + `GapStatusSelector` on Overview gap rows; `GET`/`PATCH` `/api/advisor/gap-status`.
 - **GST ledger (pre-launch RLS):** `SLATILITPanel` → `POST /api/advisor/gst-entry` (advisor–client link check + service-role insert); not direct browser `gst_ledger` writes.

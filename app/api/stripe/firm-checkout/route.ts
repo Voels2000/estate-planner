@@ -104,8 +104,9 @@ export async function POST(req: Request) {
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: quantityResult.quantity }],
       billing_address_collection: 'required',
-      success_url: `${siteUrl}/billing?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/billing`,
+      allow_promotion_codes: true,
+      success_url: `${siteUrl}/advisor?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/advisor`,
       metadata: { firm_id: firmId },
       subscription_data: { metadata: { firm_id: firmId } },
     })

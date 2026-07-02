@@ -12,6 +12,8 @@ import { buildAllEventReferralUrls } from '@/lib/events/referral'
 import { loadRosterNetWorthByOwner } from '@/lib/roster/rosterNetWorth'
 import { loadRosterAlertCounts } from '@/lib/advisor/rosterAlertCounts'
 import { resolveAdvisorFirmCheckoutPriceId } from '@/lib/billing/resolveAdvisorFirmCheckout'
+import { isActiveAdvisorFirmSubscription } from '@/lib/access/advisorBillingGate'
+import { ADVISOR_BANDS, ADVISOR_FLOOR, rateForCount } from '@/lib/pricing/connectionPricing'
 import AdvisorClient from './_advisor-client-wrapper'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ensureAdvisorActivationDripStep1 } from '@/lib/advisor/sendAdvisorDripStep'
@@ -103,6 +105,19 @@ export default async function AdvisorPage() {
   const firmTierKey = access.firm_tier ?? 'starter'
   const firmCheckoutPriceId = resolveAdvisorFirmCheckoutPriceId(firmTierKey)
 
+  let firmSubscriptionStatus: string | null = null
+  if (firm_id) {
+    const { data: firmRow } = await supabase
+      .from('firms')
+      .select('subscription_status')
+      .eq('id', firm_id)
+      .maybeSingle()
+    firmSubscriptionStatus = firmRow?.subscription_status ?? null
+  }
+
+  const firmBillingActive = isActiveAdvisorFirmSubscription(firmSubscriptionStatus)
+  const connectionRatePerHousehold = rateForCount(1, ADVISOR_BANDS, ADVISOR_FLOOR)
+
   return (
     <AdvisorClient
       advisorClients={(advisorClients ?? []).map(ac => ({
@@ -115,6 +130,8 @@ export default async function AdvisorPage() {
       firm_name={firm_name}
       firm_id={firm_id}
       firmCheckoutPriceId={firmCheckoutPriceId || null}
+      firmBillingActive={firmBillingActive}
+      connectionRatePerHousehold={connectionRatePerHousehold}
       healthScoreMap={healthScoreMap}
       householdIdMap={ownerToHousehold}
       alertCountsMap={alertCountsMap}

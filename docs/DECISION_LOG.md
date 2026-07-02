@@ -1,6 +1,105 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-06-26 (Profiles advisor SELECT status gate)
+# Last updated: 2026-07-02 (attorney settings practice profile gate)
+
+---
+
+## Attorney practice profile — paid-consumer gate only (2026-07-02)
+
+**Problem.** Directory seed gives sparse `specializations` / `credentials`; attorneys need a self-serve way to complete their listing. Connection billing allows one free client — tightening the bar-number gate to all connects would block 16/18 seeded attorneys without WSBA parse.
+
+**Decision.**
+
+- **`/attorney/settings`** — Practice & credentials section: optional save for `bar_number`; checklist `specializations[]`, multi-select `states_licensed[]`, tag `credentials[]`, enum `fee_structure` (`hourly` | `flat-fee` | `hybrid` | `consultation`).
+- **Paid-consumer gate** (all four practice fields required): 2nd+ billable household when `CONNECTION_BILLING_ENABLED`, or consumer with direct paid subscription (`active` / `trialing` / `canceling`). **First free client stays ungated.**
+- **Bar number** — still optional for settings; existing first-connect WSBA modal (`assertProfessionalCredentialForConnect`) unchanged.
+- **Directory-quality gap (backlog):** attorney who never exceeds one free client can keep empty profile live in `/find-attorney` — address with dismissible settings nudge later, not a hard gate.
+
+**Reasoning.** Billing integrity without blocking wave-1 outreach listings; directory completeness is a separate, lighter follow-up.
+
+**Shipped:** PR → `staging` (attorney settings practice profile). Spec: [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md).
+
+---
+
+## Invite-send capacity warning — soft gate (2026-07-01)
+
+**Problem.** At `client_limit`, `POST /api/advisor/invite` used legacy `getAdvisorClientCapacity()` (paid firms → `atLimit: false`), so advisors could send invites with no warning while accept correctly returned 402 `limit_raise_required`.
+
+**Decision.** Canonical rule lives in `evaluateFirmConnectionBillingGate()` (`lib/billing/firmConnectionBilling.ts`). **Send path:** `assessFirmConnectionBillingGateForInvite()` — first attempt at capacity → 402 with `invite_warn: true`; retry with `acknowledge_at_capacity: true` allows send. **Accept path:** hard block unchanged (no ack). **UI:** advisor portal "At client capacity" modal with "Send invitation anyway" (#198). **Flag-off:** invite path unchanged (legacy capacity helper).
+
+**Reasoning.** Accept must stay hard-gated (consumer handoff is irreversible). Send is reversible — warn + explicit ack beats silent over-capacity invites.
+
+**Shipped:** PR [#198](https://github.com/Voels2000/estate-planner/pull/198) → `staging` (pending merge at doc time).
+
+---
+
+## Advisor portal redirects after firm checkout (2026-07-01)
+
+**Decision.** Firm checkout success → `/advisor?checkout=success` (not `/dashboard`). Billing nav for advisor identity → "← Advisor portal". Consumers unchanged on `/dashboard`.
+
+**Reasoning.** Advisors who subscribe from `/billing` should land in their workspace, not the consumer dashboard.
+
+**Shipped:** PR [#197](https://github.com/Voels2000/estate-planner/pull/197) → `staging` (pending merge at doc time). Includes `scripts/walk-staging-invite-accepts.ts` for staging invite-accept walks.
+
+---
+
+## `/billing` connection-billing UI rebuild (#196, 2026-07-01)
+
+**Problem.** Flag ON but `/billing` still rendered legacy `$149/advisor` seat math over connection-model data; raise/reset APIs existed but no in-product forms (limit-reached modal dead-ended).
+
+**Decision.** Flag-gated rebuild per `docs/BILLING_PAGE_CONNECTION_REBUILD.md`: `firmConnectionBillingSummary.ts` (pure display helpers) + `_firm-connection-billing-client.tsx` — connected/capacity/floor/band rate/est monthly; raise + reset forms with re-band preview; `/billing?action=raise` deep-link; member read-only. Flag-off branch byte-identical to legacy `_firm-billing-client.tsx`.
+
+**Attestation:** Al / 2026-07-01 — staging manual walk on `e2e-advisor-empty@mywealthmaps.test`; unit tests `tests/unit/firmConnectionBillingSummary.spec.ts` (11 passing).
+
+**Remaining gap:** `/advisor/firm` (`_firm-client.tsx`) still shows legacy per-seat copy — **not in #196 scope**; separate PR before real-advisor launch recommended.
+
+---
+
+## Connection billing B2 sticky-floor model (#195, 2026-07-01)
+
+**Problem.** Staging spine walk (#194) proved checkout + connect gates work, but `resolveFirmStripeBillableQuantity` (flag on) uses connected households only — ignores prepaid checkout quantity. Sync can **lower** Stripe qty below what the advisor purchased (e.g. checkout 5 → connect 1 → qty 1). Pure usage-metering; conflicts with purchase-ahead UX.
+
+**Decision.** Implement **B2 sticky-floor, gated ceiling** per `docs/CONNECTION_BILLING_STICKY_FLOOR_FIX.md`. Three new firm columns — `client_limit`, `billing_floor`, `reset_count` — **not** `seat_count`. Billable qty = `max(connected, billing_floor)`. **Load-bearing invariant:** sync may ratchet `billing_floor` **up** only; **only explicit reset** may lower it. Exceeding `client_limit` → 402 `limit_raise_required` (gate, no auto-bill). Self-serve reset: `new_limit >= connected_count`, re-band confirmation, max 2 resets then admin reset required.
+
+**Confirmed:**
+- `reset_count` clears **only on admin reset** (not per billing period).
+- Attorney parallel deferred to Phase 6 (same mechanics, listing-scoped).
+
+**Reasoning.** Usage-fair going up; no surprise bills (gate vs auto-bill); discount gaming closed by sticky floor + re-band on reset; reset valve capped at 2 without support.
+
+**`/billing` UI:** Shipped #196 (see entry above). Staging proof may use in-product forms or API.
+
+**Post-merge staging proof (flag on, in order):**
+1. **5-seat checkout → connect 1 → Stripe qty stays 5** (sticky floor end-to-end, not unit-only).
+2. **Gate + raise round-trip:** connect to limit → 6th returns 402 `limit_raise_required` (no row, no handoff) → raise limit → 6th connects, qty ratchets to 6.
+3. **Reset re-band live:** ratchet across band boundary, disconnect, bill holds → reset with preview → floor drops + rate re-bands up.
+4. **3rd reset blocked;** admin endpoint clears `reset_count`.
+
+Reset E2E fixture: `npx tsx scripts/reset-staging-e2e-advisor-empty-billing.ts` (with `.env.test.staging`).
+
+---
+
+## Staging-first branch policy (2026-07-01)
+
+**Problem.** Connection billing (#190–#193) and firm-checkout (#193) merged to **`main`** without landing on **`staging`**. Vercel staging env vars (`CONNECTION_BILLING_ENABLED`, connection price IDs) were set, but `estate-planner-staging` still deployed the #187 build — spine walk failed until `main` → `staging` promotion.
+
+**Decision.** Reinforce documented flow: **feature PRs → `staging` only**; **promotion PRs → `staging` → `main`** for production. Agents follow `.cursor/rules/staging-first.mdc`. `DEPLOYMENT.md` § Branch flow updated with explicit warning. **Enforcement:** CI check **`staging-first-gate`** (workflow + duplicate step in **`verify`** on PRs to `main`) rejects any head branch other than `staging`. Add **`staging-first-gate`** to ruleset **`main-no-direct-push`** required checks after the workflow is on `main` (via staging → main promotion). Prior rulesets only required CI passes — they did not restrict PR head branch, which allowed #190–#193 to merge feature branches directly to `main`.
+
+**Reasoning.** `staging` branch = staging Vercel deploy; `main` = production path. Env-only changes on Vercel do not ship code that never merged to `staging`.
+
+---
+
+## Public RPC `search_path` batch fix (2026-06-29)
+
+**Problem.** Supabase Security Advisor flagged ~29 legacy `public` functions without pinned `search_path` (`function_search_path_mutable`) — search-path hijacking risk on SECURITY DEFINER / unqualified references.
+
+**Decision.** Single idempotent migration `20260729120000_public_function_search_path.sql` — `ALTER FUNCTION … SET search_path = public` on 28 app-owned functions. Skip `public.moddatetime()` (Supabase extension owner `supabase_admin`; pooler cannot ALTER). Platform schemas (`auth`, `storage`, `realtime`, `extensions`) left untouched.
+
+**Apply order:** staging + prod DBs before/with doc record on main. Ledger via `apply-migration.sh`.
+
+**Verify:** Security Advisor rerun — `public` warnings ~29 → 1. No app behavior change expected.
+
+**Shipped:** #184 → staging · #185 → main.
 
 ---
 
@@ -3573,6 +3672,49 @@ Pass = at least one row with referral code matching a test signup.
 **Implication:** Branded resend for already-registered unconfirmed users stays on existing `/auth/confirm-email` Supabase resend (follow-up PR). Enable custom Resend SMTP on staging Supabase for non-signup auth emails.
 
 **Attestation:** Al / 2026-06-24 — staging Outlook prefetch test passed (`avoels@outlook.com` confirm flow).
+
+---
+
+### July 2026 — Claim-flow v2 auth model (LOCKED)
+
+**Decision:** Claim v2 uses **Supabase magic link for entry** (passwordless session at click — account created by link, not signup form). **Password + TOTP MFA step-up is action-gated** at first sensitive data touch (attorney: connect/view client; advisor: own plan data), atomic with the action. Claim itself is un-gated. Repeat return while un-secured = another magic link; login page must offer **"email me a link"** prominently.
+
+**Alternatives rejected:** Genuine account-less "approved" intermediate state (no `profile_id` until trial) — everything assumes auth user today; magic link collapses approval + session creation.
+
+**Implication:** Build plan in [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md). Explicit billing seed at claim (attorney `client_limit=1/floor=0`; advisor `bootstrapAdvisorFirm` at claim). **Verify scope of `/claim-listing/` identity-skip before rename** — see security entry below.
+
+---
+
+### July 2026 — `/claim-listing/` identity-skip (verify before rename)
+
+**Decision:** Treat `/claim-listing/` skipping `verifyClaimIdentity` as a **security item**, not a naming collision. The path is professional-facing (respond-to-consumer request-connect email). Today it sets `profile_id` on an unclaimed listing and creates `consumer_requested` rows with only **token possession + professional role** — no email match to `listing.email` (`app/claim-listing/[token]/page.tsx`).
+
+**Action:** **Confirm-then-fix ahead of v2 rename** — document what an unverified actor can reach; if sensitive, add `verifyClaimIdentity` (or equivalent) before any listing bind. Do not assume benign because the link was emailed to the listing address (forwarding/leak remains a threat model).
+
+**Scope of writes (for verification):** `profile_id` on listing; `consumer_requested` queue entry; `connection_requests` → `accepted`. Does not directly accept/connect client household data — but listing hijack on unclaimed rows is in scope.
+
+**Alternatives rejected:** Deferring identity fix until v2 rename-only PR.
+
+---
+
+### July 2026 — Attorney connection billing gate UI + raise-connect parity (#200, #201)
+
+**Decision:** Wire attorney connection billing gates on all **live** connect surfaces: attorney `accept-request` (checkout + raise modals); consumer `attorney-invite`, `intake-complete` (friendly blocked copy). Share `ConnectionLimitRaiseForm` for attorney raise parity with advisor. Stripe qty sync on **connect**, not on raise.
+
+**Gate UI coverage:**
+
+| API path | UI surface | Status |
+|----------|------------|--------|
+| `accept-request` | `/attorney/requests` | ✅ #200 + #201 inline raise |
+| `attorney-invite` | `/attorney-invite/[token]` | ✅ #200 |
+| `intake-complete` | profile save + login + dashboard banner | ✅ #200 |
+| `grant-access` | **No production UI** (hook exists; find-attorney uses request-connect) | API 402 only |
+
+**Reasoning:** Raw `attorney_checkout_required` strings were a launch blocker on connect paths. `grant-access` consumer UI was removed with legacy dashboard directory (2026); API retained for E2E/cross-role.
+
+**Implication:** Staging proof step 4 is requests-accept raise+connect. Claim v2 discovery: [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md).
+
+**Attestation:** Pending manual staging walk after #201 deploy.
 
 ---
 

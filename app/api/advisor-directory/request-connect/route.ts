@@ -91,7 +91,7 @@ export async function POST(request: Request) {
   // 8. Fire email + notifications (fire-and-forget)
   const consumerLabel = profile.full_name?.trim() || profile.email || 'A potential client'
   const appUrl = getAppUrl()
-  const claimUrl = `${appUrl}/claim-listing/${claimToken}`
+  const claimUrl = `${appUrl}/respond-request/${claimToken}`
 
   ;(async () => {
     try {

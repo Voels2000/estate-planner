@@ -26,3 +26,9 @@ export function summarizeMissingDocs(
     .map((g) => g.gap_key.toUpperCase())
     .join(', ')
 }
+
+export function countOpenDocumentGaps(
+  documents: { document_type: string; is_current?: boolean; is_deleted?: boolean }[],
+): number {
+  return getMissingDocumentAlerts(documents).length
+}

@@ -5,6 +5,8 @@ import { getAccessContext } from '@/lib/access/getAccessContext'
 import { resend } from '@/lib/resend'
 import { generateInviteToken, tokenExpiresAt } from '@/lib/invite-token'
 import { getAdvisorClientCapacity } from '@/lib/advisor/advisorClientLimits'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import { assessFirmConnectionBillingGateForInvite } from '@/lib/billing/firmConnectionBilling'
 import { EMAIL_FROM } from '@/lib/email/config'
 
 
@@ -16,7 +18,10 @@ export async function POST(request: Request) {
 
     const supabase = await createClient()
 
-    const { invitedEmail } = await request.json()
+    const body = await request.json().catch(() => ({}))
+    const invitedEmail =
+      typeof body.invitedEmail === 'string' ? body.invitedEmail.trim() : ''
+    const acknowledgeAtCapacity = body.acknowledge_at_capacity === true
 
     if (!invitedEmail) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
@@ -34,15 +39,26 @@ export async function POST(request: Request) {
     }
 
     const admin = createAdminClient()
-    const { cap, current, atLimit, tierName } = await getAdvisorClientCapacity(admin, user.id)
 
-    if (atLimit) {
-      return NextResponse.json({
-        error: 'tier_limit_reached',
-        current_count: current,
-        max_clients: cap,
-        tier_name: tierName,
-      }, { status: 403 })
+    if (isConnectionBillingEnabled()) {
+      const gate = await assessFirmConnectionBillingGateForInvite(
+        admin,
+        user.id,
+        invitedEmail,
+        { acknowledgeAtCapacity },
+      )
+      if (!gate.ok) return gate.response
+    } else {
+      const { cap, current, atLimit, tierName } = await getAdvisorClientCapacity(admin, user.id)
+
+      if (atLimit) {
+        return NextResponse.json({
+          error: 'tier_limit_reached',
+          current_count: current,
+          max_clients: cap,
+          tier_name: tierName,
+        }, { status: 403 })
+      }
     }
 
     // Check for existing pending invite

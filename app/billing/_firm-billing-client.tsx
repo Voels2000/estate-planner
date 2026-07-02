@@ -130,11 +130,11 @@ export function FirmBillingClient({
     <div className="mx-auto max-w-4xl px-4 py-12">
       <div className="mb-6">
         <ButtonLink
-          href="/dashboard"
+          href="/advisor"
           variant="link"
           className="text-sm text-neutral-500 hover:text-neutral-900"
         >
-          ← Back to Dashboard
+          ← Advisor portal
         </ButtonLink>
       </div>
       <div className="mb-10">

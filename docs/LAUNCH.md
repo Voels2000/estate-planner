@@ -1,6 +1,6 @@
 # LAUNCH.md — single source of truth for go-live
 
-**Last updated:** 2026-06-27 (cutover step 5 + SMTP attested; #170 prod smoke; counsel deferred to nexus)
+**Last updated:** 2026-06-29 (pre-flip items 3–8 attested; search_path #184/#185; PITR enabled — propagating)
 **Supersedes:** `docs/archive/LAUNCH_CHECKLIST.md`, `docs/archive/LAUNCH_GATE.md`, `docs/archive/RELEASE_ROUTINE.md`
 
 Status target before launch: **B&O-READY**  
@@ -21,7 +21,7 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 **Working tracker (manual attestations):** [LAUNCH_TRACKER_SYNC.md](./LAUNCH_TRACKER_SYNC.md) — browser UI at `tools/launch-tracker.html` (`npm run launch:tracker`); sync to this file via `npm run sync:launch-tracker`.
 
-**Step-off list (while B&O pending):** [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md)
+**Step-off list (while B&O pending):** [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) · **GTM / post-flip planning:** [LAUNCH_START_HERE.md](./LAUNCH_START_HERE.md)
 
 **Migrations before flip:** per-environment pairing — apply on staging before staging deploy, on production before/at production deploy (not both at staging-merge time). See [DEPLOYMENT.md § Migration gate](./DEPLOYMENT.md#1-apply-migrations-ongoing--prevents-schema-drift) and `bash scripts/apply-migration.sh staging|production …`. Vercel does not run migrations.
 
@@ -84,10 +84,10 @@ When the WA DAS/B&O ruling lands: resolve Bucket A, then run Bucket C in order.
 
 Accumulated security/correctness on **`staging`** (PRs #28–#39). Does **not** open prod signups or retire flip blockers. Canonical runbook: [PROMOTION_STAGING_TO_MAIN.md](./PROMOTION_STAGING_TO_MAIN.md).
 
-- [ ] Prod secrets confirmed — `RECOMPUTE_SECRET`, `CRON_SECRET`, `INTERNAL_API_KEY` on `estate-planner` (attest: __ / __)
-- [ ] Prod migration verified — `20260718120000_attorney_drip_unsubscribed_at.sql` present (`supabase migration list` or `information_schema`) (attest: __ / __)
-- [ ] Staging→`main` PR merged on green CI (`verify` + `e2e-smoke` + `rls-verify`) (attest: __ / __)
-- [ ] Prod deploy green; post-deploy passive smoke — recompute/cron logs OK; checkout **block paths** 403/409 (defer live Stripe charge to real-card test) (attest: __ / __)
+- [x] Prod secrets confirmed — `RECOMPUTE_SECRET`, `CRON_SECRET`, `INTERNAL_API_KEY` on `estate-planner` (implicit via prod cron/recompute/checkout paths; attest: Al / 2026-06-29)
+- [x] Prod migration verified — `20260718120000_attorney_drip_unsubscribed_at.sql` + `20260729120000_public_function_search_path.sql` in ledger (attest: Al / 2026-06-29)
+- [x] Staging→`main` PR merged on green CI — #181 · #183 · #185 (attest: Al / 2026-06-29)
+- [x] Prod deploy green; post-deploy attestation + prod smoke 34/34 (attest: Al / 2026-06-27/29)
 
 ### B4. Manual smokes — automated on staging where noted
 
@@ -425,21 +425,22 @@ PLAYWRIGHT_BASE_URL=https://www.mywealthmaps.com npm run test:e2e:prod:smoke -- 
 
 ---
 
-## Launch status scoreboard (2026-06-27)
+## Launch status scoreboard (2026-06-29)
 
-**Bucket B:** **50 of 55** checked (5 open) — see [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) for ordered step-off list.
+**Bucket B:** **52 of 55** checked (3 open) — see [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) for ordered step-off list.
 
-**Done since 2026-06-25:** cutover step 5 (real-card + C-4) · prod SMTP · #170 prod smoke (31/31 executable) · counsel deferred to first-state nexus.
+**Done since 2026-06-25:** cutover step 5 · prod SMTP · #170 prod smoke · items 5–8 verify scripts (#182/#183) · onboarding re-walk · MC edge deploy · search_path migration (#184/#185) · counsel deferred to first-state nexus.
 
 **Launch blockers (pre-flip):** consolidated checklist → [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md).
 
 | Priority | Item | Bucket |
 |----------|------|--------|
 | **P0** | WA B&O / DAS ruling | A |
-| **P1** | `release:post-deploy` attestation post-cutover | B1 |
-| **P1** | PITR / backups ON before real customers | B7 / PRE_FLIP §A |
-| **P1** | ~~Email aliases (`security@`, `legal@`)~~ ✅ | B6 |
-| **P2** | ~~BCC inbox, drip cron 2/3~~ ✅ · webhook-failure alerting ✅ | B4 / B5 |
+| **P1** | ~~`release:post-deploy` attestation~~ ✅ | B1 |
+| **P1** | PITR propagation (`check:pitr-prod` exit 0) | B7 / PRE_FLIP §4 |
+| **P1** | Upstash Redis on prod Vercel | B7 / PRE_FLIP §4 |
+| **P1** | ~~Email aliases~~ ✅ | B6 |
+| **P2** | ~~BCC inbox, drip cron 2/3~~ ✅ · webhook alerting ✅ | B4 / B5 |
 | **TODO (nexus)** | Counsel ToS §10/§11 + privacy redline | deferred |
 | **AT-FLIP** | Fresh prod signup smoke (after B&O + flip) | B4 / C |
 

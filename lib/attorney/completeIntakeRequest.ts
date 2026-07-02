@@ -2,17 +2,37 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
 import {
   countActiveAttorneyClients,
-  FREE_ATTORNEY_CLIENT_CAP_MESSAGE,
+  getAttorneyClientCapMessage,
   isAtAttorneyClientCap,
 } from '@/lib/attorney/attorneyClientCap'
 import { applyAttorneyConnectionBilling } from '@/lib/attorney/applyAttorneyConnectionBilling'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import {
+  afterAttorneyConnectionBillingConnect,
+  evaluateAttorneyConnectionBillingGate,
+} from '@/lib/billing/attorneyConnectionBilling'
+import {
+  assertAttorneyPracticeProfileForPaidConsumerConnect,
+  consumerAttorneyPracticeProfileBlockedMessage,
+} from '@/lib/attorney/attorneyListingPracticeProfile'
 
 export async function completeIntakeRequestForUser(
   userSupabase: SupabaseClient,
   userId: string,
   userEmail: string,
   intakeToken: string,
-): Promise<{ ok: true; listingId: string } | { ok: false; error: string; status: number }> {
+): Promise<
+  | { ok: true; listingId: string }
+  | {
+      ok: false
+      error: string
+      status: number
+      quantity?: number
+      currentLimit?: number
+      connected_count?: number
+      billing_floor?: number
+    }
+> {
   const admin = createAdminClient()
   const token = intakeToken.trim()
 
@@ -83,15 +103,77 @@ export async function completeIntakeRequestForUser(
       .single()
 
     if (attorneyListing?.profile_id) {
-      const { data: attorneyProfile } = await userSupabase
-        .from('profiles')
-        .select('attorney_tier')
-        .eq('id', attorneyListing.profile_id)
-        .single()
+      if (isConnectionBillingEnabled()) {
+        const evaluation = await evaluateAttorneyConnectionBillingGate(
+          admin,
+          attorneyListingId,
+          household.id,
+        )
+        if (!evaluation.ok) {
+          const { failure } = evaluation
+          if (failure.kind === 'listing_unclaimed') {
+            return {
+              ok: false,
+              error: 'Claim your attorney listing before connecting clients.',
+              status: 403,
+            }
+          }
+          if (failure.kind === 'attorney_checkout_required') {
+            return {
+              ok: false,
+              error: 'attorney_checkout_required',
+              status: 402,
+              quantity: failure.quantity,
+            }
+          }
+          if (failure.kind === 'limit_raise_required') {
+            return {
+              ok: false,
+              error: 'limit_raise_required',
+              status: 402,
+              currentLimit: failure.currentLimit,
+              connected_count: failure.connected_count,
+              billing_floor: failure.billing_floor,
+            }
+          }
+          return { ok: false, error: 'Forbidden', status: 403 }
+        }
+      } else {
+        const { data: attorneyProfile } = await userSupabase
+          .from('profiles')
+          .select('attorney_tier')
+          .eq('id', attorneyListing.profile_id)
+          .single()
 
-      const activeCount = await countActiveAttorneyClients(userSupabase, attorneyListingId)
-      if (isAtAttorneyClientCap(attorneyProfile?.attorney_tier ?? 0, activeCount)) {
-        return { ok: false, error: FREE_ATTORNEY_CLIENT_CAP_MESSAGE, status: 403 }
+        const activeCount = await countActiveAttorneyClients(userSupabase, attorneyListingId)
+        if (isAtAttorneyClientCap(attorneyProfile?.attorney_tier ?? 0, activeCount)) {
+          return { ok: false, error: getAttorneyClientCapMessage(), status: 403 }
+        }
+      }
+
+      const { data: consumerSubscription } = await userSupabase
+        .from('profiles')
+        .select('subscription_status')
+        .eq('id', userId)
+        .maybeSingle()
+
+      const practiceGate = await assertAttorneyPracticeProfileForPaidConsumerConnect(admin, {
+        listingId: attorneyListingId,
+        householdId: household.id,
+        consumerSubscriptionStatus: consumerSubscription?.subscription_status,
+      })
+      if (!practiceGate.ok) {
+        return {
+          ok: false,
+          error: consumerAttorneyPracticeProfileBlockedMessage(),
+          status: practiceGate.status,
+        }
+      }
+    } else if (isConnectionBillingEnabled()) {
+      return {
+        ok: false,
+        error: 'Claim your attorney listing before connecting clients.',
+        status: 403,
       }
     }
 
@@ -114,6 +196,9 @@ export async function completeIntakeRequestForUser(
         clientId: userId,
         attorneyClientRowId: inserted.id,
       })
+      if (isConnectionBillingEnabled()) {
+        await afterAttorneyConnectionBillingConnect(admin, attorneyListingId)
+      }
     }
   }
 

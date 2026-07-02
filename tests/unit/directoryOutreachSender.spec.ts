@@ -1,0 +1,88 @@
+import { test, expect } from '@playwright/test'
+import {
+  buildClaimMagicConfirmUrl,
+  claimMagicLinkRedirectTo,
+} from '@/lib/auth/generateClaimMagicLink'
+import { outreachFirstNameFromContact } from '@/lib/directory/outreachRecipient'
+import {
+  buildAttorneyDirectoryOutreachEmail,
+  buildAdvisorDirectoryOutreachEmail,
+} from '@/lib/emails/directory-outreach-templates'
+
+test.describe('generateClaimMagicLink helpers', () => {
+  test('claimMagicLinkRedirectTo encodes claim path in next param', () => {
+    const url = claimMagicLinkRedirectTo('https://staging.mywealthmaps.com', 'tok_abc123')
+    expect(url).toBe(
+      'https://staging.mywealthmaps.com/auth/callback?next=%2Fclaim%2Ftok_abc123',
+    )
+  })
+
+  test('buildClaimMagicConfirmUrl is role-agnostic for attorney and advisor outreach', () => {
+    const prev = process.env.NEXT_PUBLIC_APP_URL
+    process.env.NEXT_PUBLIC_APP_URL = 'https://staging.mywealthmaps.com'
+    try {
+      const attorneyUrl = buildClaimMagicConfirmUrl('hash_att', 'tok_attorney')
+      const advisorUrl = buildClaimMagicConfirmUrl('hash_adv', 'tok_advisor')
+      expect(new URL(attorneyUrl).searchParams.get('next')).toBe('/claim/tok_attorney')
+      expect(new URL(advisorUrl).searchParams.get('next')).toBe('/claim/tok_advisor')
+      expect(new URL(attorneyUrl).searchParams.get('type')).toBe('magiclink')
+      expect(new URL(advisorUrl).searchParams.get('type')).toBe('magiclink')
+    } finally {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_APP_URL
+      else process.env.NEXT_PUBLIC_APP_URL = prev
+    }
+  })
+
+  test('buildClaimMagicConfirmUrl uses token_hash for server-side verify', () => {
+    const prev = process.env.NEXT_PUBLIC_APP_URL
+    process.env.NEXT_PUBLIC_APP_URL = 'https://staging.mywealthmaps.com'
+    try {
+      const url = buildClaimMagicConfirmUrl('hash_xyz', 'tok_abc123')
+      const parsed = new URL(url)
+      expect(parsed.pathname).toBe('/auth/confirm')
+      expect(parsed.searchParams.get('token_hash')).toBe('hash_xyz')
+      expect(parsed.searchParams.get('type')).toBe('magiclink')
+      expect(parsed.searchParams.get('next')).toBe('/claim/tok_abc123')
+    } finally {
+      if (prev === undefined) delete process.env.NEXT_PUBLIC_APP_URL
+      else process.env.NEXT_PUBLIC_APP_URL = prev
+    }
+  })
+})
+
+test.describe('outreachRecipient', () => {
+  test('outreachFirstNameFromContact uses first token', () => {
+    expect(outreachFirstNameFromContact('Sarah Bowman')).toBe('Sarah')
+    expect(outreachFirstNameFromContact(null)).toBe('there')
+  })
+})
+
+test.describe('directory outreach templates + send shape', () => {
+  const fields = {
+    firmName: 'Perkins Coie LLP',
+    firstName: 'Sarah',
+    claimLink: 'https://example.com/auth/confirm?token=abc',
+    senderName: 'Alan Voels',
+  }
+
+  test('attorney template includes pricing, value prop, compliance footer', () => {
+    const attorney = buildAttorneyDirectoryOutreachEmail(fields)
+    expect(attorney.subject).toContain('Perkins Coie LLP')
+    expect(attorney.bodyHtml).toContain(fields.claimLink)
+    expect(attorney.bodyText).toContain('first connected client is free')
+    expect(attorney.bodyText).toContain('A complex estate matter runs $7,500–$15,000+')
+    expect(attorney.bodyText).toContain('flags it when their situation changes')
+    expect(attorney.bodyText).toContain('public directory information')
+    expect(attorney.bodyText).toContain('22033 Echo Lake Rd, Snohomish, WA 98296')
+    expect(attorney.bodyText).toContain('Reply "unsubscribe"')
+  })
+
+  test('advisor template includes pricing, value prop, compliance footer', () => {
+    const advisor = buildAdvisorDirectoryOutreachEmail(fields)
+    expect(advisor.bodyText).toContain('per connected household, not per seat')
+    expect(advisor.bodyText).toContain('meeting-prep briefs')
+    expect(advisor.bodyText).toContain('public directory information')
+    expect(advisor.bodyText).toContain('22033 Echo Lake Rd, Snohomish, WA 98296')
+    expect(advisor.bodyText).toContain('Reply "unsubscribe"')
+  })
+})

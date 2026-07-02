@@ -27,6 +27,41 @@ Clears on every `@mywealthmaps.test` + canonical E2E email: `stripe_customer_id`
 
 ---
 
+## Connection billing fixture reset (staging)
+
+When manually walking advisor connection billing on staging, reset **`e2e-advisor-empty@mywealthmaps.test`** before each spine pass — otherwise stale `advisor_clients` rows, invites, or Stripe qty drift from prior walks.
+
+```bash
+npm run reset:staging-e2e-advisor-empty-billing
+```
+
+Requires `.env.test.staging` (staging Supabase + Stripe test keys). Clears connected clients + pending invites, re-seeds connection checkout state (`client_limit`, `billing_floor`, Stripe subscription qty).
+
+**Invite-accept walk helper** (after #197 merge): `TEST_ENV=staging dotenv -o -e .env.test.staging -- npx tsx scripts/walk-staging-invite-accepts.ts` — lists pending invite URLs for the empty-advisor firm.
+
+### Attorney connection billing (staging)
+
+Reset **`e2e-attorney@mywealthmaps.test`** before attorney connection billing walks:
+
+```bash
+npm run reset:staging-e2e-attorney-connection-billing
+```
+
+Seeds pending `consumer_requested` rows for `/attorney/requests`. Spine (after reset):
+
+```bash
+npm run walk:staging-attorney-connection-accepts   # accept #1 + checkout gate on #2
+npm run walk:staging-attorney-step4                # checkout sim → accept #2 → raise → accept #3
+```
+
+Inspect: `npx tsx scripts/inspect-staging-attorney-billing-state.ts`
+
+Proof checklist: [ATTORNEY_RAISE_CONNECT_PARITY_FIX.md](./ATTORNEY_RAISE_CONNECT_PARITY_FIX.md) staging re-walk (step 4 = raise + accept 3rd).
+
+See [CONNECTION_BILLING_STICKY_FLOOR_FIX.md § Post-merge staging proof](./CONNECTION_BILLING_STICKY_FLOOR_FIX.md#post-merge-staging-proof-live-in-order).
+
+---
+
 ## Canonical accounts (keep forever)
 
 | Role | Login email | Password | Notes |
@@ -34,6 +69,7 @@ Clears on every `@mywealthmaps.test` + canonical E2E email: `stripe_customer_id`
 | Consumer (tier 3) | `e2e-consumer@mywealthmaps.test` | `E2eTest!2026Mwm` | Full household + assets; `PLAYWRIGHT_HOUSEHOLD_ID` |
 | Consumer (tier 1) | `e2e-consumer-tier1@mywealthmaps.test` | same | Upgrade-banner Playwright project |
 | Advisor portal | `e2e-advisor@mywealthmaps.test` | same | Firm owner (`ensureAdvisorFirmForE2e`) + linked client below |
+| Advisor (zero clients) | `e2e-advisor-empty@mywealthmaps.test` | same | Connection-billing spine walks; firm `MWM E2E Empty Advisory` |
 | Advisor client | `e2e-advisor-client@mywealthmaps.test` | same | Rich FL household (401k, IRA, domicile, RMD E2E); **3 `asset_beneficiaries` on 401k** (verified by `verifyE2eAccounts()`) |
 | Attorney portal | `e2e-attorney@mywealthmaps.test` | same | Newsletter kit on `/attorney` |
 | Golden path (optional) | `e2e-golden-path@mywealthmaps.test` | same | Stage-1 onramp smoke |

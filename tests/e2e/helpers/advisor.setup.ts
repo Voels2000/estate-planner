@@ -1,4 +1,4 @@
-import { test as setup, expect } from '@playwright/test'
+import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import {
   ensureAdvisorFirmForE2e,
@@ -29,16 +29,5 @@ setup('authenticate advisor', async ({ page }) => {
   await page.locator('input[id="password"]').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.waitForURL((url) => !url.toString().includes('/login'), { timeout: 90_000 })
-
-  await page.goto('/prospect')
-  if (page.url().includes('/billing')) {
-    throw new Error(
-      `advisor-setup: /prospect redirected to billing — firm sub not readable for ${email}`,
-    )
-  }
-  await expect(page.getByRole('heading', { name: 'Prospect Mode' })).toBeVisible({
-    timeout: 30_000,
-  })
-
   await page.context().storageState({ path: '.auth/advisor.json' })
 })

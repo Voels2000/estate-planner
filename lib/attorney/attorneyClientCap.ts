@@ -3,7 +3,14 @@ import { attorneyTierFeatures } from '@/lib/attorney/attorneyTierLimits'
 
 export const ACTIVE_ATTORNEY_CLIENT_STATUSES = ['active', 'accepted'] as const
 
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
+import { freeAttorneyClientCapMessage } from '@/lib/copy/connectionBillingMarketing'
+
 export const FREE_ATTORNEY_CLIENT_CAP_MESSAGE = 'Free plan limited to 3 client households'
+
+export function getAttorneyClientCapMessage(): string {
+  return freeAttorneyClientCapMessage()
+}
 
 export async function getAttorneyListingIdForUser(
   supabase: SupabaseClient,

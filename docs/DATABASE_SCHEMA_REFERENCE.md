@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # My Wealth Maps — Database Schema Guide
-# Last updated: 2026-06-26 (profiles advisor SELECT status gate)
+# Last updated: 2026-07-02 (attorney_listings practice profile — application layer)
 
 **Session history:** [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · **Consumer journeys:** [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md)
 
@@ -134,7 +134,7 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 - **Purpose:** canonical attorney listing for find-attorney, registration, and connection requests — **not** `attorney_directory`
 - **Referral:** unique `referral_code`; event links use `?aref=`; resolved in `referral_clicks.attorney_listing_id`
 - **Migration:** `20260528000000_attorney_referrals.sql`
-- **Application:** `/attorney` portal — nav, requests inbox, firm settings **`PATCH /api/attorney/listing`**; newsletter kit; `POST /api/referral/track` with `type: 'attorney'`
+- **Application:** `/attorney` portal — nav, requests inbox, firm settings **`PATCH /api/attorney/listing`** (firm/contact + practice profile: `states_licensed`, `specializations`, `credentials`, `fee_structure` enum at app layer); paid-consumer connect gate — see [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md). Newsletter kit; `POST /api/referral/track` with `type: 'attorney'`
 
 ### `attorney_clients`
 
@@ -158,8 +158,8 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 
 ### `firms`
 
-- **Key columns:** `id`, `name`, `owner_id`, `tier`, `seat_count`, `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`
-- **Purpose:** advisor firm billing and seat management; denormalized `profiles.firm_id` / `firm_role`.
+- **Key columns:** `id`, `name`, `owner_id`, `tier`, `seat_count` (legacy per-seat sync; **not** connection billing floor), `client_limit`, `billing_floor`, `reset_count` (connection billing B2 — migration `20260731120000`), `stripe_customer_id`, `stripe_subscription_id`, `subscription_status`
+- **Purpose:** advisor firm billing and seat management; denormalized `profiles.firm_id` / `firm_role`. Connection billing (flag ON): `client_limit` = gated ceiling; `billing_floor` = sticky high-water-mark; `reset_count` = self-serve reset cap (2, then admin).
 - **Migration:** `20260404000000_create_firms_and_firm_members.sql`
 - **Deletion:** references `auth.users(id)` via `owner_id` — cleared by `lib/compliance/deleteUser.ts` FK scan before Auth delete (cascades `firm_members` for owned firms).
 

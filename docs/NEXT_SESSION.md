@@ -1,42 +1,47 @@
 # NEXT_SESSION.md — session handoff
 
-**Last updated:** 2026-06-27
+**Last updated:** 2026-07-02 (attorney settings practice profile PR → staging)
 
 ---
 
 ## Start here
 
-**Working list:** [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) — step off items one-by-one while B&O ruling is pending.
+**Attorney settings practice profile:** `[~]` PR → **`staging`** — `/attorney/settings` practice section + paid-consumer gate (2nd billable client or consumer paid sub; first free client exempt). Spec: [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md).
 
-**Blocked on external:** WA B&O / DAS ruling (Bucket A) — do **not** set `PUBLIC_SIGNUP_OPEN=true` until cleared.
+**Attorney connection billing:** ✅ **Closed** — step-4 spine proven.
 
-**Deferred to first-state nexus:** counsel ToS §10/§11 + privacy policy redline (not active pre-flip work).
+**Claim v2:** ✅ **Closed on staging** (#206–#213). **Promotion PR #215** open (`staging` → `main`).
+
+**GTM WA first wave (in progress):** WA seed committed (#230 credentials column + re-import). Next: sender test `--commit`, compliance sign-off.
 
 ---
 
-## Current state (2026-06-27)
+## Current state (2026-07-02)
 
 | Area | Status |
 |------|--------|
-| Tier-restructure prod cutover steps 0–5 | ✅ Complete |
-| Real-card live smoke + C-4 billing | ✅ Al / 2026-06-27 |
-| Prod SMTP (signup confirm) | ✅ Resend 200 |
-| Track 2 prod smoke (#170) | ✅ Merged `63df4fa8` · 31 passed · 3 skips |
-| `avoels@outlook.com` | ✅ Reset — tier 1, no household, ready for login re-walk |
-| B&O ruling | ⏳ Waiting |
-| Flip (`PUBLIC_SIGNUP_OPEN=true`) | 🚫 Blocked on B&O |
+| Attorney settings practice profile | `[~]` | PR → staging — UI + gate + docs |
+| Section A pricing (#216–#218) | ✅ On staging |
+| Section C copy (#220) | ✅ On staging |
+| Outreach sender (#221) | ✅ Merged |
+| WA directory seed (#230) | ✅ Import + `credentials[]` on staging |
+| Sender test `--commit` | `[~]` |
+| Compliance sign-off (outreach copy) | `[ ]` |
+| Prod connection billing flip | 🚫 After promotion — [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) |
+
+---
+
+## Handoff (fresh chat)
+
+**Proven on staging:** connection billing, claim v2, directory seed importer, attorney portal connection-billing UX (#229).
+
+**Next:** merge attorney practice-profile PR → staging smoke (`/attorney/settings`, accept-request gate on 2nd client). GTM: outreach test send. Backlog: dismissible directory-profile nudge for ungated incomplete listings.
 
 ---
 
 ## Paste block (first message in Cursor)
 
-> My Wealth Maps — **pre-flip prep, B&O-blocked.** Tier-restructure cutover **steps 0–5 done** (real-card smoke + C-4 + SMTP). **#170** prod smoke fixes on `main` (`63df4fa8`). **`avoels@outlook.com`** reset to tier 1 for manual onboarding re-walk — no fresh signup needed.
->
-> **Work from:** [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) — next up: `release:post-deploy`, prod smoke re-bank, PITR, email/drip smokes, billing edge paths.
->
-> **Not active:** counsel (first-state nexus) · fresh-email signup validation · flip until B&O clears.
->
-> **Canonical:** [LAUNCH.md](./LAUNCH.md) · [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) · [pre-billing-run-sheet.md](./pre-billing-run-sheet.md)
+> My Wealth Maps — attorney **practice profile** PR on staging (settings UI + paid-consumer gate). Smoke `/attorney/settings` save + requests accept on 2nd client. GTM: outreach `--commit` test send when ready. Promotion #215 when staging green.
 
 ---
 
@@ -44,18 +49,14 @@
 
 | Doc | Role |
 |-----|------|
-| [LAUNCH.md](./LAUNCH.md) | Single source of truth / Bucket A–C |
-| [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) | Consolidated hard vs should-clear |
-| [PRE_FLIP_REMAINING.md](./PRE_FLIP_REMAINING.md) | **Ordered step-off list** |
-| [pre-billing-run-sheet.md](./pre-billing-run-sheet.md) | Gates A/B + billing attestation |
-| [prod-smoke-canary-runbook.md](./prod-smoke-canary-runbook.md) | Prod canary + isolation |
-| [ROADMAP.md](./ROADMAP.md) | Shipped history |
+| [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md) | Practice profile fields + paid-consumer gate |
+| [GTM_FIRST_WAVE.md](./GTM_FIRST_WAVE.md) | First-wave outreach |
+| [DECISION_LOG.md](./DECISION_LOG.md) | Settled decisions |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Staging-first branch flow |
 
 ---
 
 ## Standing rules
 
-1. Calculation / tax work → read [CALCULATION_ENGINES.md](./CALCULATION_ENGINES.md) first.
-2. CST strings → import from `lib/constants/strategyTypes.ts`.
-3. Prod writes → never CI; `--confirm` scripts only with `.env.projects.local`.
-4. Migrations → per-environment pairing ([DEPLOYMENT.md](./DEPLOYMENT.md)).
+- Feature PRs → **`staging`** first; promote `staging` → `main` only when green.
+- Do not run staging integration tests against live URL until code is on **`staging`**.

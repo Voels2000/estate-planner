@@ -1,6 +1,6 @@
 # ROADMAP.md
 # My Wealth Maps — Sprint Roadmap
-# Last updated: 2026-06-24 (billing capability matrix)
+# Last updated: 2026-07-02 (GTM WA seed; attorney settings practice profile)
 
 ---
 
@@ -18,6 +18,64 @@
 ---
 
 ## Current sprint
+
+### Attorney portal — practice profile settings (2026-07-02) `[~]` **PR → staging**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| `/attorney/settings` practice & credentials UI | `[~]` | Checklist, tags, fee enum; completeness banner |
+| `PATCH /api/attorney/listing` | `[~]` | `bar_number`, `credentials`, normalized arrays |
+| Paid-consumer connect gate | `[~]` | `attorneyListingPracticeProfile.ts`; first free client exempt |
+| Unit tests | `[~]` | `attorneyListingPracticeProfile.spec.ts` |
+| Directory nudge (ungated incomplete) | `[ ]` | Backlog — dismissible banner |
+
+### GTM — WA directory seed + outreach (2026-07-02) `[~]` **seed committed; sender merged**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Section A pricing (#216–#218) | `[x]` | On staging |
+| Section C copy (#220) | `[x]` | `connectionBillingMarketing.ts` + outreach templates |
+| Outreach sender (#221) | `[x]` | Merged to staging 2026-07-02 |
+| Outreach send-tracking migration | `[x]` | Applied on staging 2026-07-02 |
+| XLSX pre-flight (Perkins, DWT, advisor TBD) | `[x]` | Al signed off 2026-07-02; gitignored XLSX updated |
+| WA import `--commit` | `[x]` | Committed 2026-07-02 — 1 att insert / 13 att update / 3 adv insert / 5 adv update |
+| Sender dry-run + test send | `[~]` | Attorney dry-run PASS; test `--commit` send pending |
+| Compliance sign-off (outreach copy) | `[ ]` | Templates on staging via #220 |
+
+### Attorney connection billing — staging track (2026-07-01) `[x]` **closed**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Phase 6 attorney sticky floor (#199) | `[x]` | Gate + sync + listing-scoped billing |
+| Free-client offset + gate UI (#200) | `[x]` | `billable = connected − 1`; consumer blocked copy |
+| Raise-connect parity (#201) | `[x]` | Shared raise form; inline modal |
+| Step-4 walk helper (#203) | `[x]` | `npm run walk:staging-attorney-step4` |
+| Staging walk step 4 | `[x]` | API spine PASS — qty 2 / $150 |
+
+### Claim-flow v2 (2026-07-01) `[x]` **shipped on staging**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Discovery audit | `[x]` | [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) |
+| Complete spec + locked auth | `[x]` | [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) |
+| Magic-link claim entry | `[x]` | #206–#213 |
+| `/respond-request` rename | `[x]` | #212 (redirect from `/claim-listing`) |
+| Explicit billing seed at claim | `[x]` | Attorney + advisor firm bootstrap |
+| Action-gated step-up (password+MFA) | `[x]` | #211 + staging flag |
+| Promotion to prod | `[~]` | PR #215 — Vercel rate limit |
+
+### Advisor connection billing — staging track (2026-07-01) `[~]` **PRs → staging**
+
+| Item | Status | Notes |
+|------|--------|-------|
+| B2 sticky-floor backend (#195) | `[x]` | Migration + sync + raise/reset APIs · live proof on staging |
+| `/billing` connection UI (#196) | `[x]` | Flag-gated rebuild · raise/reset forms · unit tests |
+| Advisor checkout redirect (#197) | `[~]` | PR open — `/advisor?checkout=success` · walk script |
+| Invite-send capacity warning (#198) | `[~]` | PR open — soft warn + ack modal at capacity |
+| `/advisor/firm` connection copy | `[ ]` | Still legacy per-seat summary when flag ON |
+| Prod flip + checkout repoint | `[ ]` | After staging green · `automatic_tax` |
+
+Specs: [CONNECTION_BILLING_STICKY_FLOOR_FIX.md](./CONNECTION_BILLING_STICKY_FLOOR_FIX.md) · [BILLING_PAGE_CONNECTION_REBUILD.md](./BILLING_PAGE_CONNECTION_REBUILD.md)
 
 ### Consumer billing capability matrix (2026-06-24) `[~]` **PR → staging**
 
@@ -1756,6 +1814,11 @@ The following items are explicitly deferred to post-launch. Each has a DECISION_
 invite-your-advisor Path A onboarding; A/B exit criteria.
 
 **Still backlog:** Blended family as separate slug (optional; `remarriage-blended-family` covers today)
+
+- **Attorney directory profile nudge** — dismissible settings/portal banner when claimed
+  listing has incomplete practice profile but attorney stays on one free client only
+  (ungated forever in `/find-attorney`). Directory-quality follow-up; gate scope confirmed
+  **not** to include free connection. See [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md) § Known gap.
 
 **Queued next (2026-05-29 — post attorney monetization + projections readiness):**
 

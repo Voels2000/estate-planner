@@ -25,7 +25,16 @@ export async function POST(req: NextRequest) {
   )
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status })
+    return NextResponse.json(
+      {
+        error: result.error,
+        ...(result.quantity != null ? { quantity: result.quantity } : {}),
+        ...(result.currentLimit != null ? { currentLimit: result.currentLimit } : {}),
+        ...(result.connected_count != null ? { connected_count: result.connected_count } : {}),
+        ...(result.billing_floor != null ? { billing_floor: result.billing_floor } : {}),
+      },
+      { status: result.status },
+    )
   }
 
   return NextResponse.json({ success: true, listingId: result.listingId })

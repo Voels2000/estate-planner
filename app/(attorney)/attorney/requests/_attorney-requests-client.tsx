@@ -4,6 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AttorneyUpgradePrompt } from '@/components/attorney/AttorneyUpgradePrompt'
+import {
+  AttorneyConnectionBillingGateModals,
+  useAttorneyConnectionBillingGateHandlers,
+} from '@/components/attorney/AttorneyConnectionBillingGateModals'
+import { ProfessionalCredentialModal } from '@/components/directory/ProfessionalCredentialModal'
+import type { CredentialGateType } from '@/lib/directory/professionalCredential'
 
 type IncomingRequest = {
   id: string
@@ -39,8 +45,24 @@ export function AttorneyRequestsClient({
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [capError, setCapError] = useState(false)
+  const [credentialModal, setCredentialModal] = useState<{
+    requestId: string
+    credentialType: CredentialGateType
+  } | null>(null)
+  const {
+    checkoutModal,
+    setCheckoutModal,
+    limitRaiseModal,
+    setLimitRaiseModal,
+    checkoutLoading,
+    handleConnectBillingError,
+    startAttorneyConnectionCheckout,
+  } = useAttorneyConnectionBillingGateHandlers()
 
-  async function handleAccept(id: string) {
+  async function handleAccept(
+    id: string,
+    credential?: { bar_number?: string; bar_state?: string },
+  ) {
     setLoadingId(id)
     setError(null)
     setCapError(false)
@@ -48,13 +70,36 @@ export function AttorneyRequestsClient({
       const res = await fetch('/api/attorney/accept-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attorney_client_id: id }),
+        body: JSON.stringify({
+          attorney_client_id: id,
+          ...credential,
+        }),
       })
       const data = await res.json()
       if (!res.ok) {
+        if (data.step_up_required && typeof data.step_up_path === 'string') {
+          const redirectTo = encodeURIComponent('/attorney/requests')
+          router.push(`${data.step_up_path}?redirectTo=${redirectTo}`)
+          return
+        }
+        if (data.credential_required && data.credential_type) {
+          setCredentialModal({
+            requestId: id,
+            credentialType: data.credential_type as CredentialGateType,
+          })
+          return
+        }
+        if (data.practice_profile_required) {
+          setError(
+            `${data.error ?? 'Complete your practice profile before accepting paid client connections.'} Go to Firm settings → Practice & credentials.`,
+          )
+          return
+        }
         if (res.status === 403) setCapError(true)
+        if (handleConnectBillingError(data, res.status)) return
         throw new Error(data.error ?? 'Unable to accept')
       }
+      setCredentialModal(null)
       setIncoming((prev) => prev.filter((r) => r.id !== id))
       router.refresh()
     } catch (e: unknown) {
@@ -86,6 +131,30 @@ export function AttorneyRequestsClient({
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <ProfessionalCredentialModal
+        open={credentialModal !== null}
+        credentialType={credentialModal?.credentialType ?? 'bar'}
+        loading={loadingId === credentialModal?.requestId}
+        onClose={() => setCredentialModal(null)}
+        onSubmit={(values) => {
+          if (!credentialModal) return
+          void handleAccept(credentialModal.requestId, values)
+        }}
+      />
+      <AttorneyConnectionBillingGateModals
+        checkoutModal={checkoutModal}
+        limitRaiseModal={limitRaiseModal}
+        checkoutLoading={checkoutLoading}
+        onCloseCheckout={() => setCheckoutModal(null)}
+        onCloseRaise={() => setLimitRaiseModal(null)}
+        onConfirmCheckout={(quantity) => {
+          void startAttorneyConnectionCheckout(quantity)
+        }}
+        onRaiseSuccess={() => {
+          setLimitRaiseModal(null)
+          router.refresh()
+        }}
+      />
       <div>
         <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Requests</h1>
         <p className="text-sm text-neutral-500 mt-1">
