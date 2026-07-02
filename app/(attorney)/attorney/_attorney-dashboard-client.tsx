@@ -42,8 +42,6 @@ type IntakeRequestRow = {
 type Props = {
   attorneyName: string
   clients: ClientCard[]
-  referralCode?: string | null
-  eventReferralUrls?: Record<string, string> | null
   showDocHealth?: boolean
   attorneyTier?: number
   clientLimit?: number
@@ -60,52 +58,6 @@ const STATUS_BADGE: Record<IntakeRequestRow['displayStatus'], string> = {
   expired: 'bg-red-100 text-red-700',
 }
 
-const EVENT_REFERRAL_LABELS: Record<string, string> = {
-  'selling-a-business': 'Selling a business',
-  'death-of-spouse': 'Death of a spouse',
-  'serious-diagnosis': 'Serious diagnosis',
-  'receiving-inheritance': 'Receiving an inheritance',
-  divorce: 'Divorce',
-  'approaching-retirement': 'Approaching retirement',
-  'large-rsu-vest': 'Large RSU vest / liquidity event',
-  'new-child-grandchild': 'New child or grandchild',
-  'getting-married': 'Getting married',
-  'remarriage-blended-family': 'Remarriage / blended family',
-  'aging-parent-needs-care': 'Aging parent needs care',
-  'loss-of-parent': 'Loss of a parent',
-  'starting-a-business': 'Starting a business',
-  'selling-a-home': 'Selling a home',
-  'multi-state-real-estate': 'Multi-state real estate',
-  'child-reaching-adulthood': 'Child reaching adulthood',
-  'disability-early-retirement': 'Disability / early retirement',
-  'estate-tax-law-change': 'Estate tax law change',
-  'first-time-high-net-worth': 'First-time high-net-worth',
-  'major-job-change': 'Major job change',
-  'five-year-plan-review': 'Five-year plan review',
-  'rmd-start-age': 'RMD start age (72–75, by birth year)',
-  'medicare-eligibility': 'Medicare eligibility (65)',
-  'social-security-timing': 'Social Security timing (62)',
-}
-
-const EVENT_REFERRAL_GROUPS: { label: string; slugs: string[] }[] = [
-  {
-    label: 'Business & Wealth Events',
-    slugs: ['selling-a-business', 'starting-a-business', 'large-rsu-vest', 'first-time-high-net-worth', 'major-job-change'],
-  },
-  {
-    label: 'Family & Life Transitions',
-    slugs: ['death-of-spouse', 'serious-diagnosis', 'divorce', 'getting-married', 'remarriage-blended-family', 'new-child-grandchild', 'child-reaching-adulthood', 'loss-of-parent', 'aging-parent-needs-care', 'disability-early-retirement'],
-  },
-  {
-    label: 'Real Estate & Inheritance',
-    slugs: ['selling-a-home', 'multi-state-real-estate', 'receiving-inheritance'],
-  },
-  {
-    label: 'Retirement & Tax Planning',
-    slugs: ['approaching-retirement', 'rmd-start-age', 'medicare-eligibility', 'social-security-timing', 'estate-tax-law-change', 'five-year-plan-review'],
-  },
-]
-
 const complexityColor: Record<string, string> = {
   low: 'bg-green-100 text-green-700',
   moderate: 'bg-yellow-100 text-yellow-700',
@@ -116,8 +68,6 @@ const complexityColor: Record<string, string> = {
 export function AttorneyDashboardClient({
   attorneyName,
   clients,
-  referralCode,
-  eventReferralUrls,
   showDocHealth = false,
   attorneyTier = 0,
   clientLimit = 3,
@@ -128,9 +78,6 @@ export function AttorneyDashboardClient({
 }: Props) {
   const router = useRouter()
   const [search, setSearch] = useState('')
-  const [newsletterTab, setNewsletterTab] = useState<'links' | 'email' | 'text'>('links')
-  const [copiedNewsletter, setCopiedNewsletter] = useState(false)
-  const [copiedSlug, setCopiedSlug] = useState<string | null>(null)
   const [intakeModalOpen, setIntakeModalOpen] = useState(false)
   const [intakeRequests, setIntakeRequests] = useState<IntakeRequestRow[]>([])
   const [sentThisMonth, setSentThisMonth] = useState(0)
@@ -426,167 +373,6 @@ export function AttorneyDashboardClient({
       )}
 
       <AttorneyValuePropBanner />
-
-      {referralCode && eventReferralUrls && (() => {
-        const emailCopy = `Subject: Estate planning resource for [life event] clients
-
-I wanted to share a resource I recommend to clients navigating specific life events.
-
-My Wealth Maps helps households with $2M–$30M understand estate tax exposure, identify plan gaps, and arrive at our meetings with focused questions.
-
-Share the link that matches your client's situation:
-
-${EVENT_REFERRAL_GROUPS.flatMap((g) =>
-  [`${g.label}:`, ...g.slugs.map((s) => `• ${EVENT_REFERRAL_LABELS[s] ?? s}: ${eventReferralUrls[s] ?? ''}`), ''],
-).join('\n')}
-Visits through your links use your attorney referral code (${referralCode}).
-
-— [Your name]`
-
-        const textCopy = `My Wealth Maps — estate planning for $2M–$30M households.
-
-${EVENT_REFERRAL_GROUPS.flatMap((g) =>
-  g.slugs.map((s) => `${EVENT_REFERRAL_LABELS[s] ?? s}: ${eventReferralUrls[s] ?? ''}`),
-).join('\n')}
-Attorney ref: ${referralCode}`
-
-        return (
-          <div className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden mb-8">
-            <div className="px-6 pt-6 pb-4 border-b border-neutral-100">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500 mb-1">
-                Newsletter Kit
-              </h2>
-              <p className="text-sm text-neutral-600">
-                Your referral code:{' '}
-                <span className="font-mono font-semibold text-neutral-900">{referralCode}</span>
-                {' '}· Links use <span className="font-mono">?aref=</span> for attorney attribution.
-              </p>
-              <div className="flex gap-2 mt-4">
-                {([
-                  { key: 'links' as const, label: '🔗 All Links' },
-                  { key: 'email' as const, label: '✉️ Email Copy' },
-                  { key: 'text' as const, label: '📱 Plain Text' },
-                ] as const).map((t) => (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => setNewsletterTab(t.key)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      newsletterTab === t.key
-                        ? 'bg-[color:var(--mwm-navy)] text-white'
-                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {newsletterTab === 'links' && (
-              <div className="p-6 space-y-6">
-                {EVENT_REFERRAL_GROUPS.map((group) => {
-                  const groupSlugs = group.slugs.filter((s) => eventReferralUrls[s])
-                  if (groupSlugs.length === 0) return null
-                  return (
-                    <div key={group.label}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400 mb-2">
-                        {group.label}
-                      </p>
-                      <div className="space-y-1.5">
-                        {groupSlugs.map((slug) => {
-                          const url = eventReferralUrls[slug]
-                          return (
-                            <div
-                              key={slug}
-                              className="flex items-center justify-between gap-3 rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2"
-                            >
-                              <span className="text-sm text-neutral-700 shrink-0">
-                                {EVENT_REFERRAL_LABELS[slug] ?? slug}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  try {
-                                    await navigator.clipboard.writeText(url)
-                                    setCopiedSlug(slug)
-                                    setTimeout(() => setCopiedSlug(null), 2000)
-                                  } catch {
-                                    window.prompt('Copy this link:', url)
-                                  }
-                                }}
-                                className="shrink-0 text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy-light)] whitespace-nowrap"
-                              >
-                                {copiedSlug === slug ? '✓ Copied' : 'Copy'}
-                              </button>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {newsletterTab === 'email' && (
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                    Email template
-                  </p>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(emailCopy)
-                        setCopiedNewsletter(true)
-                        setTimeout(() => setCopiedNewsletter(false), 2000)
-                      } catch {
-                        window.prompt('Copy this text:', emailCopy)
-                      }
-                    }}
-                    className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy-light)]"
-                  >
-                    {copiedNewsletter ? '✓ Copied' : 'Copy all'}
-                  </button>
-                </div>
-                <pre className="text-xs text-neutral-700 bg-neutral-50 border border-neutral-200 rounded-xl p-4 whitespace-pre-wrap leading-relaxed font-sans overflow-x-auto max-h-[480px] overflow-y-auto">
-                  {emailCopy}
-                </pre>
-              </div>
-            )}
-
-            {newsletterTab === 'text' && (
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                    Plain text
-                  </p>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(textCopy)
-                        setCopiedNewsletter(true)
-                        setTimeout(() => setCopiedNewsletter(false), 2000)
-                      } catch {
-                        window.prompt('Copy this text:', textCopy)
-                      }
-                    }}
-                    className="text-xs font-medium text-[color:var(--mwm-navy)] hover:text-[color:var(--mwm-navy-light)]"
-                  >
-                    {copiedNewsletter ? '✓ Copied' : 'Copy all'}
-                  </button>
-                </div>
-                <pre className="text-xs text-neutral-700 bg-neutral-50 border border-neutral-200 rounded-xl p-4 whitespace-pre-wrap leading-relaxed font-mono overflow-x-auto max-h-[480px] overflow-y-auto">
-                  {textCopy}
-                </pre>
-              </div>
-            )}
-          </div>
-        )
-      })()}
     </div>
   )
 }
