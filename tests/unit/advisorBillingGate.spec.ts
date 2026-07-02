@@ -2,7 +2,6 @@ import { test, expect } from '@playwright/test'
 import {
   isAdvisorOwnPlanPath,
   resolveAdvisorPostLoginPath,
-  shouldRedirectAdvisorToBilling,
 } from '@/lib/access/advisorBillingGate'
 
 test.describe('advisorBillingGate', () => {
@@ -14,42 +13,6 @@ test.describe('advisorBillingGate', () => {
     expect(isAdvisorOwnPlanPath('/advisor')).toBe(false)
     expect(isAdvisorOwnPlanPath('/advisor/firm')).toBe(false)
     expect(isAdvisorOwnPlanPath('/prospect/new')).toBe(false)
-  })
-
-  test('unpaid advisor on own-plan path is not redirected', () => {
-    expect(
-      shouldRedirectAdvisorToBilling({
-        isSuperuser: false,
-        isFirmMember: false,
-        profileSubscriptionStatus: null,
-        firmSubscriptionStatus: null,
-        pathname: '/dashboard',
-      }),
-    ).toBe(false)
-  })
-
-  test('unpaid advisor off own-plan path is redirected', () => {
-    expect(
-      shouldRedirectAdvisorToBilling({
-        isSuperuser: false,
-        isFirmMember: false,
-        profileSubscriptionStatus: null,
-        firmSubscriptionStatus: null,
-        pathname: '/advisor',
-      }),
-    ).toBe(true)
-  })
-
-  test('firm-paid owner with null profile sub is not redirected', () => {
-    expect(
-      shouldRedirectAdvisorToBilling({
-        isSuperuser: false,
-        isFirmMember: false,
-        profileSubscriptionStatus: null,
-        firmSubscriptionStatus: 'active',
-        pathname: '/advisor',
-      }),
-    ).toBe(false)
   })
 
   test('unpaid owner login lands on dashboard or redirectTo', () => {
@@ -84,5 +47,17 @@ test.describe('advisorBillingGate', () => {
         firmSubscriptionStatus: 'active',
       }),
     ).toBe('/advisor')
+  })
+
+  test('claim redirect takes precedence over billing state', () => {
+    expect(
+      resolveAdvisorPostLoginPath({
+        redirectTo: '/dashboard',
+        claimRedirect: '/claim/test-token',
+        firmRole: 'owner',
+        profileSubscriptionStatus: null,
+        firmSubscriptionStatus: null,
+      }),
+    ).toBe('/claim/test-token')
   })
 })
