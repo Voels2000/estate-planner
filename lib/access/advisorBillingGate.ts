@@ -1,16 +1,17 @@
-/** Profile-level subs that bypass the advisor billing redirect. */
+/** Profile-level subs treated as paid for post-login routing helpers. */
 export const ACTIVE_ADVISOR_PROFILE_SUB_STATUSES = [
   'active',
   'trialing',
   'canceling',
 ] as const
 
-/** Firm-level subs that bypass the advisor billing redirect (matches client-capacity gate). */
+/** Firm-level subs treated as paid for post-login routing helpers. */
 export const ACTIVE_ADVISOR_FIRM_SUB_STATUSES = ['active', 'trialing'] as const
 
 /**
- * Paths an advisor may reach without profile or firm subscription — their own estate plan.
- * `/advisor` and `/prospect` are intentionally excluded; client roster requires firm billing.
+ * Consumer estate-plan paths advisors may use without firm connection billing.
+ * Portal routes (`/advisor`, `/prospect`) are not listed — they are always reachable;
+ * connect/invite is gated in API handlers (`getAdvisorClientCapacity`).
  */
 export const ADVISOR_OWN_PLAN_PATH_PREFIXES = [
   '/dashboard',
@@ -70,20 +71,6 @@ export function isAdvisorOwnPlanPath(pathname: string): boolean {
   return ADVISOR_OWN_PLAN_PATH_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   )
-}
-
-export function shouldRedirectAdvisorToBilling(input: {
-  isSuperuser: boolean
-  isFirmMember: boolean
-  profileSubscriptionStatus: string | null | undefined
-  firmSubscriptionStatus: string | null | undefined
-  pathname: string
-}): boolean {
-  if (input.isSuperuser || input.isFirmMember) return false
-  if (isActiveAdvisorProfileSubscription(input.profileSubscriptionStatus)) return false
-  if (isActiveAdvisorFirmSubscription(input.firmSubscriptionStatus)) return false
-  if (isAdvisorOwnPlanPath(input.pathname)) return false
-  return true
 }
 
 /** Post-login destination for advisor accounts (SSR + client login must stay in sync). */

@@ -1,6 +1,4 @@
 import { createServerClient } from '@supabase/ssr'
-import { shouldRedirectAdvisorToBilling } from '@/lib/access/advisorBillingGate'
-import { isAdvisorIdentity } from '@/lib/access/isAdvisorIdentity'
 import { NextResponse, type NextRequest } from 'next/server'
 import {
   isLocalDevHost,
@@ -251,36 +249,14 @@ export async function middleware(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, subscription_status, firm_role, is_superuser, is_admin, firm_id')
+    .select('role, is_superuser, is_admin')
     .eq('id', user.id)
     .single()
 
   const isSuperuser = profile?.is_superuser === true || profile?.is_admin === true
-  const isAdvisor = isAdvisorIdentity(profile?.role)
-  const isFirmMember = profile?.firm_role === 'member'
 
-  let firmSubscriptionStatus: string | null = null
-  if (profile?.firm_id) {
-    const { data: firm } = await supabase
-      .from('firms')
-      .select('subscription_status')
-      .eq('id', profile.firm_id)
-      .maybeSingle()
-    firmSubscriptionStatus = firm?.subscription_status ?? null
-  }
-
-  if (
-    isAdvisor &&
-    shouldRedirectAdvisorToBilling({
-      isSuperuser,
-      isFirmMember,
-      profileSubscriptionStatus: profile?.subscription_status,
-      firmSubscriptionStatus,
-      pathname,
-    })
-  ) {
-    return redirectPreservingCookies(request, '/billing', supabaseResponse)
-  }
+  // Advisor portal shell is always reachable (Path A). Client connect/invite billing
+  // is enforced in API handlers via getAdvisorClientCapacity — not middleware.
 
   // Mandatory MFA for privileged roles — legacy blanket enroll (skip when action-gated mode)
   if (

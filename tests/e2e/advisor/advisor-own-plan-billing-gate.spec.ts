@@ -18,9 +18,21 @@ test.describe('Path A — unpaid advisor own plan', () => {
     await expect(page).not.toHaveURL(/\/login/)
   })
 
-  test('advisor portal still requires firm billing', async ({ page }) => {
+  test('advisor portal loads without billing redirect', async ({ page }) => {
     await page.goto('/advisor')
-    await expect(page).toHaveURL(/\/billing/)
+    await expect(page).not.toHaveURL(/\/billing/)
+    await expect(page).not.toHaveURL(/\/login/)
+    await expect(
+      page.getByRole('heading', { name: 'Advisor Portal' }).or(page.getByText('Connect your first client')),
+    ).toBeVisible({ timeout: 30_000 })
+  })
+
+  test('billing back link reaches advisor portal without redirect loop', async ({ page }) => {
+    await page.goto('/billing')
+    await expect(page).not.toHaveURL(/\/login/)
+    await page.getByRole('link', { name: /Advisor portal/i }).click()
+    await expect(page).toHaveURL(/\/advisor/)
+    await expect(page).not.toHaveURL(/\/billing/)
   })
 
   test('POST /api/advisor/invite returns tier_limit_reached', async ({ request }) => {
