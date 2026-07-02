@@ -1,6 +1,7 @@
 import { test as setup } from '@playwright/test'
 import { E2E_IDENTITIES } from '../../../scripts/e2e-test-identities'
 import {
+  ensureAdvisorDirectoryListing,
   ensureAdvisorFirmForE2e,
   ensureE2eAdvisorFirmSubscriptionActive,
   findUserIdByEmail,
@@ -22,6 +23,7 @@ setup('authenticate advisor', async ({ page }) => {
   }
   await ensureAdvisorFirmForE2e(advisorUserId, E2E_IDENTITIES.advisor.firmName)
   await ensureE2eAdvisorFirmSubscriptionActive(advisorUserId)
+  await ensureAdvisorDirectoryListing(advisorUserId)
 
   await page.goto('/login')
   await page.waitForSelector('input[id="email"]', { state: 'visible' })

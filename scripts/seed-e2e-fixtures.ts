@@ -184,7 +184,7 @@ async function main() {
         updated_at: new Date().toISOString(),
       })
       .eq('id', advisorId)
-    await ensureAdvisorDirectoryListing()
+    await ensureAdvisorDirectoryListing(advisorId)
     await ensureAdvisorFirmForE2e(advisorId, E2E_IDENTITIES.advisor.firmName)
     await ensureE2eAdvisorFirmSubscriptionActive(advisorId)
     console.log('')
