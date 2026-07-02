@@ -1,60 +1,55 @@
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { runPostAuthConfirmSideEffects } from '@/lib/auth/runPostAuthConfirmSideEffects'
+import { syncOutreachProfessionalRole } from '@/lib/auth/syncOutreachProfessionalRole'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const tokenHash = searchParams.get('token_hash')
-  const type = searchParams.get('type')
   const next = searchParams.get('next') ?? '/dashboard'
 
-  const cookieStore = await cookies()
+  const buildLoginRedirect = (reason: string) => {
+    const loginParams = new URLSearchParams({
+      error: 'auth_callback_failed',
+      reason,
+      redirectTo: next,
+    })
+    return NextResponse.redirect(new URL(`/login?${loginParams.toString()}`, origin))
+  }
+
+  if (!code) {
+    return buildLoginRedirect('missing_code')
+  }
+
+  const response = NextResponse.redirect(new URL(next, origin))
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll()
+          return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
         },
       },
-    }
+    },
   )
 
-  let sessionError: Error | null = null
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+  if (error) return buildLoginRedirect(error.message)
 
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (error) sessionError = error
-  } else if (tokenHash && type === 'magiclink') {
-    const { error } = await supabase.auth.verifyOtp({
-      type: 'magiclink',
-      token_hash: tokenHash,
-    })
-    if (error) sessionError = error
-  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return buildLoginRedirect('no_user')
 
-  if (!sessionError) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (user) {
-      await runPostAuthConfirmSideEffects(user)
-      return NextResponse.redirect(`${origin}${next}`)
-    }
-  }
-
-  const loginParams = new URLSearchParams({
-    error: 'auth_callback_failed',
-    redirectTo: next,
-  })
-  return NextResponse.redirect(`${origin}/login?${loginParams.toString()}`)
+  await syncOutreachProfessionalRole(user)
+  await runPostAuthConfirmSideEffects(user)
+  return response
 }
