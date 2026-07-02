@@ -64,3 +64,7 @@ export function freeAttorneyClientCapMessage(): string {
     ? `Free plan limited to ${ATTORNEY_FREE_CLIENTS} client household`
     : 'Free plan limited to 3 client households'
 }
+
+export function attorneyPortalSubtitleLine(entryRate: number = ATTORNEY_BANDS[0]?.rate ?? 75): string {
+  return `1 client connection free · then $${entryRate} per connected client, no seats or contract`
+}
