@@ -11,7 +11,7 @@ import {
 } from '../../lib/billing/stripePrices'
 
 test('derives amountCents from estate annual total', () => {
-  expect(planAndExportAmountCents()).toBe(1490 * 100)
+  expect(planAndExportAmountCents()).toBe(790 * 100)
 })
 
 test('keeps one-time price out of PRICE_ID_TO_TIER when env is set', () => {

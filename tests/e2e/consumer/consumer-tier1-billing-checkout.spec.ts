@@ -66,7 +66,7 @@ test.describe('Tier-1 consumer billing checkout UI', () => {
     }
 
     await toggle.click()
-    await expect(page.getByText(/\$290|\$24/).first()).toBeVisible()
+    await expect(page.getByText(/\$190|\$16/).first()).toBeVisible()
 
     const res = await clickFinancialSubscribe(page)
 
