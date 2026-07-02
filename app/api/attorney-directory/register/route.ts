@@ -3,6 +3,12 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { resend } from '@/lib/resend'
 import { EMAIL_FROM } from '@/lib/email/config'
+import {
+  normalizeAttorneyCredentials,
+  normalizeAttorneyFeeStructure,
+  normalizeAttorneySpecializations,
+  normalizeLicensedStates,
+} from '@/lib/attorney/attorneyPracticeOptions'
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -26,6 +32,7 @@ export async function POST(req: NextRequest) {
     specializations?: string[]
     states_licensed?: string[]
     languages?: string[]
+    credentials?: string[]
   }
 
   if (!body.firm_name || !body.email || !body.state) {
@@ -47,12 +54,13 @@ export async function POST(req: NextRequest) {
       city: body.city ?? null,
       state: body.state,
       bar_number: body.bar_number ?? null,
-      fee_structure: body.fee_structure ?? null,
+      fee_structure: normalizeAttorneyFeeStructure(body.fee_structure) ?? body.fee_structure ?? null,
       bio: body.bio ?? null,
       website: body.website ?? null,
       serves_remote: body.serves_remote ?? false,
-      specializations: body.specializations ?? [],
-      states_licensed: body.states_licensed ?? [],
+      specializations: normalizeAttorneySpecializations(body.specializations),
+      states_licensed: normalizeLicensedStates(body.states_licensed),
+      credentials: normalizeAttorneyCredentials(body.credentials),
       languages: body.languages ?? [],
       is_active: false,
       is_verified: false,

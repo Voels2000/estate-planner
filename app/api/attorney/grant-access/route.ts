@@ -15,6 +15,10 @@ import {
   afterAttorneyConnectionBillingConnect,
   assessAttorneyConnectionBillingGate,
 } from '@/lib/billing/attorneyConnectionBilling'
+import {
+  assertAttorneyPracticeProfileForPaidConsumerConnect,
+  consumerAttorneyPracticeProfileBlockedMessage,
+} from '@/lib/attorney/attorneyListingPracticeProfile'
 
 export async function POST(req: NextRequest) {
   const { user, isSuperuser, isConsumer } = await getAccessContext()
@@ -96,6 +100,30 @@ export async function POST(req: NextRequest) {
       if (isAtAttorneyClientCap(attorneyProfile?.attorney_tier ?? 0, activeCount)) {
         return NextResponse.json({ error: getAttorneyClientCapMessage() }, { status: 403 })
       }
+    }
+
+    const { data: consumerSubscription } = await supabase
+      .from('profiles')
+      .select('subscription_status')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const practiceGate = await assertAttorneyPracticeProfileForPaidConsumerConnect(
+      createAdminClient(),
+      {
+        listingId: attorney_id,
+        householdId: household.id,
+        consumerSubscriptionStatus: consumerSubscription?.subscription_status,
+      },
+    )
+    if (!practiceGate.ok) {
+      return NextResponse.json(
+        {
+          error: consumerAttorneyPracticeProfileBlockedMessage(),
+          practice_profile_required: true,
+        },
+        { status: practiceGate.status },
+      )
     }
   } else if (isConnectionBillingEnabled()) {
     return NextResponse.json(

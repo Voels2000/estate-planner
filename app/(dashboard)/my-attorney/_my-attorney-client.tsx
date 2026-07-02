@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { DISCLAIMER_STRINGS } from '@/lib/compliance/language-policy'
 import { ConsumerAttorneyDocumentRequests } from '@/components/attorney/ConsumerAttorneyDocumentRequests'
+import { formatAttorneyPracticeAreaLabel } from '@/lib/attorney/attorneyPracticeOptions'
 
 type Connection = {
   connection_id: string
@@ -18,6 +19,7 @@ type Connection = {
   state: string | null
   bio: string | null
   specializations: string[]
+  credentials: string[]
   website: string | null
 }
 
@@ -206,12 +208,24 @@ export default function MyAttorneyClient({
                 {conn.bio && (
                   <p className="mt-3 text-sm text-neutral-600 leading-relaxed">{conn.bio}</p>
                 )}
+                {conn.credentials.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {conn.credentials.map(c => (
+                      <span
+                        key={c}
+                        className="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-900 ring-1 ring-sky-100"
+                      >
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {conn.specializations.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {conn.specializations.map(s => (
                       <span key={s}
                         className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600">
-                        {s}
+                        {formatAttorneyPracticeAreaLabel(s)}
                       </span>
                     ))}
                   </div>

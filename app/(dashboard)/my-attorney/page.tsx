@@ -37,7 +37,7 @@ export default async function MyAttorneyPage() {
   const { data: listings } = attorneyIds.length > 0
     ? await supabase
         .from('attorney_listings')
-        .select('id, firm_name, contact_name, email, city, state, bio, specializations, website')
+        .select('id, firm_name, contact_name, email, city, state, bio, specializations, credentials, website')
         .in('id', attorneyIds)
     : { data: [] }
 
@@ -75,6 +75,7 @@ export default async function MyAttorneyPage() {
       state: listing?.state ?? null,
       bio: listing?.bio ?? null,
       specializations: listing?.specializations ?? [],
+      credentials: listing?.credentials ?? [],
       website: listing?.website ?? null,
     }
   })

@@ -3,6 +3,10 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getSignupHref } from '@/lib/waitlist-mode'
+import {
+  formatAttorneyFeeStructureLabel,
+  formatAttorneyPracticeAreaLabel,
+} from '@/lib/attorney/attorneyPracticeOptions'
 
 type Attorney = {
   id: string
@@ -19,6 +23,7 @@ type Attorney = {
   fee_structure: string | null
   specializations: string[]
   states_licensed: string[]
+  credentials: string[]
   languages: string[]
   serves_remote: boolean
   is_verified: boolean
@@ -206,7 +211,9 @@ export function AttorneyDirectoryClient({
                 fontSize: 13, background: 'white', outline: 'none',
                 fontFamily: 'DM Sans, system-ui, sans-serif' }}>
               <option value="">All specializations</option>
-              {allSpecializations.map(s => <option key={s} value={s}>{s}</option>)}
+              {allSpecializations.map(s => (
+                <option key={s} value={s}>{formatAttorneyPracticeAreaLabel(s)}</option>
+              ))}
             </select>
           )}
           <label style={{ display: 'flex', alignItems: 'center', gap: 6,
@@ -322,6 +329,19 @@ export function AttorneyDirectoryClient({
                     </div>
                   )}
 
+                  {/* Credentials */}
+                  {attorney.credentials?.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4 }}>
+                      {attorney.credentials.slice(0, 4).map(c => (
+                        <span key={c} style={{ background: '#ecfeff',
+                          color: '#0e7490', fontSize: 11, padding: '2px 7px',
+                          borderRadius: 20, border: '1px solid #a5f3fc' }}>
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Specializations */}
                   {attorney.specializations?.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4 }}>
@@ -329,7 +349,7 @@ export function AttorneyDirectoryClient({
                         <span key={s} style={{ background: '#f0f4ff',
                           color: '#3730a3', fontSize: 11, padding: '2px 7px',
                           borderRadius: 20, border: '1px solid #c7d2fe' }}>
-                          {s}
+                          {formatAttorneyPracticeAreaLabel(s)}
                         </span>
                       ))}
                     </div>
@@ -338,7 +358,7 @@ export function AttorneyDirectoryClient({
                   {/* Fee structure */}
                   {attorney.fee_structure && (
                     <div style={{ fontSize: 12, color: '#718096' }}>
-                      💼 {attorney.fee_structure}
+                      💼 {formatAttorneyFeeStructureLabel(attorney.fee_structure)}
                     </div>
                   )}
 

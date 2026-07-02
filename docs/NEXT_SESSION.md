@@ -1,61 +1,47 @@
 # NEXT_SESSION.md — session handoff
 
-**Last updated:** 2026-07-01 (#212–#213 merged; claim v2 staging walks green)
+**Last updated:** 2026-07-02 (attorney settings practice profile PR → staging)
 
 ---
 
 ## Start here
 
+**Attorney settings practice profile:** `[~]` PR → **`staging`** — `/attorney/settings` practice section + paid-consumer gate (2nd billable client or consumer paid sub; first free client exempt). Spec: [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md).
+
 **Attorney connection billing:** ✅ **Closed** — step-4 spine proven.
 
-**Claim v2:** ✅ **Closed on staging** (#206–#213). Staging walks green (`walk:staging-action-step-up`, `walk:staging-directory-claim-magic-link`). **Next:** promotion PR **`staging` → `main`** → prod deploy → prod env flags (`CONNECTION_BILLING_ENABLED`, `ACTION_GATED_PRIVILEGED_MFA`) when ready for cutover.
+**Claim v2:** ✅ **Closed on staging** (#206–#213). **Promotion PR #215** open (`staging` → `main`).
+
+**GTM WA first wave (in progress):** WA seed committed (#230 credentials column + re-import). Next: sender test `--commit`, compliance sign-off.
 
 ---
 
-## Current state (2026-07-01)
+## Current state (2026-07-02)
 
 | Area | Status |
 |------|--------|
-| Attorney connection billing | ✅ Closed — step 4 PASS on staging |
-| Walk helpers | ✅ attorney connection + directory claim + action step-up walks |
-| Claim v2 implementation | ✅ #206–#213 on staging; walks green 2026-07-01 |
-| `/respond-request` rename | ✅ #212 (redirect from `/claim-listing`) |
-| Action-gated step-up | ✅ #211 + `ACTION_GATED_PRIVILEGED_MFA=true` on staging |
-| Credential at first connect | ✅ #212 — WSBA/CRD on accept; sets `credential_verified_at` |
-| Prod connection billing flip | 🚫 After promotion + prod deploy — [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) |
+| Attorney settings practice profile | `[~]` | PR → staging — UI + gate + docs |
+| Section A pricing (#216–#218) | ✅ On staging |
+| Section C copy (#220) | ✅ On staging |
+| Outreach sender (#221) | ✅ Merged |
+| WA directory seed (#230) | ✅ Import + `credentials[]` on staging |
+| Sender test `--commit` | `[~]` |
+| Compliance sign-off (outreach copy) | `[ ]` |
+| Prod connection billing flip | 🚫 After promotion — [PRE_FLIP_CHECKLIST.md](./PRE_FLIP_CHECKLIST.md) |
 
 ---
 
 ## Handoff (fresh chat)
 
-**Proven on staging (2026-07-01):** advisor + attorney connection billing, Path A, directory magic-link claim + billing seed, action step-up + credential at connect.
+**Proven on staging:** connection billing, claim v2, directory seed importer, attorney portal connection-billing UX (#229).
 
-**Next:** merge promotion PR **`staging` → `main`**; after prod deploy set prod env flags for connection billing / action-gated step-up when cutover-ready.
-
-**Before launch:** prod cutover checklist · P0 outreach copy · real-card smoke.
+**Next:** merge attorney practice-profile PR → staging smoke (`/attorney/settings`, accept-request gate on 2nd client). GTM: outreach test send. Backlog: dismissible directory-profile nudge for ungated incomplete listings.
 
 ---
 
 ## Paste block (first message in Cursor)
 
-> My Wealth Maps — **attorney billing closed** (#200–#203). Spine: `reset:staging-e2e-attorney-connection-billing` → `walk:staging-attorney-connection-accepts` → `walk:staging-attorney-step4`.
->
-> **Claim v2:** [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) — magic link at claim, step-up on first data action, explicit billing seed at claim.
-
----
-
-## Staging walk helpers
-
-| Command | Purpose |
-|---------|---------|
-| `npm run reset:staging-e2e-attorney-connection-billing` | Clean attorney billing fixture + seed pending requests |
-| `npm run reset:staging-e2e-directory-claim` | Unclaimed directory listings for claim walk |
-| `npm run walk:staging-directory-claim-magic-link` | Magic-link session → POST claim → billing seed checks |
-| `npm run walk:staging-action-step-up` | Step-up block + credential gate + accept with bar (#212–#213) |
-| `npx tsx scripts/walk-staging-attorney-connection-accepts.ts` | List pending accepts + API walk |
-| `npx tsx scripts/inspect-staging-attorney-billing-state.ts` | DB + Stripe snapshot |
-
-**E2E identity:** `e2e-attorney@mywealthmaps.test`
+> My Wealth Maps — attorney **practice profile** PR on staging (settings UI + paid-consumer gate). Smoke `/attorney/settings` save + requests accept on 2nd client. GTM: outreach `--commit` test send when ready. Promotion #215 when staging green.
 
 ---
 
@@ -63,13 +49,10 @@
 
 | Doc | Role |
 |-----|------|
-| [ATTORNEY_RAISE_CONNECT_PARITY_FIX.md](./ATTORNEY_RAISE_CONNECT_PARITY_FIX.md) | Attorney raise/connect parity spec (shipped #201) |
-| [CLAIM_FLOW_V2_COMPLETE_SPEC.md](./CLAIM_FLOW_V2_COMPLETE_SPEC.md) | Claim v2 — locked auth + build plan |
-| [CLAIM_FLOW_V2_DISCOVERY_AUDIT.md](./CLAIM_FLOW_V2_DISCOVERY_AUDIT.md) | Claim v2 code audit |
-| [CONNECTION_BILLING_STICKY_FLOOR_FIX.md](./CONNECTION_BILLING_STICKY_FLOOR_FIX.md) | B2 model + contract tests |
+| [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md) | Practice profile fields + paid-consumer gate |
+| [GTM_FIRST_WAVE.md](./GTM_FIRST_WAVE.md) | First-wave outreach |
 | [DECISION_LOG.md](./DECISION_LOG.md) | Settled decisions |
-| [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | Connection billing architecture |
-| [E2E_TEST_RESET.md](./E2E_TEST_RESET.md) | Fixture resets |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Staging-first branch flow |
 
 ---
 

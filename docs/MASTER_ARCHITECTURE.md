@@ -1,6 +1,6 @@
 # MASTER_ARCHITECTURE.md
 # My Wealth Maps — Full Architecture Reference
-# Last updated: 2026-07-01 (connection billing staging track #195–#198 on staging)
+# Last updated: 2026-07-02 (attorney settings practice profile + paid-consumer gate)
 
 ---
 
@@ -1171,7 +1171,7 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 | Advisor portal | `advisor/layout.tsx` | Advisor top bar + tabs | Navy, UX-2 |
 | Advisor tools | `(advisor-tools)/layout.tsx` | Prospect Mode bar | Minimal strip; canonical route `/prospect` |
 | Prospect PDF | `GET /api/advisor/prospect-pdf` | — | Print-to-PDF HTML; query params mirror prospect form |
-| Attorney portal | `(attorney)/layout.tsx` + nav | Clients · Requests · Billing · Firm settings | Collaboration v2: matter workflow, doc requests, firm notes; consumer data read-only |
+| Attorney portal | `(attorney)/layout.tsx` + nav | Clients · Requests · Billing · Firm settings | Collaboration v2 + **practice profile** (`/attorney/settings`); consumer data read-only |
 | Public marketing | `(public)/layout.tsx` | `PublicNav` + footer | `/pricing`, `/assess`, `/`, etc. |
 | Education | `(public)/education/layout.tsx` | Education sticky header | Overrides `PublicNav` on `/education/*` |
 | Learn guides | `(public)/learn/layout.tsx` | Learn sticky header | Overrides `PublicNav` on `/learn/*`; WA estate tax SEO |
@@ -1371,6 +1371,8 @@ Per-user engine trace for support diagnostics. **Not** a second calculation engi
 | Attorney accept gate UI | `components/attorney/AttorneyConnectionBillingGateModals.tsx` — checkout + inline raise on `/attorney/requests` |
 | Consumer blocked copy | `lib/billing/attorneyConnectBillingGateClient.ts` — invite accept, intake-complete, dashboard banner |
 | Connect APIs gated | `accept-request`, `accept-invite`, `grant-access`, `completeIntakeRequest` |
+| Practice profile gate | `lib/attorney/attorneyListingPracticeProfile.ts` — 403 `practice_profile_required` when billable connect or consumer paid sub; bar # gate unchanged (`lib/directory/professionalCredential.ts`) |
+| Firm settings UI | `app/(attorney)/attorney/settings/` — practice checklist + credential tags + fee enum |
 | Raise API | `POST /api/attorney/connection-limit/raise` — DB limit only; Stripe sync on connect |
 | Spec / proof | [ATTORNEY_RAISE_CONNECT_PARITY_FIX.md](./ATTORNEY_RAISE_CONNECT_PARITY_FIX.md) |
 
@@ -1505,6 +1507,7 @@ Manual consumer deploy smoke: [CONSUMER_RELEASE_SMOKE_TEST.md](./CONSUMER_RELEAS
 - **Referral:** `lib/events/referral.ts` — advisor `?ref=` (`buildAllEventReferralUrls`) and attorney `?aref=` (`buildAllAttorneyEventReferralUrls`) for all **24** slugs; `_referral-tracker.tsx` → `POST /api/referral/track` with `type: 'advisor' | 'attorney'`; `referral_clicks` with `listing_type`.
 - **Advisor portal:** `app/advisor/page.tsx` + `_advisor-client.tsx` **Newsletter Kit** (`?ref=`).
 - **Attorney portal (Sprint 8 + v2 2026-06-07):** `app/(attorney)/attorney/` — dashboard, **`/requests`** (connection inbox), **`/settings`** (listing edit), **`/billing`**; client detail — matter workflow, firm notes, document requests, read-only estate view + document vault upload. APIs: **`/api/attorney/matter`**, **`notes`**, **`document-requests`**, **`listing`**. Consumer **`/my-attorney`** shows pending doc requests. Migration **`20260702120000`**. Newsletter kit (`?aref=`) unchanged.
+- **Attorney settings — practice & credentials (2026-07-02):** `/attorney/settings` — firm/contact + practice section (`bar_number` optional; `states_licensed[]`, `specializations[]` checklist, `credentials[]` tags, `fee_structure` enum). **`PATCH /api/attorney/listing`** normalizes slugs/enums. **Paid-consumer gate:** `lib/attorney/attorneyListingPracticeProfile.ts` — required before 2nd billable client (connection billing) or consumer on own paid subscription; first free client ungated. Wired: `accept-request`, `grant-access`, `accept-invite`, `completeIntakeRequest`. Spec: [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md). **Backlog:** dismissible nudge for permanently ungated incomplete directory listings (directory quality, not billing).
 - **Plan readiness:** `PlanStatusCard` on advisor client Overview (`estate_health_scores.score` + gap counts; replaces `PlanReadinessCard`).
 - **Gap workflow (UX-2):** `advisor_gap_statuses` + `GapStatusSelector` on Overview gap rows; `GET`/`PATCH` `/api/advisor/gap-status`.
 - **GST ledger (pre-launch RLS):** `SLATILITPanel` → `POST /api/advisor/gst-entry` (advisor–client link check + service-role insert); not direct browser `gst_ledger` writes.

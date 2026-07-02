@@ -1,6 +1,6 @@
 # DATABASE_SCHEMA_REFERENCE.md
 # My Wealth Maps — Database Schema Guide
-# Last updated: 2026-07-01 (firms connection billing columns)
+# Last updated: 2026-07-02 (attorney_listings practice profile — application layer)
 
 **Session history:** [SCHEMA_CHANGELOG.md](./SCHEMA_CHANGELOG.md) · **Consumer journeys:** [CONSUMER_FLOWS.md](./CONSUMER_FLOWS.md)
 
@@ -134,7 +134,7 @@ These tables had permissive `auth.uid() IS NOT NULL` policies; migration replace
 - **Purpose:** canonical attorney listing for find-attorney, registration, and connection requests — **not** `attorney_directory`
 - **Referral:** unique `referral_code`; event links use `?aref=`; resolved in `referral_clicks.attorney_listing_id`
 - **Migration:** `20260528000000_attorney_referrals.sql`
-- **Application:** `/attorney` portal — nav, requests inbox, firm settings **`PATCH /api/attorney/listing`**; newsletter kit; `POST /api/referral/track` with `type: 'attorney'`
+- **Application:** `/attorney` portal — nav, requests inbox, firm settings **`PATCH /api/attorney/listing`** (firm/contact + practice profile: `states_licensed`, `specializations`, `credentials`, `fee_structure` enum at app layer); paid-consumer connect gate — see [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md). Newsletter kit; `POST /api/referral/track` with `type: 'attorney'`
 
 ### `attorney_clients`
 

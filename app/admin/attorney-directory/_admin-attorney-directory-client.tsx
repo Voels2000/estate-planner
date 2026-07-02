@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatAttorneyPracticeAreaLabel } from '@/lib/attorney/attorneyPracticeOptions'
 
 type Attorney = {
   id: string
@@ -254,7 +255,7 @@ export function AdminAttorneyDirectoryClient({ attorneys: initialAttorneys, refe
                             key={s}
                             className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600"
                           >
-                            {s}
+                            {formatAttorneyPracticeAreaLabel(s)}
                           </span>
                         ))}
                       </div>
@@ -324,7 +325,7 @@ export function AdminAttorneyDirectoryClient({ attorneys: initialAttorneys, refe
                   <div className="flex flex-wrap gap-1">
                     {(attorney.specializations ?? []).slice(0, 2).map(s => (
                       <span key={s} className="rounded-full bg-[var(--mwm-gold-pale)] px-2 py-0.5 text-xs text-[color:var(--mwm-navy)]">
-                        {s}
+                        {formatAttorneyPracticeAreaLabel(s)}
                       </span>
                     ))}
                     {(attorney.specializations ?? []).length > 2 && (

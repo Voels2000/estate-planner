@@ -89,6 +89,12 @@ export function AttorneyRequestsClient({
           })
           return
         }
+        if (data.practice_profile_required) {
+          setError(
+            `${data.error ?? 'Complete your practice profile before accepting paid client connections.'} Go to Firm settings → Practice & credentials.`,
+          )
+          return
+        }
         if (res.status === 403) setCapError(true)
         if (handleConnectBillingError(data, res.status)) return
         throw new Error(data.error ?? 'Unable to accept')
