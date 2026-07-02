@@ -8,7 +8,21 @@ For live table/RPC definitions, use [DATABASE_SCHEMA_REFERENCE.md](./DATABASE_SC
 
 ---
 
-# Last updated: 2026-07-01 (attorney connection billing #199–#201)
+# Last updated: 2026-07-02 (attorney settings practice profile — application layer)
+
+---
+
+## Attorney settings practice profile (2026-07-02)
+
+**Migration:** none (uses existing `attorney_listings` columns from `20260803120000_attorney_listings_credentials.sql`).
+
+**Change (application):**
+
+- `/attorney/settings` — Practice & credentials section; `PATCH /api/attorney/listing` persists `bar_number`, `credentials`, normalized `specializations` / `states_licensed` / `fee_structure`.
+- Paid-consumer connect gate — `lib/attorney/attorneyListingPracticeProfile.ts`; first free client exempt; consumer direct paid subscription always gated.
+- Unit tests: `tests/unit/attorneyListingPracticeProfile.spec.ts`.
+
+**Spec:** [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md).
 
 ---
 

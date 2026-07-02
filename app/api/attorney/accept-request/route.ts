@@ -22,6 +22,7 @@ import {
   assertProfessionalCredentialForConnect,
   type ConnectCredentialInput,
 } from '@/lib/directory/professionalCredential'
+import { assertAttorneyPracticeProfileForPaidConsumerConnect } from '@/lib/attorney/attorneyListingPracticeProfile'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,6 +82,29 @@ export async function POST(request: Request) {
   if (isConnectionBillingEnabled()) {
     const gate = await assessAttorneyConnectionBillingGate(admin, attorneyListingId, row.client_id)
     if (!gate.ok) return gate.response
+  }
+
+  const { data: consumerProfileForGate } = await admin
+    .from('households')
+    .select('owner_id')
+    .eq('id', row.client_id)
+    .maybeSingle()
+
+  const { data: consumerSubscription } = consumerProfileForGate?.owner_id
+    ? await admin
+        .from('profiles')
+        .select('subscription_status')
+        .eq('id', consumerProfileForGate.owner_id)
+        .maybeSingle()
+    : { data: null }
+
+  const practiceGate = await assertAttorneyPracticeProfileForPaidConsumerConnect(admin, {
+    listingId: attorneyListingId,
+    householdId: row.client_id,
+    consumerSubscriptionStatus: consumerSubscription?.subscription_status,
+  })
+  if (!practiceGate.ok) {
+    return NextResponse.json(practiceGate.body, { status: practiceGate.status })
   }
 
   const credentialGate = await assertProfessionalCredentialForConnect(admin, {

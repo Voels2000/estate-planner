@@ -11,6 +11,10 @@ import {
   afterAttorneyConnectionBillingConnect,
   evaluateAttorneyConnectionBillingGate,
 } from '@/lib/billing/attorneyConnectionBilling'
+import {
+  assertAttorneyPracticeProfileForPaidConsumerConnect,
+  consumerAttorneyPracticeProfileBlockedMessage,
+} from '@/lib/attorney/attorneyListingPracticeProfile'
 
 export async function completeIntakeRequestForUser(
   userSupabase: SupabaseClient,
@@ -144,6 +148,25 @@ export async function completeIntakeRequestForUser(
         const activeCount = await countActiveAttorneyClients(userSupabase, attorneyListingId)
         if (isAtAttorneyClientCap(attorneyProfile?.attorney_tier ?? 0, activeCount)) {
           return { ok: false, error: getAttorneyClientCapMessage(), status: 403 }
+        }
+      }
+
+      const { data: consumerSubscription } = await userSupabase
+        .from('profiles')
+        .select('subscription_status')
+        .eq('id', userId)
+        .maybeSingle()
+
+      const practiceGate = await assertAttorneyPracticeProfileForPaidConsumerConnect(admin, {
+        listingId: attorneyListingId,
+        householdId: household.id,
+        consumerSubscriptionStatus: consumerSubscription?.subscription_status,
+      })
+      if (!practiceGate.ok) {
+        return {
+          ok: false,
+          error: consumerAttorneyPracticeProfileBlockedMessage(),
+          status: practiceGate.status,
         }
       }
     } else if (isConnectionBillingEnabled()) {

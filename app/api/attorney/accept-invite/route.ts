@@ -10,6 +10,10 @@ import {
   afterAttorneyConnectionBillingConnect,
   assessAttorneyConnectionBillingGate,
 } from '@/lib/billing/attorneyConnectionBilling'
+import {
+  assertAttorneyPracticeProfileForPaidConsumerConnect,
+  consumerAttorneyPracticeProfileBlockedMessage,
+} from '@/lib/attorney/attorneyListingPracticeProfile'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,6 +56,27 @@ export async function POST(request: Request) {
   if (isConnectionBillingEnabled()) {
     const gate = await assessAttorneyConnectionBillingGate(admin, invite.attorney_id, householdId)
     if (!gate.ok) return gate.response
+  }
+
+  const { data: consumerSubscription } = await admin
+    .from('profiles')
+    .select('subscription_status')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  const practiceGate = await assertAttorneyPracticeProfileForPaidConsumerConnect(admin, {
+    listingId: invite.attorney_id,
+    householdId,
+    consumerSubscriptionStatus: consumerSubscription?.subscription_status,
+  })
+  if (!practiceGate.ok) {
+    return NextResponse.json(
+      {
+        error: consumerAttorneyPracticeProfileBlockedMessage(),
+        practice_profile_required: true,
+      },
+      { status: practiceGate.status },
+    )
   }
 
   const { error: acceptError } = await admin

@@ -1,6 +1,23 @@
 # DECISION_LOG.md
 # My Wealth Maps — Key Decisions and Reasoning
-# Last updated: 2026-07-01 (connection billing staging track #195–#198)
+# Last updated: 2026-07-02 (attorney settings practice profile gate)
+
+---
+
+## Attorney practice profile — paid-consumer gate only (2026-07-02)
+
+**Problem.** Directory seed gives sparse `specializations` / `credentials`; attorneys need a self-serve way to complete their listing. Connection billing allows one free client — tightening the bar-number gate to all connects would block 16/18 seeded attorneys without WSBA parse.
+
+**Decision.**
+
+- **`/attorney/settings`** — Practice & credentials section: optional save for `bar_number`; checklist `specializations[]`, multi-select `states_licensed[]`, tag `credentials[]`, enum `fee_structure` (`hourly` | `flat-fee` | `hybrid` | `consultation`).
+- **Paid-consumer gate** (all four practice fields required): 2nd+ billable household when `CONNECTION_BILLING_ENABLED`, or consumer with direct paid subscription (`active` / `trialing` / `canceling`). **First free client stays ungated.**
+- **Bar number** — still optional for settings; existing first-connect WSBA modal (`assertProfessionalCredentialForConnect`) unchanged.
+- **Directory-quality gap (backlog):** attorney who never exceeds one free client can keep empty profile live in `/find-attorney` — address with dismissible settings nudge later, not a hard gate.
+
+**Reasoning.** Billing integrity without blocking wave-1 outreach listings; directory completeness is a separate, lighter follow-up.
+
+**Shipped:** PR → `staging` (attorney settings practice profile). Spec: [ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md](./ATTORNEY_SETTINGS_CREDENTIALS_SPEC.md).
 
 ---
 
