@@ -98,7 +98,6 @@ export const fxAttorneyPlans: ComponentProps<typeof AttorneyBillingClient> = {
         'Intake summary PDF export',
         'Multi-client document health dashboard',
       ],
-      envKey: 'STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY',
     },
     {
       id: 2,
@@ -111,7 +110,6 @@ export const fxAttorneyPlans: ComponentProps<typeof AttorneyBillingClient> = {
         'Bulk client management',
         'Everything in Starter',
       ],
-      envKey: 'STRIPE_PRICE_ATTORNEY_GROWTH_MONTHLY',
     },
   ],
 }

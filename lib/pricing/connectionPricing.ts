@@ -80,6 +80,11 @@ export const CONNECTION_STRIPE_PRICE_ENV = {
   attorney: 'STRIPE_PRICE_ATTORNEY_CONNECTION_MONTHLY',
 } as const
 
+export const CONNECTION_STRIPE_PRICE_ENV_VARS = [
+  CONNECTION_STRIPE_PRICE_ENV.advisor,
+  CONNECTION_STRIPE_PRICE_ENV.attorney,
+] as const
+
 /** Legacy per-seat / flat-tier prices retired by connection billing (archive with --archive-old). */
 export const LEGACY_PROFESSIONAL_STRIPE_PRICE_ENV_VARS = [
   'STRIPE_PRICE_ADVISOR_STARTER_MONTHLY',

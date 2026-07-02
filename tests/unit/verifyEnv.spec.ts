@@ -176,6 +176,21 @@ test.describe('Stripe liveness key mode', () => {
       shouldSkipUnsetStripePriceCheck('STRIPE_PRICE_ATTORNEY_STARTER_MONTHLY', 'local'),
     ).toBe(false)
   })
+
+  test('shouldSkipUnsetStripePriceCheck — legacy retired when connection billing on', () => {
+    const env = { CONNECTION_BILLING_ENABLED: 'true' }
+    expect(
+      shouldSkipUnsetStripePriceCheck('STRIPE_PRICE_ADVISOR_STARTER_MONTHLY', 'preview', env),
+    ).toBe(true)
+    expect(
+      shouldSkipUnsetStripePriceCheck('STRIPE_PRICE_ADVISOR_CONNECTION_MONTHLY', 'preview', env),
+    ).toBe(false)
+    expect(
+      shouldSkipUnsetStripePriceCheck('STRIPE_PRICE_ADVISOR_CONNECTION_MONTHLY', 'preview', {
+        CONNECTION_BILLING_ENABLED: 'false',
+      }),
+    ).toBe(true)
+  })
 })
 
 test.describe('verifier tuning — Supabase formats, canary, platform vars', () => {
@@ -301,6 +316,7 @@ test.describe('boot identity', () => {
       stripe_secret_key_last4: null,
       stripe_publishable_key_prefix: null,
       stripe_price_financial_monthly: null,
+      connection_billing_enabled: false,
     })
   })
 

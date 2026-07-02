@@ -149,9 +149,14 @@ else
     if echo "$BODY" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
+boot = d.get('boot') or {}
+connection = boot.get('connection_billing_enabled') is True
 prices = (d.get('liveness') or {}).get('stripe_prices') or []
-adv = [p for p in prices if 'ADVISOR' in p.get('env_var','') or 'ATTORNEY' in p.get('env_var','')]
-bad = [p for p in adv if p.get('status') != 'active']
+if connection:
+    adv = [p for p in prices if 'CONNECTION' in p.get('env_var','')]
+else:
+    adv = [p for p in prices if ('ADVISOR' in p.get('env_var','') or 'ATTORNEY' in p.get('env_var','')) and 'CONNECTION' not in p.get('env_var','')]
+bad = [p for p in adv if p.get('status') not in ('active', 'skipped')]
 crit = [f for f in d.get('flags',[]) if f.get('level') == 'CRITICAL']
 if bad:
     print('BAD_PRICES')
@@ -161,7 +166,7 @@ if crit:
     print('CRITICAL_FLAGS')
     sys.exit(1)
 mode = (d.get('liveness') or {}).get('stripe_key_mode')
-print('ok', len(adv), 'advisor/attorney prices active', 'mode='+str(mode))
+print('ok', len(adv), 'pro prices checked', 'connection='+str(connection), 'mode='+str(mode))
 " 2>/dev/null; then
       pass "staging verify-env?live=1 — advisor/attorney prices active (test mode)"
     else

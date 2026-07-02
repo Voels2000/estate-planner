@@ -15,6 +15,12 @@ import {
   type EnvShape,
   type EnvVarEntry,
 } from '@/lib/env/manifest'
+import {
+  isConnectionBillingEnabledInEnv,
+  isConnectionStripePriceEnvVar,
+  isLegacyProfessionalStripePriceEnvVar,
+  isStripePriceRequiredInScope,
+} from '@/lib/env/stripePriceRequirements'
 
 export type VarStatus =
   | 'OK'
@@ -117,6 +123,7 @@ export interface BootIdentity {
   stripe_secret_key_last4: string | null
   stripe_publishable_key_prefix: string | null
   stripe_price_financial_monthly: string | null
+  connection_billing_enabled: boolean
 }
 
 /** Parse `cmzyxpxfyvdvbsykjvsg` from `https://cmzyxpxfyvdvbsykjvsg.supabase.co`. */
@@ -168,6 +175,7 @@ export function buildBootIdentity(env: EnvSource = process.env): BootIdentity {
     stripe_secret_key_last4: secretFp.last4,
     stripe_publishable_key_prefix: publishableFp.prefix,
     stripe_price_financial_monthly: env.STRIPE_PRICE_FINANCIAL_MONTHLY?.trim() || null,
+    connection_billing_enabled: isConnectionBillingEnabledInEnv(env),
   }
 }
 
@@ -217,6 +225,7 @@ function classifyVar(
   entry: EnvVarEntry,
   scope: EnvScope,
   raw: string | undefined,
+  env: EnvSource,
 ): { status: VarStatus; flag?: EnvFlag } {
   const value = raw?.trim() ?? ''
   const present = value.length > 0
@@ -234,7 +243,7 @@ function classifyVar(
   }
 
   const inScope = entry.scopes.includes(scope)
-  const required = entry.requiredInScopes.includes(scope)
+  const required = isStripePriceRequiredInScope(entry, scope, env)
   const warnIfMissing = entry.warnIfMissingInScopes?.includes(scope)
 
   if (!inScope && !required && !warnIfMissing) {
@@ -342,12 +351,42 @@ function detectUnknownVars(env: EnvSource): EnvFlag[] {
   return flags
 }
 
-/** Consumer prices may be unset on preview/local (legacy fallbacks in stripePrices.ts). */
-export function shouldSkipUnsetStripePriceCheck(envVar: string, scope: EnvScope): boolean {
-  return (
+/** Skip Stripe price liveness when unset — consumer on non-prod; legacy pro when connection billing on; connection when flag off. */
+function connectionBillingSkipReason(envVar: string, env: EnvSource): string {
+  if (
+    (CONSUMER_STRIPE_PRICE_ENV_VARS as readonly string[]).includes(envVar) &&
+    resolveEnvScope(env) !== 'production'
+  ) {
+    return 'unset (consumer legacy fallback may apply in preview/local)'
+  }
+  if (isConnectionBillingEnabledInEnv(env) && isLegacyProfessionalStripePriceEnvVar(envVar)) {
+    return 'unset (retired — CONNECTION_BILLING_ENABLED uses connection price IDs)'
+  }
+  if (!isConnectionBillingEnabledInEnv(env) && isConnectionStripePriceEnvVar(envVar)) {
+    return 'unset (connection billing flag off — legacy per-seat prices apply)'
+  }
+  return 'unset (skipped by stripe price policy)'
+}
+
+export function shouldSkipUnsetStripePriceCheck(
+  envVar: string,
+  scope: EnvScope,
+  env: EnvSource = process.env,
+): boolean {
+  const connectionBilling = isConnectionBillingEnabledInEnv(env)
+  if (
     scope !== 'production' &&
     (CONSUMER_STRIPE_PRICE_ENV_VARS as readonly string[]).includes(envVar)
-  )
+  ) {
+    return true
+  }
+  if (connectionBilling && isLegacyProfessionalStripePriceEnvVar(envVar)) {
+    return true
+  }
+  if (!connectionBilling && isConnectionStripePriceEnvVar(envVar)) {
+    return true
+  }
+  return false
 }
 
 async function verifyStripePrices(
@@ -380,12 +419,12 @@ async function verifyStripePrices(
   for (const envVar of STRIPE_PRICE_ENV_VARS) {
     const priceId = env[envVar]?.trim() ?? ''
     if (!priceId) {
-      if (shouldSkipUnsetStripePriceCheck(envVar, scope)) {
+      if (shouldSkipUnsetStripePriceCheck(envVar, scope, env)) {
         rows.push({
           env_var: envVar,
           price_id: '',
           status: 'skipped',
-          reason: 'unset (consumer legacy fallback may apply in preview/local)',
+          reason: connectionBillingSkipReason(envVar, env),
         })
       } else {
         rows.push({ env_var: envVar, price_id: '', status: 'missing', reason: 'env var unset' })
@@ -585,7 +624,7 @@ export async function verifyEnvironment(options?: {
   let wrongShape = 0
 
   for (const entry of ENV_MANIFEST) {
-    const { status, flag } = classifyVar(entry, scope, env[entry.name])
+    const { status, flag } = classifyVar(entry, scope, env[entry.name], env)
     if (status !== 'NOT_APPLICABLE') {
       vars[entry.name] = status
     }
