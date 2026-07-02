@@ -125,27 +125,27 @@ await stripe.promotionCodes.create({
 
 **The tightened 5.** Draw from your 9 HIGH list. Confirmed anchors from the directory research: **Angela Macey-Cushman** (WSBA #38320), **James Flaggert** (WSBA #20965), **Sarah B. Bowman** (Perkins Coie, Seattle — the corrected current EP partner). Slot two more from the HIGH tier; prioritize solo/small-firm EP specialists over big-firm partners for pilot responsiveness.
 
-**The offer:** "Claim your free directory listing + run up to 3 client households through the platform at no cost. It calculates each household's WA estate-tax exposure and generates a one-page meeting brief."
+**The offer:** Claim your free directory listing. Your first connected client is free; after that, pay-per-connection (no seats, no annual contract, no minimum). See `lib/emails/directory-outreach-templates.ts` for shipped copy.
 
-**Email — Attorney first wave:**
+**Email — Attorney first wave** *(source of truth: `lib/emails/directory-outreach-templates.ts`)*
 
-> **Subject:** Your listing on My Wealth Maps — [Attorney Name]
+> **Subject:** {Firm Name} is listed on My Wealth Maps — claim it in 5 minutes
 >
-> Hi [First Name],
+> Hi {First Name},
 >
-> I'm Al Voels, founder of My Wealth Maps — a new estate-planning intelligence platform for Washington households in the $2M–$15M range.
+> We've listed {Firm Name} on My Wealth Maps, a Washington estate-planning platform designed to connect attorneys with households working through their estate plans — trust funding, WA estate tax exposure, beneficiary coordination.
 >
-> I've created a listing for you in the platform's attorney directory (live now, built from public sources — claiming it takes about five minutes to add your focus areas and bio).
+> Once a client connects, you'll see modeled estate tax exposure, plan completeness, and document gaps in their matter workspace — as they share their household data.
 >
-> I'd also like to offer you free founding access: run up to three client households through the platform at no cost. It calculates each household's Washington estate-tax exposure in real time — the $3M state exemption catches more households than people expect once homes and retirement accounts are counted — and generates a one-page brief you can take into a meeting.
+> Claiming your listing takes about five minutes and your first connected client is free… [pricing paragraph]
 >
-> I've attached a short guide on Washington's estate tax, including the ESB 6347 changes that took effect this year — yours to share with clients, no strings.
+> We built your listing from public directory information. If {Firm Name} isn't the right contact, just reply and let us know who is.
 >
-> Happy to do a 20-minute walkthrough if useful.
+> Alan Voels · My Wealth Maps · al@mywealthmaps.com
 >
-> Al Voels · Founder, My Wealth Maps · mywealthmaps.com · al@mywealthmaps.com
+> Footer: My Wealth Maps LLC physical address + unsubscribe line (CAN-SPAM).
 
-**Leave-behind:** WA_Estate_Tax_Explainer.pdf on every send.
+**Leave-behind (optional manual send):** WA_Estate_Tax_Explainer.pdf
 
 ---
 
@@ -161,25 +161,27 @@ await stripe.promotionCodes.create({
 
 **Verify before sending (from the research notes):** Occidental's Bellevue office is a satellite (Managing Principal based in Burlingame, CA — find the local advisor via FINRA BrokerCheck); LNW rebranded from Laird Norton (use lnwadvisors.com/team); Pure Financial acquired Kaufman Kampe (confirm Kaufman/Kampe still at Mercer Island). All CRD numbers verifiable at brokercheck.finra.org.
 
-**The offer:** "Free founding access — run your client households through the platform at no cost. Send a strategy recommendation (SLAT, ILIT, bypass trust) to a client, they accept it, and watch the estate-tax number move. That's the thing eMoney and RightCapital can't show your clients."
+**The offer:** Claim your directory listing. Pricing is per connected household, not per seat. See `lib/emails/directory-outreach-templates.ts` for shipped copy.
 
-> **Weave in the moat:** lead the advisor email with the *strategy-recommendation flywheel*, not the feature list. The differentiator versus their existing portal is the accept-and-recompute loop, not the calculator.
+> **Weave in the moat:** advisor email leads with connected-household workflow (live data, strategy recommendations, meeting prep) — not a feature list.
 
-**Email — Advisor first wave:**
+**Email — Advisor first wave** *(source of truth: `lib/emails/directory-outreach-templates.ts`)*
 
-> **Subject:** A Washington estate-tax tool for your HNW clients — free founding access
+> **Subject:** {Firm Name} is listed on My Wealth Maps — claim it in 5 minutes
 >
-> Hi [First Name],
+> Hi {First Name},
 >
-> I'm Al Voels, founder of My Wealth Maps. I built it for the gap your existing planning tools don't quite fill: showing a client, in real numbers, what their Washington estate-tax exposure is and what a specific strategy would do about it.
+> We've listed {Firm Name} on My Wealth Maps… [HNW households, estate + retirement planning]
 >
-> Here's the part I think you'll find useful: you can send a client a strategy recommendation — a SLAT, an ILIT, a bypass trust — and when they accept it, the platform recomputes their estate-tax exposure live. The client sees the number move. It turns an abstract recommendation into something they can see the value of.
+> Once a household connects, you get read-only access to their live data, strategy recommendations they can accept in their dashboard, and meeting-prep briefs — without re-keying their balance sheet.
 >
-> I'd like to offer you free founding access to run your own client households through it — no cost, no commitment. [Standout-specific line — e.g. for Cervantes: "Given your AEP focus, I think the WA-specific modeling will line up closely with how you already work."]
+> Claiming takes about five minutes. Pricing is per connected household, not per seat…
 >
-> Twenty minutes to show you the flywheel in action?
+> We built your listing from public directory information. Wrong contact? Just reply.
 >
-> Al Voels · Founder, My Wealth Maps · mywealthmaps.com · al@mywealthmaps.com
+> Alan Voels · My Wealth Maps · al@mywealthmaps.com
+>
+> Footer: My Wealth Maps LLC physical address + unsubscribe line (CAN-SPAM).
 
 ---
 
@@ -319,7 +321,7 @@ Run rules: reply in the **same thread** (subject becomes `Re:`). Stop the moment
 - [ ] Consumer copy review (GRAT/Roth) cleared.
 - [ ] WA MHMD determination answered.
 - [x] Conversion emails drafted — see [B&O-Day Conversion Emails](#bo-day-conversion-emails-staged--fire-on-ruling-day).
-- [ ] Send-from-personal-email, reply-to al@mywealthmaps.com confirmed.
+- [x] Send-from-personal-email, reply-to al@mywealthmaps.com — default in `sendDirectoryOutreachEmail.ts` (override via `DIRECTORY_OUTREACH_FROM_ADDRESS` / `DIRECTORY_OUTREACH_REPLY_TO`).
 
 ---
 

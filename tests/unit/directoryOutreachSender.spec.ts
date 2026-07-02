@@ -58,19 +58,30 @@ test.describe('outreachRecipient', () => {
 })
 
 test.describe('directory outreach templates + send shape', () => {
-  test('template fields match Resend send contract', () => {
-    const fields = {
-      firmName: 'Perkins Coie LLP',
-      firstName: 'Sarah',
-      claimLink: 'https://example.com/auth/v1/verify?token=abc',
-      senderName: 'Alan Voels',
-    }
+  const fields = {
+    firmName: 'Perkins Coie LLP',
+    firstName: 'Sarah',
+    claimLink: 'https://example.com/auth/confirm?token=abc',
+    senderName: 'Alan Voels',
+  }
+
+  test('attorney template includes pricing, value prop, compliance footer', () => {
     const attorney = buildAttorneyDirectoryOutreachEmail(fields)
     expect(attorney.subject).toContain('Perkins Coie LLP')
     expect(attorney.bodyHtml).toContain(fields.claimLink)
     expect(attorney.bodyText).toContain('first connected client is free')
+    expect(attorney.bodyText).toContain('modeled estate tax exposure, plan completeness, and document gaps')
+    expect(attorney.bodyText).toContain('public directory information')
+    expect(attorney.bodyText).toContain('22033 Echo Lake Rd, Snohomish, WA 98296')
+    expect(attorney.bodyText).toContain('Reply "unsubscribe"')
+  })
 
+  test('advisor template includes pricing, value prop, compliance footer', () => {
     const advisor = buildAdvisorDirectoryOutreachEmail(fields)
     expect(advisor.bodyText).toContain('per connected household, not per seat')
+    expect(advisor.bodyText).toContain('meeting-prep briefs')
+    expect(advisor.bodyText).toContain('public directory information')
+    expect(advisor.bodyText).toContain('22033 Echo Lake Rd, Snohomish, WA 98296')
+    expect(advisor.bodyText).toContain('Reply "unsubscribe"')
   })
 })
