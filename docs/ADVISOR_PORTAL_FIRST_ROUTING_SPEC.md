@@ -48,9 +48,11 @@ hardcode dollar amounts in UI.
 
 Empty-state card, metrics, connect CTA, firm billing section — see full spec sections below.
 
-### PR 3 (optional) — Callback consistency
+### PR 3 — Post-login routing (merged in fix/advisor-post-login-portal)
 
-`auth/callback` + `resolveAdvisorPostLoginPath` — defer.
+Default advisor sign-in (password, SSR `/login` redirect, magic-link `auth/callback`) lands on
+`/advisor`, not `/dashboard`. Advisors reach their own estate plan via **My Estate Plan** in the
+portal nav. Explicit `redirectTo` (e.g. `/claim/…`, `/profile`) is still honored.
 
 ---
 

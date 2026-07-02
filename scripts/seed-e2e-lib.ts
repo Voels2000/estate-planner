@@ -305,16 +305,37 @@ export async function seedE2eEstateHealthForHousehold(householdId: string): Prom
   await triggerE2eRecompute(householdId)
 }
 
-export async function ensureAdvisorDirectoryListing(): Promise<string> {
+export async function ensureAdvisorDirectoryListing(advisorUserId?: string): Promise<string> {
   const admin = createAdminClient()
   const listing = E2E_IDENTITIES.advisorListing
   const code = E2E_REFERRAL_CODES.advisor
+  const now = new Date().toISOString()
+  const linkFields = advisorUserId
+    ? {
+        profile_id: advisorUserId,
+        claimed_at: now,
+        crd_number: 'E2E-0001',
+        credential_verified_at: now,
+      }
+    : {}
 
-  const { data: existing } = await admin
-    .from('advisor_directory')
-    .select('id, referral_code')
-    .or(`email.eq.${listing.email},referral_code.eq.${code}`)
-    .maybeSingle()
+  let existing: { id: string; referral_code: string | null } | null = null
+  if (advisorUserId) {
+    const { data } = await admin
+      .from('advisor_directory')
+      .select('id, referral_code')
+      .eq('profile_id', advisorUserId)
+      .maybeSingle()
+    existing = data
+  }
+  if (!existing?.id) {
+    const { data } = await admin
+      .from('advisor_directory')
+      .select('id, referral_code')
+      .or(`email.eq.${listing.email},referral_code.eq.${code}`)
+      .maybeSingle()
+    existing = data
+  }
 
   if (existing?.id) {
     await admin
@@ -326,6 +347,7 @@ export async function ensureAdvisorDirectoryListing(): Promise<string> {
         firm_name: listing.firmName,
         is_verified: true,
         is_active: true,
+        ...linkFields,
       })
       .eq('id', existing.id)
     console.log(`  advisor_directory: updated ${existing.id} ref=${code}`)
@@ -346,6 +368,7 @@ export async function ensureAdvisorDirectoryListing(): Promise<string> {
       is_verified: true,
       is_active: true,
       referral_code: code,
+      ...linkFields,
     })
     .select('id, referral_code')
     .single()
