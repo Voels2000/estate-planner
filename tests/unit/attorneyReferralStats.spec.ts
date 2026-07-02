@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test'
 import { aggregateAttorneyReferralClicks } from '../../lib/attorney/attorneyReferralStats'
-import { attorneyEventReferralUsageTip } from '../../lib/attorney/attorneyEventReferralKit'
+import {
+  ATTORNEY_EVENT_REFERRAL_LABELS,
+  ATTORNEY_EVENT_REFERRAL_USAGE_TIPS,
+  attorneyEventReferralUsageTip,
+  attorneyReferralEventSlugs,
+} from '../../lib/attorney/attorneyEventReferralKit'
 
 test.describe('attorneyReferralStats', () => {
   test('aggregates clicks by slug, category, and 30-day window', () => {
@@ -35,9 +40,25 @@ test.describe('attorneyReferralStats', () => {
 })
 
 test.describe('attorneyEventReferralKit', () => {
-  test('derives usage tip from event subhead', () => {
+  test('every referral slug has a Share-when usage tip', () => {
+    const slugs = attorneyReferralEventSlugs()
+    expect(slugs).toHaveLength(24)
+    for (const slug of slugs) {
+      const tip = attorneyEventReferralUsageTip(slug)
+      expect(tip, `missing tip for ${slug}`).toBeTruthy()
+      expect(tip!.startsWith('Share ')).toBe(true)
+      expect(tip!.length).toBeLessThanOrEqual(200)
+    }
+    expect(Object.keys(ATTORNEY_EVENT_REFERRAL_USAGE_TIPS)).toHaveLength(24)
+    expect(Object.keys(ATTORNEY_EVENT_REFERRAL_LABELS)).toHaveLength(24)
+    for (const slug of slugs) {
+      expect(ATTORNEY_EVENT_REFERRAL_LABELS[slug]).toBeTruthy()
+    }
+  })
+
+  test('usage tips are attorney guidance, not raw subheads', () => {
     const tip = attorneyEventReferralUsageTip('selling-a-business')
-    expect(tip).toBeTruthy()
-    expect(tip!.length).toBeLessThanOrEqual(140)
+    expect(tip).toContain('Share when')
+    expect(tip).not.toMatch(/^When a business represents/)
   })
 })
