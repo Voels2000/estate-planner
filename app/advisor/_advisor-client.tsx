@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { AdvisorAlertBadge } from '@/components/alerts/AdvisorAlertBadge'
 import { AdvisorEmptyStateCta } from '@/components/advisor/AdvisorEmptyStateCta'
+import { AdvisorPortalOnboardingPanel } from '@/components/advisor/AdvisorPortalOnboardingPanel'
 import { AdvisorFirstClientPlaybook } from '@/components/advisor/AdvisorFirstClientPlaybook'
 import { ClientAttentionRow } from '@/components/advisor/ClientAttentionRow'
 import { HealthScoreBadge } from '@/components/shared/HealthScoreBadge'
@@ -97,6 +98,8 @@ type Props = {
   firm_name?: string | null
   firm_id?: string | null
   firmCheckoutPriceId?: string | null
+  firmBillingActive?: boolean
+  connectionRatePerHousehold?: number
   referralCode?: string | null
   eventReferralUrls?: Record<string, string> | null
 }
@@ -133,6 +136,8 @@ export default function AdvisorClientPage({
   firm_name,
   firm_id,
   firmCheckoutPriceId,
+  firmBillingActive = false,
+  connectionRatePerHousehold = 120,
   referralCode,
   eventReferralUrls,
 }: Props) {
@@ -397,6 +402,10 @@ export default function AdvisorClientPage({
 
   const incomingRequests = clients.filter(c => c.status === 'consumer_requested')
   const acceptedClients = clients.filter(c => c.accepted_at && c.status !== 'consumer_requested')
+  const pendingInviteCount = clients.filter(
+    (c) => !c.accepted_at && c.status !== 'consumer_requested' && c.status !== 'removed',
+  ).length
+  const pendingRequestCount = incomingRequests.length + pendingInviteCount
   const pendingClients = clients.filter(c => !c.accepted_at && c.status !== 'consumer_requested')
   const listedClients = clients.filter(c => c.status !== 'consumer_requested')
 
@@ -592,6 +601,16 @@ export default function AdvisorClientPage({
           </button>
         </div>
       </div>
+
+      {isFirmOwner && (
+        <AdvisorPortalOnboardingPanel
+          connectedCount={acceptedClients.length}
+          pendingRequestCount={pendingRequestCount}
+          firmBillingActive={firmBillingActive}
+          connectionRatePerHousehold={connectionRatePerHousehold}
+          onConnectClick={() => setShowIntakeModal(true)}
+        />
+      )}
 
       {referralCode && eventReferralUrls && (() => {
         const emailCopy = `Subject: A planning resource for [life event] clients

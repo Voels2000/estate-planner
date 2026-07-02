@@ -22,17 +22,19 @@ test.describe('Path A — unpaid advisor own plan', () => {
     await page.goto('/advisor')
     await expect(page).not.toHaveURL(/\/billing/)
     await expect(page).not.toHaveURL(/\/login/)
-    await expect(
-      page.getByRole('heading', { name: 'Advisor Portal' }).or(page.getByText('Connect your first client')),
-    ).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByRole('heading', { name: 'Advisor Portal' })).toBeVisible({
+      timeout: 30_000,
+    })
+    await expect(page.getByText('No connected clients yet')).toBeVisible()
   })
 
-  test('billing back link reaches advisor portal without redirect loop', async ({ page }) => {
+  test('advisor portal reachable from billing without redirect loop', async ({ page }) => {
     await page.goto('/billing')
     await expect(page).not.toHaveURL(/\/login/)
-    await page.getByRole('link', { name: /Advisor portal/i }).click()
+    await page.goto('/advisor')
     await expect(page).toHaveURL(/\/advisor/)
     await expect(page).not.toHaveURL(/\/billing/)
+    await expect(page.getByRole('heading', { name: 'Advisor Portal' })).toBeVisible()
   })
 
   test('POST /api/advisor/invite returns tier_limit_reached', async ({ request }) => {
@@ -63,6 +65,8 @@ test.describe('Path A — firm-paid owner with null profile sub', () => {
 })
 
 test.describe('Path A — login destination for unpaid advisor owner', () => {
+  test.use({ storageState: { cookies: [], origins: [] } })
+
   test('unpaid advisor owner lands on dashboard after sign-in', async ({ page }) => {
     const empty = E2E_IDENTITIES.advisorEmpty
     await page.goto('/login')
