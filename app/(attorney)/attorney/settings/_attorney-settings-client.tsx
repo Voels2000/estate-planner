@@ -8,6 +8,8 @@ import {
   attorneyPracticeProfileCompletedCount,
   attorneyPracticeProfileMissingFields,
   isAttorneyPracticeProfileComplete,
+  practiceProfileIncompleteBannerMessage,
+  type PracticeProfileMissingField,
 } from '@/lib/attorney/attorneyListingPracticeProfile'
 import {
   ATTORNEY_CREDENTIAL_SUGGESTIONS,
@@ -51,14 +53,18 @@ function toListingState(raw: Listing & {
   }
 }
 
+function licensedStateName(code: string): string {
+  return US_STATES.find((s) => s.code === code)?.name ?? code
+}
+
 export function AttorneySettingsClient({ initialListing }: { initialListing: Listing | null }) {
   const router = useRouter()
   const [listing, setListing] = useState<Listing | null>(
     initialListing ? toListingState(initialListing) : null,
   )
   const [credentialDraft, setCredentialDraft] = useState('')
-  const [stateDraft, setStateDraft] = useState('')
   const [showCredentialAdd, setShowCredentialAdd] = useState(false)
+  const [showStatePicker, setShowStatePicker] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -74,6 +80,9 @@ export function AttorneySettingsClient({ initialListing }: { initialListing: Lis
   const practiceAddedCount = useMemo(
     () => (listing ? attorneyPracticeProfileCompletedCount(listing) : 0),
     [listing],
+  )
+  const practiceProgressPct = Math.round(
+    (practiceAddedCount / ATTORNEY_PRACTICE_PROFILE_FIELD_COUNT) * 100,
   )
 
   if (!listing) {
@@ -124,6 +133,7 @@ export function AttorneySettingsClient({ initialListing }: { initialListing: Lis
       return { ...prev, credentials: next }
     })
     setCredentialDraft('')
+    setShowCredentialAdd(false)
   }
 
   function removeCredential(value: string) {
@@ -139,7 +149,7 @@ export function AttorneySettingsClient({ initialListing }: { initialListing: Lis
   function addLicensedState(code: string) {
     if (!code) return
     toggleState(code)
-    setStateDraft('')
+    setShowStatePicker(false)
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -177,38 +187,37 @@ export function AttorneySettingsClient({ initialListing }: { initialListing: Lis
   const feeValue = normalizeAttorneyFeeStructure(listing.fee_structure) ?? ''
   const availableStates = US_STATES.filter(({ code }) => !listing.states_licensed.includes(code))
 
+  const fieldComplete = {
+    states_licensed: listing.states_licensed.length > 0,
+    specializations: listing.specializations.length > 0,
+    credentials: listing.credentials.length > 0,
+    fee_structure: Boolean(feeValue),
+  }
+
+  function gatedFieldStatus(
+    field: PracticeProfileMissingField,
+  ): 'complete' | 'incomplete' | undefined {
+    if (fieldComplete[field]) return 'complete'
+    if (practiceMissing.includes(field)) return 'incomplete'
+    return undefined
+  }
+
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-[color:var(--mwm-navy)]">Firm settings</h1>
         <p className="text-sm text-neutral-500 mt-1">
-          Update your public directory profile. Client estate data remains owned by the household —
-          this only affects how you appear to consumers.
+          Update your public directory profile. Client estate data remains owned by the household.
         </p>
       </div>
 
-      {!practiceComplete && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <p className="font-medium">Practice profile incomplete for paid client connections</p>
-          <p className="mt-1 text-amber-800">
-            Your first client is always free. Before a second client (or any client on their own
-            paid subscription), complete:{' '}
-            {practiceMissing
-              .map((f) => {
-                if (f === 'states_licensed') return 'licensed states'
-                if (f === 'specializations') return 'practice areas'
-                if (f === 'credentials') return 'credentials'
-                return 'fee structure'
-              })
-              .join(', ')}
-            .
-          </p>
-        </div>
-      )}
-
-      <form onSubmit={(e) => void handleSave(e)} className="space-y-8">
+      <form onSubmit={(e) => void handleSave(e)} className="space-y-6">
         <section className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6">
-          <h2 className="text-sm font-semibold text-neutral-800">Firm & contact</h2>
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-800">Firm and contact</h2>
+            <p className="mt-1 text-xs text-neutral-500">How you appear to consumers.</p>
+          </div>
+
           <Field label="Firm name">
             <input
               className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
@@ -262,115 +271,108 @@ export function AttorneySettingsClient({ initialListing }: { initialListing: Lis
             />
           </Field>
           <p className="text-xs text-neutral-400">Directory email: {listing.email}</p>
-        </section>
 
-        <section className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-semibold text-neutral-800">Credentials and practice</h2>
-              <p className="mt-1 text-xs text-neutral-500">
-                Shown to prospective clients as a credibility signal. All fields are optional to
-                save — required before your second billable client or any client on their own paid
-                subscription.
-              </p>
-            </div>
-            <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-amber-200">
-              {practiceAddedCount} of {ATTORNEY_PRACTICE_PROFILE_FIELD_COUNT} added
-            </span>
+          <div className="border-t border-neutral-200 pt-6" />
+
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-800">Credentials and practice</h2>
+            <p className="mt-1 text-xs text-neutral-500">
+              Shown to prospective clients as a credibility signal.
+            </p>
           </div>
 
-          <Field label="Bar number">
+          {!practiceComplete && (
+            <div className="rounded-xl bg-amber-50 px-4 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-medium text-amber-900">
+                  {practiceAddedCount} of {ATTORNEY_PRACTICE_PROFILE_FIELD_COUNT} complete
+                </p>
+                <span className="text-xs text-amber-800">{practiceProgressPct}%</span>
+              </div>
+              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-white">
+                <div
+                  className="h-full rounded-full bg-amber-500 transition-all"
+                  style={{ width: `${practiceProgressPct}%` }}
+                />
+              </div>
+              <p className="mt-2 text-sm text-neutral-600">
+                {practiceProfileIncompleteBannerMessage(practiceMissing)}
+              </p>
+            </div>
+          )}
+
+          <Field
+            label="Bar number"
+            status={listing.bar_number?.trim() ? 'complete' : undefined}
+          >
             <input
               className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
               placeholder="WSBA #12345"
               value={listing.bar_number ?? ''}
               onChange={(e) => setListing({ ...listing, bar_number: e.target.value })}
             />
-            {!listing.bar_number?.trim() && (
-              <p className="mt-1 text-xs text-neutral-400">Not yet added.</p>
-            )}
           </Field>
 
-          <Field label="States licensed">
+          <Field label="States licensed" status={gatedFieldStatus('states_licensed')}>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {listing.states_licensed.map((code) => (
-                <span
+                <Chip
                   key={code}
-                  className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-800 ring-1 ring-blue-100"
-                >
-                  {code}
-                  <button
-                    type="button"
-                    onClick={() => toggleState(code)}
-                    className="text-blue-500 hover:text-blue-800"
-                    aria-label={`Remove ${code}`}
-                  >
-                    ×
-                  </button>
-                </span>
+                  label={licensedStateName(code)}
+                  onRemove={() => toggleState(code)}
+                />
               ))}
               {availableStates.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <select
-                    value={stateDraft}
-                    onChange={(e) => {
-                      const code = e.target.value
-                      if (code) addLicensedState(code)
-                    }}
-                    className="rounded-lg border border-neutral-300 px-2 py-1 text-xs bg-white"
-                    aria-label="Add licensed state"
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowStatePicker((open) => !open)}
+                    className="h-8 rounded-lg border border-neutral-300 px-3 text-sm text-neutral-800 hover:bg-neutral-50"
                   >
-                    <option value="">+ Add state</option>
-                    {availableStates.map(({ code, name }) => (
-                      <option key={code} value={code}>
-                        {code} — {name}
-                      </option>
-                    ))}
-                  </select>
+                    + Add state
+                  </button>
+                  {showStatePicker && (
+                    <div className="absolute left-0 z-20 mt-1 max-h-48 w-56 overflow-y-auto rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
+                      {availableStates.map(({ code, name }) => (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => addLicensedState(code)}
+                          className="block w-full px-3 py-1.5 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </Field>
 
-          <Field label="Practice areas">
-            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <Field label="Practice areas" status={gatedFieldStatus('specializations')}>
+            <div className="mt-2 flex flex-wrap gap-2">
               {ATTORNEY_PRACTICE_AREAS.map(({ slug, label }) => (
-                <label key={slug} className="flex items-center gap-2 text-sm text-neutral-700">
-                  <input
-                    type="checkbox"
-                    checked={listing.specializations.includes(slug)}
-                    onChange={() => togglePracticeArea(slug)}
-                    className="rounded border-neutral-300"
-                  />
-                  {label}
-                </label>
+                <TogglePill
+                  key={slug}
+                  label={label}
+                  selected={listing.specializations.includes(slug)}
+                  onClick={() => togglePracticeArea(slug)}
+                />
               ))}
             </div>
           </Field>
 
-          <Field label="Credentials">
+          <Field label="Credentials" status={gatedFieldStatus('credentials')}>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {listing.credentials.map((cred) => (
-                <span
-                  key={cred}
-                  className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-900 ring-1 ring-sky-100"
-                >
-                  {cred}
-                  <button
-                    type="button"
-                    onClick={() => removeCredential(cred)}
-                    className="text-sky-500 hover:text-sky-800"
-                    aria-label={`Remove ${cred}`}
-                  >
-                    ×
-                  </button>
-                </span>
+                <Chip key={cred} label={cred} onRemove={() => removeCredential(cred)} />
               ))}
               {!showCredentialAdd ? (
                 <button
                   type="button"
                   onClick={() => setShowCredentialAdd(true)}
-                  className="rounded-full border border-dashed border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-50"
+                  className="h-8 rounded-lg border border-neutral-300 px-3 text-sm text-neutral-800 hover:bg-neutral-50"
                 >
                   + Add credential
                 </button>
@@ -386,7 +388,6 @@ export function AttorneySettingsClient({ initialListing }: { initialListing: Lis
                       if (e.key === 'Enter') {
                         e.preventDefault()
                         addCredential(credentialDraft)
-                        setShowCredentialAdd(false)
                       }
                       if (e.key === 'Escape') {
                         setShowCredentialAdd(false)
@@ -397,10 +398,7 @@ export function AttorneySettingsClient({ initialListing }: { initialListing: Lis
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      addCredential(credentialDraft)
-                      setShowCredentialAdd(false)
-                    }}
+                    onClick={() => addCredential(credentialDraft)}
                     className="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
                   >
                     Add
@@ -418,24 +416,22 @@ export function AttorneySettingsClient({ initialListing }: { initialListing: Lis
             </datalist>
           </Field>
 
-          <Field label="Fee structure">
-            <select
-              className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm bg-white"
-              value={feeValue}
-              onChange={(e) =>
-                setListing({
-                  ...listing,
-                  fee_structure: e.target.value || null,
-                })
-              }
-            >
-              <option value="">Not specified</option>
+          <Field label="Fee structure" status={gatedFieldStatus('fee_structure')}>
+            <div className="mt-2 flex flex-wrap gap-2">
               {ATTORNEY_FEE_STRUCTURE_OPTIONS.map(({ value, label }) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
+                <TogglePill
+                  key={value}
+                  label={label}
+                  selected={feeValue === value}
+                  onClick={() =>
+                    setListing({
+                      ...listing,
+                      fee_structure: feeValue === value ? null : value,
+                    })
+                  }
+                />
               ))}
-            </select>
+            </div>
           </Field>
         </section>
 
@@ -462,11 +458,74 @@ export function AttorneySettingsClient({ initialListing }: { initialListing: Lis
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+type FieldStatus = 'complete' | 'incomplete'
+
+function Field({
+  label,
+  status,
+  children,
+}: {
+  label: string
+  status?: FieldStatus
+  children: React.ReactNode
+}) {
   return (
     <div>
-      <label className="block text-xs font-medium text-neutral-600 mb-1">{label}</label>
+      <div className="mb-1 flex items-center gap-2">
+        <label className="text-xs font-medium text-neutral-600">{label}</label>
+        {status === 'complete' && (
+          <span className="text-sm text-emerald-800" aria-label="Complete">
+            ✓
+          </span>
+        )}
+        {status === 'incomplete' && (
+          <span className="text-sm text-amber-800" aria-label="Required for paid connections">
+            ⚠
+          </span>
+        )}
+      </div>
       {children}
     </div>
+  )
+}
+
+function Chip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#e6f1fb] px-3 py-1 text-sm text-[#0c447c]">
+      {label}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="text-[#0c447c]/60 hover:text-[#0c447c]"
+        aria-label={`Remove ${label}`}
+      >
+        ×
+      </button>
+    </span>
+  )
+}
+
+function TogglePill({
+  label,
+  selected,
+  onClick,
+}: {
+  label: string
+  selected: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
+        selected
+          ? 'bg-neutral-900 text-white'
+          : 'border border-neutral-300 text-neutral-800 hover:bg-neutral-50'
+      }`}
+    >
+      {label}
+    </button>
   )
 }

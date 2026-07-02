@@ -4,6 +4,7 @@ import {
   isAttorneyPracticeProfileComplete,
   isConsumerDirectPaidSubscriber,
   practiceProfileGateErrorMessage,
+  practiceProfileIncompleteBannerMessage,
 } from '../../lib/attorney/attorneyListingPracticeProfile'
 import {
   formatAttorneyFeeStructureLabel,
@@ -63,6 +64,19 @@ test.describe('attorneyListingPracticeProfile', () => {
   test('builds gate error message from missing fields', () => {
     expect(practiceProfileGateErrorMessage(['credentials', 'fee_structure'])).toContain(
       'at least one credential',
+    )
+  })
+
+  test('builds settings banner from first missing field', () => {
+    expect(practiceProfileIncompleteBannerMessage(['fee_structure'])).toContain('a fee structure')
+    expect(practiceProfileIncompleteBannerMessage(['states_licensed'])).toContain(
+      'at least one licensed state',
+    )
+    expect(practiceProfileIncompleteBannerMessage(['credentials', 'fee_structure'])).toContain(
+      'at least one credential',
+    )
+    expect(practiceProfileIncompleteBannerMessage(['credentials', 'fee_structure'])).not.toContain(
+      'fee structure',
     )
   })
 

@@ -72,6 +72,25 @@ export type PracticeProfileGateOk = { ok: true }
 
 export type PracticeProfileGateResult = PracticeProfileGateOk | PracticeProfileGateBlock
 
+const PRACTICE_PROFILE_BANNER_FIELD_PHRASES: Record<PracticeProfileMissingField, string> = {
+  states_licensed: 'at least one licensed state',
+  specializations: 'at least one practice area',
+  credentials: 'at least one credential',
+  fee_structure: 'a fee structure',
+}
+
+/** Settings-page banner body — names the first blocking field. */
+export function practiceProfileIncompleteBannerMessage(
+  missing: PracticeProfileMissingField[],
+): string {
+  const first = missing[0]
+  if (!first) {
+    return 'Your first client is always free. Complete the fields below before connecting a second client or any client on their own paid plan.'
+  }
+  const fieldPhrase = PRACTICE_PROFILE_BANNER_FIELD_PHRASES[first]
+  return `Your first client is always free. Add ${fieldPhrase} below before connecting a second client or any client on their own paid plan.`
+}
+
 export function practiceProfileGateErrorMessage(missing: PracticeProfileMissingField[]): string {
   if (missing.length === 0) {
     return 'Complete your practice profile in Firm settings before connecting paid clients.'
