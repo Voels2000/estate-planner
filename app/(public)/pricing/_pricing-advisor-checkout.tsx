@@ -5,25 +5,28 @@ import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 
 type Props = {
   planName: string
-  seatRate: number
+  unitRate: number
   priceId: string
-  minSeats?: number
-  maxSeats: number
+  minUnits?: number
+  maxUnits: number
+  unitLabel?: 'seat' | 'client'
 }
 
 export function PricingAdvisorCheckout({
   planName,
-  seatRate,
+  unitRate,
   priceId,
-  minSeats = 1,
-  maxSeats,
+  minUnits = 1,
+  maxUnits,
+  unitLabel = 'seat',
 }: Props) {
-  const [seatCount, setSeatCount] = useState(minSeats)
+  const [unitCount, setUnitCount] = useState(minUnits)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const effectiveSeats = Math.min(Math.max(minSeats, seatCount || minSeats), maxSeats)
-  const totalMonthly = seatRate * effectiveSeats
+  const effectiveUnits = Math.min(Math.max(minUnits, unitCount || minUnits), maxUnits)
+  const totalMonthly = unitRate * effectiveUnits
+  const unitNoun = unitLabel === 'client' ? 'connected clients' : 'advisor seats'
 
   async function handleCheckout() {
     setError(null)
@@ -32,7 +35,7 @@ export function PricingAdvisorCheckout({
       const res = await fetch('/api/stripe/firm-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, seatCount: effectiveSeats }),
+        body: JSON.stringify({ priceId, seatCount: effectiveUnits }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -55,20 +58,20 @@ export function PricingAdvisorCheckout({
     <>
       <div style={{ marginBottom: 12 }}>
         <label
-          htmlFor={`advisor-seats-${planName}`}
+          htmlFor={`advisor-units-${planName}`}
           style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#4a5568', marginBottom: 6 }}
         >
-          How many advisor seats?
+          How many {unitNoun}?
         </label>
         <input
-          id={`advisor-seats-${planName}`}
+          id={`advisor-units-${planName}`}
           type="number"
-          min={minSeats}
-          max={maxSeats}
-          value={seatCount}
+          min={minUnits}
+          max={maxUnits}
+          value={unitCount}
           onChange={(e) => {
             const parsed = parseInt(e.target.value, 10)
-            setSeatCount(Number.isNaN(parsed) ? minSeats : parsed)
+            setUnitCount(Number.isNaN(parsed) ? minUnits : parsed)
           }}
           style={{
             width: '100%',
@@ -80,7 +83,7 @@ export function PricingAdvisorCheckout({
           }}
         />
         <p style={{ fontSize: 12, fontWeight: 600, color: '#0f1f3d', marginTop: 8 }}>
-          Total: ${totalMonthly.toLocaleString('en-US')}/month
+          Estimated: ${totalMonthly.toLocaleString('en-US')}/month at ${unitRate}/{unitLabel}
         </p>
       </div>
       <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.6, marginBottom: 12 }}>
