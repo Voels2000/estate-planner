@@ -9,7 +9,7 @@ export function claimMagicLinkRedirectTo(appUrl: string, claimToken: string): st
   return `${origin}/auth/callback?next=${encodeURIComponent(`/claim/${claimToken}`)}`
 }
 
-/** One-click claim URL: our callback verifies token_hash server-side (avoids Supabase action_link hash/PKCE gaps). */
+/** One-click claim URL: our callback verifies token_hash server-side (avoids Supabase action_link hash/PKCE gaps). Role-agnostic — attorney and advisor outreach share this path; role is set via generateLink user_metadata. */
 export function buildClaimMagicConfirmUrl(tokenHash: string, claimToken: string): string {
   const params = new URLSearchParams({
     token_hash: tokenHash,
