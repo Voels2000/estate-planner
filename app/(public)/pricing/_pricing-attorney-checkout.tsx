@@ -4,24 +4,51 @@ import { useState } from 'react'
 import { BILLING_DISCLOSURES } from '@/lib/compliance/billing-disclosures'
 import type { AttorneyPlanKey } from '@/lib/tiers'
 
-type Props = {
+type LegacyProps = {
+  mode?: 'legacy'
   planName: string
   planKey: AttorneyPlanKey
   priceMonthly: number
 }
 
-export function PricingAttorneyCheckout({ planName, planKey, priceMonthly }: Props) {
+type ConnectionProps = {
+  mode: 'connection'
+  planName: string
+  ratePerClient: number
+  minClients: number
+  maxClients: number
+}
+
+type Props = LegacyProps | ConnectionProps
+
+export function PricingAttorneyCheckout(props: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const isConnection = props.mode === 'connection'
+  const minClients = isConnection ? props.minClients : 1
+  const maxClients = isConnection ? props.maxClients : 1
+  const [clientCount, setClientCount] = useState(minClients)
+
+  const effectiveClients = isConnection
+    ? Math.min(Math.max(minClients, clientCount || minClients), maxClients)
+    : 1
+  const estimatedMonthly = isConnection ? props.ratePerClient * effectiveClients : props.priceMonthly
+  const disclosureAmount = isConnection
+    ? `$${estimatedMonthly.toLocaleString('en-US')}`
+    : `$${props.priceMonthly}`
 
   async function handleCheckout() {
     setError(null)
     setLoading(true)
     try {
+      const body = isConnection
+        ? { quantity: effectiveClients }
+        : { planKey: props.planKey }
       const res = await fetch('/api/stripe/attorney-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planKey }),
+        body: JSON.stringify(body),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -42,8 +69,40 @@ export function PricingAttorneyCheckout({ planName, planKey, priceMonthly }: Pro
 
   return (
     <>
+      {isConnection && (
+        <div style={{ marginBottom: 12 }}>
+          <label
+            htmlFor={`attorney-clients-${props.planName}`}
+            style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#4a5568', marginBottom: 6 }}
+          >
+            How many client households?
+          </label>
+          <input
+            id={`attorney-clients-${props.planName}`}
+            type="number"
+            min={minClients}
+            max={maxClients}
+            value={clientCount}
+            onChange={(e) => {
+              const parsed = parseInt(e.target.value, 10)
+              setClientCount(Number.isNaN(parsed) ? minClients : parsed)
+            }}
+            style={{
+              width: '100%',
+              padding: '8px 10px',
+              borderRadius: 8,
+              border: '1px solid #e2e8f0',
+              fontSize: 13,
+              fontFamily: 'DM Sans, system-ui, sans-serif',
+            }}
+          />
+          <p style={{ fontSize: 12, fontWeight: 600, color: '#0f1f3d', marginTop: 8 }}>
+            Estimated: ${estimatedMonthly.toLocaleString('en-US')}/month at ${props.ratePerClient}/client
+          </p>
+        </div>
+      )}
       <p style={{ fontSize: 12, color: '#4a5568', lineHeight: 1.6, marginBottom: 12 }}>
-        {BILLING_DISCLOSURES.preCheckout(planName, `$${priceMonthly}`, 'month')}
+        {BILLING_DISCLOSURES.preCheckout(props.planName, disclosureAmount, 'month')}
       </p>
       {error && (
         <p style={{ fontSize: 12, color: '#c53030', marginBottom: 12 }}>{error}</p>

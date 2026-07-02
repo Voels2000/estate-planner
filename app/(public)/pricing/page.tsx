@@ -6,109 +6,15 @@ import { PricingConsumerPlans } from './_pricing-consumer-plans'
 import { PricingPlanAndExportSection } from './_pricing-plan-and-export-section'
 import { PricingAdvisorCheckout } from './_pricing-advisor-checkout'
 import { PricingAttorneyCheckout } from './_pricing-attorney-checkout'
+import { TIER_PRICES } from '@/lib/tiers'
 import {
-  ADVISOR_FIRM_SEAT_RATES,
-  ADVISOR_FIRM_SEAT_RANGES,
-  ADVISOR_FIRM_PRICE_IDS,
-  ATTORNEY_PLAN_LIMITS,
-  TIER_PRICES,
-} from '@/lib/tiers'
+  getPublicAdvisorPlans,
+  getPublicAdvisorPricingSubtitle,
+  getPublicAttorneyPlans,
+  getPublicAttorneyPricingSubtitle,
+} from '@/lib/pricing/publicProfessionalPricing'
 
 const ESTATE_TRIAL_DAYS = getConsumerPlanDisplay(3, 'monthly').trialDays
-
-const ADVISOR_PLANS = [
-  {
-    name: 'Starter',
-    seatRate: ADVISOR_FIRM_SEAT_RATES.starter,
-    range: ADVISOR_FIRM_SEAT_RANGES.starter.label,
-    priceId: ADVISOR_FIRM_PRICE_IDS.starter,
-    minSeats: ADVISOR_FIRM_SEAT_RANGES.starter.min,
-    maxSeats: ADVISOR_FIRM_SEAT_RANGES.starter.max ?? 10,
-    popular: false,
-    features: [
-      'Up to 10 advisor seats',
-      'All consumer Estate features per client',
-      'Strategy recommendation workflow',
-      'Meeting brief PDF exports',
-      'Client invite portal',
-      'Advisor directory listing',
-      'Firm branding',
-    ],
-  },
-  {
-    name: 'Growth',
-    seatRate: ADVISOR_FIRM_SEAT_RATES.growth,
-    range: ADVISOR_FIRM_SEAT_RANGES.growth.label,
-    priceId: ADVISOR_FIRM_PRICE_IDS.growth,
-    minSeats: ADVISOR_FIRM_SEAT_RANGES.growth.min,
-    maxSeats: ADVISOR_FIRM_SEAT_RANGES.growth.max ?? 50,
-    popular: true,
-    features: [
-      'Up to 50 advisor seats',
-      'Everything in Starter',
-      'Bulk client import',
-      'Custom PDF branding',
-      'Priority support',
-      'Advisor activation playbook',
-    ],
-  },
-  {
-    name: 'Enterprise',
-    seatRate: ADVISOR_FIRM_SEAT_RATES.enterprise,
-    range: ADVISOR_FIRM_SEAT_RANGES.enterprise.label,
-    priceId: ADVISOR_FIRM_PRICE_IDS.enterprise,
-    popular: false,
-    features: [
-      '51+ advisor seats',
-      'Everything in Growth',
-      'White-label option',
-      'Dedicated onboarding',
-      'API access (roadmap)',
-      'SSO / SAML (roadmap)',
-    ],
-  },
-]
-
-const ATTORNEY_PLANS = [
-  {
-    name: 'Free',
-    price: 0,
-    clientCap: 3,
-    priceId: null,
-    features: [
-      '3 client households',
-      'Consumer-approved read access',
-      'Attorney directory listing',
-      'Document gap visibility',
-    ],
-  },
-  {
-    name: 'Starter',
-    planKey: 'starter' as const,
-    price: ATTORNEY_PLAN_LIMITS.starter.priceMonthly,
-    clientCap: ATTORNEY_PLAN_LIMITS.starter.clientCap,
-    popular: true,
-    features: [
-      '15 client households',
-      'Everything in Free',
-      'Document upload to client repository',
-      'Weekly client digest emails',
-      'Annual review due alerts',
-      'Stale matter alerts (30-day)',
-    ],
-  },
-  {
-    name: 'Growth',
-    planKey: 'growth' as const,
-    price: ATTORNEY_PLAN_LIMITS.growth.priceMonthly,
-    clientCap: ATTORNEY_PLAN_LIMITS.growth.clientCap,
-    features: [
-      '50 client households',
-      'Everything in Starter',
-      'Priority support',
-    ],
-  },
-]
 
 export default async function PricingPage() {
   const supabase = await createClient()
@@ -117,6 +23,8 @@ export default async function PricingPage() {
   } = await supabase.auth.getUser()
   const signupHref = getSignupHref()
   const annualBillingAvailable = isAnnualBillingConfigured()
+  const advisorPlans = getPublicAdvisorPlans()
+  const attorneyPlans = getPublicAttorneyPlans()
 
   return (
     <div
@@ -278,75 +186,80 @@ export default async function PricingPage() {
               Advisor Plans
             </h2>
             <p style={{ fontSize: 13, color: '#718096', lineHeight: 1.6 }}>
-              Per-seat pricing. Connected clients get full Estate-tier access — no separate consumer subscription needed.
+              {getPublicAdvisorPricingSubtitle()}
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-            {ADVISOR_PLANS.map((plan) => (
-              <div
-                key={plan.name}
-                style={{
-                  border: plan.popular ? '2px solid #0f1f3d' : '1px solid #e2e8f0',
-                  borderRadius: 12,
-                  padding: '24px 20px',
-                  position: 'relative',
-                  background: plan.popular ? '#f7f8fa' : 'white',
-                }}
-              >
-                {plan.popular && (
-                  <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: '#0f1f3d', color: 'white', fontSize: 10, fontWeight: 600, padding: '3px 14px', borderRadius: 40, whiteSpace: 'nowrap' }}>
-                    Most Popular
-                  </div>
-                )}
-                <div style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 18, fontWeight: 500, color: '#0f1f3d', marginBottom: 4 }}>
-                  {plan.name}
-                </div>
-                <div style={{ fontSize: 12, color: '#718096', marginBottom: 16 }}>{plan.range}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-                  {plan.name === 'Enterprise' ? (
-                    <span style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 28, fontWeight: 500, color: '#0f1f3d', lineHeight: 1 }}>
-                      ${plan.seatRate}
-                    </span>
-                  ) : (
-                    <span style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 32, fontWeight: 500, color: '#0f1f3d', lineHeight: 1 }}>
-                      ${plan.seatRate}
-                    </span>
+            {advisorPlans.map((plan) => {
+              const isLegacy = plan.mode === 'legacy'
+              const unitRate = isLegacy ? plan.seatRate : plan.ratePerClient
+              const rangeLabel = isLegacy ? plan.range : plan.rangeLabel
+              const unitSuffix = isLegacy ? '/seat/month' : '/client/month'
+              const feeNote = plan.isEnterprise
+                ? 'Annual contract · contact us'
+                : isLegacy
+                  ? 'No per-client fees'
+                  : 'Volume bands · pay per connected household'
+
+              return (
+                <div
+                  key={plan.name}
+                  style={{
+                    border: plan.popular ? '2px solid #0f1f3d' : '1px solid #e2e8f0',
+                    borderRadius: 12,
+                    padding: '24px 20px',
+                    position: 'relative',
+                    background: plan.popular ? '#f7f8fa' : 'white',
+                  }}
+                >
+                  {plan.popular && (
+                    <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: '#0f1f3d', color: 'white', fontSize: 10, fontWeight: 600, padding: '3px 14px', borderRadius: 40, whiteSpace: 'nowrap' }}>
+                      Most Popular
+                    </div>
                   )}
-                  <span style={{ fontSize: 12, color: '#718096' }}>/seat/month</span>
+                  <div style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 18, fontWeight: 500, color: '#0f1f3d', marginBottom: 4 }}>
+                    {plan.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#718096', marginBottom: 16 }}>{rangeLabel}</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                    <span style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: plan.isEnterprise ? 28 : 32, fontWeight: 500, color: '#0f1f3d', lineHeight: 1 }}>
+                      ${unitRate}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#718096' }}>{unitSuffix}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#718096', marginBottom: 20 }}>{feeNote}</div>
+                  <ul style={{ listStyle: 'none', padding: 0, marginBottom: 20 }}>
+                    {plan.features.map((feature) => (
+                      <li key={feature} style={{ fontSize: 12, color: '#4a5568', padding: '4px 0', display: 'flex', gap: 6 }}>
+                        <span style={{ color: '#4a7c6f', fontWeight: 700 }}>✓</span>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  {plan.isEnterprise ? (
+                    <a
+                      href={`mailto:${EMAIL_REPLY_TO}?subject=Enterprise%20Advisor%20Plan`}
+                      style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+                    >
+                      Contact us
+                    </a>
+                  ) : user ? (
+                    <PricingAdvisorCheckout
+                      planName={plan.name}
+                      unitRate={unitRate}
+                      priceId={plan.priceId}
+                      minUnits={isLegacy ? plan.minSeats : plan.minClients}
+                      maxUnits={isLegacy ? plan.maxSeats : plan.maxClients}
+                      unitLabel={isLegacy ? 'seat' : 'client'}
+                    />
+                  ) : (
+                    <a href={signupHref} style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                      Get started
+                    </a>
+                  )}
                 </div>
-                <div style={{ fontSize: 11, color: '#718096', marginBottom: 20 }}>
-                  {plan.name === 'Enterprise' ? 'Annual contract · contact us' : 'No per-client fees'}
-                </div>
-                <ul style={{ listStyle: 'none', padding: 0, marginBottom: 20 }}>
-                  {plan.features.map((feature) => (
-                    <li key={feature} style={{ fontSize: 12, color: '#4a5568', padding: '4px 0', display: 'flex', gap: 6 }}>
-                      <span style={{ color: '#4a7c6f', fontWeight: 700 }}>✓</span>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                {plan.name === 'Enterprise' ? (
-                  <a
-                    href={`mailto:${EMAIL_REPLY_TO}?subject=Enterprise%20Advisor%20Plan`}
-                    style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
-                  >
-                    Contact us
-                  </a>
-                ) : user && 'maxSeats' in plan && plan.maxSeats ? (
-                  <PricingAdvisorCheckout
-                    planName={plan.name}
-                    seatRate={plan.seatRate}
-                    priceId={plan.priceId}
-                    minSeats={'minSeats' in plan ? plan.minSeats : 1}
-                    maxSeats={plan.maxSeats}
-                  />
-                ) : (
-                  <a href={signupHref} style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-                    Get started
-                  </a>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
@@ -369,62 +282,95 @@ export default async function PricingPage() {
               Attorney Plans
             </h2>
             <p style={{ fontSize: 13, color: '#718096', lineHeight: 1.6 }}>
-              Read access and document tools. Flat monthly fee — no per-client billing. Clients control what you can see.
+              {getPublicAttorneyPricingSubtitle()}
             </p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-            {ATTORNEY_PLANS.map((plan) => (
-              <div
-                key={plan.name}
-                style={{
-                  border: plan.popular ? '2px solid #0f1f3d' : '1px solid #e2e8f0',
-                  borderRadius: 12,
-                  padding: '24px 20px',
-                  position: 'relative',
-                  background: plan.popular ? '#f7f8fa' : 'white',
-                }}
-              >
-                {plan.popular && (
-                  <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: '#0f1f3d', color: 'white', fontSize: 10, fontWeight: 600, padding: '3px 14px', borderRadius: 40, whiteSpace: 'nowrap' }}>
-                    Most Popular
+            {attorneyPlans.map((plan) => {
+              const isLegacy = plan.mode === 'legacy'
+              const isConnectionPaid = plan.mode === 'connection' && plan.price > 0
+              const capLabel = isConnectionPaid && plan.rangeLabel
+                ? plan.rangeLabel
+                : `Up to ${plan.clientCap} client households`
+
+              return (
+                <div
+                  key={plan.name}
+                  style={{
+                    border: plan.popular ? '2px solid #0f1f3d' : '1px solid #e2e8f0',
+                    borderRadius: 12,
+                    padding: '24px 20px',
+                    position: 'relative',
+                    background: plan.popular ? '#f7f8fa' : 'white',
+                  }}
+                >
+                  {plan.popular && (
+                    <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: '#0f1f3d', color: 'white', fontSize: 10, fontWeight: 600, padding: '3px 14px', borderRadius: 40, whiteSpace: 'nowrap' }}>
+                      Most Popular
+                    </div>
+                  )}
+                  <div style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 18, fontWeight: 500, color: '#0f1f3d', marginBottom: 4 }}>
+                    {plan.name}
                   </div>
-                )}
-                <div style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 18, fontWeight: 500, color: '#0f1f3d', marginBottom: 4 }}>
-                  {plan.name}
+                  <div style={{ fontSize: 12, color: '#718096', marginBottom: 16 }}>{capLabel}</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                    <span style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 32, fontWeight: 500, color: '#0f1f3d', lineHeight: 1 }}>
+                      {plan.price === 0 ? 'Free' : isConnectionPaid ? `$${plan.ratePerClient}` : `$${plan.price}`}
+                    </span>
+                    {plan.price > 0 && (
+                      <span style={{ fontSize: 12, color: '#718096' }}>
+                        {isConnectionPaid ? '/client/month' : '/month'}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#718096', marginBottom: 20 }}>
+                    {isConnectionPaid
+                      ? 'Volume bands · pay per connected household'
+                      : plan.price === 0
+                        ? 'No subscription required'
+                        : 'No per-client fees'}
+                  </div>
+                  <ul style={{ listStyle: 'none', padding: 0, marginBottom: 20 }}>
+                    {plan.features.map((feature) => (
+                      <li key={feature} style={{ fontSize: 12, color: '#4a5568', padding: '4px 0', display: 'flex', gap: 6 }}>
+                        <span style={{ color: '#4a7c6f', fontWeight: 700 }}>✓</span>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  {plan.price === 0 ? (
+                    <a href={signupHref} style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                      Get started free
+                    </a>
+                  ) : 'isEnterprise' in plan && plan.isEnterprise ? (
+                    <a
+                      href={`mailto:${EMAIL_REPLY_TO}?subject=Enterprise%20Attorney%20Plan`}
+                      style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+                    >
+                      Contact us
+                    </a>
+                  ) : user && isLegacy && plan.planKey ? (
+                    <PricingAttorneyCheckout
+                      planName={plan.name}
+                      planKey={plan.planKey}
+                      priceMonthly={plan.price}
+                    />
+                  ) : user && isConnectionPaid && plan.minClients && plan.maxClients && plan.ratePerClient ? (
+                    <PricingAttorneyCheckout
+                      mode="connection"
+                      planName={plan.name}
+                      ratePerClient={plan.ratePerClient}
+                      minClients={plan.minClients}
+                      maxClients={plan.maxClients}
+                    />
+                  ) : (
+                    <a href={signupHref} style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                      Get started
+                    </a>
+                  )}
                 </div>
-                <div style={{ fontSize: 12, color: '#718096', marginBottom: 16 }}>Up to {plan.clientCap} client households</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
-                  <span style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 32, fontWeight: 500, color: '#0f1f3d', lineHeight: 1 }}>
-                    {plan.price === 0 ? 'Free' : `$${plan.price}`}
-                  </span>
-                  {plan.price > 0 && <span style={{ fontSize: 12, color: '#718096' }}>/month</span>}
-                </div>
-                <div style={{ fontSize: 11, color: '#718096', marginBottom: 20 }}>No per-client fees</div>
-                <ul style={{ listStyle: 'none', padding: 0, marginBottom: 20 }}>
-                  {plan.features.map((feature) => (
-                    <li key={feature} style={{ fontSize: 12, color: '#4a5568', padding: '4px 0', display: 'flex', gap: 6 }}>
-                      <span style={{ color: '#4a7c6f', fontWeight: 700 }}>✓</span>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                {plan.price === 0 ? (
-                  <a href={signupHref} style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-                    Get started free
-                  </a>
-                ) : user && 'planKey' in plan && plan.planKey ? (
-                  <PricingAttorneyCheckout
-                    planName={plan.name}
-                    planKey={plan.planKey}
-                    priceMonthly={plan.price}
-                  />
-                ) : (
-                  <a href={signupHref} style={{ display: 'block', textAlign: 'center', padding: '10px', borderRadius: 8, background: '#0f1f3d', color: 'white', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
-                    Get started
-                  </a>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
