@@ -39,7 +39,7 @@ test.describe('generateClaimMagicLink helpers', () => {
     try {
       const url = buildClaimMagicConfirmUrl('hash_xyz', 'tok_abc123')
       const parsed = new URL(url)
-      expect(parsed.pathname).toBe('/auth/callback')
+      expect(parsed.pathname).toBe('/auth/confirm')
       expect(parsed.searchParams.get('token_hash')).toBe('hash_xyz')
       expect(parsed.searchParams.get('type')).toBe('magiclink')
       expect(parsed.searchParams.get('next')).toBe('/claim/tok_abc123')
