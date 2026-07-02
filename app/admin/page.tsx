@@ -2,7 +2,8 @@ import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { computeAdminMrr } from '@/lib/billing/computeAdminMrr'
-import { countDistinctClientIds } from '@/lib/billing/connectedHouseholdCount'
+import { countDistinctClientIds, firmConnectedHouseholds } from '@/lib/billing/connectedHouseholdCount'
+import { isConnectionBillingEnabled } from '@/lib/billing/connectionBillingFlag'
 import { ACTIVE_ATTORNEY_CLIENT_STATUSES } from '@/lib/attorney/attorneyClientCap'
 import { getCanonicalTerms } from '@/lib/terms/getCanonicalTerms'
 import { computeOpsTaskUrgency } from '@/lib/admin/opsTasks'
@@ -265,12 +266,23 @@ export default async function AdminPage() {
 
   const { data: activeFirmsRaw } = await admin
     .from('firms')
-    .select('seat_count, tier, owner_id')
+    .select('id, seat_count, tier, owner_id, billing_floor')
     .in('subscription_status', ['active', 'trialing'])
 
-  const activeFirms = (activeFirmsRaw ?? []).filter(
+  const activeFirmsFiltered = (activeFirmsRaw ?? []).filter(
     (f) => !f.owner_id || !excludedOwnerIds.has(f.owner_id),
   )
+
+  const activeFirms = isConnectionBillingEnabled()
+    ? await Promise.all(
+        activeFirmsFiltered.map(async (firm) => ({
+          seat_count: firm.seat_count,
+          tier: firm.tier,
+          billing_floor: firm.billing_floor,
+          connected_count: firm.id ? await firmConnectedHouseholds(admin, firm.id) : 0,
+        })),
+      )
+    : activeFirmsFiltered.map(({ seat_count, tier }) => ({ seat_count, tier }))
 
   const { data: activeAttorneyListingsRaw } = await admin
     .from('attorney_listings')
